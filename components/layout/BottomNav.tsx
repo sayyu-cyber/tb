@@ -30,7 +30,13 @@ export function BottomNav() {
           const Icon = item.icon;
 
           return (
-            <Link key={item.href} href={item.href} className="relative flex flex-col items-center py-1 px-3">
+            <Link 
+              key={item.href} 
+              href={item.href} 
+              scroll={false}
+              prefetch={false}
+              className="relative flex flex-col items-center py-1 px-3"
+            >
               <motion.div
                 whileTap={{ scale: 0.85 }}
                 className="relative"
