@@ -7,10 +7,9 @@ import { useCountdown } from "@/hooks/useCountdown";
 
 export function SeasonCard() {
   const season = useSeasonInfo();
+const { days, hours } = useCountdown(season?.endDate ?? new Date());
 
-  if (!season) return null;
-
-  const { days, hours } = useCountdown(season.endDate);
+if (!season) return null;
 
   return (
     <motion.div
