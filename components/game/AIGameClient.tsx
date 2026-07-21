@@ -59,14 +59,14 @@ export function AIGameClient({ gameId }: { gameId: string }) {
       setPlayedCards(prev => ({ ...prev, bot: botCard }));
 
       setTimeout(() => {
-        setGameState(prev => {
+        setGameState((prev: GameState) => {
           const playerWon = (selectedCard || 0) > botCard;
           const newPlayerScore = playerWon ? prev.playerScore + 1 : prev.playerScore;
           const newBotScore = !playerWon ? prev.botScore + 1 : prev.botScore;
           const newRound = prev.round + 1;
           const isGameOver = newRound > prev.maxRounds;
 
-          const finalState = {
+          const nextState: GameState = {
             ...prev,
             playerScore: newPlayerScore,
             botScore: newBotScore,
@@ -79,7 +79,7 @@ export function AIGameClient({ gameId }: { gameId: string }) {
               : null,
           };
 
-          return finalState;
+          return nextState;
         });
 
         setRoundResult(selectedCard && botCard ? 
@@ -132,7 +132,7 @@ export function AIGameClient({ gameId }: { gameId: string }) {
           isVictory={gameState.winner === "player"}
           coinsEarned={gameState.winner === "player" ? 10 : 2}
           trophyChange={gameState.winner === "player" ? 15 : -5}
-          newCoinBalance={0} // Will be read from context
+          newCoinBalance={0}
         />
       </>
     );
