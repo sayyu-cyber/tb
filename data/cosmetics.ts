@@ -112,12 +112,12 @@ export const ACHIEVEMENTS: Achievement[] = [
 ];
 
 export const DAILY_LOGIN_REWARDS = [
-  { day: 1, coins: 25, bonusItem: null },
-  { day: 2, coins: 50, bonusItem: null },
-  { day: 3, coins: 75, bonusItem: null },
-  { day: 4, coins: 100, bonusItem: null },
-  { day: 5, coins: 125, bonusItem: null },
-  { day: 6, coins: 150, bonusItem: null },
+  { day: 1, coins: 25, bonusItem: undefined },
+  { day: 2, coins: 50, bonusItem: undefined },
+  { day: 3, coins: 75, bonusItem: undefined },
+  { day: 4, coins: 100, bonusItem: undefined },
+  { day: 5, coins: 125, bonusItem: undefined },
+  { day: 6, coins: 150, bonusItem: undefined },
   { day: 7, coins: 250, bonusItem: 'room_card_1h' },
 ];
 
