@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, X, Trophy, Swords } from "lucide-react";
+import { Search, X, Clock, Trophy, Swords, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getRankFromTrophies, BOT_NAMES } from "@/constants/ranks";
+import { getRankFromTrophies } from "@/constants/ranks";
+import { useRankLock } from "@/hooks/useRankLock";
+import { useMatchLimits } from "@/hooks/useMatchLimits";
+import { RankLockBanner } from "@/components/game/RankLockBanner";
+import { WeekendLeagueBadge } from "@/components/game/WeekendLeagueBadge";
 import Link from "next/link";
 
 export default function MatchmakingPage() {
-  const { playerStats } = useAuth();
+  const { playerStats, user } = useAuth();
+  const { isLocked } = useRankLock();
+  const matchLimits = useMatchLimits(user?.uid);
   const [searching, setSearching] = useState(true);
   const [dots, setDots] = useState("");
   const [matchFound, setMatchFound] = useState(false);
 
   const trophies = playerStats?.trophies || 0;
   const rank = getRankFromTrophies(trophies);
-  const matchesRemaining = 2; // TODO: fetch from context/state
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -25,12 +30,29 @@ export default function MatchmakingPage() {
   }, []);
 
   useEffect(() => {
+    if (isLocked) {
+      setSearching(false);
+      return;
+    }
     const timer = setTimeout(() => {
       setMatchFound(true);
       setSearching(false);
     }, 4000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isLocked]);
+
+  if (isLocked) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+        <Link href="/play" className="absolute top-6 left-4">
+          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
+            <X size={20} className="text-[#3A3A3A]" />
+          </motion.button>
+        </Link>
+        <RankLockBanner />
+      </div>
+    );
+  }
 
   if (matchFound) {
     return <MatchFoundScreen rank={rank} trophies={trophies} />;
@@ -47,9 +69,10 @@ export default function MatchmakingPage() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="text-center space-y-8"
+        className="text-center space-y-8 w-full max-w-sm"
       >
-        {/* Searching animation */}
+        <WeekendLeagueBadge />
+
         <div className="relative w-32 h-32 mx-auto">
           <motion.div
             animate={{ rotate: 360 }}
@@ -71,8 +94,7 @@ export default function MatchmakingPage() {
           <p className="text-[#3A3A3A] text-sm mt-2">Estimated wait: ~30s</p>
         </div>
 
-        {/* Stats */}
-        <div className="glass-card rounded-2xl p-5 space-y-3 max-w-xs mx-auto">
+        <div className="glass-card rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[#3A3A3A] text-sm">Rank</span>
             <span className="text-[#D4AF37] font-semibold text-sm">{rank}</span>
@@ -85,10 +107,17 @@ export default function MatchmakingPage() {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[#3A3A3A] text-sm">Matches Left</span>
+            <span className="text-[#3A3A3A] text-sm">Daily Left</span>
             <div className="flex items-center gap-1">
               <Swords size={14} className="text-[#D4AF37]" />
-              <span className="text-white font-semibold text-sm">{matchesRemaining} / 3</span>
+              <span className="text-white font-semibold text-sm">{matchLimits.dailyRemaining} / {matchLimits.dailyTotal}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#3A3A3A] text-sm">Weekly Left</span>
+            <div className="flex items-center gap-1">
+              <Clock size={14} className="text-[#D4AF37]" />
+              <span className="text-white font-semibold text-sm">{matchLimits.weeklyRemaining} / {matchLimits.weeklyTotal}</span>
             </div>
           </div>
         </div>
@@ -106,7 +135,8 @@ export default function MatchmakingPage() {
 }
 
 function MatchFoundScreen({ rank, trophies }: { rank: string; trophies: number }) {
-  const opponentName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+  const botNames = ["Ahmed", "Ali", "Hussain", "Ibrahim", "Ismail", "Mariyam", "Fathimath", "Aishath", "Shifa", "Rasheed"];
+  const opponentName = botNames[Math.floor(Math.random() * botNames.length)];
 
   return (
     <motion.div
@@ -126,7 +156,7 @@ function MatchFoundScreen({ rank, trophies }: { rank: string; trophies: number }
 
         <div>
           <h2 className="text-xl font-bold text-white">{opponentName}</h2>
-          <p className="text-[#D4AF37] text-sm">{rank} • {trophies} trophies</p>
+          <p className="text-[#D4AF37] text-sm">{rank} &bull; {trophies} trophies</p>
         </div>
 
         <motion.div
