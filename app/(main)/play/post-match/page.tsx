@@ -16,7 +16,6 @@ export default function PostMatchPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
-  // Get from URL params or defaults
   const isVictory = searchParams.get("win") === "true" || true;
   const gameType = (searchParams.get("game") as "mindi" | "gin-rummy") || "mindi";
 
@@ -32,7 +31,6 @@ export default function PostMatchPage() {
   useEffect(() => {
     const processResult = async () => {
       if (!user?.uid || user.isGuest) {
-        // Guest mode — no trophy updates
         const oldTrophies = 48;
         const trophyChange = isVictory ? TROPHY_WIN : TROPHY_LOSS;
         const newTrophies = Math.max(0, oldTrophies + trophyChange);
@@ -45,7 +43,7 @@ export default function PostMatchPage() {
           trophyChange,
           oldRank,
           newRank,
-          isPromoted: false, // Guests don't rank up
+          isPromoted: false,
         });
         setUpdating(false);
         return;
@@ -54,13 +52,15 @@ export default function PostMatchPage() {
       try {
         const result = await updateMatchResult(user.uid, isVictory, gameType);
         const oldTrophies = result.newTrophies - (isVictory ? TROPHY_WIN : TROPHY_LOSS);
+        const safeOldRank = result.oldRank || getRankFromTrophies(Math.max(0, oldTrophies));
+        const safeNewRank = result.newRank || safeOldRank;
 
         setMatchData({
           oldTrophies: Math.max(0, oldTrophies),
           newTrophies: result.newTrophies,
           trophyChange: isVictory ? TROPHY_WIN : TROPHY_LOSS,
-          oldRank: result.oldRank || getRankFromTrophies(Math.max(0, oldTrophies)),
-          newRank: result.newRank,
+          oldRank: safeOldRank,
+          newRank: safeNewRank,
           isPromoted: result.rankChanged || false,
         });
       } catch (err) {

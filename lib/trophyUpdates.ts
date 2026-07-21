@@ -2,11 +2,18 @@ import { doc, updateDoc, increment, getDoc, setDoc, serverTimestamp } from "fire
 import { db } from "./firebase";
 import { TROPHY_WIN, TROPHY_LOSS, getRankFromTrophies } from "@/constants/ranks";
 
+export interface MatchResult {
+  newTrophies: number;
+  rankChanged: boolean;
+  newRank: string;
+  oldRank: string;
+}
+
 export async function updateMatchResult(
   userId: string,
   isWin: boolean,
   gameType: "mindi" | "gin-rummy"
-) {
+): Promise<MatchResult> {
   const playerRef = doc(db, "players", userId);
   const trophyChange = isWin ? TROPHY_WIN : TROPHY_LOSS;
 
@@ -14,18 +21,26 @@ export async function updateMatchResult(
     const snap = await getDoc(playerRef);
 
     if (!snap.exists()) {
-      // Initialize if new
+      const initialTrophies = Math.max(0, trophyChange);
+      const initialRank = getRankFromTrophies(initialTrophies);
+
       await setDoc(playerRef, {
-        trophies: Math.max(0, trophyChange),
+        trophies: initialTrophies,
         wins: isWin ? 1 : 0,
         losses: isWin ? 0 : 1,
         totalMatches: 1,
-        currentRank: getRankFromTrophies(Math.max(0, trophyChange)),
-        highestRank: getRankFromTrophies(Math.max(0, trophyChange)),
+        currentRank: initialRank,
+        highestRank: initialRank,
         favoriteGame: gameType,
         updatedAt: serverTimestamp(),
       });
-      return { newTrophies: Math.max(0, trophyChange), rankChanged: true };
+
+      return { 
+        newTrophies: initialTrophies, 
+        rankChanged: true, 
+        newRank: initialRank,
+        oldRank: "Unranked",
+      };
     }
 
     const data = snap.data();
@@ -34,13 +49,15 @@ export async function updateMatchResult(
     const oldRank = data.currentRank || "Bronze";
     const newRank = getRankFromTrophies(newTrophies);
     const rankChanged = oldRank !== newRank;
+
     const highestRank = data.highestRank || oldRank;
-    const newHighestRank = [oldRank, newRank, highestRank].sort(
-      (a, b) => {
-        const order = ["Bronze", "Silver", "Gold", "Platinum"];
-        return order.indexOf(b) - order.indexOf(a);
-      }
-    )[0];
+    const rankOrder = ["Bronze", "Silver", "Gold", "Platinum"];
+    const newHighestRank = rankOrder.indexOf(newRank) > rankOrder.indexOf(highestRank) 
+      ? newRank 
+      : highestRank;
+
+    const totalMatches = (data.totalMatches || 0) + 1;
+    const wins = (data.wins || 0) + (isWin ? 1 : 0);
 
     await updateDoc(playerRef, {
       trophies: increment(trophyChange),
@@ -49,13 +66,16 @@ export async function updateMatchResult(
       totalMatches: increment(1),
       currentRank: newRank,
       highestRank: newHighestRank,
-      winPercentage: Math.round(
-        (((data.wins || 0) + (isWin ? 1 : 0)) / ((data.totalMatches || 0) + 1)) * 100
-      ),
+      winPercentage: Math.round((wins / totalMatches) * 100),
       updatedAt: serverTimestamp(),
     });
 
-    return { newTrophies, rankChanged, newRank, oldRank };
+    return { 
+      newTrophies, 
+      rankChanged, 
+      newRank,
+      oldRank,
+    };
   } catch (error) {
     console.error("Failed to update match result:", error);
     throw error;
@@ -73,7 +93,6 @@ export async function checkWeeklyReset(userId: string) {
   const now = new Date();
   const daysSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24);
 
-  // Reset every Monday at 00:00
   if (daysSinceReset >= 7 && now.getDay() === 1) {
     await updateDoc(playerRef, {
       weeklyMatches: 0,
