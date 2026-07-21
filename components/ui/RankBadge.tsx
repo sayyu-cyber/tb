@@ -9,13 +9,10 @@ interface RankBadgeProps {
 
 const rankColors: Record<string, string> = {
   "Unranked": "bg-[#3A3A3A] text-[#888888]",
-  "Bronze": "bg-[#8B6914] text-[#CD7F32]",
-  "Silver": "bg-[#71797E] text-[#C0C0C0]",
-  "Gold": "bg-[#B8962E] text-[#FFD700]",
-  "Platinum": "bg-[#3EB489] text-[#E5E4E2]",
-  "Diamond": "bg-[#0F52BA] text-[#B9F2FF]",
-  "Master": "bg-[#800080] text-[#DA70D6]",
-  "Grandmaster": "bg-gradient-to-r from-[#D4AF37] to-[#E8C84A] text-[#0F0F0F]",
+  "Bronze": "bg-[#8B6914]/20 text-[#CD7F32] border border-[#CD7F32]/30",
+  "Silver": "bg-[#71797E]/20 text-[#C0C0C0] border border-[#C0C0C0]/30",
+  "Gold": "bg-[#B8962E]/20 text-[#FFD700] border border-[#FFD700]/30",
+  "Platinum": "bg-[#3EB489]/20 text-[#E5E4E2] border border-[#E5E4E2]/30",
   "Guest": "bg-[#2A2A2A] text-[#888888]",
 };
 

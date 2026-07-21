@@ -7,11 +7,12 @@ import { MatchesRemaining } from "@/components/home/MatchesRemaining";
 import { QuickPlayButtons } from "@/components/home/QuickPlayButtons";
 import { NewsSection } from "@/components/home/NewsSection";
 import { WeekendLeague } from "@/components/home/WeekendLeague";
+import { RankProgress } from "@/components/home/RankProgress";
+import { DailyMatchCounter } from "@/components/home/DailyMatchCounter";
 
 export default function HomePage() {
   return (
     <div className="px-4 pt-6 pb-6 space-y-5">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -26,23 +27,38 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* User Profile Card */}
       <ProfileCard />
-
-      {/* Season Info */}
+      <RankProgress />
+      <DailyMatchCounter />
       <SeasonCard />
-
-      {/* Ranked Matches */}
       <MatchesRemaining remaining={2} total={3} />
-
-      {/* Quick Play */}
       <QuickPlayButtons />
-
-      {/* Weekend League Countdown */}
       <WeekendLeague />
-
-      {/* News Section */}
       <NewsSection />
+
+      {/* Future placeholders */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="space-y-2"
+      >
+        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
+          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Friends (Coming Soon)</p>
+        </div>
+        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
+          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Private Rooms (Coming Soon)</p>
+        </div>
+        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
+          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Weekend Tournament (Coming Soon)</p>
+        </div>
+        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
+          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">VIP Pass (Coming Soon)</p>
+        </div>
+        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
+          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Cosmetic Shop (Coming Soon)</p>
+        </div>
+      </motion.div>
     </div>
   );
 }
