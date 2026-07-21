@@ -19,6 +19,14 @@ interface GameState {
   botName: string;
 }
 
+// Required for static export with dynamic routes
+export function generateStaticParams() {
+  return [
+    { game: "mindi" },
+    { game: "gin-rummy" },
+  ];
+}
+
 export default function AIGamePage() {
   const params = useParams();
   const router = useRouter();
@@ -42,7 +50,6 @@ export default function AIGamePage() {
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [roundResult, setRoundResult] = useState<string | null>(null);
 
-  // Initialize cards
   useEffect(() => {
     const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
     const shuffled = [...cards].sort(() => Math.random() - 0.5);
@@ -50,7 +57,6 @@ export default function AIGamePage() {
     setBotCards(shuffled.slice(5, 10));
   }, []);
 
-  // Bot turn logic
   const botPlay = useCallback(() => {
     setGameState(prev => ({ ...prev, botThinking: true }));
 
@@ -88,7 +94,7 @@ export default function AIGamePage() {
         setSelectedCard(null);
         setPlayedCards({player: null, bot: null});
       }, 1000);
-    }, 2000 + Math.random() * 2000); // 2-4 seconds "thinking"
+    }, 2000 + Math.random() * 2000);
   }, [botCards, selectedCard, gameState.botName]);
 
   const handleCardSelect = (card: number) => {
@@ -121,7 +127,6 @@ export default function AIGamePage() {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
-      {/* Header */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <Link href="/play">
           <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
@@ -135,7 +140,6 @@ export default function AIGamePage() {
         <div className="w-10" />
       </div>
 
-      {/* Score Board */}
       <div className="px-4 py-3">
         <div className="glass-card rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -168,7 +172,6 @@ export default function AIGamePage() {
         </div>
       </div>
 
-      {/* Bot Thinking Indicator */}
       <AnimatePresence>
         {gameState.botThinking && (
           <motion.div
@@ -190,10 +193,8 @@ export default function AIGamePage() {
         )}
       </AnimatePresence>
 
-      {/* Played Cards Area */}
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="flex items-center gap-8">
-          {/* Bot played card */}
           <motion.div
             animate={playedCards.bot ? { scale: [0.5, 1.1, 1] } : {}}
             className="w-20 h-28 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] flex items-center justify-center"
@@ -207,7 +208,6 @@ export default function AIGamePage() {
 
           <div className="text-[#3A3A3A] text-xs font-bold">VS</div>
 
-          {/* Player played card */}
           <motion.div
             animate={playedCards.player ? { scale: [0.5, 1.1, 1] } : {}}
             className="w-20 h-28 rounded-xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8962E]/10 border border-[#D4AF37]/30 flex items-center justify-center"
@@ -221,7 +221,6 @@ export default function AIGamePage() {
         </div>
       </div>
 
-      {/* Round Result */}
       <AnimatePresence>
         {roundResult && (
           <motion.div
@@ -235,7 +234,6 @@ export default function AIGamePage() {
         )}
       </AnimatePresence>
 
-      {/* Player Cards */}
       <div className="px-4 pb-6">
         <p className="text-[#3A3A3A] text-xs mb-3 text-center">Select a card to play</p>
         <div className="flex justify-center gap-3">

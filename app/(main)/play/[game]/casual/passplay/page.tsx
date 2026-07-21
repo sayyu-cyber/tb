@@ -16,6 +16,14 @@ interface GameState {
   winner: 1 | 2 | null;
 }
 
+// Required for static export with dynamic routes
+export function generateStaticParams() {
+  return [
+    { game: "mindi" },
+    { game: "gin-rummy" },
+  ];
+}
+
 export default function PassPlayPage() {
   const params = useParams();
   const gameId = params.game as string;
@@ -57,7 +65,6 @@ export default function PassPlayPage() {
       setPlayedCards(prev => ({ ...prev, p2: card }));
       setP2Cards(prev => prev.filter(c => c !== card));
 
-      // Resolve round
       setTimeout(() => {
         setGameState(prev => {
           const p1Won = (playedCards.p1 || 0) > card;
@@ -99,7 +106,6 @@ export default function PassPlayPage() {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
-      {/* Header */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <Link href="/play">
           <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
@@ -113,7 +119,6 @@ export default function PassPlayPage() {
         <div className="w-10" />
       </div>
 
-      {/* Score Board */}
       <div className="px-4 py-3">
         <div className="glass-card rounded-2xl p-4 flex items-center justify-between">
           <div className={`flex items-center gap-3 ${gameState.currentPlayer === 1 ? "opacity-100" : "opacity-50"}`}>
@@ -147,7 +152,6 @@ export default function PassPlayPage() {
         </div>
       </div>
 
-      {/* Pass Device Overlay */}
       <AnimatePresence>
         {showPassDevice && (
           <motion.div
@@ -182,7 +186,6 @@ export default function PassPlayPage() {
         )}
       </AnimatePresence>
 
-      {/* Played Cards */}
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="flex items-center gap-8">
           <motion.div
@@ -211,7 +214,6 @@ export default function PassPlayPage() {
         </div>
       </div>
 
-      {/* Current Player Cards */}
       <div className="px-4 pb-6">
         <p className="text-[#3A3A3A] text-xs mb-3 text-center">
           {gameState.currentPlayer === 1 ? "Player 1 — Select a card" : "Waiting for Player 2..."}
