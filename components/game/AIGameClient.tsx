@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Bot, User, Clock, Sparkles } from "lucide-react";
+import { ArrowLeft, Bot, User, Clock, Sparkles, Home, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BOT_NAMES } from "@/constants/ranks";
+import { useEconomy } from "@/contexts/EconomyContext";
+import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
 
 interface GameState {
   playerScore: number;
@@ -21,6 +23,7 @@ interface GameState {
 
 export function AIGameClient({ gameId }: { gameId: string }) {
   const router = useRouter();
+  const { processMatchEnd } = useEconomy();
 
   const [gameState, setGameState] = useState<GameState>({
     playerScore: 0,
@@ -39,6 +42,7 @@ export function AIGameClient({ gameId }: { gameId: string }) {
   const [playedCards, setPlayedCards] = useState<{player: number | null, bot: number | null}>({player: null, bot: null});
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [roundResult, setRoundResult] = useState<string | null>(null);
+  const [showRewardPopup, setShowRewardPopup] = useState(false);
 
   useEffect(() => {
     const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
@@ -62,7 +66,7 @@ export function AIGameClient({ gameId }: { gameId: string }) {
           const newRound = prev.round + 1;
           const isGameOver = newRound > prev.maxRounds;
 
-          return {
+          const finalState = {
             ...prev,
             playerScore: newPlayerScore,
             botScore: newBotScore,
@@ -74,6 +78,8 @@ export function AIGameClient({ gameId }: { gameId: string }) {
               ? (newPlayerScore > newBotScore ? "player" : "bot")
               : null,
           };
+
+          return finalState;
         });
 
         setRoundResult(selectedCard && botCard ? 
@@ -99,19 +105,36 @@ export function AIGameClient({ gameId }: { gameId: string }) {
     setTimeout(() => botPlay(), 500);
   };
 
+  const handleShowRewards = () => {
+    const isVictory = gameState.winner === "player";
+    processMatchEnd(isVictory, gameId === "mindi" ? "mindi" : "gin_rummy");
+    setShowRewardPopup(true);
+  };
+
   const handlePlayAgain = () => {
     router.refresh();
   };
 
   if (gameState.gameOver) {
     return (
-      <GameOverScreen 
-        winner={gameState.winner} 
-        playerScore={gameState.playerScore} 
-        botScore={gameState.botScore}
-        botName={gameState.botName}
-        onPlayAgain={handlePlayAgain}
-      />
+      <>
+        <GameOverScreen 
+          winner={gameState.winner} 
+          playerScore={gameState.playerScore} 
+          botScore={gameState.botScore}
+          botName={gameState.botName}
+          onPlayAgain={handlePlayAgain}
+          onShowRewards={handleShowRewards}
+        />
+        <MatchRewardPopup
+          isOpen={showRewardPopup}
+          onClose={() => setShowRewardPopup(false)}
+          isVictory={gameState.winner === "player"}
+          coinsEarned={gameState.winner === "player" ? 10 : 2}
+          trophyChange={gameState.winner === "player" ? 15 : -5}
+          newCoinBalance={0} // Will be read from context
+        />
+      </>
     );
   }
 
@@ -250,13 +273,15 @@ function GameOverScreen({
   playerScore, 
   botScore, 
   botName,
-  onPlayAgain 
+  onPlayAgain,
+  onShowRewards
 }: { 
   winner: "player" | "bot" | null; 
   playerScore: number; 
   botScore: number;
   botName: string;
   onPlayAgain: () => void;
+  onShowRewards: () => void;
 }) {
   const isWin = winner === "player";
 
@@ -307,17 +332,19 @@ function GameOverScreen({
           <Link href="/play" className="flex-1">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="w-full py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium"
+              className="w-full py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium flex items-center justify-center gap-2"
             >
+              <Home size={16} />
               Exit
             </motion.button>
           </Link>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={onPlayAgain}
-            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold"
+            onClick={onShowRewards}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
           >
-            Play Again
+            <Sparkles size={16} />
+            Rewards
           </motion.button>
         </div>
       </motion.div>
