@@ -16,7 +16,7 @@ export default function PostMatchPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
-  const isVictory = searchParams.get("win") === "true" || true;
+  const isVictory = searchParams.get("win") === "true";
   const gameType = (searchParams.get("game") as "mindi" | "gin-rummy") || "mindi";
 
   const [matchData, setMatchData] = useState({
@@ -172,7 +172,7 @@ export default function PostMatchPage() {
               Home
             </motion.button>
           </Link>
-          <Link href="/play/matchmaking" className="flex-1">
+          <Link href="/play" className="flex-1">
             <motion.button
               whileTap={{ scale: 0.95 }}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"

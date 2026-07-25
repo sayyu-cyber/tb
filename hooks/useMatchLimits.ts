@@ -13,7 +13,7 @@ interface MatchLimits {
   isVip: boolean;
 }
 
-export function useMatchLimits(userId?: string): MatchLimits {
+export function useMatchLimits(userId?: string): MatchLimits & { recordMatch: () => void } {
   const [limits, setLimits] = useState<MatchLimits>({
     dailyUsed: 1,
     dailyTotal: FREE_DAILY_MATCHES,

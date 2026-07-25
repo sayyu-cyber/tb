@@ -1,0 +1,359 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Home, Sparkles, Layers } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEconomy } from "@/contexts/EconomyContext";
+import { updateMatchResult } from "@/lib/trophyUpdates";
+import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
+import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
+import {
+  Card,
+  cardId,
+  rankLabel,
+  SUIT_SYMBOLS,
+  SUIT_COLOR,
+  bestMeldArrangement,
+  scoreKnock,
+} from "@/lib/ginRummyEngine";
+
+export interface GinOnlineState {
+  hands: Record<string, Card[]>;
+  stock: Card[];
+  discard: Card[];
+  turn: string;
+  phase: "draw" | "discard";
+  result: {
+    winnerUid: string | "draw";
+    knockerUid: string | null;
+    gin: boolean;
+    undercut: boolean;
+    deadwood: Record<string, number>;
+    score: number;
+  } | null;
+}
+
+export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
+  const { user } = useAuth();
+  const { processMatchEnd } = useEconomy();
+  const myUid = user?.uid ?? "";
+
+  const [match, setMatch] = useState<MatchDoc<GinOnlineState> | null>(null);
+  const [selectedDiscard, setSelectedDiscard] = useState<Card | null>(null);
+  const [showRewardPopup, setShowRewardPopup] = useState(false);
+  const [rewardsApplied, setRewardsApplied] = useState(false);
+
+  useEffect(() => {
+    const unsub = watchMatch<GinOnlineState>(matchId, setMatch);
+    return unsub;
+  }, [matchId]);
+
+  const opponentUid = useMemo(() => match?.players.find((p) => p !== myUid) ?? "", [match, myUid]);
+  const state = match?.state;
+  const myHand = useMemo(() => state?.hands[myUid] ?? [], [state, myUid]);
+  const isMyTurn = state?.turn === myUid;
+  const topDiscard = state && state.discard.length > 0 ? state.discard[state.discard.length - 1] : null;
+
+  const sortedHand = useMemo(
+    () => [...myHand].sort((a, b) => (a.suit === b.suit ? a.rank - b.rank : a.suit.localeCompare(b.suit))),
+    [myHand]
+  );
+
+  const deadwoodAfterSelected = useMemo(() => {
+    if (!selectedDiscard) return null;
+    const rest = myHand.filter((c) => cardId(c) !== cardId(selectedDiscard));
+    return bestMeldArrangement(rest);
+  }, [myHand, selectedDiscard]);
+
+  const canKnock = state?.phase === "discard" && !!deadwoodAfterSelected && deadwoodAfterSelected.deadwoodValue <= 10;
+
+  async function handleDraw(source: "stock" | "discard") {
+    if (!state || !isMyTurn || state.phase !== "draw") return;
+    await updateMatchState<GinOnlineState>(matchId, (current) => {
+      const s = current.state;
+      if (s.turn !== myUid || s.phase !== "draw") return null;
+      if (s.stock.length <= 2) {
+        return {
+          status: "completed",
+          state: {
+            ...s,
+            result: {
+              winnerUid: "draw",
+              knockerUid: null,
+              gin: false,
+              undercut: false,
+              deadwood: {
+                [myUid]: bestMeldArrangement(s.hands[myUid]).deadwoodValue,
+                [opponentUid]: bestMeldArrangement(s.hands[opponentUid]).deadwoodValue,
+              },
+              score: 0,
+            },
+          },
+        };
+      }
+      const hand = [...s.hands[myUid]];
+      let stock = [...s.stock];
+      let discard = [...s.discard];
+      if (source === "discard") {
+        if (discard.length === 0) return null;
+        hand.push(discard.pop()!);
+      } else {
+        if (stock.length === 0) return null;
+        hand.push(stock.pop()!);
+      }
+      return { state: { ...s, hands: { ...s.hands, [myUid]: hand }, stock, discard, phase: "discard" } };
+    });
+  }
+
+  function handleSelectDiscard(card: Card) {
+    if (!state || state.phase !== "discard" || !isMyTurn) return;
+    setSelectedDiscard((prev) => (prev && cardId(prev) === cardId(card) ? null : card));
+  }
+
+  async function handleConfirmDiscard() {
+    if (!selectedDiscard || !opponentUid) return;
+    const discardCard = selectedDiscard;
+    setSelectedDiscard(null);
+    await updateMatchState<GinOnlineState>(matchId, (current) => {
+      const s = current.state;
+      if (s.turn !== myUid || s.phase !== "discard") return null;
+      const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
+      return {
+        state: { ...s, hands: { ...s.hands, [myUid]: hand }, discard: [...s.discard, discardCard], phase: "draw", turn: opponentUid },
+      };
+    });
+  }
+
+  async function handleKnock() {
+    if (!selectedDiscard || !deadwoodAfterSelected || !opponentUid) return;
+    const discardCard = selectedDiscard;
+    const arrangement = deadwoodAfterSelected;
+    setSelectedDiscard(null);
+    await updateMatchState<GinOnlineState>(matchId, (current) => {
+      const s = current.state;
+      if (s.turn !== myUid || s.phase !== "discard") return null;
+      const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
+      if (arrangement.deadwoodValue > 10) return null;
+      const raw = scoreKnock("player", arrangement, s.hands[opponentUid]);
+      const winnerUid = raw.winner === "player" ? myUid : opponentUid;
+      return {
+        status: "completed",
+        state: {
+          ...s,
+          hands: { ...s.hands, [myUid]: hand },
+          discard: [...s.discard, discardCard],
+          result: {
+            winnerUid,
+            knockerUid: myUid,
+            gin: raw.gin,
+            undercut: raw.undercut,
+            deadwood: { [myUid]: raw.playerDeadwood, [opponentUid]: raw.opponentDeadwood },
+            score: raw.score,
+          },
+        },
+      };
+    });
+  }
+
+  async function handleShowRewards() {
+    if (!state?.result || rewardsApplied) {
+      setShowRewardPopup(true);
+      return;
+    }
+    setRewardsApplied(true);
+    const isVictory = state.result.winnerUid === myUid;
+    processMatchEnd(isVictory, "gin_rummy");
+    if (state.result.winnerUid !== "draw") {
+      await updateMatchResult(myUid, isVictory, "gin-rummy").catch(() => {});
+    }
+    setShowRewardPopup(true);
+  }
+
+  if (!match || !state) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+        <p className="text-[#3A3A3A] text-sm">Loading match…</p>
+      </div>
+    );
+  }
+
+  if (state.result) {
+    const { result } = state;
+    const isDraw = result.winnerUid === "draw";
+    const youWon = result.winnerUid === myUid;
+    return (
+      <>
+        <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
+                youWon ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[#1A1A1A] border border-[#2A2A2A]"
+              }`}
+            >
+              <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[#3A3A3A]"} />
+            </motion.div>
+            <div>
+              <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[#3A3A3A]"}`}>
+                {isDraw ? "Stock Ran Out — Draw" : youWon ? "You Won!" : "You Lost"}
+              </h1>
+              {!isDraw && (result.gin || result.undercut) && (
+                <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
+                  {result.gin ? "Gin!" : "Undercut!"}
+                </p>
+              )}
+            </div>
+            <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[#3A3A3A] text-xs">Your deadwood</span>
+                <span className="text-white font-bold">{result.deadwood[myUid] ?? 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#3A3A3A] text-xs">Opponent deadwood</span>
+                <span className="text-white font-bold">{result.deadwood[opponentUid] ?? 0}</span>
+              </div>
+              {!isDraw && (
+                <>
+                  <div className="h-px bg-[#2A2A2A]" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#3A3A3A] text-xs">Points</span>
+                    <span className="text-[#D4AF37] font-bold">{result.score}</span>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex gap-3 max-w-xs mx-auto">
+              <Link href="/play" className="flex-1">
+                <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium flex items-center justify-center gap-2">
+                  <Home size={16} />
+                  Exit
+                </motion.button>
+              </Link>
+              {!isDraw && (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleShowRewards}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  Rewards
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        </div>
+        {!isDraw && (
+          <MatchRewardPopup
+            isOpen={showRewardPopup}
+            onClose={() => setShowRewardPopup(false)}
+            isVictory={youWon}
+            coinsEarned={youWon ? 10 : 2}
+            trophyChange={youWon ? 15 : -5}
+            newCoinBalance={0}
+          />
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+        <Link href="/play">
+          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
+            <ArrowLeft size={20} className="text-[#D4AF37]" />
+          </motion.button>
+        </Link>
+        <div className="text-center">
+          <p className="text-white text-sm font-semibold">Gin Rummy — Ranked</p>
+          <p className="text-[#3A3A3A] text-[10px]">
+            {isMyTurn ? "Your turn" : "Opponent's turn"} · Deadwood: {bestMeldArrangement(myHand).deadwoodValue}
+          </p>
+        </div>
+        <div className="w-10" />
+      </div>
+
+      <div className="flex items-center justify-center gap-8 py-6">
+        <button
+          onClick={() => handleDraw("stock")}
+          disabled={state.phase !== "draw" || !isMyTurn || state.stock.length <= 2}
+          className="flex flex-col items-center gap-1 disabled:opacity-40"
+        >
+          <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-[#2A2A2A] flex items-center justify-center">
+            <Layers size={20} className="text-[#3A3A3A]" />
+          </div>
+          <span className="text-[10px] text-[#3A3A3A]">Stock ({state.stock.length})</span>
+        </button>
+
+        <button
+          onClick={() => handleDraw("discard")}
+          disabled={state.phase !== "draw" || !isMyTurn || !topDiscard}
+          className="flex flex-col items-center gap-1 disabled:opacity-40"
+        >
+          {topDiscard ? (
+            <div className="w-16 h-24 rounded-xl bg-[#1A1A1A] border border-[#D4AF37]/40 flex flex-col items-center justify-center">
+              <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-white"}`}>
+                {rankLabel(topDiscard.rank)}
+              </span>
+              <span className={`text-sm ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-white"}`}>
+                {SUIT_SYMBOLS[topDiscard.suit]}
+              </span>
+            </div>
+          ) : (
+            <div className="w-16 h-24 rounded-xl border border-dashed border-[#2A2A2A]" />
+          )}
+          <span className="text-[10px] text-[#3A3A3A]">Discard pile</span>
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col justify-end px-4 pb-6">
+        <p className="text-[#3A3A3A] text-xs mb-3 text-center">
+          {!isMyTurn ? "Waiting for opponent…" : state.phase === "draw" ? "Draw a card" : "Select a card to discard"}
+        </p>
+        <div className="flex justify-center gap-1.5 flex-wrap">
+          {sortedHand.map((card) => {
+            const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
+            return (
+              <motion.button
+                key={cardId(card)}
+                whileHover={isMyTurn && state.phase === "discard" ? { y: -8 } : {}}
+                whileTap={isMyTurn && state.phase === "discard" ? { scale: 0.95 } : {}}
+                onClick={() => handleSelectDiscard(card)}
+                disabled={!isMyTurn || state.phase !== "discard"}
+                className={`w-11 h-16 rounded-lg border flex flex-col items-center justify-center disabled:opacity-70 ${
+                  selected ? "bg-[#D4AF37]/20 border-[#D4AF37] -translate-y-2" : "bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border-[#2A2A2A]"
+                }`}
+              >
+                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                  {rankLabel(card.rank)}
+                </span>
+                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                  {SUIT_SYMBOLS[card.suit]}
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence>
+          {selectedDiscard && state.phase === "discard" && isMyTurn && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="flex justify-center gap-3 mt-4">
+              <motion.button whileTap={{ scale: 0.95 }} onClick={handleConfirmDiscard} className="px-6 py-2.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium">
+                Discard
+              </motion.button>
+              {canKnock && (
+                <motion.button whileTap={{ scale: 0.95 }} onClick={handleKnock} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold">
+                  Knock
+                </motion.button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}

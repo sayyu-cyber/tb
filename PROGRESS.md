@@ -46,7 +46,7 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 - Casual mode — **Done** for both games now (real Mindi + real Gin Rummy, AI and Pass & Play). The old placeholder mini-game and its components have been removed.
 
 ### Beta
-- Ranked mode — **Partial**. Trophy gain/loss, rank tiers, and match limits are implemented (`lib/trophyUpdates.ts`), but matches are against AI bots playing the placeholder mini-game above — no live matchmaking backend, and no real game rules to play once matched.
+- Ranked mode — **Done** (2026-07-26), with one accepted trade-off. Real matchmaking (`lib/matchmaking.ts`) pairs real waiting players via a Firestore queue + transaction (2 for Gin Rummy, 4 for Mindi), then plays out live on a shared match document synced via `MindiOnlineClient`/`GinRummyOnlineClient`. **Trade-off:** there's no game server — match state lives in a Firestore doc both players can read, so a technically savvy opponent could inspect raw network data to see your hand even though the UI never shows it. Hardening this needs Cloud Functions to hold hands server-side (bigger project, deliberately deferred). There's also a small accepted race: if two matches try to form from overlapping queued players at the same instant, one player can end up briefly double-booked. Both are documented at the top of `lib/matchmaking.ts`. **Not yet tested with real multiple accounts** - I verified the code compiles and lints clean, but this needs an actual two/four-account live test, which I can't do from here.
 - Trophies — **Done**.
 - Leaderboards — **Done** (2026-07-26). Real Firestore query, ordered by trophies, confirmed working live.
 
