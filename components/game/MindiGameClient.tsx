@@ -262,7 +262,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
           onClick={() => setRevealedSeat(turnSeat)}
           className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
         >
-          I'm ready — show my hand
+          I&apos;m ready — show my hand
         </motion.button>
       </div>
     );
