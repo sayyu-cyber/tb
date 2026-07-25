@@ -8,7 +8,7 @@ import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LeaderboardPage() {
-  const { entries, loading } = useLeaderboard();
+  const { entries, loading, error } = useLeaderboard();
   const { user } = useAuth();
 
   const topThree = entries.slice(0, 3);
@@ -48,6 +48,12 @@ export default function LeaderboardPage() {
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-16 bg-[#1A1A1A] rounded-xl animate-pulse" />
           ))}
+        </div>
+      ) : error ? (
+        <div className="text-center py-12 text-[#3A3A3A] text-sm">{error}</div>
+      ) : entries.length === 0 ? (
+        <div className="text-center py-12 text-[#3A3A3A] text-sm">
+          No ranked players yet — be the first to climb the leaderboard!
         </div>
       ) : (
         <>

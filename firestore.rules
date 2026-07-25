@@ -1,9 +1,12 @@
 ﻿rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Used by AuthContext + trophyUpdates for login/profile/stats
+    // Used by AuthContext + trophyUpdates for login/profile/stats.
+    // Read is open to any signed-in user so the leaderboard can query
+    // across all players' trophy counts; writes stay owner-only.
     match /players/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
     // Used by EconomyContext for coins/missions/shop state
     match /playerEconomy/{uid} {
