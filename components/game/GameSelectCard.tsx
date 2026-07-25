@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Swords, Lock, Bot, Smartphone } from "lucide-react";
+import { Users, Swords, Lock, Bot, Smartphone, KeyRound } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
@@ -92,6 +92,28 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                     >
                       <Swords size={16} />
                       <span>Play Ranked</span>
+                    </motion.button>
+                  </Link>
+                )}
+              </div>
+
+              {/* Private Room */}
+              <div className="space-y-2 pt-2">
+                <p className="text-[#3A3A3A] text-xs uppercase tracking-wider">Play with Friends</p>
+                {isGuest ? (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
+                    <Lock size={16} className="text-[#3A3A3A]" />
+                    <p className="text-[#3A3A3A] text-sm">Please sign in to use Private Rooms</p>
+                  </div>
+                ) : (
+                  <Link href={`/play/${id}/room`}>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center justify-center gap-2 bg-[#1A1A1A] border border-[#2A2A2A] hover:border-[#D4AF37]/30 text-white rounded-xl py-3 transition-colors"
+                    >
+                      <KeyRound size={16} className="text-[#D4AF37]" />
+                      <span className="text-sm">Private Room</span>
                     </motion.button>
                   </Link>
                 )}

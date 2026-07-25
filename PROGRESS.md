@@ -53,7 +53,7 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 ### Version 1.0
 - Weekend League — **Partial**. Badge/widget UI exists (`WeekendLeagueBadge`, home widget); no real weekly bracket/qualification backend.
 - Friends — **Pending**. No code found (add/search friends, profiles-of-others).
-- Rooms — **Partial**. Room-card UI exists (`app/room-cards`, `components/roomcards`); real-time invite/join/kick backend not found.
+- Rooms — **Done** (2026-07-26). Real private rooms in `lib/rooms.ts` + `components/game/RoomLobbyClient.tsx`: create a room (optional password), share the 6-character code, friends join by code, owner can kick, and starting the match hands off to the exact same live match system Ranked mode uses. Reachable from the game select card's new "Private Room" button. Same no-server-authority trust model as matchmaking (documented in the file). Not yet tested with real multiple accounts. Note: `app/room-cards` / `components/roomcards/RoomCardManager.tsx` is a *different, unrelated* feature despite the similar name - it's a consumable economy entitlement ("Room Card" item that unlocks unlimited private rooms for a time window), not the room system itself. The two aren't currently wired together (room creation isn't gated by owning a Room Card yet) - worth deciding whether that gating should exist.
 - VIP — **Partial**. VIP UI components exist and are wired into the Economy context; real payment/subscription flow not present.
 - Shop — **Done** UI + coin-spending logic wired to Economy context; real-money purchases not implemented (coins only).
 
