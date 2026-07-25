@@ -28,8 +28,6 @@ import {
   getDoc,
   query,
   where,
-  orderBy,
-  limit,
   onSnapshot,
   runTransaction,
   Unsubscribe,
@@ -76,16 +74,15 @@ export async function tryFormMatch<TState>(
   buildInitialState: (orderedPlayerUids: string[]) => TState
 ): Promise<string | null> {
   const cutoff = Date.now() - STALE_QUEUE_MS;
-  const q = query(
-    collection(db, QUEUE_COLLECTION),
-    where("gameType", "==", gameType),
-    orderBy("queuedAt", "asc"),
-    limit(neededPlayers * 3)
-  );
+  // Single equality filter only (no orderBy/limit in the query itself) so
+  // this never depends on a manually-created composite index - queues are
+  // small, so sorting/slicing the result client-side is cheap.
+  const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
   const snap = await getDocs(q);
   const others = snap.docs
     .map((d) => d.data() as { uid: string; queuedAt: number })
     .filter((d) => d.uid !== uid && d.queuedAt >= cutoff)
+    .sort((a, b) => a.queuedAt - b.queuedAt)
     .slice(0, neededPlayers - 1);
 
   if (others.length < neededPlayers - 1) {
@@ -121,31 +118,47 @@ export async function tryFormMatch<TState>(
 
     return matchId;
   } catch (err) {
-    // Someone else grabbed a candidate first - caller will retry.
+    // Either a benign race (someone else grabbed a candidate first) or a
+    // real problem (permission denied, missing index, etc). Log it so it's
+    // at least visible in the browser console instead of failing silently.
+    console.error("tryFormMatch failed:", err);
     return null;
   }
 }
 
-/** Listens for a match this player has been placed into (by someone else's tryFormMatch). */
+/**
+ * Listens for a match this player has been placed into (by someone else's
+ * tryFormMatch). Deliberately filters on nothing but the array-contains
+ * clause in the query itself (gameType/status/recency are all checked
+ * client-side afterwards) - combining array-contains with extra equality
+ * filters or an orderBy needs a manually-created Firestore composite index,
+ * and a signed-in player is only ever in a handful of match documents at
+ * once, so filtering the small result set in JS is simpler and needs no
+ * index setup at all.
+ */
 export function watchForMatch(
   uid: string,
   gameType: GameType,
-  onFound: (matchId: string, match: MatchDoc) => void
+  onFound: (matchId: string, match: MatchDoc) => void,
+  onError?: (err: unknown) => void
 ): Unsubscribe {
-  const q = query(
-    collection(db, MATCHES_COLLECTION),
-    where("players", "array-contains", uid),
-    where("gameType", "==", gameType),
-    where("status", "==", "active"),
-    orderBy("createdAt", "desc"),
-    limit(1)
-  );
-  return onSnapshot(q, (snap) => {
-    if (!snap.empty) {
-      const d = snap.docs[0];
-      onFound(d.id, d.data() as MatchDoc);
+  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid));
+  return onSnapshot(
+    q,
+    (snap) => {
+      const candidates = snap.docs
+        .map((d) => ({ id: d.id, data: d.data() as MatchDoc }))
+        .filter((m) => m.data.gameType === gameType && m.data.status === "active")
+        .sort((a, b) => b.data.createdAt - a.data.createdAt);
+      if (candidates.length > 0) {
+        onFound(candidates[0].id, candidates[0].data);
+      }
+    },
+    (err) => {
+      console.error("watchForMatch failed:", err);
+      onError?.(err);
     }
-  });
+  );
 }
 
 export async function getMatch<TState>(matchId: string): Promise<MatchDoc<TState> | null> {

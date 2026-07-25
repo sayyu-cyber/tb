@@ -58,6 +58,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   const matchLimits = useMatchLimits(user?.uid);
   const [dots, setDots] = useState("");
   const [matchFound, setMatchFound] = useState(false);
+  const [debugError, setDebugError] = useState<string | null>(null);
   const navigatedRef = useRef(false);
 
   const trophies = playerStats?.trophies || 0;
@@ -85,17 +86,26 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
       }, 900);
     }
 
-    joinQueue(uid, gameType);
+    joinQueue(uid, gameType).catch((err) => setDebugError(`Couldn't join queue: ${String(err)}`));
 
-    const unwatch = watchForMatch(uid, gameType, (matchId) => {
-      leaveQueue(uid);
-      goToMatch(matchId);
-    });
+    const unwatch = watchForMatch(
+      uid,
+      gameType,
+      (matchId) => {
+        leaveQueue(uid);
+        goToMatch(matchId);
+      },
+      (err) => setDebugError(`Match lookup error: ${String(err)}`)
+    );
 
     const attempt = async () => {
       if (navigatedRef.current || cancelled) return;
-      const matchId = await tryFormMatch(uid, gameType, neededPlayers, (players) => buildInitialState(gameType, players));
-      if (matchId) goToMatch(matchId);
+      try {
+        const matchId = await tryFormMatch(uid, gameType, neededPlayers, (players) => buildInitialState(gameType, players));
+        if (matchId) goToMatch(matchId);
+      } catch (err) {
+        setDebugError(`Matchmaking error: ${String(err)}`);
+      }
     };
     attempt();
     const interval = setInterval(attempt, 2500);
@@ -158,6 +168,11 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
           <p className="text-[#3A3A3A] text-sm mt-2">
             {gameType === "mindi" ? "Needs 4 real players — this can take a while" : "Waiting for another real player"}
           </p>
+          {debugError && (
+            <p className="text-red-400 text-xs mt-3 break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">
+              {debugError}
+            </p>
+          )}
         </div>
 
         <div className="glass-card rounded-2xl p-5 space-y-3">
