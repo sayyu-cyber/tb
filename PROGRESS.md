@@ -42,8 +42,8 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 - Authentication (Google, email, guest) — **Done**, fixed and confirmed working live (2026-07-26).
 - Profiles — **Done** (profile page, stats).
 - Mindi — **Done** (2026-07-26). Real rules implemented in `lib/mindiEngine.ts` + `components/game/MindiGameClient.tsx`, based on the documented Maldivian "Dihaeh" ruleset (pagat.com/national/maldives.html, research by Alex de Voogt): 4 players in 2 fixed partnerships, 13 cards each, last card dealt sets trump, follow-suit trick-taking, first team to capture 3 of the 4 Tens wins (4 Tens = "baga", all 13 tricks = "hukunbunye"). AI mode = you + 3 bots; Pass & Play = you + a local partner (seats 0 & 2) vs 2 bots, with a "pass the device" screen between turns.
-- Gin Rummy — **Not actually implemented.** `AIGameClient`/`PassPlayClient` still run the old placeholder "high card wins" mini-game for this `gameId`. Real melds/knocking/deadwood rules are the next game-logic task.
-- Casual mode — **Done for Mindi**, **Partial for Gin Rummy** (placeholder game only).
+- Gin Rummy — **Done** (2026-07-26). Real rules in `lib/ginRummyEngine.ts` + `components/game/GinRummyGameClient.tsx`: standard 2-player Gin Rummy — 10-card hands, draw/discard, meld detection (sets + runs) via a deadwood-minimizing solver, knock/gin/undercut scoring, lay-off on knock. AI mode = you vs a bot; Pass & Play = 2 local players with a pass-the-device screen. Verified with a 500-hand bot-vs-bot simulation (deck integrity, legal moves, no negative scores, no infinite loops) before shipping.
+- Casual mode — **Done** for both games now (real Mindi + real Gin Rummy, AI and Pass & Play). The old placeholder mini-game and its components have been removed.
 
 ### Beta
 - Ranked mode — **Partial**. Trophy gain/loss, rank tiers, and match limits are implemented (`lib/trophyUpdates.ts`), but matches are against AI bots playing the placeholder mini-game above — no live matchmaking backend, and no real game rules to play once matched.
