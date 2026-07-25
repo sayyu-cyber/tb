@@ -1,0 +1,74 @@
+# Thaasbai — Build Status
+*Generated 2026-07-25 from the actual codebase at github.com/sayyu-cyber/tb (branch `main`, HEAD `d6a7256`) plus uncommitted local changes.*
+
+## What broke, and why
+
+Login on https://thasbai.netlify.app stopped working after "workflow 3." The site's code was never actually broken — commit `d6a7256` is the same working app from workflow 2. What changed was the **live Firestore security rules**, deployed directly from your machine via `firebase deploy` (this bypasses GitHub/Netlify entirely, which is why the deploy history looked clean).
+
+Workflow 3 added a new `firestore.rules` file scoped only to the new economy feature:
+
+```
+match /playerEconomy/{uid} {
+  allow read, write: if request.auth != null && request.auth.uid == uid;
+}
+```
+
+and ran `firebase deploy` (visible in workflow 3.docx around the `firebase.json`/`firestore.rules` setup steps). That overwrote whatever rules existed before. But your login flow (`contexts/AuthContext.tsx`) reads and writes a **different** collection — `players/{uid}` — on every sign-in to fetch/init player stats. Since the new rules never mention `players`, every login now gets a Firestore "permission denied" the instant it tries to load stats, which is what you're seeing as "can't log in."
+
+**Fix applied:** `firestore.rules` in your project folder now allow both collections:
+
+```
+match /players/{uid}      { allow read, write: if request.auth != null && request.auth.uid == uid; }
+match /playerEconomy/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+```
+
+**This still needs to be deployed** — I can't do this step for you since it requires your own Firebase CLI login. From the `thaasbai` project folder on your machine:
+
+```
+firebase deploy --only firestore:rules
+```
+
+That's the only step needed to restore login. No GitHub push or Netlify rebuild is required for this specific fix.
+
+## Other things found while investigating
+
+- `contexts/EconomyContext.tsx`, `package.json`/`package-lock.json` (adds `firebase-admin`, `firebase-functions`), `firebase.json`, `.firebaserc`, `firestore.indexes.json`, and `functions/` all exist locally but were **never committed** — they're sitting as uncommitted/untracked changes in your project folder. This is real, correct progress (the Economy context is properly wired to Firestore, game-economy shaped — not the unrelated "budget/transactions" version workflow 3's chat first hallucinated before you course-corrected). Worth committing once you've verified it builds cleanly, so future work isn't at risk of being lost again.
+- `functions/` (Cloud Functions for awarding coins server-side) had TypeScript build errors in the workflow 3 transcript (`admin.firestore` typing issues from a `firebase-admin`/`firebase-functions` version mismatch) that don't look fully resolved — check `functions/src/index.ts` before deploying functions.
+- Leaderboard (`hooks/useLeaderboard.ts`) is still mock data, not live Firestore — flagged below too.
+
+## Status vs. the GDD roadmap
+
+### Alpha
+- Authentication (Google, email, guest) — **Done**, code-complete; broken live by the rules regression above, fixed pending redeploy.
+- Profiles — **Done** (profile page, stats).
+- Mindi — **Done**, playable vs AI and Pass & Play.
+- Gin Rummy — **Done**, playable vs AI and Pass & Play.
+- Casual mode — **Done** (AI bots, Pass & Play, unlimited matches).
+
+### Beta
+- Ranked mode — **Partial**. Trophy gain/loss, rank tiers, and match limits are implemented (`lib/trophyUpdates.ts`), but matchmaking is against AI bots, not real opponents — no live matchmaking backend yet.
+- Trophies — **Done**.
+- Leaderboards — **Partial**. UI is built but still serves mock data (`hooks/useLeaderboard.ts` has a hardcoded list, comment says "replace with Firestore query").
+
+### Version 1.0
+- Weekend League — **Partial**. Badge/widget UI exists (`WeekendLeagueBadge`, home widget); no real weekly bracket/qualification backend.
+- Friends — **Pending**. No code found (add/search friends, profiles-of-others).
+- Rooms — **Partial**. Room-card UI exists (`app/room-cards`, `components/roomcards`); real-time invite/join/kick backend not found.
+- VIP — **Partial**. VIP UI components exist and are wired into the Economy context; real payment/subscription flow not present.
+- Shop — **Done** UI + coin-spending logic wired to Economy context; real-money purchases not implemented (coins only).
+
+### Version 1.5
+- Collections — **Done** UI (`app/collection`).
+- Achievements — **Done** UI (`app/achievements`), tied to Economy context.
+- Hall of Fame — **Pending**. No code found.
+- Seasonal cosmetics — **Partial**. Cosmetic data model supports it (`data/cosmetics.ts`); no season-rotation logic found.
+
+### Version 2.0
+- Clubs — **Pending**.
+- Spectator mode — **Pending**.
+- New card games — **Pending** (only Mindi + Gin Rummy exist).
+
+## Suggested next steps
+1. Run `firebase deploy --only firestore:rules` to restore login.
+2. Verify the app builds cleanly (`npm run build`) with the uncommitted Economy/Firebase changes, then commit and push so this progress is safe.
+3. Decide priority for the next chunk of work — likely candidates: real Firestore-backed leaderboard, real player-vs-player matchmaking, or Friends/Rooms backend.

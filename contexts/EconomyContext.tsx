@@ -1,9 +1,19 @@
-// src/contexts/EconomyContext.tsx
+// contexts/EconomyContext.tsx
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
-import { PlayerEconomy, CoinTransaction, CoinSource, PlayerProfile, VipPass, RoomCard, DailyMission, WeeklyMission, Achievement, DailyLoginReward, RewardPopup, RewardItem } from '../types/economy';
-import { DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS } from '../data/cosmetics';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { 
+  PlayerEconomy, CoinTransaction, CoinSource, PlayerProfile, 
+  RoomCard, DailyMission, WeeklyMission, Achievement, 
+  DailyLoginReward, RewardPopup, RewardItem 
+} from '../types/economy';
+import { 
+  DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, 
+  ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS 
+} from '../data/cosmetics';
 
 // ─── ACTIONS ─────────────────────────────────────────
 type EconomyAction =
@@ -124,6 +134,23 @@ const initialState: EconomyState = {
     pending: false,
   },
 };
+
+const STORAGE_KEY = 'thaasbai-economy-state';
+
+function isNewDay(lastTimestamp: number): boolean {
+  const last = new Date(lastTimestamp);
+  const now = new Date();
+  return last.getDate() !== now.getDate() || 
+         last.getMonth() !== now.getMonth() || 
+         last.getFullYear() !== now.getFullYear();
+}
+
+function isNewWeek(lastTimestamp: number): boolean {
+  const last = new Date(lastTimestamp);
+  const now = new Date();
+  const daysSinceLast = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+  return daysSinceLast >= 7 || (now.getDay() === 0 && last.getDay() !== 0);
+}
 
 // ─── REDUCER ─────────────────────────────────────────
 function economyReducer(state: EconomyState, action: EconomyAction): EconomyState {
@@ -516,8 +543,110 @@ interface EconomyContextType {
 const EconomyContext = createContext<EconomyContextType | null>(null);
 
 export function EconomyProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [state, dispatch] = useReducer(economyReducer, initialState);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Load from Firebase on auth change
+  useEffect(() => {
+    if (!user) {
+      // Load from localStorage for guests
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          dispatch({ type: 'SET_STATE', payload: parsed });
+        } catch {
+          console.error('Failed to parse localStorage');
+        }
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // Load from Firebase
+    const loadFromFirebase = async () => {
+      try {
+        const ref = doc(db, 'playerEconomy', user.uid);
+        const snap = await getDoc(ref);
+        
+        if (snap.exists()) {
+          const data = snap.data() as EconomyState;
+          
+          // Check for daily/weekly resets
+          const now = Date.now();
+          const needsDailyReset = isNewDay(data.missions.lastDailyReset);
+          const needsWeeklyReset = isNewWeek(data.missions.lastWeeklyReset);
+          
+          let updatedState = { ...data };
+          
+          if (needsDailyReset) {
+            updatedState.missions.daily = generateDailyMissions();
+            updatedState.missions.lastDailyReset = now;
+          }
+          
+          if (needsWeeklyReset) {
+            updatedState.missions.weekly = generateWeeklyMissions();
+            updatedState.missions.lastWeeklyReset = now;
+          }
+          
+          dispatch({ type: 'SET_STATE', payload: updatedState });
+        } else {
+          // New user — save initial state with their UID
+          const newState = {
+            ...initialState,
+            profile: { ...initialState.profile, uid: user.uid, displayName: user.displayName || 'Player' }
+          };
+          await setDoc(ref, newState);
+          dispatch({ type: 'SET_STATE', payload: newState });
+        }
+      } catch (error) {
+        console.error('Failed to load from Firebase:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFromFirebase();
+
+    // Real-time sync from other devices
+    const unsub = onSnapshot(doc(db, 'playerEconomy', user.uid), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as EconomyState;
+        // Only update if the data is newer than our current state
+        // This prevents loops while still allowing multi-device sync
+        const lastTx = data.economy?.transactions?.[0]?.timestamp || 0;
+        const ourLastTx = state.economy?.transactions?.[0]?.timestamp || 0;
+        if (lastTx > ourLastTx) {
+          dispatch({ type: 'SET_STATE', payload: data });
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [user]);
+
+  // Save to Firebase on state change
+  useEffect(() => {
+    if (!user) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return;
+    }
+
+    const saveToFirebase = async () => {
+      try {
+        await setDoc(doc(db, 'playerEconomy', user.uid), state, { merge: true });
+      } catch (error) {
+        console.error('Failed to save to Firebase:', error);
+      }
+    };
+
+    // Debounce save to prevent excessive writes
+    const timer = setTimeout(saveToFirebase, 1000);
+    return () => clearTimeout(timer);
+  }, [state, user]);
+
+  // VIP and room card expiry check
   useEffect(() => {
     const interval = setInterval(() => {
       dispatch({ type: 'CHECK_VIP_EXPIRY' });
@@ -724,6 +853,14 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   const getAvailableRoomCards = useCallback(() => {
     return state.profile.roomCards.filter(c => !c.activated);
   }, [state.profile.roomCards]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+        <div className="text-[#D4AF37] animate-pulse">Loading economy...</div>
+      </div>
+    );
+  }
 
   return (
     <EconomyContext.Provider
