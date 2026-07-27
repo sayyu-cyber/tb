@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { GameType } from "@/lib/matchmaking";
-import { dealMindiHand } from "@/lib/mindiEngine";
+import { dealMindiHand, dealMindiHandFFA1v1 } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
@@ -20,6 +20,7 @@ import {
   leaveRoom,
   closeRoom,
   startRoomMatch,
+  setSeatOrder,
   watchRoom,
   RoomDoc,
 } from "@/lib/rooms";
@@ -28,8 +29,26 @@ function gameTypeFor(gameId: string): GameType {
   return gameId === "mindi" ? "mindi" : "gin_rummy";
 }
 
-function buildInitialState(gameType: GameType, players: string[]): MindiOnlineState | GinOnlineState {
+function buildInitialState(
+  gameType: GameType,
+  players: string[],
+  mindiMode: "team2v2" | "ffa1v1" = "team2v2"
+): MindiOnlineState | GinOnlineState {
   if (gameType === "mindi") {
+    if (mindiMode === "ffa1v1") {
+      const deal = dealMindiHandFFA1v1(1);
+      return {
+        handsByUid: { [players[0]]: deal.hands[0], [players[1]]: deal.hands[1] },
+        trumpSuit: deal.trumpSuit,
+        turnSeat: deal.leader,
+        trick: [],
+        tensCaptured: { A: 0, B: 0 },
+        tricksWon: { A: 0, B: 0 },
+        tricksPlayed: 0,
+        outcome: null,
+        numPlayers: 2,
+      };
+    }
     const deal = dealMindiHand(3);
     const handsByUid: Record<string, ReturnType<typeof dealMindiHand>["hands"][0]> = {};
     for (let seat = 0; seat < 4; seat++) handsByUid[players[seat]] = deal.hands[seat as 0 | 1 | 2 | 3];
@@ -42,6 +61,7 @@ function buildInitialState(gameType: GameType, players: string[]): MindiOnlineSt
       tricksWon: { A: 0, B: 0 },
       tricksPlayed: 0,
       outcome: null,
+      numPlayers: 4,
     };
   }
   const deal = dealGinHand();
@@ -75,6 +95,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
   const [password, setPassword] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [joinPassword, setJoinPassword] = useState("");
+  const [mindiMode, setMindiMode] = useState<"team2v2" | "ffa1v1">("team2v2");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -88,7 +109,14 @@ function RoomChooser({ gameId }: { gameId: string }) {
     setBusy(true);
     setError(null);
     try {
-      const code = await createRoom(user.uid, user.displayName ?? "Player", gameTypeFor(gameId), password || null);
+      const code = await createRoom(
+        user.uid,
+        user.displayName ?? "Player",
+        gameTypeFor(gameId),
+        password || null,
+        "casual",
+        mindiMode
+      );
       router.push(`/play/${gameId}/room?code=${code}`);
     } catch (err) {
       setError(String(err));
@@ -160,6 +188,34 @@ function RoomChooser({ gameId }: { gameId: string }) {
 
         {mode === "create" && (
           <div className="space-y-3 glass-card rounded-2xl p-5">
+            {gameId === "mindi" && (
+              <div className="space-y-2">
+                <p className="text-[rgb(var(--c4))] text-xs">Mode</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setMindiMode("team2v2")}
+                    className={`py-2.5 rounded-lg text-sm font-medium border ${
+                      mindiMode === "team2v2"
+                        ? "bg-[#D4AF37]/10 border-[#D4AF37] text-[#D4AF37]"
+                        : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
+                    }`}
+                  >
+                    Team 2v2 (4 players)
+                  </button>
+                  <button
+                    onClick={() => setMindiMode("ffa1v1")}
+                    className={`py-2.5 rounded-lg text-sm font-medium border ${
+                      mindiMode === "ffa1v1"
+                        ? "bg-[#D4AF37]/10 border-[#D4AF37] text-[#D4AF37]"
+                        : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
+                    }`}
+                  >
+                    1v1 (2 players)
+                  </button>
+                </div>
+                <p className="text-[rgb(var(--c3))] text-[11px]">1v1v1 and 1v1v1v1 free-for-all modes are coming in a future update.</p>
+              </div>
+            )}
             <p className="text-[rgb(var(--c4))] text-xs">Optional password (leave blank for no password)</p>
             <input
               value={password}
@@ -266,7 +322,7 @@ function RoomLobby({
     if (!room) return;
     setError(null);
     try {
-      await startRoomMatch(code, myUid, (players) => buildInitialState(gameType, players));
+      await startRoomMatch(code, myUid, (players) => buildInitialState(gameType, players, room.mindiMode ?? "team2v2"));
     } catch (err) {
       setError(String(err));
     }
@@ -278,6 +334,16 @@ function RoomLobby({
 
   async function handleBan(uid: string) {
     await banPlayer(code, myUid, uid).catch((err) => setError(String(err)));
+  }
+
+  async function handleSwapSeats(uidA: string, uidB: string) {
+    if (!room) return;
+    const order = room.seatOrder && room.seatOrder.length === room.players.length ? [...room.seatOrder] : [...room.players];
+    const iA = order.indexOf(uidA);
+    const iB = order.indexOf(uidB);
+    if (iA === -1 || iB === -1) return;
+    [order[iA], order[iB]] = [order[iB], order[iA]];
+    await setSeatOrder(code, myUid, order).catch((err) => setError(String(err)));
   }
 
   async function handleLeave() {
@@ -380,6 +446,39 @@ function RoomLobby({
           ))}
         </div>
       </div>
+
+      {gameType === "mindi" && (room.mindiMode ?? "team2v2") === "team2v2" && isFull && (() => {
+        const seatOrder = room.seatOrder && room.seatOrder.length === room.players.length ? room.seatOrder : room.players;
+        const teamA = [seatOrder[0], seatOrder[2]];
+        const teamB = [seatOrder[1], seatOrder[3]];
+        return (
+          <div className="glass-card rounded-2xl p-4 mb-4">
+            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3">Teams</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-[#D4AF37] text-xs font-bold mb-1">Team A</p>
+                {teamA.map((uid) => (
+                  <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || "Player"}</p>
+                ))}
+              </div>
+              <div className="space-y-1">
+                <p className="text-[#D4AF37] text-xs font-bold mb-1">Team B</p>
+                {teamB.map((uid) => (
+                  <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || "Player"}</p>
+                ))}
+              </div>
+            </div>
+            {isOwner && (
+              <button
+                onClick={() => handleSwapSeats(teamA[0], teamB[0])}
+                className="w-full mt-3 py-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-xs font-medium"
+              >
+                Swap Team A / Team B (partner 1)
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {isOwner ? (
         <motion.button

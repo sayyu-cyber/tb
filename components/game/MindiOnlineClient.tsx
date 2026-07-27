@@ -21,6 +21,7 @@ import {
   cardId,
   teamOf,
   nextSeat,
+  nextSeatFFA1v1,
   getLegalPlays,
   resolveTrick,
   isTen,
@@ -37,6 +38,10 @@ export interface MindiOnlineState {
   tricksWon: Record<Team, number>;
   tricksPlayed: number;
   outcome: HandOutcome | null;
+  /** 4 = the standard 2v2 partnership game (default, matches every match
+   *  created before this field existed). 2 = the 1v1 FFA room variant
+   *  (dealMindiHandFFA1v1) - only seats 0 and 1 are ever used. */
+  numPlayers?: 2 | 4;
 }
 
 const SEAT_NAMES = ["You", "Left opponent", "Partner", "Right opponent"];
@@ -61,12 +66,14 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   );
   const myTeam: Team = teamOf(mySeat);
   const state = match?.state;
+  const numPlayers = state?.numPlayers ?? 4;
   const myHand = state?.handsByUid[myUid] ?? [];
   const isMyTurn = state?.turnSeat === mySeat;
   const ledSuit = state && state.trick.length > 0 ? state.trick[0].card.suit : null;
   const legalForMe = state ? getLegalPlays(myHand, ledSuit) : [];
 
   function seatLabelFor(seat: SeatIndex): string {
+    if (numPlayers === 2) return "Opponent";
     // Relative to the viewer: same seat = You, +2 = Partner, others = opponents.
     const relative = (((seat - mySeat) % 4) + 4) % 4;
     return SEAT_NAMES[relative];
@@ -79,17 +86,18 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     await updateMatchState<MindiOnlineState>(matchId, (current) => {
       const s = current.state;
       if (s.turnSeat !== mySeat) return null;
+      const n = s.numPlayers ?? 4;
 
       const hand = s.handsByUid[myUid].filter((c) => cardId(c) !== cardId(card));
       const trick = [...s.trick, { seat: mySeat, card }];
 
-      if (trick.length < 4) {
+      if (trick.length < n) {
         return {
           state: {
             ...s,
             handsByUid: { ...s.handsByUid, [myUid]: hand },
             trick,
-            turnSeat: nextSeat(mySeat),
+            turnSeat: n === 2 ? nextSeatFFA1v1(mySeat as 0 | 1) : nextSeat(mySeat),
           },
         };
       }
@@ -101,7 +109,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       const tensCaptured = { ...s.tensCaptured, [winnerTeam]: s.tensCaptured[winnerTeam] + tensInTrick };
       const tricksWon = { ...s.tricksWon, [winnerTeam]: s.tricksWon[winnerTeam] + 1 };
       const tricksPlayed = s.tricksPlayed + 1;
-      const outcome = checkHandOutcome(tensCaptured, tricksWon, tricksPlayed);
+      const outcome = checkHandOutcome(tensCaptured, tricksWon, tricksPlayed, n === 2 ? 26 : 13);
 
       const nextState: MindiOnlineState = {
         ...s,
@@ -200,11 +208,11 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
             </div>
             <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Your team — Tens</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? "You" : "Your team"} — Tens</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{state.outcome.tensCaptured[myTeam]} / 4</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Opponents — Tens</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? "Opponent" : "Opponents"} — Tens</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{state.outcome.tensCaptured[myTeam === "A" ? "B" : "A"]} / 4</span>
               </div>
             </div>
@@ -238,8 +246,6 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     );
   }
 
-  const seatOrder: SeatIndex[] = [0, 1, 2, 3];
-
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
@@ -257,23 +263,33 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <Users size={14} className="text-[#D4AF37]" />
-            <span className="text-[rgb(var(--text-primary))] font-medium">Your team</span>
+            <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? "You" : "Your team"}</span>
             <span className="text-[#D4AF37] font-bold">{state.tensCaptured[myTeam]} tens</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[#D4AF37] font-bold">{state.tensCaptured[myTeam === "A" ? "B" : "A"]} tens</span>
-            <span className="text-[rgb(var(--text-primary))] font-medium">Opponents</span>
+            <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? "Opponent" : "Opponents"}</span>
           </div>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-between py-4 px-4">
-        <SeatRow label={seatLabelFor(((mySeat + 2) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 2) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 2) % 4) as SeatIndex)} />
+        {numPlayers === 2 ? (
+          <SeatRow
+            label={seatLabelFor(((mySeat === 0 ? 1 : 0) as SeatIndex))}
+            count={state.handsByUid[match.players[mySeat === 0 ? 1 : 0]]?.length ?? 0}
+            active={state.turnSeat !== mySeat}
+          />
+        ) : (
+          <SeatRow label={seatLabelFor(((mySeat + 2) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 2) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 2) % 4) as SeatIndex)} />
+        )}
 
         <div className="flex items-center justify-between w-full max-w-sm">
-          <SeatRow label={seatLabelFor(((mySeat + 1) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 1) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 1) % 4) as SeatIndex)} />
+          {numPlayers !== 2 && (
+            <SeatRow label={seatLabelFor(((mySeat + 1) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 1) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 1) % 4) as SeatIndex)} />
+          )}
 
-          <div className="relative w-32 h-32 flex items-center justify-center flex-wrap gap-1">
+          <div className="relative w-32 h-32 flex items-center justify-center flex-wrap gap-1 mx-auto">
             {state.trick.length === 0 ? (
               <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? "Your turn" : "Waiting…"}</span>
             ) : (
@@ -286,7 +302,9 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
             )}
           </div>
 
-          <SeatRow label={seatLabelFor(((mySeat + 3) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 3) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 3) % 4) as SeatIndex)} />
+          {numPlayers !== 2 && (
+            <SeatRow label={seatLabelFor(((mySeat + 3) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 3) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 3) % 4) as SeatIndex)} />
+          )}
         </div>
 
         <div className="w-full">

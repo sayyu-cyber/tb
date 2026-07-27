@@ -49,6 +49,21 @@ export interface RoomDoc {
    *  have the code, unlike a kick which only removes them once. Defaults
    *  to [] for every room created before this field existed. */
   bannedUids?: string[];
+  /** Mindi-only: "team2v2" (the default, fixed partnerships - seats 0&2 vs
+   *  1&3) or "ffa1v1" (2 players, no partnership - see lib/mindiEngine.ts's
+   *  teamOf(), which happens to reduce to individual scoring when only
+   *  seats 0 and 1 are in play). Ignored for Gin Rummy, which is always
+   *  1v1. 1v1v1/1v1v1v1 free-for-all aren't implemented yet - they'd need
+   *  genuinely individual (non-team) scoring in mindiEngine.ts, not just a
+   *  seat-count change, so they're deliberately deferred rather than
+   *  half-shipped. */
+  mindiMode?: "team2v2" | "ffa1v1";
+  /** Owner-adjustable seat assignment for Team Mode - an ordering of
+   *  `players` that decides who sits where (and therefore who's on which
+   *  team: seats 0&2 = Team A, 1&3 = Team B) once the room is full. Falls
+   *  back to `players`' join order if never set. Only meaningful for Mindi
+   *  team2v2 rooms. */
+  seatOrder?: string[];
 }
 
 function generateRoomCode(): string {
@@ -59,9 +74,10 @@ function generateRoomCode(): string {
   return code;
 }
 
-function maxPlayersFor(gameType: GameType, mode: "casual" | "rankedDuo"): number {
+function maxPlayersFor(gameType: GameType, mode: "casual" | "rankedDuo", mindiMode: "team2v2" | "ffa1v1"): number {
   if (mode === "rankedDuo") return 2; // always just you + one partner, regardless of game
-  return gameType === "mindi" ? 4 : 2;
+  if (gameType === "mindi") return mindiMode === "ffa1v1" ? 2 : 4;
+  return 2;
 }
 
 export async function createRoom(
@@ -69,7 +85,8 @@ export async function createRoom(
   ownerName: string,
   gameType: GameType,
   password: string | null,
-  mode: "casual" | "rankedDuo" = "casual"
+  mode: "casual" | "rankedDuo" = "casual",
+  mindiMode: "team2v2" | "ffa1v1" = "team2v2"
 ): Promise<string> {
   // Vanishingly unlikely to collide, but check anyway before committing.
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -83,7 +100,7 @@ export async function createRoom(
       gameType,
       ownerUid,
       password: password || null,
-      maxPlayers: maxPlayersFor(gameType, mode),
+      maxPlayers: maxPlayersFor(gameType, mode, mindiMode),
       players: [ownerUid],
       playerNames: { [ownerUid]: ownerName },
       status: "waiting",
@@ -91,6 +108,7 @@ export async function createRoom(
       createdAt: Date.now(),
       mode,
       bannedUids: [],
+      ...(gameType === "mindi" ? { mindiMode, seatOrder: [ownerUid] } : {}),
     };
     await setDoc(ref, room);
     return code;
@@ -120,7 +138,29 @@ export async function joinRoom(
     transaction.update(ref, {
       players: [...room.players, uid],
       playerNames: { ...room.playerNames, [uid]: displayName },
+      ...(room.seatOrder ? { seatOrder: [...room.seatOrder, uid] } : {}),
     });
+  });
+}
+
+/**
+ * Owner rearranges who sits in which seat before starting a Mindi Team Mode
+ * match - seats 0&2 become Team A, 1&3 become Team B (mindiEngine.ts's
+ * teamOf()), so this is how the owner picks who's paired with whom. Must be
+ * exactly the same set of uids already in the room, just reordered.
+ */
+export async function setSeatOrder(code: string, ownerUid: string, seatOrder: string[]): Promise<void> {
+  await runTransaction(db, async (transaction) => {
+    const ref = doc(db, ROOMS_COLLECTION, code);
+    const snap = await transaction.get(ref);
+    if (!snap.exists()) return;
+    const room = snap.data() as RoomDoc;
+    if (room.ownerUid !== ownerUid) return;
+    const sameSet =
+      seatOrder.length === room.players.length &&
+      room.players.every((p) => seatOrder.includes(p));
+    if (!sameSet) throw new Error("Seat order must contain exactly the current players");
+    transaction.update(ref, { seatOrder });
   });
 }
 
@@ -135,7 +175,8 @@ export async function kickPlayer(code: string, ownerUid: string, targetUid: stri
     const players = room.players.filter((p) => p !== targetUid);
     const playerNames = { ...room.playerNames };
     delete playerNames[targetUid];
-    transaction.update(ref, { players, playerNames });
+    const seatOrder = room.seatOrder ? room.seatOrder.filter((p) => p !== targetUid) : undefined;
+    transaction.update(ref, { players, playerNames, ...(seatOrder ? { seatOrder } : {}) });
   });
 }
 
@@ -158,7 +199,8 @@ export async function banPlayer(code: string, ownerUid: string, targetUid: strin
     const playerNames = { ...room.playerNames };
     delete playerNames[targetUid];
     const bannedUids = Array.from(new Set([...(room.bannedUids ?? []), targetUid]));
-    transaction.update(ref, { players, playerNames, bannedUids });
+    const seatOrder = room.seatOrder ? room.seatOrder.filter((p) => p !== targetUid) : undefined;
+    transaction.update(ref, { players, playerNames, bannedUids, ...(seatOrder ? { seatOrder } : {}) });
   });
 }
 
@@ -175,7 +217,8 @@ export async function leaveRoom(code: string, uid: string): Promise<void> {
     const players = room.players.filter((p) => p !== uid);
     const playerNames = { ...room.playerNames };
     delete playerNames[uid];
-    transaction.update(ref, { players, playerNames });
+    const seatOrder = room.seatOrder ? room.seatOrder.filter((p) => p !== uid) : undefined;
+    transaction.update(ref, { players, playerNames, ...(seatOrder ? { seatOrder } : {}) });
   });
 }
 
@@ -210,13 +253,19 @@ export async function startRoomMatch<TState>(
     if (room.ownerUid !== ownerUid) throw new Error("Only the room owner can start the match");
     if (room.players.length !== room.maxPlayers) throw new Error("Room isn't full yet");
 
+    // Team Mode lets the owner rearrange seats (see setSeatOrder) - use
+    // that order for team assignment if it's been set, otherwise fall back
+    // to plain join order like before.
+    const orderedPlayers =
+      room.seatOrder && room.seatOrder.length === room.players.length ? room.seatOrder : room.players;
+
     const matchRef = doc(collection(db, "matches"));
     const matchDoc: MatchDoc<TState> = {
       gameType: room.gameType,
-      players: room.players,
+      players: orderedPlayers,
       status: "active",
       createdAt: Date.now(),
-      state: buildInitialState(room.players),
+      state: buildInitialState(orderedPlayers),
     };
     transaction.set(matchRef, matchDoc);
     transaction.update(ref, { status: "started", matchId: matchRef.id });

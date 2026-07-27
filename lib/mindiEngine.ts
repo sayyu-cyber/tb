@@ -59,6 +59,12 @@ export function nextSeat(seat: SeatIndex): SeatIndex {
   return ((seat + 1) % 4) as SeatIndex;
 }
 
+/** Like nextSeat, but for the 1v1 FFA variant where only seats 0 and 1 are
+ *  ever in play (see dealMindiHandFFA1v1) - just toggles between the two. */
+export function nextSeatFFA1v1(seat: 0 | 1): 0 | 1 {
+  return seat === 0 ? 1 : 0;
+}
+
 export interface TrickPlay {
   seat: SeatIndex;
   card: Card;
@@ -114,6 +120,40 @@ export function dealMindiHand(dealer: SeatIndex): MindiDeal {
   };
 }
 
+/**
+ * Deals a 1v1 "free-for-all" hand: just two players, seats 0 and 1, no
+ * partnership. Reuses the existing team plumbing unmodified - teamOf(0) is
+ * always "A" and teamOf(1) is always "B", and since each "team" here has
+ * exactly one player, the existing tensCaptured/tricksWon-by-team tallies
+ * already are individual scoring for this mode. Seats 2 and 3 are simply
+ * never dealt into or played from.
+ *
+ * 26 cards each (52 / 2), same one-at-a-time clockwise dealing rule as the
+ * 4-player game, so the last card dealt (to the dealer) still sets trump.
+ */
+export function dealMindiHandFFA1v1(dealer: 0 | 1): MindiDeal {
+  const deck = createShuffledDeck();
+  const hands: Record<SeatIndex, Card[]> = { 0: [], 1: [], 2: [], 3: [] };
+
+  const other: 0 | 1 = dealer === 0 ? 1 : 0;
+  let seat: 0 | 1 = other;
+  for (let i = 0; i < 52; i++) {
+    hands[seat].push(deck[i]);
+    seat = seat === 0 ? 1 : 0;
+  }
+
+  const dealerHand = hands[dealer];
+  const trumpCard = dealerHand[dealerHand.length - 1];
+
+  return {
+    hands,
+    trumpSuit: trumpCard.suit,
+    trumpCard,
+    dealer,
+    leader: other,
+  };
+}
+
 /** Cards a seat may legally play, given the suit led (null if this seat is leading). */
 export function getLegalPlays(hand: Card[], ledSuit: Suit | null): Card[] {
   if (!ledSuit) return hand;
@@ -144,12 +184,20 @@ export interface HandOutcome {
   special: "baga" | "hukunbunye" | "forfeit" | null;
 }
 
-/** Checks whether the hand should end after the trick just resolved. */
+/**
+ * Checks whether the hand should end after the trick just resolved.
+ * `totalTricks` defaults to 13 (the standard 4-player, 13-card-each game);
+ * pass 26 for the 1v1 FFA variant (26 cards each - see
+ * dealMindiHandFFA1v1), which needs a proportionally higher "unassailable
+ * majority" and "all tricks played" threshold.
+ */
 export function checkHandOutcome(
   tensCaptured: Record<Team, number>,
   tricksWon: Record<Team, number>,
-  tricksPlayed: number
+  tricksPlayed: number,
+  totalTricks: number = 13
 ): HandOutcome | null {
+  const majority = Math.ceil((totalTricks + 1) / 2);
   for (const team of ["A", "B"] as Team[]) {
     if (tensCaptured[team] >= 3) {
       return {
@@ -161,16 +209,16 @@ export function checkHandOutcome(
     }
   }
   // No team has reached 3 tens yet. Once a team has an unassailable trick
-  // majority (7 of 13), or all 13 tricks are played, decide by trick count.
+  // majority, or all tricks are played, decide by trick count.
   for (const team of ["A", "B"] as Team[]) {
-    if (tricksWon[team] >= 7 || tricksPlayed >= 13) {
+    if (tricksWon[team] >= majority || tricksPlayed >= totalTricks) {
       const other: Team = team === "A" ? "B" : "A";
       const winner = tricksWon[team] >= tricksWon[other] ? team : other;
       return {
         winner,
         tensCaptured,
         tricksWon,
-        special: tricksWon[winner] === 13 ? "hukunbunye" : null,
+        special: tricksWon[winner] === totalTricks ? "hukunbunye" : null,
       };
     }
   }
