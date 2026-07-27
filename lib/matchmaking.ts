@@ -282,6 +282,22 @@ export async function getMatch<TState>(matchId: string): Promise<MatchDoc<TState
   return snap.exists() ? (snap.data() as MatchDoc<TState>) : null;
 }
 
+/**
+ * Finds a live match a given player is currently in, if any - used by
+ * Spectator Mode (see components/game/SpectateClient.tsx) to turn "watch
+ * this player" into a matchId. Returns the most recently created one if
+ * they're somehow in more than one (shouldn't normally happen).
+ */
+export async function getActiveMatchId(uid: string): Promise<{ matchId: string; gameType: GameType } | null> {
+  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid));
+  const snap = await getDocs(q);
+  const active = snap.docs
+    .map((d) => ({ id: d.id, data: d.data() as MatchDoc }))
+    .filter((m) => m.data.status === "active")
+    .sort((a, b) => b.data.createdAt - a.data.createdAt);
+  return active.length > 0 ? { matchId: active[0].id, gameType: active[0].data.gameType } : null;
+}
+
 export function watchMatch<TState>(matchId: string, onUpdate: (match: MatchDoc<TState> | null) => void): Unsubscribe {
   return onSnapshot(doc(db, MATCHES_COLLECTION, matchId), (snap) => {
     onUpdate(snap.exists() ? (snap.data() as MatchDoc<TState>) : null);

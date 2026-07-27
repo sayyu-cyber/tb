@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Trophy, Star, Swords, Percent } from "lucide-react";
+import { Trophy, Star, Swords, Percent, Eye } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { getPublicProfile, PublicProfile } from "@/lib/publicProfile";
+import { getActiveMatchId } from "@/lib/matchmaking";
 import { RANKS } from "@/constants/ranks";
 import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
 
@@ -20,6 +22,7 @@ export function PlayerProfileClient() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [liveMatchId, setLiveMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!uid) {
@@ -41,6 +44,11 @@ export function PlayerProfileClient() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    getActiveMatchId(uid)
+      .then((m) => {
+        if (!cancelled) setLiveMatchId(m?.matchId ?? null);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -58,6 +66,14 @@ export function PlayerProfileClient() {
         </div>
       ) : profile ? (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          {liveMatchId && (
+            <Link href={`/spectate?m=${liveMatchId}`}>
+              <div className="glass-card rounded-xl p-3 flex items-center justify-center gap-2 border border-[#D4AF37]/30 bg-[#D4AF37]/5">
+                <Eye size={14} className="text-[#D4AF37]" />
+                <span className="text-[#D4AF37] text-sm font-medium">Currently in a match — Watch Live</span>
+              </div>
+            </Link>
+          )}
           <div className={`glass-card rounded-2xl p-6 text-center bg-gradient-to-b ${getBannerPreset(profile.bannerPreset).gradient}`}>
             <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarPreset(profile.avatarPreset).gradient} p-[2px] mx-auto mb-3`}>
               <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">

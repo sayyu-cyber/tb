@@ -22,12 +22,16 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // A live match. Only its participants may read or write it; a match may
-    // only be created by one of the players listed in it. Match state is
-    // otherwise trusted client-side (no server authority) - see the
-    // limitations noted at the top of lib/matchmaking.ts.
+    // A live match. Read is open to any signed-in user so Spectator Mode
+    // can watch a friend's match (components/game/SpectateClient.tsx) -
+    // this is the same accepted trade-off already documented in
+    // lib/matchmaking.ts (a technically savvy user could always inspect
+    // raw match data, hands included, via devtools; the UI itself just
+    // never renders a spectator's or opponent's hand). Only a match's own
+    // players may create or update it - a spectator can look but never
+    // touch the game state.
     match /matches/{matchId} {
-      allow read: if request.auth != null && request.auth.uid in resource.data.players;
+      allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid in request.resource.data.players;
       allow update: if request.auth != null && request.auth.uid in resource.data.players;
       allow delete: if false;
