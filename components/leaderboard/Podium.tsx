@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Crown } from "lucide-react";
 import { LeaderboardEntry } from "@/types";
 
@@ -25,13 +26,12 @@ export function Podium({ topThree }: PodiumProps) {
         const crownColor = order === 1 ? "#D4AF37" : order === 2 ? "#C0C0C0" : "#CD7F32";
 
         return (
+          <Link key={player.rank} href={`/player?uid=${player.uid}`} style={{ order }}>
           <motion.div
-            key={player.rank}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: order * 0.15, duration: 0.5 }}
             className="flex flex-col items-center"
-            style={{ order }}
           >
             {/* Player info */}
             <div className="text-center mb-3">
@@ -85,6 +85,7 @@ export function Podium({ topThree }: PodiumProps) {
               </div>
             </motion.div>
           </motion.div>
+          </Link>
         );
       })}
     </div>

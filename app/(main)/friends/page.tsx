@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, UserPlus, Check, X, Trophy, Users, Gamepad2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -248,7 +249,9 @@ export default function FriendsPage() {
           ) : (
             friends.map((f) => (
               <div key={f.requestId} className="glass-card rounded-xl p-3 flex items-center justify-between">
-                <p className="text-white text-sm font-medium">{f.name}</p>
+                <Link href={`/player?uid=${f.uid}`} className="text-white text-sm font-medium hover:text-[#D4AF37] transition-colors">
+                  {f.name}
+                </Link>
                 <div className="flex gap-2">
                   <motion.button
                     whileTap={{ scale: 0.95 }}

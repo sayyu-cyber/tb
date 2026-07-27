@@ -6,7 +6,7 @@ import { Search, X, Trophy, Swords, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getRankFromTrophies } from "@/constants/ranks";
+import { getRankFromTrophies, VIP_DAILY_MATCHES } from "@/constants/ranks";
 import { useRankLock } from "@/hooks/useRankLock";
 import { useMatchLimits } from "@/hooks/useMatchLimits";
 import { RankLockBanner } from "@/components/game/RankLockBanner";
@@ -69,7 +69,11 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   // Casual Ranked is closed during the Weekend League window; qualified
   // players (Silver+) queue into the Weekend League pool instead.
   const weekendMode = isWeekendLeague;
-  const canQueue = !weekendMode || qualified;
+  // The daily/weekly free-match caps were previously shown on this screen
+  // but never actually enforced - a player could keep queueing past 0
+  // remaining. Now queueing is blocked once either cap is hit.
+  const outOfMatches = matchLimits.dailyRemaining <= 0 || matchLimits.weeklyRemaining <= 0;
+  const canQueue = (!weekendMode || qualified) && !outOfMatches;
   const pool: Pool = weekendMode ? "weekend" : "ranked";
 
   useEffect(() => {
@@ -126,6 +130,28 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canQueue, pool, user?.uid, gameType, neededPlayers, gameId]);
+
+  if (outOfMatches) {
+    const reason = matchLimits.weeklyRemaining <= 0 ? "weekly" : "daily";
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+        <Link href="/play" className="absolute top-6 left-4">
+          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
+            <X size={20} className="text-[#3A3A3A]" />
+          </motion.button>
+        </Link>
+        <div className="text-center space-y-3 max-w-xs">
+          <Clock size={32} className="text-[#D4AF37] mx-auto" />
+          <h2 className="text-lg font-bold text-white">Out of {reason} matches</h2>
+          <p className="text-[#3A3A3A] text-sm">
+            {matchLimits.isVip
+              ? `You've used all ${reason === "weekly" ? matchLimits.weeklyTotal : matchLimits.dailyTotal} of your ${reason} ranked matches. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`
+              : `Free players get ${matchLimits.dailyTotal} ranked matches a day (${matchLimits.weeklyTotal} a week). VIP raises the daily cap to ${VIP_DAILY_MATCHES}. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!canQueue) {
     return (

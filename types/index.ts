@@ -22,6 +22,7 @@ export interface PlayerStats {
 
 export interface LeaderboardEntry {
   rank: number;
+  uid: string;
   username: string;
   trophies: number;
   avatar?: string;

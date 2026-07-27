@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Trophy, Crown, Medal } from "lucide-react";
 import { LeaderboardEntry } from "@/types";
 
@@ -44,6 +45,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
   };
 
   return (
+    <Link href={`/player?uid=${entry.uid}`}>
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -82,5 +84,6 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
         </span>
       </div>
     </motion.div>
+    </Link>
   );
 }

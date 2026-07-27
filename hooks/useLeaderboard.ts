@@ -26,6 +26,7 @@ export function useLeaderboard() {
         const data = doc.data();
         return {
           rank: index + 1,
+          uid: doc.id,
           username: data.displayName || "Player",
           trophies: typeof data.trophies === "number" ? data.trophies : 0,
           avatar: data.photoURL || "",

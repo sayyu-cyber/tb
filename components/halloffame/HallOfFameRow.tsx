@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Crown, Medal, Star } from "lucide-react";
 import { RANKS } from "@/constants/ranks";
 import { HallOfFameEntry } from "@/lib/hallOfFame";
@@ -46,11 +47,12 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
   const winPct = entry.totalMatches > 0 ? Math.round((entry.wins / entry.totalMatches) * 100) : 0;
 
   return (
+    <Link href={`/player?uid=${entry.uid}`}>
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${getRowStyle()}`}
+      className={`flex items-center gap-4 p-4 rounded-xl transition-colors hover:bg-[#1A1A1A]/50 ${getRowStyle()}`}
     >
       <div className="w-8 flex justify-center">{getRowIcon()}</div>
 
@@ -80,5 +82,6 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
         </span>
       </div>
     </motion.div>
+    </Link>
   );
 }

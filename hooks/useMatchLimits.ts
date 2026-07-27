@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FREE_DAILY_MATCHES, FREE_WEEKLY_MAX, VIP_DAILY_MATCHES } from "@/constants/ranks";
+import { useEconomy } from "@/contexts/EconomyContext";
+import { getWeekStartKey } from "@/lib/trophyUpdates";
 
 interface MatchLimits {
   dailyUsed: number;
@@ -13,64 +15,74 @@ interface MatchLimits {
   isVip: boolean;
 }
 
+function getDayKey(date: Date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Tracks how many ranked/Weekend League matches a player has queued into
+ * today and this week, for the daily/weekly free-tier caps (GDD Beta:
+ * FREE_DAILY_MATCHES / FREE_WEEKLY_MAX, raised for VIP).
+ *
+ * Two bugs fixed here:
+ * 1. Counters never reset - once a player used their 3 free daily matches,
+ *    `dailyUsed` stayed at that number in localStorage forever, since
+ *    nothing ever compared "today" to the day the count was recorded.
+ *    Now compares against the current day key (and the current week key,
+ *    shared with lib/trophyUpdates.ts's Weekend League week logic) and
+ *    resets to zero whenever they don't match.
+ * 2. `isVip` was its own separate localStorage field that nothing ever
+ *    set to true - so VIP players never actually got the higher daily
+ *    cap. It now reads real VIP status from EconomyContext.
+ */
 export function useMatchLimits(userId?: string): MatchLimits & { recordMatch: () => void } {
-  const [limits, setLimits] = useState<MatchLimits>({
-    dailyUsed: 1,
-    dailyTotal: FREE_DAILY_MATCHES,
-    dailyRemaining: FREE_DAILY_MATCHES - 1,
-    weeklyUsed: 5,
-    weeklyTotal: FREE_WEEKLY_MAX,
-    weeklyRemaining: FREE_WEEKLY_MAX - 5,
-    isVip: false,
-  });
+  const { state } = useEconomy();
+  const isVip = state.profile.vip.active;
+  const dailyTotal = isVip ? VIP_DAILY_MATCHES : FREE_DAILY_MATCHES;
+
+  const [counts, setCounts] = useState({ dailyUsed: 0, weeklyUsed: 0 });
 
   useEffect(() => {
-    // TODO: Fetch from Firestore / localStorage
-    // For now, demo values
-    const stored = localStorage.getItem(`thaasbai_matches_${userId || "guest"}`);
+    const key = `thaasbai_matches_${userId || "guest"}`;
+    const today = getDayKey();
+    const thisWeek = getWeekStartKey();
+    let dailyUsed = 0;
+    let weeklyUsed = 0;
+
+    const stored = localStorage.getItem(key);
     if (stored) {
       try {
         const data = JSON.parse(stored);
-        const isVip = data.isVip || false;
-        const dailyTotal = isVip ? VIP_DAILY_MATCHES : FREE_DAILY_MATCHES;
-        const dailyUsed = data.dailyUsed || 0;
-        const weeklyUsed = data.weeklyUsed || 0;
-
-        setLimits({
-          dailyUsed,
-          dailyTotal,
-          dailyRemaining: Math.max(0, dailyTotal - dailyUsed),
-          weeklyUsed,
-          weeklyTotal: FREE_WEEKLY_MAX,
-          weeklyRemaining: Math.max(0, FREE_WEEKLY_MAX - weeklyUsed),
-          isVip,
-        });
+        dailyUsed = data.lastDay === today ? data.dailyUsed || 0 : 0;
+        weeklyUsed = data.lastWeek === thisWeek ? data.weeklyUsed || 0 : 0;
       } catch {
-        // keep defaults
+        // keep zeros
       }
     }
+
+    localStorage.setItem(key, JSON.stringify({ dailyUsed, weeklyUsed, lastDay: today, lastWeek: thisWeek }));
+    setCounts({ dailyUsed, weeklyUsed });
   }, [userId]);
 
   const recordMatch = () => {
-    setLimits(prev => {
-      const updated = {
-        ...prev,
-        dailyUsed: prev.dailyUsed + 1,
-        weeklyUsed: prev.weeklyUsed + 1,
-      };
-      localStorage.setItem(`thaasbai_matches_${userId || "guest"}`, JSON.stringify({
-        dailyUsed: updated.dailyUsed,
-        weeklyUsed: updated.weeklyUsed,
-        isVip: prev.isVip,
-        lastReset: new Date().toISOString(),
-      }));
-      return {
-        ...updated,
-        dailyRemaining: Math.max(0, prev.dailyTotal - updated.dailyUsed),
-        weeklyRemaining: Math.max(0, prev.weeklyTotal - updated.weeklyUsed),
-      };
+    const key = `thaasbai_matches_${userId || "guest"}`;
+    const today = getDayKey();
+    const thisWeek = getWeekStartKey();
+    setCounts((prev) => {
+      const updated = { dailyUsed: prev.dailyUsed + 1, weeklyUsed: prev.weeklyUsed + 1 };
+      localStorage.setItem(key, JSON.stringify({ ...updated, lastDay: today, lastWeek: thisWeek }));
+      return updated;
     });
   };
 
-  return { ...limits, recordMatch } as MatchLimits & { recordMatch: () => void };
+  return {
+    dailyUsed: counts.dailyUsed,
+    dailyTotal,
+    dailyRemaining: Math.max(0, dailyTotal - counts.dailyUsed),
+    weeklyUsed: counts.weeklyUsed,
+    weeklyTotal: FREE_WEEKLY_MAX,
+    weeklyRemaining: Math.max(0, FREE_WEEKLY_MAX - counts.weeklyUsed),
+    isVip,
+    recordMatch,
+  };
 }
