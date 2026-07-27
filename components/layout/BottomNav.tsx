@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Home, Gamepad2, Trophy, User, Settings, ShoppingBag, Target, Gift, Users, Flame } from "lucide-react";
+import { Home, Gamepad2, Trophy, User, Settings, ShoppingBag, Target, Gift, Users, Flame, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const navItems = [
   { icon: Gamepad2, label: "Play", href: "/play" },
   { icon: Flame, label: "Weekend", href: "/tournament" },
   { icon: Users, label: "Friends", href: "/friends" },
+  { icon: MessageCircle, label: "Messages", href: "/messages" },
   { icon: ShoppingBag, label: "Shop", href: "/shop" },
   { icon: Target, label: "Missions", href: "/missions" },
   { icon: Gift, label: "Rewards", href: "/rewards" },

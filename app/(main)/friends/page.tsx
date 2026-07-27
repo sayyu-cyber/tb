@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, Check, X, Trophy, Users, Gamepad2 } from "lucide-react";
+import { Search, UserPlus, Check, X, Trophy, Users, Gamepad2, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -253,6 +253,14 @@ export default function FriendsPage() {
                   {f.name}
                 </Link>
                 <div className="flex gap-2">
+                  <Link href={`/messages?with=${f.uid}&name=${encodeURIComponent(f.name)}`}>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[#D4AF37] text-xs flex items-center gap-1"
+                    >
+                      <MessageCircle size={12} /> Message
+                    </motion.button>
+                  </Link>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleInvite(f, "mindi")}
