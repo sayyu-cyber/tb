@@ -75,12 +75,31 @@ export const VICTORY_ANIMATIONS: CosmeticItem[] = [
   { id: 'va_vip_crown', name: 'VIP Crown', category: 'victoryAnimation', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/victory/vip-crown.png', description: 'VIP exclusive.', isVipExclusive: true },
 ];
 
+export const STICKERS: CosmeticItem[] = [
+  { id: 'st_gg', name: 'GG Sticker', category: 'sticker', rarity: 'Common', price: 150, previewImage: '/cosmetics/stickers/gg.png', description: 'Good game, well played.' },
+  { id: 'st_nice', name: 'Nice Move', category: 'sticker', rarity: 'Common', price: 150, previewImage: '/cosmetics/stickers/nice.png', description: 'Smooth play.' },
+  { id: 'st_oops', name: 'Oops', category: 'sticker', rarity: 'Rare', price: 400, previewImage: '/cosmetics/stickers/oops.png', description: 'It happens to the best of us.' },
+  { id: 'st_mindi_gold', name: 'Golden Mindi', category: 'sticker', rarity: 'Epic', price: 1000, previewImage: '/cosmetics/stickers/mindi-gold.png', description: 'Captured all four Tens? Flex it.' },
+  { id: 'st_vip_wink', name: 'VIP Wink', category: 'sticker', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/stickers/vip-wink.png', description: 'VIP exclusive.', isVipExclusive: true },
+];
+
+export const BANNERS: CosmeticItem[] = [
+  { id: 'bn_default', name: 'Classic Navy', category: 'banner', rarity: 'Common', price: 0, previewImage: '/cosmetics/banners/navy.png', description: 'A clean starting banner.' },
+  { id: 'bn_maldives_wave', name: 'Maldives Wave', category: 'banner', rarity: 'Common', price: 350, previewImage: '/cosmetics/banners/wave.png', description: 'Turquoise waters banner.' },
+  { id: 'bn_sunset', name: 'Golden Sunset', category: 'banner', rarity: 'Rare', price: 900, previewImage: '/cosmetics/banners/sunset.png', description: 'Warm gradient skies.' },
+  { id: 'bn_royal', name: 'Royal Purple', category: 'banner', rarity: 'Epic', price: 2000, previewImage: '/cosmetics/banners/royal.png', description: 'For the ambitious.' },
+  { id: 'bn_champion', name: "Champion's Banner", category: 'banner', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/banners/champion.png', description: 'Weekend League Champion reward.' },
+  { id: 'bn_vip_gold', name: 'VIP Gold Rays', category: 'banner', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/banners/vip-gold.png', description: 'VIP exclusive.', isVipExclusive: true },
+];
+
 export const ALL_COSMETICS = [
   ...CARD_BACKS,
   ...TABLE_THEMES,
   ...PROFILE_FRAMES,
   ...EMOTES,
   ...VICTORY_ANIMATIONS,
+  ...STICKERS,
+  ...BANNERS,
 ];
 
 export const COIN_PACKS: CoinPack[] = [
@@ -106,8 +125,8 @@ export const ROOM_CARD_PRICES: Record<RoomCardType, number> = {
 export const RANK_CONFIGS: RankConfig[] = [
   { tier: 'Bronze', minTrophies: 0, color: '#CD7F32', weeklyReward: 50, icon: '/ranks/bronze.png' },
   { tier: 'Silver', minTrophies: 500, color: '#C0C0C0', weeklyReward: 150, icon: '/ranks/silver.png' },
-  { tier: 'Gold', minTrophies: 1200, color: '#FFD700', weeklyReward: 350, icon: '/ranks/gold.png' },
-  { tier: 'Platinum', minTrophies: 2500, color: '#E5E4E2', weeklyReward: 700, icon: '/ranks/platinum.png' },
+  { tier: 'Gold', minTrophies: 1200, color: '#FFD700', weeklyReward: 350, icon: '/ranks/gold.png', weeklyRewardCosmeticId: 'st_mindi_gold' },
+  { tier: 'Platinum', minTrophies: 2500, color: '#E5E4E2', weeklyReward: 700, icon: '/ranks/platinum.png', weeklyRewardCosmeticId: 'pf_dragon' },
 ];
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -123,12 +142,16 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ach_100_collection', title: 'Master Collector', description: 'Collect 100% of all cosmetics', icon: '💯', reward: 0, unlocked: false, progress: 0, target: 85, category: 'collection' },
 ];
 
+// bonusItem is either the special "room_card_1h" token (handled directly in
+// CLAIM_DAILY_REWARD) or a real cosmetic id from ALL_COSMETICS (granted
+// generically via grantCosmetic in EconomyContext.tsx) - one of the earn
+// sources for stickers/banners/etc you asked for.
 export const DAILY_LOGIN_REWARDS = [
   { day: 1, coins: 25, bonusItem: undefined },
   { day: 2, coins: 50, bonusItem: undefined },
-  { day: 3, coins: 75, bonusItem: undefined },
+  { day: 3, coins: 75, bonusItem: 'st_gg' },
   { day: 4, coins: 100, bonusItem: undefined },
-  { day: 5, coins: 125, bonusItem: undefined },
+  { day: 5, coins: 125, bonusItem: 'bn_maldives_wave' },
   { day: 6, coins: 150, bonusItem: undefined },
   { day: 7, coins: 250, bonusItem: 'room_card_1h' },
 ];
@@ -143,10 +166,10 @@ export const DAILY_MISSION_TEMPLATES = [
 ];
 
 export const WEEKLY_MISSION_TEMPLATES = [
-  { id: 'wm_win_10', title: 'Win 10 Matches', description: 'Win 10 matches this week', target: 10, reward: 200 },
+  { id: 'wm_win_10', title: 'Win 10 Matches', description: 'Win 10 matches this week', target: 10, reward: 200, rewardCosmeticId: 'st_nice' },
   { id: 'wm_play_20', title: 'Play 20 Matches', description: 'Play 20 matches this week', target: 20, reward: 150 },
   { id: 'wm_reach_silver', title: 'Reach Silver', description: 'Achieve Silver rank', target: 1, reward: 300 },
-  { id: 'wm_reach_gold', title: 'Reach Gold', description: 'Achieve Gold rank', target: 1, reward: 500 },
-  { id: 'wm_reach_platinum', title: 'Reach Platinum', description: 'Achieve Platinum rank', target: 1, reward: 1000 },
-  { id: 'wm_weekend_champ', title: 'Weekend Champion', description: 'Become Weekend Champion', target: 1, reward: 2000 },
+  { id: 'wm_reach_gold', title: 'Reach Gold', description: 'Achieve Gold rank', target: 1, reward: 500, rewardCosmeticId: 'bn_sunset' },
+  { id: 'wm_reach_platinum', title: 'Reach Platinum', description: 'Achieve Platinum rank', target: 1, reward: 1000, rewardCosmeticId: 'pf_platinum' },
+  { id: 'wm_weekend_champ', title: 'Weekend Champion', description: 'Become Weekend Champion', target: 1, reward: 2000, rewardCosmeticId: 'bn_champion' },
 ];

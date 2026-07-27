@@ -162,11 +162,19 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
   );
 }
 
+const VIP_PLANS = [
+  { id: 'weekly' as const, days: 7, priceMVR: 100, label: 'Weekly', sub: '7 Days of Premium Benefits' },
+  // 4 weekly passes back-to-back would be MVR 400 (4 x 100) - the monthly
+  // plan is priced a little below that as the "slight discount" you asked for.
+  { id: 'monthly' as const, days: 30, priceMVR: 350, label: 'Monthly', sub: '30 Days of Premium Benefits', savingsNote: 'Save MVR 50 vs. 4 weekly passes' },
+];
+
 export default function CosmeticShop() {
   const { state, purchaseCosmetic, equipCosmetic, activateVip } = useEconomy();
   const [activeTab, setActiveTab] = useState<'featured' | 'permanent' | 'coins' | 'vip'>('featured');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [timeLeft, setTimeLeft] = useState('');
+  const [selectedVipPlan, setSelectedVipPlan] = useState<'weekly' | 'monthly'>('weekly');
 
   useEffect(() => {
     const updateTimer = () => {
@@ -194,6 +202,8 @@ export default function CosmeticShop() {
     { id: 'profileFrame', label: 'Frames', icon: '🖼️' },
     { id: 'emote', label: 'Emotes', icon: '😊' },
     { id: 'victoryAnimation', label: 'Victory', icon: '✨' },
+    { id: 'sticker', label: 'Stickers', icon: '🏷️' },
+    { id: 'banner', label: 'Banners', icon: '🚩' },
   ];
 
   // Deterministic rotation: same featured set for everyone during a given
@@ -211,6 +221,7 @@ export default function CosmeticShop() {
       tableTheme: state.profile.equipped.tableTheme,
       profileFrame: state.profile.equipped.profileFrame,
       victoryAnimation: state.profile.equipped.victoryAnimation,
+      banner: state.profile.equipped.banner,
     };
     return map[item.category] === item.id;
   };
@@ -383,10 +394,31 @@ export default function CosmeticShop() {
                     👑
                   </motion.div>
                   <h2 className="text-3xl font-bold text-purple-300 mb-2">VIP Pass</h2>
-                  <p className="text-purple-200/60 mb-6">7 Days of Premium Benefits</p>
+                  <p className="text-purple-200/60 mb-6">{VIP_PLANS.find(p => p.id === selectedVipPlan)?.sub}</p>
 
-                  <div className="text-4xl font-bold text-[rgb(var(--text-primary))] mb-6">
-                    MVR <span className="text-purple-400">100</span>
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {VIP_PLANS.map((plan) => (
+                      <button
+                        key={plan.id}
+                        onClick={() => setSelectedVipPlan(plan.id)}
+                        className={`relative rounded-xl border p-4 text-left transition-all ${
+                          selectedVipPlan === plan.id
+                            ? 'border-purple-400 bg-purple-900/30'
+                            : 'border-neutral-700/40 bg-neutral-900/40'
+                        }`}
+                      >
+                        {plan.savingsNote && (
+                          <span className="absolute -top-2 right-2 bg-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            SAVE
+                          </span>
+                        )}
+                        <p className="text-purple-200 text-sm font-bold">{plan.label}</p>
+                        <p className="text-2xl font-bold text-[rgb(var(--text-primary))] mt-1">
+                          MVR <span className="text-purple-400">{plan.priceMVR}</span>
+                        </p>
+                        {plan.savingsNote && <p className="text-amber-400 text-[11px] mt-1">{plan.savingsNote}</p>}
+                      </button>
+                    ))}
                   </div>
 
                   <ul className="text-left space-y-3 mb-8">
@@ -414,13 +446,14 @@ export default function CosmeticShop() {
                   <motion.button
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] font-bold text-lg hover:from-purple-500 hover:to-violet-500 transition-all border border-purple-400/30"
                     onClick={() => {
-                      activateVip(7);
-                      alert('VIP activated! (Payment gateway placeholder)');
+                      const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
+                      activateVip(plan.days);
+                      alert(`VIP activated (${plan.label})! (Payment gateway placeholder)`);
                     }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Activate VIP
+                    Activate {VIP_PLANS.find(p => p.id === selectedVipPlan)?.label} VIP
                   </motion.button>
 
                   {state.profile.vip.active && (

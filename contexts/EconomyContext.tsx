@@ -12,7 +12,7 @@ import {
 } from '../types/economy';
 import { 
   DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES,
-  ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS, ROOM_CARD_PRICES
+  ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS, ROOM_CARD_PRICES, RANK_CONFIGS
 } from '../data/cosmetics';
 
 // ─── ACTIONS ─────────────────────────────────────────
@@ -29,6 +29,7 @@ type EconomyAction =
   | { type: 'UPDATE_PROGRESS'; payload: { key: string; value: number } }
   | { type: 'ADD_ROOM_CARD'; payload: { type: RoomCardType } }
   | { type: 'PURCHASE_ROOM_CARD'; payload: { type: RoomCardType; price: number } }
+  | { type: 'GRANT_COSMETIC'; payload: { itemId: string } }
   | { type: 'SHOW_REWARD'; payload: RewardPopup }
   | { type: 'CLEAR_REWARD'; payload: string }
   | { type: 'RESET_DAILY_MISSIONS' }
@@ -101,9 +102,18 @@ const initialState: EconomyState = {
       profileFrame: 'pf_default',
       title: 'Novice',
       victoryAnimation: 'va_default',
+      banner: 'bn_default',
     },
     stats: { matchesPlayed: 0, matchesWon: 0, winRate: 0, highestRank: 'Bronze', weekendChampion: false },
-    collection: { cardBacks: ['cb_default'], tableThemes: ['tt_default'], profileFrames: ['pf_default'], emotes: [], victoryAnimations: ['va_default'] },
+    collection: {
+      cardBacks: ['cb_default'],
+      tableThemes: ['tt_default'],
+      profileFrames: ['pf_default'],
+      emotes: [],
+      victoryAnimations: ['va_default'],
+      stickers: [],
+      banners: ['bn_default'],
+    },
     achievements: [],
     roomCards: [],
     loginStreak: 0,
@@ -151,6 +161,38 @@ function isNewWeek(lastTimestamp: number): boolean {
   const now = new Date();
   const daysSinceLast = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
   return daysSinceLast >= 7 || (now.getDay() === 0 && last.getDay() !== 0);
+}
+
+// Maps a cosmetic's category to its collection array key - shared by every
+// place that grants or reads owned cosmetics (purchase, equip, and now the
+// various earn sources below).
+const CATEGORY_TO_COLLECTION_KEY: Record<string, keyof PlayerProfile['collection']> = {
+  cardBack: 'cardBacks',
+  tableTheme: 'tableThemes',
+  profileFrame: 'profileFrames',
+  emote: 'emotes',
+  victoryAnimation: 'victoryAnimations',
+  sticker: 'stickers',
+  banner: 'banners',
+};
+
+/**
+ * Grants a cosmetic item directly (no coin cost) - the shared path for every
+ * "earn source" you asked for: daily login bonus items, weekly mission
+ * rewards, and ranked/Weekend League weekly rewards. Returns the same
+ * collection object unchanged if the id isn't a real cosmetic (e.g. it's the
+ * special "room_card_1h" token, handled separately) or is already owned.
+ */
+function grantCosmeticToCollection(
+  collection: PlayerProfile['collection'],
+  itemId: string | undefined
+): PlayerProfile['collection'] {
+  if (!itemId) return collection;
+  const item = ALL_COSMETICS.find(c => c.id === itemId);
+  if (!item) return collection;
+  const key = CATEGORY_TO_COLLECTION_KEY[item.category];
+  if (!key || collection[key].includes(itemId)) return collection;
+  return { ...collection, [key]: [...collection[key], itemId] };
 }
 
 // ─── REDUCER ─────────────────────────────────────────
@@ -212,7 +254,11 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         return {
           ...state,
           missions: { ...state.missions, weekly },
-          profile: { ...state.profile, coins: state.profile.coins + completedMission.reward },
+          profile: {
+            ...state.profile,
+            coins: state.profile.coins + completedMission.reward,
+            collection: grantCosmeticToCollection(state.profile.collection, completedMission.rewardCosmeticId),
+          },
           economy: {
             ...state.economy,
             coins: state.economy.coins + completedMission.reward,
@@ -281,7 +327,11 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
 
       return {
         ...state,
-        profile: { ...state.profile, coins: state.profile.coins + reward.coins },
+        profile: {
+          ...state.profile,
+          coins: state.profile.coins + reward.coins,
+          collection: grantCosmeticToCollection(state.profile.collection, reward.bonusItem),
+        },
         economy: {
           ...state.economy,
           coins: state.economy.coins + reward.coins,
@@ -333,24 +383,14 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
       const { itemId } = action.payload;
       const item = ALL_COSMETICS.find(c => c.id === itemId);
       if (!item || state.economy.coins < item.price) return state;
-      const categoryMap: Record<string, keyof typeof state.profile.collection> = {
-        cardBack: 'cardBacks',
-        tableTheme: 'tableThemes',
-        profileFrame: 'profileFrames',
-        emote: 'emotes',
-        victoryAnimation: 'victoryAnimations',
-      };
-      const collectionKey = categoryMap[item.category];
-      if (state.profile.collection[collectionKey].includes(itemId)) return state;
+      const collectionKey = CATEGORY_TO_COLLECTION_KEY[item.category];
+      if (!collectionKey || state.profile.collection[collectionKey].includes(itemId)) return state;
       return {
         ...state,
         profile: {
           ...state.profile,
           coins: state.profile.coins - item.price,
-          collection: {
-            ...state.profile.collection,
-            [collectionKey]: [...state.profile.collection[collectionKey], itemId],
-          },
+          collection: grantCosmeticToCollection(state.profile.collection, itemId),
         },
         economy: {
           ...state.economy,
@@ -367,6 +407,7 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         tableTheme: 'tableTheme',
         profileFrame: 'profileFrame',
         victoryAnimation: 'victoryAnimation',
+        banner: 'banner',
       };
       const key = equipMap[category];
       if (!key) return state;
@@ -449,6 +490,13 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
           totalSpent: state.economy.totalSpent + price,
         },
       };
+    }
+
+    case 'GRANT_COSMETIC': {
+      const { itemId } = action.payload;
+      const collection = grantCosmeticToCollection(state.profile.collection, itemId);
+      if (collection === state.profile.collection) return state;
+      return { ...state, profile: { ...state.profile, collection } };
     }
 
     case 'SHOW_REWARD': {
@@ -830,14 +878,16 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   }, [dispatch, state]);
 
   const checkAndClaimWeeklyRank = useCallback((currentRank: string) => {
-    const now = Date.now();
     const lastThursday = getLastThursday();
 
     if (state.weeklyRankReward.lastClaimed < lastThursday) {
-      const rankConfig = { Bronze: 50, Silver: 150, Gold: 350, Platinum: 700 };
-      const reward = rankConfig[currentRank as keyof typeof rankConfig] || 50;
+      const rankConfig = RANK_CONFIGS.find(r => r.tier === currentRank);
+      const reward = rankConfig?.weeklyReward ?? 50;
+      const cosmeticId = rankConfig?.weeklyRewardCosmeticId;
+      const cosmetic = cosmeticId ? ALL_COSMETICS.find(c => c.id === cosmeticId) : undefined;
 
       dispatch({ type: 'ADD_COINS', payload: { amount: reward, source: 'weekly_rank', description: `${currentRank} Weekly Rank Reward` } });
+      if (cosmeticId) dispatch({ type: 'GRANT_COSMETIC', payload: { itemId: cosmeticId } });
       dispatch({
         type: 'SHOW_REWARD',
         payload: {
@@ -847,6 +897,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
           items: [
             { type: 'coins', name: 'Coins', amount: reward },
             { type: 'badge', name: `${currentRank} Rank` },
+            ...(cosmetic ? [{ type: 'cosmetic' as const, name: cosmetic.name }] : []),
           ],
           timestamp: Date.now(),
         },
@@ -861,6 +912,8 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       profileFrame: state.profile.collection.profileFrames,
       emote: state.profile.collection.emotes,
       victoryAnimation: state.profile.collection.victoryAnimations,
+      sticker: state.profile.collection.stickers,
+      banner: state.profile.collection.banners,
     };
     return map[category] || [];
   }, [state.profile.collection]);

@@ -31,12 +31,14 @@ export interface PlayerEconomy {
 
 export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 
-export type CosmeticCategory = 
-  | 'cardBack' 
-  | 'tableTheme' 
-  | 'profileFrame' 
-  | 'emote' 
-  | 'victoryAnimation';
+export type CosmeticCategory =
+  | 'cardBack'
+  | 'tableTheme'
+  | 'profileFrame'
+  | 'emote'
+  | 'victoryAnimation'
+  | 'sticker'
+  | 'banner';
 
 export interface CosmeticItem {
   id: string;
@@ -83,6 +85,9 @@ export interface WeeklyMission {
   progress: number;
   completed: boolean;
   reward: number;
+  /** Cosmetic item id granted on top of the coin reward, if any - see
+   *  data/cosmetics.ts's WEEKLY_MISSION_TEMPLATES. */
+  rewardCosmeticId?: string;
 }
 
 export interface MissionState {
@@ -240,6 +245,11 @@ export interface PlayerProfile {
     profileFrame: string;
     title: string;
     victoryAnimation: string;
+    /** Cosmetic banner (from the Shop/collection), distinct from the
+     *  preset banner gradient set in constants/profileCustomization.ts's
+     *  EditProfileModal - this is an earnable/purchasable collectible,
+     *  the other is a free built-in style choice. Empty string = none equipped. */
+    banner: string;
   };
   stats: {
     matchesPlayed: number;
@@ -254,6 +264,11 @@ export interface PlayerProfile {
     profileFrames: string[];
     emotes: string[];
     victoryAnimations: string[];
+    /** Stickers are used contextually in-match like emotes - owned, no
+     *  persistent equip slot. */
+    stickers: string[];
+    /** Owned cosmetic banners - see equipped.banner. */
+    banners: string[];
   };
   achievements: string[];
   roomCards: RoomCard[];
@@ -271,4 +286,8 @@ export interface RankConfig {
   color: string;
   weeklyReward: number;
   icon: string;
+  /** Cosmetic item id granted alongside the weekly coin reward for holding
+   *  this rank tier at the weekly claim - the "ranked rewards" earn
+   *  source. See data/cosmetics.ts's RANK_CONFIGS. */
+  weeklyRewardCosmeticId?: string;
 }

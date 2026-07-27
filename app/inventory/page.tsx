@@ -15,6 +15,8 @@ const CATEGORY_TABS: { id: CosmeticCategory; label: string; icon: string }[] = [
   { id: "profileFrame", label: "Frames", icon: "🖼️" },
   { id: "emote", label: "Emotes", icon: "😊" },
   { id: "victoryAnimation", label: "Victory", icon: "✨" },
+  { id: "sticker", label: "Stickers", icon: "🏷️" },
+  { id: "banner", label: "Banners", icon: "🚩" },
 ];
 
 const COLLECTION_KEY: Record<CosmeticCategory, string> = {
@@ -23,6 +25,8 @@ const COLLECTION_KEY: Record<CosmeticCategory, string> = {
   profileFrame: "profileFrames",
   emote: "emotes",
   victoryAnimation: "victoryAnimations",
+  sticker: "stickers",
+  banner: "banners",
 };
 
 export default function InventoryPage() {
@@ -39,8 +43,11 @@ export default function InventoryPage() {
     tableTheme: state.profile.equipped.tableTheme,
     profileFrame: state.profile.equipped.profileFrame,
     victoryAnimation: state.profile.equipped.victoryAnimation,
+    banner: state.profile.equipped.banner,
   };
-  const canEquip = category !== "emote";
+  // Emotes and stickers are used contextually in-match, not persistently
+  // equipped - only these categories have a single "equipped" slot.
+  const canEquip = category !== "emote" && category !== "sticker";
 
   return (
     <div className="pt-4 pb-32 px-4">
