@@ -69,9 +69,16 @@ export default function HomePage() {
             <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Inventory</p>
           </div>
         </Link>
-        <div className="glass-card rounded-xl p-3 border border-dashed border-[rgb(var(--c3))]">
-          <p className="text-[rgb(var(--c3))] text-[10px] text-center tracking-wider uppercase">VIP Pass (Coming Soon)</p>
-        </div>
+        <Link href="/clubs">
+          <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
+            <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Clubs</p>
+          </div>
+        </Link>
+        <Link href="/shop">
+          <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
+            <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">VIP Pass</p>
+          </div>
+        </Link>
         <Link href="/shop">
           <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
             <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Cosmetic Shop</p>
