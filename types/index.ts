@@ -18,6 +18,8 @@ export interface PlayerStats {
   currentRank: string;
   weeklyTrophies?: number;
   peakTrophies?: number;
+  avatarPreset?: string;
+  bannerPreset?: string;
 }
 
 export interface LeaderboardEntry {

@@ -21,6 +21,8 @@ export interface PublicProfile {
   totalMatches: number;
   winPercentage: number;
   favoriteGame: string | null;
+  avatarPreset?: string;
+  bannerPreset?: string;
 }
 
 export async function getPublicProfile(uid: string): Promise<PublicProfile | null> {
@@ -39,5 +41,7 @@ export async function getPublicProfile(uid: string): Promise<PublicProfile | nul
     totalMatches: data.totalMatches || 0,
     winPercentage: data.winPercentage || 0,
     favoriteGame: data.favoriteGame || null,
+    avatarPreset: data.avatarPreset,
+    bannerPreset: data.bannerPreset,
   };
 }

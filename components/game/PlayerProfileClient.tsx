@@ -7,6 +7,7 @@ import { Trophy, Star, Swords, Percent } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { getPublicProfile, PublicProfile } from "@/lib/publicProfile";
 import { RANKS } from "@/constants/ranks";
+import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
 
 function rankColor(rank: string): string {
   const match = Object.values(RANKS).find((r) => r.name === rank);
@@ -57,10 +58,10 @@ export function PlayerProfileClient() {
         </div>
       ) : profile ? (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="glass-card rounded-2xl p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[2px] mx-auto mb-3">
+          <div className={`glass-card rounded-2xl p-6 text-center bg-gradient-to-b ${getBannerPreset(profile.bannerPreset).gradient}`}>
+            <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarPreset(profile.avatarPreset).gradient} p-[2px] mx-auto mb-3`}>
               <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                <span className="text-[#D4AF37] text-xl font-bold">{profile.displayName.charAt(0).toUpperCase()}</span>
+                <span className="text-white text-xl font-bold">{profile.displayName.charAt(0).toUpperCase()}</span>
               </div>
             </div>
             <h2 className="text-white font-bold text-lg">{profile.displayName}</h2>

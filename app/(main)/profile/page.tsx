@@ -1,15 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Trophy, Swords, Target, Star, TrendingUp, Award, Heart } from "lucide-react";
+import { User, Trophy, Swords, Target, Star, TrendingUp, Award, Heart, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { RankBadge } from "@/components/ui/RankBadge";
 import { StatCard } from "@/components/profile/StatCard";
+import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
 
 export default function ProfilePage() {
   const { user, playerStats } = useAuth();
+  const [editing, setEditing] = useState(false);
 
   if (!user) return null;
+
+  const avatarPreset = getAvatarPreset(playerStats?.avatarPreset);
+  const bannerPreset = getBannerPreset(playerStats?.bannerPreset);
 
   const stats = [
     { icon: Swords, label: "Matches", value: playerStats?.totalMatches || 0 },
@@ -46,18 +53,25 @@ export default function ProfilePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="glass-card rounded-2xl p-6 text-center relative overflow-hidden"
+        className={`glass-card rounded-2xl p-6 text-center relative overflow-hidden bg-gradient-to-b ${bannerPreset.gradient}`}
       >
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
 
+        <button
+          onClick={() => setEditing(true)}
+          className="absolute top-3 right-3 p-2 rounded-lg bg-[#1A1A1A]/70 border border-[#2A2A2A] z-10"
+        >
+          <Pencil size={14} className="text-[#D4AF37]" />
+        </button>
+
         {/* Avatar */}
         <div className="relative inline-block mb-4">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[2px] mx-auto">
+          <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${avatarPreset.gradient} p-[2px] mx-auto`}>
             <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center overflow-hidden">
               {user.photoURL ? (
                 <img src={user.photoURL} alt={user.displayName || ""} className="w-full h-full object-cover" />
               ) : (
-                <User size={40} className="text-[#D4AF37]" />
+                <span className="text-3xl font-bold text-white">{(user.displayName || "P").charAt(0).toUpperCase()}</span>
               )}
             </div>
           </div>
@@ -134,6 +148,14 @@ export default function ProfilePage() {
       >
         <p className="text-[#2A2A2A] text-[10px] tracking-wider uppercase">More features coming soon</p>
       </motion.div>
+
+      <EditProfileModal
+        isOpen={editing}
+        onClose={() => setEditing(false)}
+        currentName={user.displayName || ""}
+        currentAvatar={playerStats?.avatarPreset}
+        currentBanner={playerStats?.bannerPreset}
+      />
     </div>
   );
 }

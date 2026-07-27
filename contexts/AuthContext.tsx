@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  updateProfile,
+  updateProfile as updateFirebaseAuthProfile,
   User as FirebaseUser,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -25,6 +25,7 @@ interface AuthContextType {
   signInAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   isGuest: boolean;
+  updatePlayerProfile: (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUpWithEmail = async (email: string, password: string, username: string) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(result.user, { displayName: username });
+    await updateFirebaseAuthProfile(result.user, { displayName: username });
 
     await setDoc(doc(db, "players", result.user.uid), {
       ...defaultStats,
@@ -132,6 +133,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const updatePlayerProfile = async (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => {
+    const { displayName, ...cosmeticUpdates } = updates;
+
+    if (isGuest) {
+      // Guests aren't authenticated with Firebase at all (see signInAsGuest)
+      // so there's nothing to persist - reflect the change locally only,
+      // for the length of this session.
+      setUser((prev) => (prev ? { ...prev, displayName: displayName ?? prev.displayName } : prev));
+      setPlayerStats((prev) => (prev ? { ...prev, ...cosmeticUpdates } : prev));
+      return;
+    }
+    if (!auth.currentUser) return;
+
+    if (displayName && displayName !== auth.currentUser.displayName) {
+      await updateFirebaseAuthProfile(auth.currentUser, { displayName });
+    }
+
+    await setDoc(
+      doc(db, "players", auth.currentUser.uid),
+      { ...updates, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+
+    setUser((prev) => (prev ? { ...prev, displayName: displayName ?? prev.displayName } : prev));
+    setPlayerStats((prev) => (prev ? { ...prev, ...cosmeticUpdates } : prev));
+  };
+
   const logout = async () => {
     if (isGuest) {
       setUser(null);
@@ -154,6 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInAsGuest,
         logout,
         isGuest,
+        updatePlayerProfile,
       }}
     >
       {children}
