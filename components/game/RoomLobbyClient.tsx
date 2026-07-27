@@ -102,17 +102,17 @@ function RoomChooser({ gameId }: { gameId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
-        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
+        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </motion.button>
       </Link>
 
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white">Private Room</h1>
-          <p className="text-[#3A3A3A] text-sm mt-1">Play with friends using a room code</p>
+          <h1 className="text-2xl font-bold text-[rgb(var(--text-primary))]">Private Room</h1>
+          <p className="text-[rgb(var(--c4))] text-sm mt-1">Play with friends using a room code</p>
         </div>
 
         {error && (
@@ -131,7 +131,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setMode("join")}
-              className="w-full py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white font-medium"
+              className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] font-medium"
             >
               Join with a Code
             </motion.button>
@@ -140,12 +140,12 @@ function RoomChooser({ gameId }: { gameId: string }) {
 
         {mode === "create" && (
           <div className="space-y-3 glass-card rounded-2xl p-5">
-            <p className="text-[#3A3A3A] text-xs">Optional password (leave blank for no password)</p>
+            <p className="text-[rgb(var(--c4))] text-xs">Optional password (leave blank for no password)</p>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Room password (optional)"
-              className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#D4AF37]/50"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <motion.button
               whileTap={{ scale: 0.98 }}
@@ -165,13 +165,13 @@ function RoomChooser({ gameId }: { gameId: string }) {
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="Room code"
               maxLength={6}
-              className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-white text-sm tracking-widest text-center font-bold outline-none focus:border-[#D4AF37]/50"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm tracking-widest text-center font-bold outline-none focus:border-[#D4AF37]/50"
             />
             <input
               value={joinPassword}
               onChange={(e) => setJoinPassword(e.target.value)}
               placeholder="Password (if required)"
-              className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#D4AF37]/50"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <motion.button
               whileTap={{ scale: 0.98 }}
@@ -185,7 +185,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
         )}
 
         {mode !== "choose" && (
-          <button onClick={() => setMode("choose")} className="w-full text-center text-[#3A3A3A] text-sm">
+          <button onClick={() => setMode("choose")} className="w-full text-center text-[rgb(var(--c4))] text-sm">
             Back
           </button>
         )}
@@ -245,16 +245,16 @@ function RoomLobby({
 
   if (room === null) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center px-6 text-center">
-        <p className="text-[#3A3A3A] text-sm">Loading room…</p>
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+        <p className="text-[rgb(var(--c4))] text-sm">Loading room…</p>
       </div>
     );
   }
 
   if (room.status === "closed") {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6 text-center space-y-4">
-        <p className="text-white">This room has closed.</p>
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
+        <p className="text-[rgb(var(--text-primary))]">This room has closed.</p>
         <Link href="/play" className="text-[#D4AF37] text-sm underline">
           Back to Play
         </Link>
@@ -266,25 +266,25 @@ function RoomLobby({
   const isFull = room.players.length === room.maxPlayers;
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col px-4 pt-4 pb-6">
+    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
-        <button onClick={handleLeave} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
+        <button onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </button>
-        <p className="text-white text-sm font-semibold">{gameType === "mindi" ? "Mindi" : "Gin Rummy"} Room</p>
+        <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{gameType === "mindi" ? "Mindi" : "Gin Rummy"} Room</p>
         <div className="w-10" />
       </div>
 
       <div className="glass-card rounded-2xl p-5 mb-4 text-center">
-        <p className="text-[#3A3A3A] text-xs uppercase tracking-wider mb-2">Room Code</p>
+        <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Room Code</p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl font-bold text-[#D4AF37] tracking-widest">{code}</span>
-          <button onClick={handleCopy} className="p-2 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A]">
-            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[#3A3A3A]" />}
+          <button onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
           </button>
         </div>
         {room.password && (
-          <p className="text-[#3A3A3A] text-xs mt-2 flex items-center justify-center gap-1">
+          <p className="text-[rgb(var(--c4))] text-xs mt-2 flex items-center justify-center gap-1">
             <Lock size={12} /> Password: {room.password}
           </p>
         )}
@@ -295,16 +295,16 @@ function RoomLobby({
       )}
 
       <div className="glass-card rounded-2xl p-4 mb-4 flex-1">
-        <p className="text-[#3A3A3A] text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
+        <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
           <Users size={14} /> Players ({room.players.length}/{room.maxPlayers})
         </p>
         <div className="space-y-2">
           {room.players.map((uid) => (
-            <div key={uid} className="flex items-center justify-between bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3">
+            <div key={uid} className="flex items-center justify-between bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3">
               <div className="flex items-center gap-2">
                 {uid === room.ownerUid && <Crown size={14} className="text-[#D4AF37]" />}
-                <span className="text-white text-sm">{room.playerNames[uid] || "Player"}</span>
-                {uid === myUid && <span className="text-[#3A3A3A] text-xs">(you)</span>}
+                <span className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || "Player"}</span>
+                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">(you)</span>}
               </div>
               {isOwner && uid !== myUid && (
                 <button onClick={() => handleKick(uid)} className="text-red-400 text-xs">
@@ -314,8 +314,8 @@ function RoomLobby({
             </div>
           ))}
           {Array.from({ length: room.maxPlayers - room.players.length }).map((_, i) => (
-            <div key={`empty-${i}`} className="flex items-center justify-center bg-[#0F0F0F] border border-dashed border-[#2A2A2A] rounded-xl px-4 py-3">
-              <span className="text-[#2A2A2A] text-xs">Waiting for player…</span>
+            <div key={`empty-${i}`} className="flex items-center justify-center bg-[rgb(var(--c1))] border border-dashed border-[rgb(var(--c3))] rounded-xl px-4 py-3">
+              <span className="text-[rgb(var(--c3))] text-xs">Waiting for player…</span>
             </div>
           ))}
         </div>
@@ -332,7 +332,7 @@ function RoomLobby({
           {isFull ? "Start Match" : "Waiting for players…"}
         </motion.button>
       ) : (
-        <button onClick={handleLeave} className="w-full py-3.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-[#3A3A3A] font-medium flex items-center justify-center gap-2">
+        <button onClick={handleLeave} className="w-full py-3.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] font-medium flex items-center justify-center gap-2">
           <LogOut size={16} />
           Leave Room
         </button>

@@ -134,16 +134,16 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   if (outOfMatches) {
     const reason = matchLimits.weeklyRemaining <= 0 ? "weekly" : "daily";
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <Link href="/play" className="absolute top-6 left-4">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-            <X size={20} className="text-[#3A3A3A]" />
+          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+            <X size={20} className="text-[rgb(var(--c4))]" />
           </motion.button>
         </Link>
         <div className="text-center space-y-3 max-w-xs">
           <Clock size={32} className="text-[#D4AF37] mx-auto" />
-          <h2 className="text-lg font-bold text-white">Out of {reason} matches</h2>
-          <p className="text-[#3A3A3A] text-sm">
+          <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">Out of {reason} matches</h2>
+          <p className="text-[rgb(var(--c4))] text-sm">
             {matchLimits.isVip
               ? `You've used all ${reason === "weekly" ? matchLimits.weeklyTotal : matchLimits.dailyTotal} of your ${reason} ranked matches. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`
               : `Free players get ${matchLimits.dailyTotal} ranked matches a day (${matchLimits.weeklyTotal} a week). VIP raises the daily cap to ${VIP_DAILY_MATCHES}. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`}
@@ -155,15 +155,15 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
   if (!canQueue) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <Link href="/play" className="absolute top-6 left-4">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-            <X size={20} className="text-[#3A3A3A]" />
+          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+            <X size={20} className="text-[rgb(var(--c4))]" />
           </motion.button>
         </Link>
         <RankLockBanner />
         {weekendMode && (
-          <p className="text-[#3A3A3A] text-xs mt-4 max-w-xs text-center">
+          <p className="text-[rgb(var(--c4))] text-xs mt-4 max-w-xs text-center">
             Weekend League is Silver rank and up. You&apos;re {rank} with {trophies} trophies — keep playing Ranked during the week to climb.
           </p>
         )}
@@ -173,23 +173,23 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
   if (matchFound) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-center space-y-6">
           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[#D4AF37] mx-auto flex items-center justify-center">
             <span className="text-[#D4AF37] text-xs font-bold">VS</span>
           </motion.div>
-          <h2 className="text-xl font-bold text-white">Match Found!</h2>
-          <p className="text-[#3A3A3A] text-sm">Starting {label}…</p>
+          <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">Match Found!</h2>
+          <p className="text-[rgb(var(--c4))] text-sm">Starting {label}…</p>
         </motion.div>
       </motion.div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6 relative">
+    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 relative">
       <Link href="/play" className="absolute top-6 left-4">
-        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-          <X size={20} className="text-[#3A3A3A]" />
+        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <X size={20} className="text-[rgb(var(--c4))]" />
         </motion.button>
       </Link>
 
@@ -203,10 +203,10 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-white">
+          <h2 className="text-2xl font-bold text-[rgb(var(--text-primary))]">
             Finding {weekendMode ? "Weekend League " : ""}{label} Match{dots}
           </h2>
-          <p className="text-[#3A3A3A] text-sm mt-2">
+          <p className="text-[rgb(var(--c4))] text-sm mt-2">
             {gameType === "mindi" ? "Needs 4 real players — this can take a while" : "Waiting for another real player"}
           </p>
           {weekendMode && <p className="text-orange-400 text-xs mt-1">Double trophies this match!</p>}
@@ -219,34 +219,34 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[#3A3A3A] text-sm">Rank</span>
+            <span className="text-[rgb(var(--c4))] text-sm">Rank</span>
             <span className="text-[#D4AF37] font-semibold text-sm">{rank}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[#3A3A3A] text-sm">Trophies</span>
+            <span className="text-[rgb(var(--c4))] text-sm">Trophies</span>
             <div className="flex items-center gap-1">
               <Trophy size={14} className="text-[#D4AF37]" />
               <span className="text-[#D4AF37] font-semibold text-sm">{trophies}</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[#3A3A3A] text-sm">Daily Left</span>
+            <span className="text-[rgb(var(--c4))] text-sm">Daily Left</span>
             <div className="flex items-center gap-1">
               <Swords size={14} className="text-[#D4AF37]" />
-              <span className="text-white font-semibold text-sm">{matchLimits.dailyRemaining} / {matchLimits.dailyTotal}</span>
+              <span className="text-[rgb(var(--text-primary))] font-semibold text-sm">{matchLimits.dailyRemaining} / {matchLimits.dailyTotal}</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[#3A3A3A] text-sm">Weekly Left</span>
+            <span className="text-[rgb(var(--c4))] text-sm">Weekly Left</span>
             <div className="flex items-center gap-1">
               <Clock size={14} className="text-[#D4AF37]" />
-              <span className="text-white font-semibold text-sm">{matchLimits.weeklyRemaining} / {matchLimits.weeklyTotal}</span>
+              <span className="text-[rgb(var(--text-primary))] font-semibold text-sm">{matchLimits.weeklyRemaining} / {matchLimits.weeklyTotal}</span>
             </div>
           </div>
         </div>
 
         <Link href="/play">
-          <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-[#3A3A3A] text-sm font-medium hover:text-white transition-colors">
+          <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium hover:text-[rgb(var(--text-primary))] transition-colors">
             Cancel
           </motion.button>
         </Link>

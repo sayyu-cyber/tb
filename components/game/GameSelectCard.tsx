@@ -25,16 +25,16 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/15 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F]"
+      className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/15 bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))]"
     >
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
             <motion.div className="text-5xl mb-3">{icon}</motion.div>
-            <h2 className="text-2xl font-bold text-white">{name}</h2>
-            <p className="text-[#3A3A3A] text-sm mt-1">{description}</p>
+            <h2 className="text-2xl font-bold text-[rgb(var(--text-primary))]">{name}</h2>
+            <p className="text-[rgb(var(--c4))] text-sm mt-1">{description}</p>
           </div>
-          <div className="flex items-center gap-1 bg-[#1A1A1A] rounded-full px-3 py-1.5 border border-[#2A2A2A]">
+          <div className="flex items-center gap-1 bg-[rgb(var(--c2))] rounded-full px-3 py-1.5 border border-[rgb(var(--c3))]">
             <Users size={14} className="text-[#D4AF37]" />
             <span className="text-[#D4AF37] text-xs font-medium">{players}</span>
           </div>
@@ -50,13 +50,13 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
             >
               {/* Casual Mode */}
               <div className="space-y-2">
-                <p className="text-[#3A3A3A] text-xs uppercase tracking-wider">Casual Mode</p>
+                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Casual Mode</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Link href={`/play/${id}/casual/ai`}>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center justify-center gap-2 bg-[#1A1A1A] border border-[#2A2A2A] hover:border-[#D4AF37]/30 text-white rounded-xl py-3 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <Bot size={16} className="text-[#D4AF37]" />
                       <span className="text-sm">vs AI</span>
@@ -66,7 +66,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center justify-center gap-2 bg-[#1A1A1A] border border-[#2A2A2A] hover:border-[#D4AF37]/30 text-white rounded-xl py-3 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <Smartphone size={16} className="text-[#D4AF37]" />
                       <span className="text-sm">Pass & Play</span>
@@ -77,11 +77,11 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
 
               {/* Ranked Mode */}
               <div className="space-y-2 pt-2">
-                <p className="text-[#3A3A3A] text-xs uppercase tracking-wider">Ranked Mode</p>
+                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Ranked Mode</p>
                 {isGuest ? (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-                    <Lock size={16} className="text-[#3A3A3A]" />
-                    <p className="text-[#3A3A3A] text-sm">Please sign in to access Ranked Mode</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                    <Lock size={16} className="text-[rgb(var(--c4))]" />
+                    <p className="text-[rgb(var(--c4))] text-sm">Please sign in to access Ranked Mode</p>
                   </div>
                 ) : (
                   <Link href={`/play/${id}/ranked`}>
@@ -99,18 +99,18 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
 
               {/* Private Room */}
               <div className="space-y-2 pt-2">
-                <p className="text-[#3A3A3A] text-xs uppercase tracking-wider">Play with Friends</p>
+                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Play with Friends</p>
                 {isGuest ? (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-                    <Lock size={16} className="text-[#3A3A3A]" />
-                    <p className="text-[#3A3A3A] text-sm">Please sign in to use Private Rooms</p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                    <Lock size={16} className="text-[rgb(var(--c4))]" />
+                    <p className="text-[rgb(var(--c4))] text-sm">Please sign in to use Private Rooms</p>
                   </div>
                 ) : (
                   <Link href={`/play/${id}/room`}>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center justify-center gap-2 bg-[#1A1A1A] border border-[#2A2A2A] hover:border-[#D4AF37]/30 text-white rounded-xl py-3 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <KeyRound size={16} className="text-[#D4AF37]" />
                       <span className="text-sm">Private Room</span>

@@ -26,7 +26,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/15 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] group"
+      className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/15 bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] group"
     >
       {/* Animated background glow */}
       <motion.div
@@ -48,17 +48,17 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
             >
               {icon}
             </motion.div>
-            <h2 className="text-2xl font-bold text-white">{name}</h2>
-            <p className="text-[#3A3A3A] text-sm mt-1">{description}</p>
+            <h2 className="text-2xl font-bold text-[rgb(var(--text-primary))]">{name}</h2>
+            <p className="text-[rgb(var(--c4))] text-sm mt-1">{description}</p>
           </div>
-          <div className="flex items-center gap-1 bg-[#1A1A1A] rounded-full px-3 py-1.5 border border-[#2A2A2A]">
+          <div className="flex items-center gap-1 bg-[rgb(var(--c2))] rounded-full px-3 py-1.5 border border-[rgb(var(--c3))]">
             <Users size={14} className="text-[#D4AF37]" />
             <span className="text-[#D4AF37] text-xs font-medium">{players}</span>
           </div>
         </div>
 
         {/* Game preview area */}
-        <div className="relative h-32 bg-[#0F0F0F] rounded-2xl border border-[#2A2A2A] mb-6 overflow-hidden flex items-center justify-center">
+        <div className="relative h-32 bg-[rgb(var(--c1))] rounded-2xl border border-[rgb(var(--c3))] mb-6 overflow-hidden flex items-center justify-center">
           <motion.div
             animate={{
               scale: isHovered ? 1.1 : 1,
@@ -91,7 +91,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
             disabled={isGuest}
             className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold tracking-wide transition-all duration-300 ${
               isGuest
-                ? "bg-[#1A1A1A] text-[#2A2A2A] border border-[#2A2A2A] cursor-not-allowed"
+                ? "bg-[rgb(var(--c2))] text-[rgb(var(--c3))] border border-[rgb(var(--c3))] cursor-not-allowed"
                 : "bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_25px_rgba(212,175,55,0.5)]"
             }`}
           >
@@ -112,7 +112,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center text-[#2A2A2A] text-[10px]"
+              className="text-center text-[rgb(var(--c3))] text-[10px]"
             >
               Sign in to unlock Ranked Mode
             </motion.p>

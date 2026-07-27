@@ -10,8 +10,8 @@ export function RankedLiveClient({ gameId }: { gameId: string }) {
 
   if (!matchId) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center px-6 text-center">
-        <p className="text-[#3A3A3A] text-sm">No match found. Go back to Play and search again.</p>
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+        <p className="text-[rgb(var(--c4))] text-sm">No match found. Go back to Play and search again.</p>
       </div>
     );
   }

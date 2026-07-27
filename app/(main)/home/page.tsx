@@ -22,8 +22,8 @@ export default function HomePage() {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-xl font-bold text-white">Thaasbai</h1>
-          <p className="text-[#3A3A3A] text-xs">The Home of Maldivian Card Games</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Thaasbai</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">The Home of Maldivian Card Games</p>
         </div>
         <WeekendLeagueBadge />
       </motion.div>
@@ -69,8 +69,8 @@ export default function HomePage() {
             <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Inventory</p>
           </div>
         </Link>
-        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
-          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">VIP Pass (Coming Soon)</p>
+        <div className="glass-card rounded-xl p-3 border border-dashed border-[rgb(var(--c3))]">
+          <p className="text-[rgb(var(--c3))] text-[10px] text-center tracking-wider uppercase">VIP Pass (Coming Soon)</p>
         </div>
         <Link href="/shop">
           <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">

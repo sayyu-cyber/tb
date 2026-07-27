@@ -23,7 +23,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
       case 3:
         return "bg-gradient-to-r from-[#CD7F32]/10 to-transparent border-l-2 border-[#CD7F32]";
       default:
-        return "border-l-2 border-transparent hover:bg-[#1A1A1A]/50";
+        return "border-l-2 border-transparent hover:bg-[rgb(var(--c2)/50%)]";
     }
   };
 
@@ -37,7 +37,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
         return <Medal size={18} className="text-[#CD7F32]" />;
       default:
         return (
-          <span className="text-[#3A3A3A] font-bold text-sm w-5 text-center">
+          <span className="text-[rgb(var(--c4))] font-bold text-sm w-5 text-center">
             {rank}
           </span>
         );
@@ -59,7 +59,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
 
       {/* Avatar */}
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[1.5px]">
-        <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center">
+        <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
           <span className="text-[#D4AF37] text-sm font-bold">
             {entry.username.charAt(0).toUpperCase()}
           </span>
@@ -68,7 +68,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
 
       {/* Username */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${rank <= 3 ? "text-white" : "text-[#888888]"}`}>
+        <p className={`text-sm font-medium truncate ${rank <= 3 ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c5))]"}`}>
           {entry.username}
         </p>
         {isCurrentUser && (
@@ -78,8 +78,8 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
 
       {/* Trophies */}
       <div className="flex items-center gap-1.5">
-        <Trophy size={14} className={rank <= 3 ? "text-[#D4AF37]" : "text-[#3A3A3A]"} />
-        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[#D4AF37]" : "text-[#888888]"}`}>
+        <Trophy size={14} className={rank <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
+        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
           {entry.trophies.toLocaleString()}
         </span>
       </div>

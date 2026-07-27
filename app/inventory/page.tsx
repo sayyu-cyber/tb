@@ -50,7 +50,7 @@ export default function InventoryPage() {
         <button
           onClick={() => setTab("cosmetics")}
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-            tab === "cosmetics" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[#1A1A1A] border border-[#2A2A2A] text-[#3A3A3A]"
+            tab === "cosmetics" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
         >
           <Package size={16} /> Cosmetics
@@ -58,7 +58,7 @@ export default function InventoryPage() {
         <button
           onClick={() => setTab("roomCards")}
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-            tab === "roomCards" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[#1A1A1A] border border-[#2A2A2A] text-[#3A3A3A]"
+            tab === "roomCards" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
         >
           <Ticket size={16} /> Room Cards
@@ -73,7 +73,7 @@ export default function InventoryPage() {
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap ${
-                  category === cat.id ? "bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30" : "bg-[#1A1A1A] text-[#3A3A3A] border border-[#2A2A2A]"
+                  category === cat.id ? "bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
                 }`}
               >
                 <span className="mr-1">{cat.icon}</span>
@@ -84,8 +84,8 @@ export default function InventoryPage() {
 
           {ownedItems.length === 0 ? (
             <div className="glass-card rounded-2xl p-6 text-center">
-              <Package size={28} className="text-[#2A2A2A] mx-auto mb-2" />
-              <p className="text-[#3A3A3A] text-sm">Nothing here yet — earn or buy items from the Shop.</p>
+              <Package size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+              <p className="text-[rgb(var(--c4))] text-sm">Nothing here yet — earn or buy items from the Shop.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -97,26 +97,26 @@ export default function InventoryPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className={`rounded-xl border p-3 ${isEquipped ? "border-[#D4AF37]/50 bg-[#D4AF37]/5" : "border-[#2A2A2A] bg-[#1A1A1A]/50"}`}
+                    className={`rounded-xl border p-3 ${isEquipped ? "border-[#D4AF37]/50 bg-[#D4AF37]/5" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2)/50%)]"}`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-white truncate">{item.name}</span>
+                      <span className="text-sm font-medium text-[rgb(var(--text-primary))] truncate">{item.name}</span>
                       <span className="text-[9px] font-bold" style={{ color: RARITY_COLORS[item.rarity] }}>
                         {item.rarity}
                       </span>
                     </div>
-                    <p className="text-[#3A3A3A] text-xs mb-3 line-clamp-2">{item.description}</p>
+                    <p className="text-[rgb(var(--c4))] text-xs mb-3 line-clamp-2">{item.description}</p>
                     {canEquip ? (
                       <button
                         onClick={() => equipCosmetic(item.category, item.id)}
                         className={`w-full py-1.5 rounded-lg text-xs font-semibold ${
-                          isEquipped ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[#2A2A2A] text-[#888888]"
+                          isEquipped ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
                         }`}
                       >
                         {isEquipped ? "Equipped" : "Equip"}
                       </button>
                     ) : (
-                      <span className="block w-full text-center py-1.5 rounded-lg text-xs font-medium bg-[#2A2A2A] text-[#888888]">
+                      <span className="block w-full text-center py-1.5 rounded-lg text-xs font-medium bg-[rgb(var(--c3))] text-[rgb(var(--c5))]">
                         Owned
                       </span>
                     )}

@@ -21,12 +21,12 @@ export function StatCard({ icon: Icon, label, value, delay = 0, highlight = fals
       className={`rounded-xl p-4 border ${
         highlight
           ? "bg-gradient-to-br from-[#D4AF37]/10 to-transparent border-[#D4AF37]/20"
-          : "bg-[#1A1A1A]/50 border-[#2A2A2A]"
+          : "bg-[rgb(var(--c2)/50%)] border-[rgb(var(--c3))]"
       }`}
     >
-      <Icon size={18} className={highlight ? "text-[#D4AF37]" : "text-[#3A3A3A]"} />
-      <p className="text-white text-lg font-bold mt-2">{value}</p>
-      <p className="text-[#3A3A3A] text-[10px] uppercase tracking-wider mt-0.5">{label}</p>
+      <Icon size={18} className={highlight ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
+      <p className="text-[rgb(var(--text-primary))] text-lg font-bold mt-2">{value}</p>
+      <p className="text-[rgb(var(--c4))] text-[10px] uppercase tracking-wider mt-0.5">{label}</p>
     </motion.div>
   );
 }

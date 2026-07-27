@@ -115,7 +115,7 @@ export default function MatchRewardPopup({
               </motion.div>
 
               <motion.button
-                className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-white font-bold text-lg hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/30"
+                className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold text-lg hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/30"
                 onClick={onClose}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

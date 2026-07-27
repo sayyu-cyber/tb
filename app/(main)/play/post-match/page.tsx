@@ -75,7 +75,7 @@ export default function PostMatchPage() {
 
   if (updating) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -86,7 +86,7 @@ export default function PostMatchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {isVictory && <VictoryParticles />}
 
       <motion.div
@@ -101,17 +101,17 @@ export default function PostMatchPage() {
           className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
             isVictory 
               ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" 
-              : "bg-[#1A1A1A] border border-[#2A2A2A]"
+              : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
           }`}
         >
           {isVictory ? (
             <Sparkles size={40} className="text-[#0F0F0F]" />
           ) : (
-            <TrendingDown size={40} className="text-[#3A3A3A]" />
+            <TrendingDown size={40} className="text-[rgb(var(--c4))]" />
           )}
         </motion.div>
 
-        <h1 className={`text-3xl font-bold ${isVictory ? "gold-text-gradient" : "text-[#3A3A3A]"}`}>
+        <h1 className={`text-3xl font-bold ${isVictory ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
           {isVictory ? "Victory!" : "Defeat"}
         </h1>
 
@@ -132,21 +132,21 @@ export default function PostMatchPage() {
           </div>
 
           <div className="flex items-center justify-between text-sm mb-3">
-            <span className="text-[#3A3A3A]">{matchData.oldTrophies}</span>
-            <div className="flex-1 h-px bg-[#2A2A2A] mx-3" />
+            <span className="text-[rgb(var(--c4))]">{matchData.oldTrophies}</span>
+            <div className="flex-1 h-px bg-[rgb(var(--c3))] mx-3" />
             <div className="flex items-center gap-1">
               <Trophy size={14} className="text-[#D4AF37]" />
               <span className="text-[#D4AF37] font-bold">{matchData.newTrophies}</span>
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-[#2A2A2A]">
-            <p className="text-[#3A3A3A] text-xs">Current Rank</p>
-            <p className="text-white font-semibold">{matchData.newRank}</p>
+          <div className="mt-3 pt-3 border-t border-[rgb(var(--c3))]">
+            <p className="text-[rgb(var(--c4))] text-xs">Current Rank</p>
+            <p className="text-[rgb(var(--text-primary))] font-semibold">{matchData.newRank}</p>
           </div>
 
           {user?.isGuest && (
-            <p className="text-[#2A2A2A] text-[10px] mt-2">Sign in to earn trophies</p>
+            <p className="text-[rgb(var(--c3))] text-[10px] mt-2">Sign in to earn trophies</p>
           )}
         </div>
 
@@ -166,7 +166,7 @@ export default function PostMatchPage() {
           <Link href="/home" className="flex-1">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="w-full py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2"
             >
               <Home size={16} />
               Home
@@ -217,7 +217,7 @@ function PromotionAnimation({ rank, onClose }: { rank: string; onClose: () => vo
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 bg-[#0F0F0F]/95 flex items-center justify-center px-6"
+      className="fixed inset-0 z-50 bg-[rgb(var(--c1)/95%)] flex items-center justify-center px-6"
       onClick={onClose}
     >
       <motion.div
@@ -234,7 +234,7 @@ function PromotionAnimation({ rank, onClose }: { rank: string; onClose: () => vo
           👑
         </motion.div>
         <h2 className="text-3xl font-bold gold-text-gradient mb-2">PROMOTED!</h2>
-        <p className="text-white text-xl mb-6">{rank}</p>
+        <p className="text-[rgb(var(--text-primary))] text-xl mb-6">{rank}</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onClose}

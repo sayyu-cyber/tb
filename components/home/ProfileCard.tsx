@@ -27,7 +27,7 @@ export function ProfileCard() {
           className="relative"
         >
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[2px]">
-            <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center overflow-hidden">
+            <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center overflow-hidden">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
@@ -40,7 +40,7 @@ export function ProfileCard() {
             </div>
           </div>
           {user.isGuest && (
-            <div className="absolute -bottom-1 -right-1 bg-[#2A2A2A] text-[#888888] text-[9px] px-1.5 py-0.5 rounded-full border border-[#3A3A3A]">
+            <div className="absolute -bottom-1 -right-1 bg-[rgb(var(--c3))] text-[rgb(var(--c5))] text-[9px] px-1.5 py-0.5 rounded-full border border-[rgb(var(--c4))]">
               GUEST
             </div>
           )}
@@ -48,7 +48,7 @@ export function ProfileCard() {
 
         {/* User info */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-white font-semibold text-lg truncate">
+          <h3 className="text-[rgb(var(--text-primary))] font-semibold text-lg truncate">
             {user.displayName || "Player"}
           </h3>
           <div className="flex items-center gap-2 mt-1">
@@ -64,7 +64,7 @@ export function ProfileCard() {
               {playerStats?.trophies?.toLocaleString() || 0}
             </span>
           </div>
-          <span className="text-[#3A3A3A] text-[10px] uppercase tracking-wider">Trophies</span>
+          <span className="text-[rgb(var(--c4))] text-[10px] uppercase tracking-wider">Trophies</span>
         </div>
       </div>
     </motion.div>

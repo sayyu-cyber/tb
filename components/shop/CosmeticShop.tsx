@@ -55,7 +55,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
       )}
 
       {item.isVipExclusive && (
-        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-purple-600 to-violet-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-0.5 rounded-full">
           VIP
         </div>
       )}
@@ -102,7 +102,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
             </motion.button>
           ) : (
             <motion.button
-              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-white font-bold text-sm hover:from-amber-500 hover:to-yellow-500 transition-all flex items-center justify-center gap-1.5"
+              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold text-sm hover:from-amber-500 hover:to-yellow-500 transition-all flex items-center justify-center gap-1.5"
               onClick={onPurchase}
               whileTap={{ scale: 0.95 }}
             >
@@ -127,7 +127,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
       whileTap={{ scale: 0.98 }}
     >
       {pack.isPopular && (
-        <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+        <div className="absolute top-0 right-0 bg-blue-500 text-[rgb(var(--text-primary))] text-xs font-bold px-3 py-1 rounded-bl-xl">
           POPULAR
         </div>
       )}
@@ -146,11 +146,11 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
 
       <div className="flex items-center justify-center gap-1 mb-4">
         <span className="text-gray-400 text-sm">MVR</span>
-        <span className="text-xl font-bold text-white">{pack.priceMVR}</span>
+        <span className="text-xl font-bold text-[rgb(var(--text-primary))]">{pack.priceMVR}</span>
       </div>
 
       <motion.button
-        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-white font-bold hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/20"
+        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/20"
         onClick={onPurchase}
         whileTap={{ scale: 0.95 }}
       >
@@ -241,7 +241,7 @@ export default function CosmeticShop() {
             className={`
               px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all
               ${activeTab === tab.id
-                ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white shadow-lg shadow-amber-500/20'
+                ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] shadow-lg shadow-amber-500/20'
                 : 'bg-neutral-900/60 text-gray-400 border border-neutral-700/30 hover:border-amber-500/20'
               }
             `}
@@ -385,7 +385,7 @@ export default function CosmeticShop() {
                   <h2 className="text-3xl font-bold text-purple-300 mb-2">VIP Pass</h2>
                   <p className="text-purple-200/60 mb-6">7 Days of Premium Benefits</p>
 
-                  <div className="text-4xl font-bold text-white mb-6">
+                  <div className="text-4xl font-bold text-[rgb(var(--text-primary))] mb-6">
                     MVR <span className="text-purple-400">100</span>
                   </div>
 
@@ -412,7 +412,7 @@ export default function CosmeticShop() {
                   </ul>
 
                   <motion.button
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 text-white font-bold text-lg hover:from-purple-500 hover:to-violet-500 transition-all border border-purple-400/30"
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] font-bold text-lg hover:from-purple-500 hover:to-violet-500 transition-all border border-purple-400/30"
                     onClick={() => {
                       activateVip(7);
                       alert('VIP activated! (Payment gateway placeholder)');

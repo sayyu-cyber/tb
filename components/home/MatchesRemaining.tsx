@@ -20,7 +20,7 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
     >
       <div className="flex items-center gap-2 mb-3">
         <Swords size={18} className="text-[#D4AF37]" />
-        <h3 className="text-white font-semibold text-sm">Ranked Matches</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Ranked Matches</h3>
       </div>
 
       <div className="flex items-baseline gap-1 mb-3">
@@ -32,7 +32,7 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
         >
           {remaining}
         </motion.span>
-        <span className="text-[#3A3A3A] text-sm">/ {total} remaining</span>
+        <span className="text-[rgb(var(--c4))] text-sm">/ {total} remaining</span>
       </div>
 
       <div className="flex gap-1.5">
@@ -45,7 +45,7 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
             className={`flex-1 h-2 rounded-full ${
               i < remaining
                 ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37]"
-                : "bg-[#2A2A2A]"
+                : "bg-[rgb(var(--c3))]"
             }`}
           />
         ))}

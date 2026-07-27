@@ -28,23 +28,23 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
       transition={{ delay: 0.3 + index * 0.1 }}
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full flex items-start gap-3 p-3 rounded-xl bg-[#1A1A1A]/50 border border-[#2A2A2A] hover:border-[#D4AF37]/20 transition-colors cursor-pointer group text-left"
+      className="w-full flex items-start gap-3 p-3 rounded-xl bg-[rgb(var(--c2)/50%)] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/20 transition-colors cursor-pointer group text-left"
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span className={`text-[9px] font-bold tracking-wider ${typeColors[item.type]}`}>
             {typeLabels[item.type]}
           </span>
-          <span className="text-[#2A2A2A] text-[9px]">
+          <span className="text-[rgb(var(--c3))] text-[9px]">
             {item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </span>
         </div>
-        <h4 className="text-white text-sm font-medium truncate group-hover:text-[#D4AF37] transition-colors">
+        <h4 className="text-[rgb(var(--text-primary))] text-sm font-medium truncate group-hover:text-[#D4AF37] transition-colors">
           {item.title}
         </h4>
-        <p className="text-[#3A3A3A] text-xs mt-0.5 line-clamp-1">{item.content}</p>
+        <p className="text-[rgb(var(--c4))] text-xs mt-0.5 line-clamp-1">{item.content}</p>
       </div>
-      <ChevronRight size={16} className="text-[#2A2A2A] group-hover:text-[#D4AF37] transition-colors mt-1 shrink-0" />
+      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[#D4AF37] transition-colors mt-1 shrink-0" />
     </motion.button>
   );
 }
@@ -61,13 +61,13 @@ export function NewsSection() {
     >
       <div className="flex items-center gap-2 mb-3 px-1">
         <Newspaper size={16} className="text-[#D4AF37]" />
-        <h3 className="text-white font-semibold text-sm">News & Updates</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">News & Updates</h3>
       </div>
 
       <div className="space-y-2">
         {loading ? (
           [...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 bg-[#1A1A1A] rounded-xl animate-pulse" />
+            <div key={i} className="h-16 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
           ))
         ) : (
           news.map((item, index) => (
@@ -98,16 +98,16 @@ export function NewsSection() {
                   <span className={`text-[9px] font-bold tracking-wider ${typeColors[selected.type]}`}>
                     {typeLabels[selected.type]}
                   </span>
-                  <p className="text-[#2A2A2A] text-[10px] mt-0.5">
+                  <p className="text-[rgb(var(--c3))] text-[10px] mt-0.5">
                     {selected.date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                   </p>
                 </div>
-                <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A]">
-                  <X size={16} className="text-[#3A3A3A]" />
+                <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                  <X size={16} className="text-[rgb(var(--c4))]" />
                 </button>
               </div>
-              <h3 className="text-white font-bold text-lg mb-2">{selected.title}</h3>
-              <p className="text-[#888888] text-sm leading-relaxed">{selected.content}</p>
+              <h3 className="text-[rgb(var(--text-primary))] font-bold text-lg mb-2">{selected.title}</h3>
+              <p className="text-[rgb(var(--c5))] text-sm leading-relaxed">{selected.content}</p>
             </motion.div>
           </motion.div>
         )}

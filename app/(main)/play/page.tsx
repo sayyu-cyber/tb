@@ -35,8 +35,8 @@ export default function PlayPage() {
           <Gamepad2 size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Play</h1>
-          <p className="text-[#3A3A3A] text-xs">Choose your game</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Play</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">Choose your game</p>
         </div>
       </motion.div>
 
@@ -51,9 +51,9 @@ export default function PlayPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="glass-card rounded-2xl p-4 border border-dashed border-[#2A2A2A]"
+        className="glass-card rounded-2xl p-4 border border-dashed border-[rgb(var(--c3))]"
       >
-        <p className="text-[#2A2A2A] text-xs text-center tracking-wider uppercase">More games coming soon</p>
+        <p className="text-[rgb(var(--c3))] text-xs text-center tracking-wider uppercase">More games coming soon</p>
       </motion.div>
     </div>
   );

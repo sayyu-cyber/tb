@@ -20,19 +20,19 @@ export default function HallOfFamePage() {
       >
         <Award size={16} className="text-[#D4AF37]" />
         <span className="text-[#D4AF37] text-sm font-medium">All-Time Greats</span>
-        <span className="text-[#3A3A3A] text-xs ml-auto">Ranked by peak trophies</span>
+        <span className="text-[rgb(var(--c4))] text-xs ml-auto">Ranked by peak trophies</span>
       </motion.div>
 
       {loading ? (
         <div className="space-y-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 bg-[#1A1A1A] rounded-xl animate-pulse" />
+            <div key={i} className="h-16 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-[#3A3A3A] text-sm">{error}</div>
+        <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">{error}</div>
       ) : entries.length === 0 ? (
-        <div className="text-center py-12 text-[#3A3A3A] text-sm">
+        <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">
           No legends yet — climb the ranks to be the first name in the Hall of Fame.
         </div>
       ) : (

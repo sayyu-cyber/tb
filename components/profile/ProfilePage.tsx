@@ -48,7 +48,7 @@ export default function ProfilePage() {
               </div>
               {profile.vip.active && (
                 <motion.div
-                  className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-violet-600 text-white text-xs font-bold px-2 py-1 rounded-full border border-purple-400/30"
+                  className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-1 rounded-full border border-purple-400/30"
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ repeat: Infinity, duration: 2 }}
                 >

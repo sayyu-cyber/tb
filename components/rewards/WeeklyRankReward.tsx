@@ -79,7 +79,7 @@ export default function WeeklyRankReward() {
             </motion.div>
 
             <motion.button
-              className="w-full py-3 rounded-xl font-bold text-white"
+              className="w-full py-3 rounded-xl font-bold text-[rgb(var(--text-primary))]"
               style={{ backgroundColor: rankConfig.color }}
               onClick={handleClaim}
               whileHover={{ scale: 1.02 }}

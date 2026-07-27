@@ -26,8 +26,8 @@ export default function LeaderboardPage() {
           <Trophy size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Leaderboard</h1>
-          <p className="text-[#3A3A3A] text-xs">Top players this week</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Leaderboard</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">Top players this week</p>
         </div>
       </motion.div>
 
@@ -40,19 +40,19 @@ export default function LeaderboardPage() {
       >
         <TrendingUp size={16} className="text-[#D4AF37]" />
         <span className="text-[#D4AF37] text-sm font-medium">Weekly Rankings</span>
-        <span className="text-[#3A3A3A] text-xs ml-auto">Resets every Monday</span>
+        <span className="text-[rgb(var(--c4))] text-xs ml-auto">Resets every Monday</span>
       </motion.div>
 
       {loading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-[#1A1A1A] rounded-xl animate-pulse" />
+            <div key={i} className="h-16 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-[#3A3A3A] text-sm">{error}</div>
+        <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">{error}</div>
       ) : entries.length === 0 ? (
-        <div className="text-center py-12 text-[#3A3A3A] text-sm">
+        <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">
           No ranked players yet — be the first to climb the leaderboard!
         </div>
       ) : (

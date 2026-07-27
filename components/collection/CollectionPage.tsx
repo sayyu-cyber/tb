@@ -69,7 +69,7 @@ export default function CollectionPage() {
               onClick={() => setActiveCategory(cat.key)}
               className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
                 activeCategory === cat.key
-                  ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white'
+                  ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))]'
                   : 'bg-neutral-900/60 text-gray-400 border border-neutral-700/30 hover:border-amber-500/20'
               }`}
             >

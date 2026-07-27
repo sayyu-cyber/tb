@@ -43,8 +43,8 @@ export default function ProfilePage() {
           <User size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Profile</h1>
-          <p className="text-[#3A3A3A] text-xs">Your stats & achievements</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Profile</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">Your stats & achievements</p>
         </div>
       </motion.div>
 
@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
         <button
           onClick={() => setEditing(true)}
-          className="absolute top-3 right-3 p-2 rounded-lg bg-[#1A1A1A]/70 border border-[#2A2A2A] z-10"
+          className="absolute top-3 right-3 p-2 rounded-lg bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] z-10"
         >
           <Pencil size={14} className="text-[#D4AF37]" />
         </button>
@@ -67,11 +67,11 @@ export default function ProfilePage() {
         {/* Avatar */}
         <div className="relative inline-block mb-4">
           <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${avatarPreset.gradient} p-[2px] mx-auto`}>
-            <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center overflow-hidden">
+            <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center overflow-hidden">
               {user.photoURL ? (
                 <img src={user.photoURL} alt={user.displayName || ""} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl font-bold text-white">{(user.displayName || "P").charAt(0).toUpperCase()}</span>
+                <span className="text-3xl font-bold text-[rgb(var(--text-primary))]">{(user.displayName || "P").charAt(0).toUpperCase()}</span>
               )}
             </div>
           </div>
@@ -80,8 +80,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <h2 className="text-xl font-bold text-white mt-2">{user.displayName || "Player"}</h2>
-        <p className="text-[#3A3A3A] text-sm">{user.email || "Guest Player"}</p>
+        <h2 className="text-xl font-bold text-[rgb(var(--text-primary))] mt-2">{user.displayName || "Player"}</h2>
+        <p className="text-[rgb(var(--c4))] text-sm">{user.email || "Guest Player"}</p>
 
         {/* Trophy display */}
         <div className="flex items-center justify-center gap-2 mt-3">
@@ -89,7 +89,7 @@ export default function ProfilePage() {
           <span className="text-[#D4AF37] font-bold text-lg">
             {(playerStats?.trophies || 0).toLocaleString()}
           </span>
-          <span className="text-[#3A3A3A] text-xs">trophies</span>
+          <span className="text-[rgb(var(--c4))] text-xs">trophies</span>
         </div>
       </motion.div>
 
@@ -99,7 +99,7 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h3 className="text-white font-semibold text-sm mb-3 px-1">Statistics</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">Statistics</h3>
         <div className="grid grid-cols-2 gap-3">
           {stats.map((stat, index) => (
             <StatCard key={stat.label} {...stat} delay={0.25 + index * 0.05} />
@@ -113,7 +113,7 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
       >
-        <h3 className="text-white font-semibold text-sm mb-3 px-1">Achievements</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">Achievements</h3>
         <div className="space-y-2">
           {extraStats.map((stat, index) => (
             <motion.div
@@ -121,17 +121,17 @@ export default function ProfilePage() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 + index * 0.05 }}
-              className="flex items-center justify-between p-4 rounded-xl bg-[#1A1A1A]/50 border border-[#2A2A2A]"
+              className="flex items-center justify-between p-4 rounded-xl bg-[rgb(var(--c2)/50%)] border border-[rgb(var(--c3))]"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  stat.highlight ? "bg-[#D4AF37]/10" : "bg-[#1A1A1A]"
+                  stat.highlight ? "bg-[#D4AF37]/10" : "bg-[rgb(var(--c2))]"
                 }`}>
-                  <stat.icon size={18} className={stat.highlight ? "text-[#D4AF37]" : "text-[#3A3A3A]"} />
+                  <stat.icon size={18} className={stat.highlight ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
                 </div>
-                <span className="text-[#3A3A3A] text-sm">{stat.label}</span>
+                <span className="text-[rgb(var(--c4))] text-sm">{stat.label}</span>
               </div>
-              <span className={`font-semibold text-sm ${stat.highlight ? "text-[#D4AF37]" : "text-white"}`}>
+              <span className={`font-semibold text-sm ${stat.highlight ? "text-[#D4AF37]" : "text-[rgb(var(--text-primary))]"}`}>
                 {stat.value}
               </span>
             </motion.div>
@@ -146,7 +146,7 @@ export default function ProfilePage() {
         transition={{ delay: 0.5 }}
         className="text-center py-4"
       >
-        <p className="text-[#2A2A2A] text-[10px] tracking-wider uppercase">More features coming soon</p>
+        <p className="text-[rgb(var(--c3))] text-[10px] tracking-wider uppercase">More features coming soon</p>
       </motion.div>
 
       <EditProfileModal

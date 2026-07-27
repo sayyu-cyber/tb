@@ -89,7 +89,7 @@ export function LoginForm() {
       <h2 className="text-2xl font-bold text-center mb-1 gold-text-gradient">
         {mode === "login" ? "Welcome Back" : "Join Thaasbai"}
       </h2>
-      <p className="text-[#3A3A3A] text-sm text-center mb-8">
+      <p className="text-[rgb(var(--c4))] text-sm text-center mb-8">
         {mode === "login" ? "Sign in to continue" : "Create your account"}
       </p>
 
@@ -113,16 +113,16 @@ export function LoginForm() {
         whileTap={{ scale: 0.98 }}
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 bg-[#1A1A1A] border border-[#2A2A2A] hover:border-[#3A3A3A] text-white rounded-xl py-3.5 mb-4 transition-colors disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-3 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[rgb(var(--c4))] text-[rgb(var(--text-primary))] rounded-xl py-3.5 mb-4 transition-colors disabled:opacity-50"
       >
         <Chrome size={20} className="text-[#D4AF37]" />
         <span className="text-sm font-medium">Continue with Google</span>
       </motion.button>
 
       <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-[#2A2A2A]" />
-        <span className="text-[#3A3A3A] text-xs uppercase tracking-wider">or</span>
-        <div className="flex-1 h-px bg-[#2A2A2A]" />
+        <div className="flex-1 h-px bg-[rgb(var(--c3))]" />
+        <span className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">or</span>
+        <div className="flex-1 h-px bg-[rgb(var(--c3))]" />
       </div>
 
       {/* Email form */}
@@ -133,44 +133,44 @@ export function LoginForm() {
             animate={{ opacity: 1, height: "auto" }}
             className="relative"
           >
-            <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3A3A3A]" />
+            <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
             <input
               type="text"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-[#3A3A3A] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
               required
             />
           </motion.div>
         )}
 
         <div className="relative">
-          <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3A3A3A]" />
+          <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
           <input
             type="email"
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-[#3A3A3A] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
             required
           />
         </div>
 
         <div className="relative">
-          <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3A3A3A]" />
+          <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl py-3.5 pl-12 pr-12 text-white placeholder-[#3A3A3A] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-12 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
             required
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3A3A3A] hover:text-[#D4AF37] transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))] hover:text-[#D4AF37] transition-colors"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -182,7 +182,7 @@ export function LoginForm() {
       </form>
 
       {/* Toggle mode */}
-      <p className="text-center mt-6 text-sm text-[#3A3A3A]">
+      <p className="text-center mt-6 text-sm text-[rgb(var(--c4))]">
         {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
         <button
           onClick={() => {
@@ -196,15 +196,15 @@ export function LoginForm() {
       </p>
 
       {/* Guest mode */}
-      <div className="mt-8 pt-6 border-t border-[#1A1A1A]">
+      <div className="mt-8 pt-6 border-t border-[rgb(var(--c2))]">
         <button
           onClick={handleGuestMode}
           disabled={loading}
-          className="w-full text-[#3A3A3A] hover:text-[#D4AF37] text-sm font-medium transition-colors disabled:opacity-50"
+          className="w-full text-[rgb(var(--c4))] hover:text-[#D4AF37] text-sm font-medium transition-colors disabled:opacity-50"
         >
           Continue as Guest
         </button>
-        <p className="text-[#2A2A2A] text-[10px] text-center mt-2">
+        <p className="text-[rgb(var(--c3))] text-[10px] text-center mt-2">
           Guest users can only access Casual Mode
         </p>
       </div>

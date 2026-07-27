@@ -62,28 +62,28 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
             className="glass-card rounded-2xl p-5 w-full max-w-sm border border-[#D4AF37]/20 max-h-[85vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-bold text-lg">Edit Profile</h3>
-              <button onClick={onClose} className="p-1.5 rounded-lg bg-[#1A1A1A] border border-[#2A2A2A]">
-                <X size={16} className="text-[#3A3A3A]" />
+              <h3 className="text-[rgb(var(--text-primary))] font-bold text-lg">Edit Profile</h3>
+              <button onClick={onClose} className="p-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                <X size={16} className="text-[rgb(var(--c4))]" />
               </button>
             </div>
 
             {isGuest && (
-              <p className="text-[#3A3A3A] text-xs mb-3 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg px-3 py-2">
+              <p className="text-[rgb(var(--c4))] text-xs mb-3 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-lg px-3 py-2">
                 You&apos;re playing as a guest — changes won&apos;t be saved after you sign out.
               </p>
             )}
 
-            <label className="block text-[#3A3A3A] text-xs uppercase tracking-wider mb-2">Username</label>
+            <label className="block text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Username</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={24}
               placeholder="Your username"
-              className="w-full bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#D4AF37]/50 mb-4"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50 mb-4"
             />
 
-            <label className="block text-[#3A3A3A] text-xs uppercase tracking-wider mb-2">Avatar Color</label>
+            <label className="block text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Avatar Color</label>
             <div className="grid grid-cols-4 gap-3 mb-4">
               {AVATAR_PRESETS.map((preset) => (
                 <button
@@ -102,22 +102,22 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
                       <UserIcon size={16} className="text-[#0F0F0F]/60" />
                     )}
                   </div>
-                  <span className="text-[9px] text-[#3A3A3A]">{preset.label}</span>
+                  <span className="text-[9px] text-[rgb(var(--c4))]">{preset.label}</span>
                 </button>
               ))}
             </div>
 
-            <label className="block text-[#3A3A3A] text-xs uppercase tracking-wider mb-2">Banner</label>
+            <label className="block text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Banner</label>
             <div className="grid grid-cols-2 gap-2 mb-5">
               {BANNER_PRESETS.map((preset) => (
                 <button
                   key={preset.id}
                   onClick={() => setBanner(preset.id)}
-                  className={`h-12 rounded-xl bg-gradient-to-r ${preset.gradient} bg-[#1A1A1A] border-2 flex items-end justify-start px-2 pb-1 ${
-                    banner === preset.id ? "border-white" : "border-[#2A2A2A]"
+                  className={`h-12 rounded-xl bg-gradient-to-r ${preset.gradient} bg-[rgb(var(--c2))] border-2 flex items-end justify-start px-2 pb-1 ${
+                    banner === preset.id ? "border-white" : "border-[rgb(var(--c3))]"
                   }`}
                 >
-                  <span className="text-[9px] text-white/80 font-medium">{preset.label}</span>
+                  <span className="text-[9px] text-[rgb(var(--text-primary))]/80 font-medium">{preset.label}</span>
                 </button>
               ))}
             </div>

@@ -34,9 +34,9 @@ export function SeasonCard() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Crown size={18} className="text-[#D4AF37]" />
-          <h3 className="text-white font-semibold">{season.name}</h3>
+          <h3 className="text-[rgb(var(--text-primary))] font-semibold">{season.name}</h3>
         </div>
-        <div className="flex items-center gap-1 text-[#3A3A3A]">
+        <div className="flex items-center gap-1 text-[rgb(var(--c4))]">
           <Calendar size={14} />
           <span className="text-xs">Ends in</span>
         </div>
@@ -44,12 +44,12 @@ export function SeasonCard() {
 
       <div className="flex items-end gap-2">
         <span className="text-4xl font-bold text-[#D4AF37]">{days}</span>
-        <span className="text-[#3A3A3A] text-sm mb-1">days</span>
+        <span className="text-[rgb(var(--c4))] text-sm mb-1">days</span>
         <span className="text-4xl font-bold text-[#D4AF37] ml-2">{hours}</span>
-        <span className="text-[#3A3A3A] text-sm mb-1">hours</span>
+        <span className="text-[rgb(var(--c4))] text-sm mb-1">hours</span>
       </div>
 
-      <div className="mt-4 h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
+      <div className="mt-4 h-1.5 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
         <motion.div
           className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
           initial={{ width: 0 }}
@@ -57,7 +57,7 @@ export function SeasonCard() {
           transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
         />
       </div>
-      <p className="text-[#3A3A3A] text-[10px] mt-1.5">Season progress</p>
+      <p className="text-[rgb(var(--c4))] text-[10px] mt-1.5">Season progress</p>
     </motion.div>
   );
 }

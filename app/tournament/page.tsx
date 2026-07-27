@@ -44,22 +44,22 @@ export default function TournamentPage() {
         <div className="absolute -top-8 -right-8 w-24 h-24 bg-orange-500/10 rounded-full blur-xl" />
         <div className="flex items-center gap-2 mb-2">
           <Flame size={18} className="text-orange-400" />
-          <h2 className="text-white font-semibold">
+          <h2 className="text-[rgb(var(--text-primary))] font-semibold">
             {isWeekendLeague ? "Weekend League is live" : "Weekend League"}
           </h2>
         </div>
         {isWeekendLeague ? (
-          <p className="text-[#3A3A3A] text-sm">
+          <p className="text-[rgb(var(--c4))] text-sm">
             Silver rank and up, double trophies every match. Ends {nextUnlockTime}.
           </p>
         ) : (
-          <p className="text-[#3A3A3A] text-sm">
+          <p className="text-[rgb(var(--c4))] text-sm">
             Runs every Friday-Saturday. Reach Silver rank or higher during the week to qualify. Opens {nextUnlockTime}.
           </p>
         )}
 
         {!qualified && (
-          <p className="text-[#3A3A3A] text-xs mt-3">
+          <p className="text-[rgb(var(--c4))] text-xs mt-3">
             You&apos;re {rank} with {trophies} trophies — climb to Silver in Ranked to qualify.
           </p>
         )}
@@ -88,21 +88,21 @@ export default function TournamentPage() {
 
       <div className="flex items-center gap-2 mb-3">
         <Trophy size={16} className="text-[#D4AF37]" />
-        <h3 className="text-white font-semibold text-sm">This Week&apos;s Standings</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">This Week&apos;s Standings</h3>
       </div>
 
       {loading ? (
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 bg-[#1A1A1A] rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <p className="text-[#3A3A3A] text-sm text-center py-8">{error}</p>
+        <p className="text-[rgb(var(--c4))] text-sm text-center py-8">{error}</p>
       ) : standings.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center">
-          <Clock size={24} className="text-[#2A2A2A] mx-auto mb-2" />
-          <p className="text-[#3A3A3A] text-sm">No qualified players yet this week.</p>
+          <Clock size={24} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+          <p className="text-[rgb(var(--c4))] text-sm">No qualified players yet this week.</p>
         </div>
       ) : (
         <div className="space-y-1">
@@ -113,13 +113,13 @@ export default function TournamentPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
                 className={`flex items-center gap-3 p-3 rounded-xl ${
-                  s.uid === user?.uid ? "bg-[#D4AF37]/5 border border-[#D4AF37]/20" : "hover:bg-[#1A1A1A]/50"
+                  s.uid === user?.uid ? "bg-[#D4AF37]/5 border border-[#D4AF37]/20" : "hover:bg-[rgb(var(--c2)/50%)]"
                 }`}
               >
-                <span className="text-[#3A3A3A] font-bold text-sm w-6 text-center">{i + 1}</span>
+                <span className="text-[rgb(var(--c4))] font-bold text-sm w-6 text-center">{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{s.displayName}</p>
-                  <p className="text-[#3A3A3A] text-[10px]">{s.currentRank}</p>
+                  <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{s.displayName}</p>
+                  <p className="text-[rgb(var(--c4))] text-[10px]">{s.currentRank}</p>
                 </div>
                 <span className="text-[#D4AF37] font-semibold text-sm">{s.weeklyTrophies.toLocaleString()}</span>
               </motion.div>

@@ -54,7 +54,7 @@ export default function RoomCardManager() {
                   <p className="text-gray-500 text-sm">Activate to create unlimited private rooms</p>
                 </div>
                 <motion.button
-                  className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-500 transition-all"
+                  className="px-4 py-2 rounded-lg bg-amber-600 text-[rgb(var(--text-primary))] text-sm font-bold hover:bg-amber-500 transition-all"
                   onClick={() => activateRoomCard(card.id)}
                   whileTap={{ scale: 0.95 }}
                 >

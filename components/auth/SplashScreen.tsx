@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export function SplashScreen() {
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center relative overflow-hidden">
       {/* Animated background particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(6)].map((_, i) => (
@@ -113,7 +113,7 @@ export function SplashScreen() {
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 0.8, duration: 0.4 }}
-          className="mt-10 w-48 h-1 bg-[#1A1A1A] rounded-full overflow-hidden"
+          className="mt-10 w-48 h-1 bg-[rgb(var(--c2))] rounded-full overflow-hidden"
         >
           <motion.div
             className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
@@ -136,7 +136,7 @@ export function SplashScreen() {
         transition={{ delay: 1, duration: 0.6 }}
         className="absolute bottom-8 text-center"
       >
-        <p className="text-[#2A2A2A] text-[10px] tracking-[0.2em] uppercase">
+        <p className="text-[rgb(var(--c3))] text-[10px] tracking-[0.2em] uppercase">
           Thaasbai — The Home of Maldivian Card Games
         </p>
       </motion.div>

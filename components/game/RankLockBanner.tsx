@@ -21,9 +21,9 @@ export function RankLockBanner() {
         </div>
         <div className="flex-1">
           <h3 className="text-[#D4AF37] font-semibold text-sm">Ranks Locked</h3>
-          <p className="text-[#3A3A3A] text-xs">Weekend League is active. Ranked matches resume Sunday.</p>
+          <p className="text-[rgb(var(--c4))] text-xs">Weekend League is active. Ranked matches resume Sunday.</p>
         </div>
-        <div className="flex items-center gap-1 text-[#3A3A3A]">
+        <div className="flex items-center gap-1 text-[rgb(var(--c4))]">
           <Clock size={12} />
           <span className="text-[10px]">{nextUnlockTime}</span>
         </div>

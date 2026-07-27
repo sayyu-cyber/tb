@@ -26,7 +26,7 @@ export function WeekendLeague() {
 
       <div className="flex items-center gap-2 mb-4">
         <Timer size={18} className="text-[#D4AF37]" />
-        <h3 className="text-white font-semibold text-sm">Weekend League</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Weekend League</h3>
       </div>
 
       <CountdownTimer
@@ -34,7 +34,7 @@ export function WeekendLeague() {
         label="Starts in"
       />
 
-      <div className="mt-4 flex items-center gap-2 text-[#3A3A3A] text-[10px]">
+      <div className="mt-4 flex items-center gap-2 text-[rgb(var(--c4))] text-[10px]">
         <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
         Double trophies during Weekend League
       </div>

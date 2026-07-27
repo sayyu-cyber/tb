@@ -10,7 +10,7 @@ export function PageHeader({ title }: { title: string }) {
     <div className="flex items-center gap-3 mb-6 pt-2">
       <button
         onClick={() => router.push("/home")}
-        className="p-2 rounded-lg bg-[#1A1A1A] border border-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all"
+        className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all"
       >
         <ArrowLeft size={20} />
       </button>

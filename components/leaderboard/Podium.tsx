@@ -48,17 +48,17 @@ export function Podium({ topThree }: PodiumProps) {
                 className={`w-12 h-12 rounded-full mx-auto mb-1.5 flex items-center justify-center ${
                   isFirst
                     ? "bg-gradient-to-br from-[#D4AF37] to-[#B8962E]"
-                    : "bg-[#1A1A1A] border border-[#2A2A2A]"
+                    : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
                 }`}
               >
-                <span className={`font-bold text-sm ${isFirst ? "text-[#0F0F0F]" : "text-[#888888]"}`}>
+                <span className={`font-bold text-sm ${isFirst ? "text-[#0F0F0F]" : "text-[rgb(var(--c5))]"}`}>
                   {player.username.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[#D4AF37]" : "text-[#888888]"}`}>
+              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
                 {player.username}
               </p>
-              <p className="text-[10px] text-[#3A3A3A]">{player.trophies.toLocaleString()}</p>
+              <p className="text-[10px] text-[rgb(var(--c4))]">{player.trophies.toLocaleString()}</p>
             </div>
 
             {/* Podium block */}
@@ -77,7 +77,7 @@ export function Podium({ topThree }: PodiumProps) {
               <div className="absolute inset-0 flex items-center justify-center">
                 <span
                   className={`text-2xl font-bold ${
-                    isFirst ? "text-[#D4AF37]" : "text-[#3A3A3A]"
+                    isFirst ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"
                   }`}
                 >
                   {order}

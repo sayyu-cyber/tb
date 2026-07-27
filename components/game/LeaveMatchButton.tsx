@@ -40,7 +40,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
       <motion.button
         whileTap={{ scale: 0.9 }}
         onClick={() => setConfirming(true)}
-        className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]"
+        className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
       >
         <ArrowLeft size={20} className="text-[#D4AF37]" />
       </motion.button>
@@ -65,8 +65,8 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
                 <AlertTriangle size={22} className="text-red-400" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">Leave match?</h3>
-                <p className="text-[#3A3A3A] text-xs mt-1">
+                <h3 className="text-[rgb(var(--text-primary))] font-bold text-base">Leave match?</h3>
+                <p className="text-[rgb(var(--c4))] text-xs mt-1">
                   {isOnlineMatch
                     ? "Leaving now ends the match as a forfeit — your opponent will be awarded the win."
                     : "Leaving now ends the match and your progress will be lost."}
@@ -77,7 +77,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setConfirming(false)}
                   disabled={leaving}
-                  className="flex-1 py-2.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium disabled:opacity-50"
                 >
                   Continue Playing
                 </motion.button>

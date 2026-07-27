@@ -9,8 +9,8 @@ export default function RankedLivePage({ params }: { params: { game: string } })
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
-          <p className="text-[#3A3A3A] text-sm">Loading match…</p>
+        <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
+          <p className="text-[rgb(var(--c4))] text-sm">Loading match…</p>
         </div>
       }
     >

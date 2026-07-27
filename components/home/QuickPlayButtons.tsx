@@ -32,7 +32,7 @@ export function QuickPlayButtons() {
     >
       <div className="flex items-center gap-2 mb-3 px-1">
         <Sparkles size={16} className="text-[#D4AF37]" />
-        <h3 className="text-white font-semibold text-sm">Quick Play</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Quick Play</h3>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -51,8 +51,8 @@ export function QuickPlayButtons() {
 
               <div className="relative z-10">
                 <span className="text-3xl mb-2 block">{game.icon}</span>
-                <h4 className="text-white font-semibold text-sm">{game.name}</h4>
-                <p className="text-[#3A3A3A] text-[10px] mt-0.5">{game.subtitle}</p>
+                <h4 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{game.name}</h4>
+                <p className="text-[rgb(var(--c4))] text-[10px] mt-0.5">{game.subtitle}</p>
               </div>
             </motion.div>
           </Link>

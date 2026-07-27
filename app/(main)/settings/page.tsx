@@ -29,8 +29,8 @@ export default function SettingsPage() {
           <Settings size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Settings</h1>
-          <p className="text-[#3A3A3A] text-xs">Customize your experience</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Settings</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">Customize your experience</p>
         </div>
       </motion.div>
 
@@ -41,7 +41,7 @@ export default function SettingsPage() {
         transition={{ delay: 0.1 }}
         className="glass-card rounded-2xl p-4"
       >
-        <h3 className="text-white font-semibold text-sm mb-2 px-1">Preferences</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-2 px-1">Preferences</h3>
 
         <SettingToggle
           icon={Bell}
@@ -51,7 +51,7 @@ export default function SettingsPage() {
           onChange={() => updateSettings({ notifications: !settings.notifications })}
         />
 
-        <div className="h-px bg-[#1A1A1A] mx-1" />
+        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
 
         <SettingToggle
           icon={Volume2}
@@ -61,7 +61,7 @@ export default function SettingsPage() {
           onChange={() => updateSettings({ sound: !settings.sound })}
         />
 
-        <div className="h-px bg-[#1A1A1A] mx-1" />
+        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
 
         <SettingToggle
           icon={Music}
@@ -71,12 +71,12 @@ export default function SettingsPage() {
           onChange={() => updateSettings({ music: !settings.music })}
         />
 
-        <div className="h-px bg-[#1A1A1A] mx-1" />
+        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
 
         <SettingToggle
           icon={Moon}
           label="Dark Theme"
-          description="Always use dark mode"
+          description={settings.darkTheme ? "On — switch to Light Theme" : "Off — switch to Dark Theme"}
           enabled={settings.darkTheme}
           onChange={() => updateSettings({ darkTheme: !settings.darkTheme })}
         />
@@ -89,7 +89,7 @@ export default function SettingsPage() {
         transition={{ delay: 0.2 }}
         className="glass-card rounded-2xl p-4"
       >
-        <h3 className="text-white font-semibold text-sm mb-2 px-1">Account</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-2 px-1">Account</h3>
 
         <SettingButton
           icon={Shield}
@@ -98,7 +98,7 @@ export default function SettingsPage() {
           onClick={() => {}}
         />
 
-        <div className="h-px bg-[#1A1A1A] mx-1" />
+        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
 
         <SettingButton
           icon={HelpCircle}
@@ -107,7 +107,7 @@ export default function SettingsPage() {
           onClick={() => {}}
         />
 
-        <div className="h-px bg-[#1A1A1A] mx-1" />
+        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
 
         <SettingButton
           icon={Info}
@@ -131,12 +131,12 @@ export default function SettingsPage() {
               exit={{ opacity: 0, height: 0 }}
               className="glass-card rounded-2xl p-4 space-y-3"
             >
-              <p className="text-white text-sm text-center">Are you sure you want to log out?</p>
+              <p className="text-[rgb(var(--text-primary))] text-sm text-center">Are you sure you want to log out?</p>
               <div className="flex gap-3">
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 py-3 rounded-xl bg-[#1A1A1A] text-[#888888] text-sm font-medium"
+                  className="flex-1 py-3 rounded-xl bg-[rgb(var(--c2))] text-[rgb(var(--c5))] text-sm font-medium"
                 >
                   Cancel
                 </motion.button>
@@ -169,8 +169,8 @@ export default function SettingsPage() {
         transition={{ delay: 0.4 }}
         className="text-center pt-4"
       >
-        <p className="text-[#1A1A1A] text-[10px] tracking-wider">THAASBAI v1.0.0</p>
-        <p className="text-[#1A1A1A] text-[10px] mt-1">The Home of Maldivian Card Games</p>
+        <p className="text-[rgb(var(--c2))] text-[10px] tracking-wider">THAASBAI v1.0.0</p>
+        <p className="text-[rgb(var(--c2))] text-[10px] mt-1">The Home of Maldivian Card Games</p>
       </motion.div>
     </div>
   );

@@ -40,7 +40,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
       case 3:
         return <Medal size={18} className="text-[#CD7F32]" />;
       default:
-        return <span className="text-[#3A3A3A] font-bold text-sm w-5 text-center">{position}</span>;
+        return <span className="text-[rgb(var(--c4))] font-bold text-sm w-5 text-center">{position}</span>;
     }
   };
 
@@ -52,32 +52,32 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`flex items-center gap-4 p-4 rounded-xl transition-colors hover:bg-[#1A1A1A]/50 ${getRowStyle()}`}
+      className={`flex items-center gap-4 p-4 rounded-xl transition-colors hover:bg-[rgb(var(--c2)/50%)] ${getRowStyle()}`}
     >
       <div className="w-8 flex justify-center">{getRowIcon()}</div>
 
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[1.5px]">
-        <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center">
+        <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
           <span className="text-[#D4AF37] text-sm font-bold">{entry.displayName.charAt(0).toUpperCase()}</span>
         </div>
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${position <= 3 ? "text-white" : "text-[#888888]"}`}>
+        <p className={`text-sm font-medium truncate ${position <= 3 ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c5))]"}`}>
           {entry.displayName}
         </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: rankColor(entry.highestRank) }}>
             {entry.highestRank}
           </span>
-          <span className="text-[#2A2A2A] text-[10px]">•</span>
-          <span className="text-[#3A3A3A] text-[10px]">{entry.wins} wins ({winPct}%)</span>
+          <span className="text-[rgb(var(--c3))] text-[10px]">•</span>
+          <span className="text-[rgb(var(--c4))] text-[10px]">{entry.wins} wins ({winPct}%)</span>
         </div>
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Star size={14} className={position <= 3 ? "text-[#D4AF37]" : "text-[#3A3A3A]"} />
-        <span className={`text-sm font-semibold ${position <= 3 ? "text-[#D4AF37]" : "text-[#888888]"}`}>
+        <Star size={14} className={position <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
+        <span className={`text-sm font-semibold ${position <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
           {entry.peakTrophies.toLocaleString()}
         </span>
       </div>

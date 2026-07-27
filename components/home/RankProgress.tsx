@@ -26,17 +26,17 @@ export function RankProgress() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Award size={18} className="text-[#D4AF37]" />
-          <h3 className="text-white font-semibold text-sm">Current Rank</h3>
+          <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Current Rank</h3>
         </div>
         <span className="text-[#D4AF37] font-bold text-sm">{currentRank}</span>
       </div>
 
       <div className="flex items-baseline gap-1 mb-3">
-        <span className="text-2xl font-bold text-white">{trophies}</span>
-        <span className="text-[#3A3A3A] text-xs">trophies</span>
+        <span className="text-2xl font-bold text-[rgb(var(--text-primary))]">{trophies}</span>
+        <span className="text-[rgb(var(--c4))] text-xs">trophies</span>
       </div>
 
-      <div className="h-2 bg-[#1A1A1A] rounded-full overflow-hidden">
+      <div className="h-2 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
         <motion.div
           className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
           initial={{ width: 0 }}
@@ -46,7 +46,7 @@ export function RankProgress() {
       </div>
 
       {nextRank && (
-        <p className="text-[#3A3A3A] text-[10px] mt-2">
+        <p className="text-[rgb(var(--c4))] text-[10px] mt-2">
           {nextRank.min - trophies} trophies to {nextRank.name}
         </p>
       )}

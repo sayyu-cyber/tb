@@ -15,13 +15,13 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
         key={value}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-14 h-14 bg-[#1A1A1A] rounded-xl border border-[#D4AF37]/20 flex items-center justify-center"
+        className="w-14 h-14 bg-[rgb(var(--c2))] rounded-xl border border-[#D4AF37]/20 flex items-center justify-center"
       >
         <span className="text-2xl font-bold text-[#D4AF37]">
           {value.toString().padStart(2, "0")}
         </span>
       </motion.div>
-      <span className="text-[10px] text-[#3A3A3A] uppercase tracking-wider mt-1">{label}</span>
+      <span className="text-[10px] text-[rgb(var(--c4))] uppercase tracking-wider mt-1">{label}</span>
     </div>
   );
 }
@@ -40,7 +40,7 @@ export function CountdownTimer({ targetDate, label }: CountdownTimerProps) {
   return (
     <div className="w-full">
       {label && (
-        <p className="text-xs text-[#3A3A3A] uppercase tracking-wider mb-3 text-center">{label}</p>
+        <p className="text-xs text-[rgb(var(--c4))] uppercase tracking-wider mb-3 text-center">{label}</p>
       )}
       <div className="flex items-center justify-center gap-3">
         <TimeUnit value={days} label="Days" />

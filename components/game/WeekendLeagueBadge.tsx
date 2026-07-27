@@ -22,7 +22,7 @@ export function WeekendLeagueBadge() {
         <Flame size={14} className="text-orange-400" />
       </motion.div>
       <span className="text-orange-400 text-xs font-semibold">Weekend League</span>
-      <span className="text-[#3A3A3A] text-[10px]">Double Trophies!</span>
+      <span className="text-[rgb(var(--c4))] text-[10px]">Double Trophies!</span>
     </motion.div>
   );
 }

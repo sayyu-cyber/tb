@@ -28,7 +28,7 @@ export function BottomNav() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[#0F0F0F]/95 backdrop-blur-xl border-t border-[#D4AF37]/10"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-[rgb(var(--c1)/95%)] backdrop-blur-xl border-t border-[#D4AF37]/10"
     >
       {/* Coin Balance - Added at top of nav */}
       <div className="max-w-md mx-auto px-4 pt-2 pb-1 flex justify-center">
@@ -63,7 +63,7 @@ export function BottomNav() {
                   size={20}
                   className={cn(
                     "relative z-10 transition-colors duration-200",
-                    isActive ? "text-[#D4AF37]" : "text-[#3A3A3A]"
+                    isActive ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"
                   )}
                   strokeWidth={isActive ? 2.5 : 1.5}
                 />
@@ -71,7 +71,7 @@ export function BottomNav() {
               <span
                 className={cn(
                   "text-[9px] mt-0.5 font-medium transition-colors duration-200",
-                  isActive ? "text-[#D4AF37]" : "text-[#3A3A3A]"
+                  isActive ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"
                 )}
               >
                 {item.label}

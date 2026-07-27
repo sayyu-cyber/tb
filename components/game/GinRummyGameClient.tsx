@@ -188,20 +188,20 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
     const isDraw = result.winner === "draw";
     return (
       <>
-        <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
+        <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[#1A1A1A] border border-[#2A2A2A]"
+                youWon ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
-              <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[#3A3A3A]"} />
+              <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
             </motion.div>
             <div>
-              <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[#3A3A3A]"}`}>
+              <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
                 {isDraw ? "Stock Ran Out — Draw" : youWon ? "You Won!" : "You Lost"}
               </h1>
               {!isDraw && (result.gin || result.undercut) && (
@@ -212,18 +212,18 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
             </div>
             <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[#3A3A3A] text-xs">Your deadwood</span>
-                <span className="text-white font-bold">{result.playerDeadwood}</span>
+                <span className="text-[rgb(var(--c4))] text-xs">Your deadwood</span>
+                <span className="text-[rgb(var(--text-primary))] font-bold">{result.playerDeadwood}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#3A3A3A] text-xs">Opponent deadwood</span>
-                <span className="text-white font-bold">{result.opponentDeadwood}</span>
+                <span className="text-[rgb(var(--c4))] text-xs">Opponent deadwood</span>
+                <span className="text-[rgb(var(--text-primary))] font-bold">{result.opponentDeadwood}</span>
               </div>
               {!isDraw && (
                 <>
-                  <div className="h-px bg-[#2A2A2A]" />
+                  <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
-                    <span className="text-[#3A3A3A] text-xs">Points</span>
+                    <span className="text-[rgb(var(--c4))] text-xs">Points</span>
                     <span className="text-[#D4AF37] font-bold">{result.score}</span>
                   </div>
                 </>
@@ -231,7 +231,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
             </div>
             <div className="flex gap-3 max-w-xs mx-auto">
               <Link href="/play" className="flex-1">
-                <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium flex items-center justify-center gap-2">
+                <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2">
                   <Home size={16} />
                   Exit
                 </motion.button>
@@ -265,11 +265,11 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
 
   if (needsPassScreen) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6 text-center">
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center">
         <Smartphone size={40} className="text-[#D4AF37] mb-4" />
-        <h2 className="text-white text-xl font-bold mb-2">Pass the device to</h2>
+        <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">Pass the device to</h2>
         <p className="text-[#D4AF37] text-2xl font-bold mb-6">{turn === "player" ? "Player 1" : "Player 2"}</p>
-        <p className="text-[#3A3A3A] text-xs mb-8">Make sure no one else can see the screen</p>
+        <p className="text-[rgb(var(--c4))] text-xs mb-8">Make sure no one else can see the screen</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setRevealedSide(turn)}
@@ -286,12 +286,12 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   const deadwoodShown = mode === "passplay" ? bestMeldArrangement(turn === "player" ? playerHand : opponentHand).deadwoodValue : currentArrangement.deadwoodValue;
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
+    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch={false} />
         <div className="text-center">
-          <p className="text-white text-sm font-semibold">Gin Rummy — Casual</p>
-          <p className="text-[#3A3A3A] text-[10px]">
+          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Gin Rummy — Casual</p>
+          <p className="text-[rgb(var(--c4))] text-[10px]">
             {isMyTurn ? "Your turn" : "Opponent's turn"} · Deadwood: {deadwoodShown}
           </p>
         </div>
@@ -305,10 +305,10 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
           disabled={phase !== "draw" || !isMyTurn || stock.length <= 2}
           className="flex flex-col items-center gap-1 disabled:opacity-40"
         >
-          <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-[#2A2A2A] flex items-center justify-center">
-            <Layers size={20} className="text-[#3A3A3A]" />
+          <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--c3))] flex items-center justify-center">
+            <Layers size={20} className="text-[rgb(var(--c4))]" />
           </div>
-          <span className="text-[10px] text-[#3A3A3A]">Stock ({stock.length})</span>
+          <span className="text-[10px] text-[rgb(var(--c4))]">Stock ({stock.length})</span>
         </button>
 
         <button
@@ -317,24 +317,24 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
           className="flex flex-col items-center gap-1 disabled:opacity-40"
         >
           {topDiscard ? (
-            <div className="w-16 h-24 rounded-xl bg-[#1A1A1A] border border-[#D4AF37]/40 flex flex-col items-center justify-center">
-              <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-white"}`}>
+            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[#D4AF37]/40 flex flex-col items-center justify-center">
+              <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
                 {rankLabel(topDiscard.rank)}
               </span>
-              <span className={`text-sm ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-white"}`}>
+              <span className={`text-sm ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
                 {SUIT_SYMBOLS[topDiscard.suit]}
               </span>
             </div>
           ) : (
-            <div className="w-16 h-24 rounded-xl border border-dashed border-[#2A2A2A]" />
+            <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
           )}
-          <span className="text-[10px] text-[#3A3A3A]">Discard pile</span>
+          <span className="text-[10px] text-[rgb(var(--c4))]">Discard pile</span>
         </button>
       </div>
 
       {/* Hand */}
       <div className="flex-1 flex flex-col justify-end px-4 pb-6">
-        <p className="text-[#3A3A3A] text-xs mb-3 text-center">
+        <p className="text-[rgb(var(--c4))] text-xs mb-3 text-center">
           {!isMyTurn ? "Waiting for opponent…" : phase === "draw" ? "Draw a card" : "Select a card to discard"}
         </p>
         <div className="flex justify-center gap-1.5 flex-wrap">
@@ -348,7 +348,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                 onClick={() => isMyTurn && handleSelectDiscard(card)}
                 disabled={!isMyTurn || phase !== "discard"}
                 className={`w-11 h-16 rounded-lg border flex flex-col items-center justify-center disabled:opacity-70 ${
-                  selected ? "bg-[#D4AF37]/20 border-[#D4AF37] -translate-y-2" : "bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border-[#2A2A2A]"
+                  selected ? "bg-[#D4AF37]/20 border-[#D4AF37] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
                 }`}
               >
                 <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
@@ -373,7 +373,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleConfirmDiscard}
-                className="px-6 py-2.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-white text-sm font-medium"
+                className="px-6 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium"
               >
                 Discard
               </motion.button>
