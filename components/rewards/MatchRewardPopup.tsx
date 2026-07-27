@@ -99,14 +99,21 @@ export default function MatchRewardPopup({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-2">
-                  <span className={`text-lg ${trophyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {trophyChange >= 0 ? '📈' : '📉'}
-                  </span>
-                  <span className={`font-bold ${trophyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {trophyChange > 0 ? '+' : ''}{trophyChange} Trophies
-                  </span>
-                </div>
+                {trophyChange !== 0 ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <span className={`text-lg ${trophyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {trophyChange >= 0 ? '📈' : '📉'}
+                    </span>
+                    <span className={`font-bold ${trophyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {trophyChange > 0 ? '+' : ''}{trophyChange} Trophies
+                    </span>
+                  </div>
+                ) : (
+                  // Casual matches (see CasualOnlineClient) carry no trophy
+                  // stakes at all - say so explicitly rather than showing a
+                  // misleading "+0 Trophies".
+                  <p className="text-gray-500 text-xs">Casual match — no trophies at stake</p>
+                )}
 
                 <div className="pt-4 border-t border-amber-500/20">
                   <p className="text-gray-400 text-sm mb-2">New Balance</p>

@@ -35,8 +35,15 @@ import {
 import { db } from "@/lib/firebase";
 
 export type GameType = "mindi" | "gin_rummy";
-/** Which queue a player is in - keeps casual Ranked matchmaking and Weekend League matchmaking from pairing with each other. */
-export type Pool = "ranked" | "weekend";
+/** Which queue a player is in - keeps Ranked, Weekend League, and Casual
+ *  matchmaking from ever pairing with each other. "casual" is a no-stakes
+ *  real-multiplayer queue (see components/game/CasualOnlineClient.tsx) -
+ *  same random-matching as Ranked used to be for Mindi before it went
+ *  duo-only, kept around specifically for players without a friend to
+ *  party up with: tryFormMatch orders queued players by wait time and
+ *  seats them 0-3, so a 4-player Mindi casual match auto-assigns a random
+ *  teammate (seats 0&2 vs 1&3) with zero extra logic needed. */
+export type Pool = "ranked" | "weekend" | "casual";
 
 export interface MatchDoc<TState = unknown> {
   gameType: GameType;

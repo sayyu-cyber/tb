@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Swords, Lock, Bot, Smartphone, KeyRound, UsersRound } from "lucide-react";
+import { Users, Swords, Lock, Bot, Smartphone, KeyRound, UsersRound, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
@@ -73,6 +73,23 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                     </motion.button>
                   </Link>
                 </div>
+                {isGuest ? (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                    <Lock size={16} className="text-[rgb(var(--c4))]" />
+                    <p className="text-[rgb(var(--c4))] text-sm">Sign in for Casual Online matches</p>
+                  </div>
+                ) : (
+                  <Link href={`/play/${id}/casual/online`}>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
+                    >
+                      <Globe size={16} className="text-[#D4AF37]" />
+                      <span className="text-sm">{id === "mindi" ? "Online (auto-teamed, no partner needed)" : "Online"}</span>
+                    </motion.button>
+                  </Link>
+                )}
               </div>
 
               {/* Ranked Mode */}

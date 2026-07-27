@@ -134,8 +134,14 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     setRewardsApplied(true);
     const youWon = state.outcome.winner === myTeam;
     processMatchEnd(youWon, "mindi");
-    const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
-    await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {});
+    // Casual is a no-stakes queue (see CasualOnlineClient) - coins/mission
+    // progress still apply via processMatchEnd above, same as vs-AI/Pass &
+    // Play, but trophies/rank/win-loss record are real-multiplayer-Ranked
+    // only, so skip updateMatchResult entirely for a casual match.
+    if (match?.pool !== "casual") {
+      const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
+      await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {});
+    }
     setShowRewardPopup(true);
   }
 
@@ -162,8 +168,10 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     // We're leaving, so we won't be around to click "Rewards" ourselves -
     // take the loss on our own account right now instead.
     processMatchEnd(false, "mindi");
-    const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
-    await updateMatchResult(myUid, false, "mindi", trophyMultiplier).catch(() => {});
+    if (match.pool !== "casual") {
+      const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
+      await updateMatchResult(myUid, false, "mindi", trophyMultiplier).catch(() => {});
+    }
   }
 
   if (!match || !state) {
@@ -239,7 +247,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
           onClose={() => setShowRewardPopup(false)}
           isVictory={youWon}
           coinsEarned={youWon ? 10 : 2}
-          trophyChange={youWon ? 15 : -5}
+          trophyChange={match?.pool === "casual" ? 0 : youWon ? 15 : -5}
           newCoinBalance={0}
         />
       </>
@@ -251,7 +259,9 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Mindi — Ranked</p>
+          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
+            Mindi — {match.pool === "casual" ? "Casual" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+          </p>
           <p className="text-[rgb(var(--c4))] text-[10px] flex items-center justify-center gap-1">
             Trump: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
           </p>

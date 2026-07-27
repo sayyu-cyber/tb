@@ -167,7 +167,9 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     setRewardsApplied(true);
     const isVictory = state.result.winnerUid === myUid;
     processMatchEnd(isVictory, "gin_rummy");
-    if (state.result.winnerUid !== "draw") {
+    // Casual is a no-stakes queue (see CasualOnlineClient) - skip the real
+    // trophy/rank update, same treatment as Mindi's casual pool.
+    if (state.result.winnerUid !== "draw" && match?.pool !== "casual") {
       const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
       await updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {});
     }
@@ -202,8 +204,10 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     // We're leaving, so we won't be around to click "Rewards" ourselves -
     // take the loss on our own account right now instead.
     processMatchEnd(false, "gin_rummy");
-    const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
-    await updateMatchResult(myUid, false, "gin-rummy", trophyMultiplier).catch(() => {});
+    if (match.pool !== "casual") {
+      const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
+      await updateMatchResult(myUid, false, "gin-rummy", trophyMultiplier).catch(() => {});
+    }
   }
 
   if (!match || !state) {
@@ -295,7 +299,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
             onClose={() => setShowRewardPopup(false)}
             isVictory={youWon}
             coinsEarned={youWon ? 10 : 2}
-            trophyChange={youWon ? 15 : -5}
+            trophyChange={match?.pool === "casual" ? 0 : youWon ? 15 : -5}
             newCoinBalance={0}
           />
         )}
@@ -308,7 +312,9 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Gin Rummy — Ranked</p>
+          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
+            Gin Rummy — {match.pool === "casual" ? "Casual" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+          </p>
           <p className="text-[rgb(var(--c4))] text-[10px]">
             {isMyTurn ? "Your turn" : "Opponent's turn"} · Deadwood: {bestMeldArrangement(myHand).deadwoodValue}
           </p>
