@@ -44,6 +44,11 @@ export interface RoomDoc {
    *  tryFormDuoMatch) - not a casual private match. Defaults to "casual"
    *  for every room created before this field existed. */
   mode?: "casual" | "rankedDuo";
+  /** Uids the owner has banned from this specific room code - banned
+   *  players are blocked from rejoining (see joinRoom) even if they still
+   *  have the code, unlike a kick which only removes them once. Defaults
+   *  to [] for every room created before this field existed. */
+  bannedUids?: string[];
 }
 
 function generateRoomCode(): string {
@@ -85,6 +90,7 @@ export async function createRoom(
       matchId: null,
       createdAt: Date.now(),
       mode,
+      bannedUids: [],
     };
     await setDoc(ref, room);
     return code;
@@ -106,6 +112,7 @@ export async function joinRoom(
     const room = snap.data() as RoomDoc;
 
     if (room.status !== "waiting") throw new Error("This room has already started or closed");
+    if (room.bannedUids?.includes(uid)) throw new Error("You have been banned from this room");
     if (room.password && room.password !== password) throw new Error("Incorrect room password");
     if (room.players.includes(uid)) return; // already in - fine
     if (room.players.length >= room.maxPlayers) throw new Error("This room is full");
@@ -129,6 +136,29 @@ export async function kickPlayer(code: string, ownerUid: string, targetUid: stri
     const playerNames = { ...room.playerNames };
     delete playerNames[targetUid];
     transaction.update(ref, { players, playerNames });
+  });
+}
+
+/**
+ * Like kickPlayer, but also adds the target to the room's ban list so they
+ * can't simply rejoin with the same code (see joinRoom's bannedUids check).
+ * The removed player finds out via their own watchRoom listener - once
+ * their uid disappears from room.players while the room is still
+ * "waiting", RoomLobbyClient shows them a "you were banned" screen.
+ */
+export async function banPlayer(code: string, ownerUid: string, targetUid: string): Promise<void> {
+  await runTransaction(db, async (transaction) => {
+    const ref = doc(db, ROOMS_COLLECTION, code);
+    const snap = await transaction.get(ref);
+    if (!snap.exists()) return;
+    const room = snap.data() as RoomDoc;
+    if (room.ownerUid !== ownerUid || targetUid === ownerUid) return;
+
+    const players = room.players.filter((p) => p !== targetUid);
+    const playerNames = { ...room.playerNames };
+    delete playerNames[targetUid];
+    const bannedUids = Array.from(new Set([...(room.bannedUids ?? []), targetUid]));
+    transaction.update(ref, { players, playerNames, bannedUids });
   });
 }
 

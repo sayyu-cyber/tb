@@ -129,10 +129,33 @@ export interface VipBenefits {
 
 // ─── ROOM CARDS ──────────────────────────────────────
 
+export type RoomCardType = '1h' | '3h' | '6h' | '24h' | '1w' | '1m';
+
+// Duration of each Room Card type, in hours. A "month" is treated as a fixed
+// 30 days rather than a calendar month, to keep this a simple number instead
+// of needing real calendar-month math for something this low-stakes.
+export const ROOM_CARD_DURATION_HOURS: Record<RoomCardType, number> = {
+  '1h': 1,
+  '3h': 3,
+  '6h': 6,
+  '24h': 24,
+  '1w': 24 * 7,
+  '1m': 24 * 30,
+};
+
+export const ROOM_CARD_LABELS: Record<RoomCardType, string> = {
+  '1h': '1-Hour',
+  '3h': '3-Hour',
+  '6h': '6-Hour',
+  '24h': '24-Hour',
+  '1w': '1-Week',
+  '1m': '1-Month',
+};
+
 export interface RoomCard {
   id: string;
-  type: '1h' | '24h';
-  duration: number;
+  type: RoomCardType;
+  duration: number; // hours - kept as a stored field (not just derived) so already-activated cards keep their original duration if ROOM_CARD_DURATION_HOURS ever changes
   activated: boolean;
   activatedAt?: number;
   expiresAt?: number;

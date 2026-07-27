@@ -5,14 +5,14 @@ import React, { createContext, useContext, useReducer, useCallback, useEffect, u
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { 
-  PlayerEconomy, CoinTransaction, CoinSource, PlayerProfile, 
-  RoomCard, DailyMission, WeeklyMission, Achievement, 
-  DailyLoginReward, RewardPopup, RewardItem 
+import {
+  PlayerEconomy, CoinTransaction, CoinSource, PlayerProfile,
+  RoomCard, RoomCardType, ROOM_CARD_DURATION_HOURS, DailyMission, WeeklyMission, Achievement,
+  DailyLoginReward, RewardPopup, RewardItem
 } from '../types/economy';
 import { 
-  DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, 
-  ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS 
+  DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES,
+  ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS, ROOM_CARD_PRICES
 } from '../data/cosmetics';
 
 // ─── ACTIONS ─────────────────────────────────────────
@@ -27,7 +27,8 @@ type EconomyAction =
   | { type: 'EQUIP_COSMETIC'; payload: { category: string; itemId: string } }
   | { type: 'UNLOCK_ACHIEVEMENT'; payload: { achievementId: string } }
   | { type: 'UPDATE_PROGRESS'; payload: { key: string; value: number } }
-  | { type: 'ADD_ROOM_CARD'; payload: { type: '1h' | '24h' } }
+  | { type: 'ADD_ROOM_CARD'; payload: { type: RoomCardType } }
+  | { type: 'PURCHASE_ROOM_CARD'; payload: { type: RoomCardType; price: number } }
   | { type: 'SHOW_REWARD'; payload: RewardPopup }
   | { type: 'CLEAR_REWARD'; payload: string }
   | { type: 'RESET_DAILY_MISSIONS' }
@@ -255,7 +256,7 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         const newCard: RoomCard = {
           id: `rc_${Date.now()}`,
           type: '1h',
-          duration: 1,
+          duration: ROOM_CARD_DURATION_HOURS['1h'],
           activated: false,
         };
         return {
@@ -301,7 +302,7 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
       const newCard: RoomCard = {
         id: `rc_vip_${Date.now()}`,
         type: '24h',
-        duration: 24,
+        duration: ROOM_CARD_DURATION_HOURS['24h'],
         activated: false,
       };
       return {
@@ -417,12 +418,36 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
       const newCard: RoomCard = {
         id: `rc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         type,
-        duration: type === '1h' ? 1 : 24,
+        duration: ROOM_CARD_DURATION_HOURS[type],
         activated: false,
       };
       return {
         ...state,
         profile: { ...state.profile, roomCards: [...state.profile.roomCards, newCard] },
+      };
+    }
+
+    case 'PURCHASE_ROOM_CARD': {
+      const { type, price } = action.payload;
+      if (state.economy.coins < price) return state;
+      const newCard: RoomCard = {
+        id: `rc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        type,
+        duration: ROOM_CARD_DURATION_HOURS[type],
+        activated: false,
+      };
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          coins: state.profile.coins - price,
+          roomCards: [...state.profile.roomCards, newCard],
+        },
+        economy: {
+          ...state.economy,
+          coins: state.economy.coins - price,
+          totalSpent: state.economy.totalSpent + price,
+        },
       };
     }
 
@@ -526,7 +551,8 @@ interface EconomyContextType {
   equipCosmetic: (category: string, itemId: string) => void;
   unlockAchievement: (achievementId: string) => void;
   updateProgress: (key: string, value: number) => void;
-  addRoomCard: (type: '1h' | '24h') => void;
+  addRoomCard: (type: RoomCardType) => void;
+  purchaseRoomCard: (type: RoomCardType) => boolean;
   showReward: (popup: RewardPopup) => void;
   clearReward: (id: string) => void;
   resetDailyMissions: () => void;
@@ -701,9 +727,16 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'UPDATE_PROGRESS', payload: { key, value } });
   }, [dispatch]);
 
-  const addRoomCard = useCallback((type: '1h' | '24h') => {
+  const addRoomCard = useCallback((type: RoomCardType) => {
     dispatch({ type: 'ADD_ROOM_CARD', payload: { type } });
   }, [dispatch]);
+
+  const purchaseRoomCard = useCallback((type: RoomCardType): boolean => {
+    const price = ROOM_CARD_PRICES[type];
+    if (state.economy.coins < price) return false;
+    dispatch({ type: 'PURCHASE_ROOM_CARD', payload: { type, price } });
+    return true;
+  }, [dispatch, state.economy.coins]);
 
   const showReward = useCallback((popup: RewardPopup) => {
     dispatch({ type: 'SHOW_REWARD', payload: popup });
@@ -878,6 +911,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
         unlockAchievement,
         updateProgress,
         addRoomCard,
+        purchaseRoomCard,
         showReward,
         clearReward,
         resetDailyMissions,

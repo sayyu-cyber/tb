@@ -1,6 +1,6 @@
 // src/data/cosmetics.ts
 
-import { CosmeticItem, CoinPack, RankConfig, Achievement, Rarity } from '../types/economy';
+import { CosmeticItem, CoinPack, RankConfig, Achievement, Rarity, RoomCardType } from '../types/economy';
 
 export const RARITY_COLORS: Record<Rarity, string> = {
   Common: '#9CA3AF',
@@ -90,6 +90,18 @@ export const COIN_PACKS: CoinPack[] = [
   { id: 'pack_premium', name: 'Premium Pack', coins: 4000, priceMVR: 250, isBestValue: true },
   { id: 'pack_mega', name: 'Mega Pack', coins: 10000, priceMVR: 500 },
 ];
+
+// Coin prices for buying a Room Card directly, without waiting on daily
+// login/missions/VIP grants. Placeholder pricing - intended to be editable
+// from the admin panel's shop management once that exists.
+export const ROOM_CARD_PRICES: Record<RoomCardType, number> = {
+  '1h': 50,
+  '3h': 120,
+  '6h': 200,
+  '24h': 350,
+  '1w': 1500,
+  '1m': 5000,
+};
 
 export const RANK_CONFIGS: RankConfig[] = [
   { tier: 'Bronze', minTrophies: 0, color: '#CD7F32', weeklyReward: 50, icon: '/ranks/bronze.png' },

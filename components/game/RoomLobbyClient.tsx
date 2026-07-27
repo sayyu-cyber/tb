@@ -6,6 +6,7 @@ import { ArrowLeft, Users, Lock, Copy, Check, LogOut, Play, Crown } from "lucide
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEconomy } from "@/contexts/EconomyContext";
 import { GameType } from "@/lib/matchmaking";
 import { dealMindiHand } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
@@ -15,6 +16,7 @@ import {
   createRoom,
   joinRoom,
   kickPlayer,
+  banPlayer,
   leaveRoom,
   closeRoom,
   startRoomMatch,
@@ -68,6 +70,7 @@ export function RoomLobbyClient({ gameId }: { gameId: string }) {
 function RoomChooser({ gameId }: { gameId: string }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { getActiveRoomCards } = useEconomy();
   const [mode, setMode] = useState<"choose" | "create" | "join">("choose");
   const [password, setPassword] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -75,8 +78,13 @@ function RoomChooser({ gameId }: { gameId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Rooms can only be opened while a Room Card is active - once activated,
+  // any number of rooms can be created until it expires (see
+  // components/roomcards/RoomCardManager.tsx and lib/rooms.ts's docs).
+  const hasActiveRoomCard = getActiveRoomCards().length > 0;
+
   async function handleCreate() {
-    if (!user?.uid) return;
+    if (!user?.uid || !hasActiveRoomCard) return;
     setBusy(true);
     setError(null);
     try {
@@ -121,13 +129,25 @@ function RoomChooser({ gameId }: { gameId: string }) {
 
         {mode === "choose" && (
           <div className="space-y-3">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setMode("create")}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
-            >
-              Create a Room
-            </motion.button>
+            {hasActiveRoomCard ? (
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setMode("create")}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
+              >
+                Create a Room
+              </motion.button>
+            ) : (
+              <div className="space-y-2 p-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                <p className="text-[rgb(var(--text-primary))] text-sm font-medium">You need an active Room Card to create a room</p>
+                <p className="text-[rgb(var(--c4))] text-xs">Activate or buy one - once active, you can create unlimited rooms until it expires.</p>
+                <Link href="/room-cards">
+                  <motion.button whileTap={{ scale: 0.98 }} className="w-full mt-1 py-2.5 rounded-lg bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
+                    Go to Room Cards
+                  </motion.button>
+                </Link>
+              </div>
+            )}
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setMode("join")}
@@ -209,6 +229,12 @@ function RoomLobby({
   const [room, setRoom] = useState<RoomDoc | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Once we've seen ourselves in the room's player list, a later snapshot
+  // where we're missing (but the room is still open) means the owner
+  // removed us - kick or ban. Track that so we don't misfire this on the
+  // very first snapshot before our own join has propagated.
+  const [wasSeated, setWasSeated] = useState(false);
+  const [removedAs, setRemovedAs] = useState<"kicked" | "banned" | null>(null);
 
   useEffect(() => watchRoom(code, setRoom), [code]);
 
@@ -217,6 +243,18 @@ function RoomLobby({
       router.replace(`/play/${gameId}/ranked/live?m=${room.matchId}`);
     }
   }, [room, gameId, router]);
+
+  useEffect(() => {
+    if (!room || room.status !== "waiting") return;
+    const stillIn = room.players.includes(myUid);
+    if (stillIn) {
+      setWasSeated(true);
+      return;
+    }
+    if (wasSeated) {
+      setRemovedAs(room.bannedUids?.includes(myUid) ? "banned" : "kicked");
+    }
+  }, [room, myUid, wasSeated]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard?.writeText(code).catch(() => {});
@@ -238,6 +276,10 @@ function RoomLobby({
     await kickPlayer(code, myUid, uid).catch((err) => setError(String(err)));
   }
 
+  async function handleBan(uid: string) {
+    await banPlayer(code, myUid, uid).catch((err) => setError(String(err)));
+  }
+
   async function handleLeave() {
     await leaveRoom(code, myUid).catch(() => {});
     router.push("/play");
@@ -247,6 +289,19 @@ function RoomLobby({
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
         <p className="text-[rgb(var(--c4))] text-sm">Loading room…</p>
+      </div>
+    );
+  }
+
+  if (removedAs) {
+    return (
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
+        <p className="text-[rgb(var(--text-primary))] font-semibold">
+          {removedAs === "banned" ? "You were banned from this room by the owner." : "You were removed from this room by the owner."}
+        </p>
+        <Link href="/play" className="text-[#D4AF37] text-sm underline">
+          Back to Play
+        </Link>
       </div>
     );
   }
@@ -307,9 +362,14 @@ function RoomLobby({
                 {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">(you)</span>}
               </div>
               {isOwner && uid !== myUid && (
-                <button onClick={() => handleKick(uid)} className="text-red-400 text-xs">
-                  Kick
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => handleKick(uid)} className="text-orange-400 text-xs">
+                    Kick
+                  </button>
+                  <button onClick={() => handleBan(uid)} className="text-red-400 text-xs">
+                    Ban
+                  </button>
+                </div>
               )}
             </div>
           ))}
