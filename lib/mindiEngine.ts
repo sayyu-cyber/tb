@@ -141,7 +141,7 @@ export interface HandOutcome {
   winner: Team;
   tensCaptured: Record<Team, number>;
   tricksWon: Record<Team, number>;
-  special: "baga" | "hukunbunye" | null;
+  special: "baga" | "hukunbunye" | "forfeit" | null;
 }
 
 /** Checks whether the hand should end after the trick just resolved. */

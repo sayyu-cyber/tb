@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Home, Sparkles, Users, Smartphone } from "lucide-react";
+import { Home, Sparkles, Users, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BOT_NAMES } from "@/constants/ranks";
 import { useEconomy } from "@/contexts/EconomyContext";
 import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
+import { LeaveMatchButton } from "@/components/game/LeaveMatchButton";
 import {
   Card,
   SeatIndex,
@@ -271,11 +272,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <Link href="/play">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-            <ArrowLeft size={20} className="text-[#D4AF37]" />
-          </motion.button>
-        </Link>
+        <LeaveMatchButton exitHref="/play" isOnlineMatch={false} />
         <div className="text-center">
           <p className="text-white text-sm font-semibold">Mindi — Casual</p>
           <p className="text-[#3A3A3A] text-[10px] flex items-center justify-center gap-1">

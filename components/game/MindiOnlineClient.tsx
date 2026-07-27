@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Home, Sparkles, Users } from "lucide-react";
+import { Home, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { updateMatchResult } from "@/lib/trophyUpdates";
 import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
+import { LeaveMatchButton } from "@/components/game/LeaveMatchButton";
 import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
 import {
   Card,
@@ -130,6 +131,33 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     setShowRewardPopup(true);
   }
 
+  async function handleForfeit() {
+    if (!match) return;
+    const opponentTeam: Team = myTeam === "A" ? "B" : "A";
+    await updateMatchState<MindiOnlineState>(matchId, (current) => {
+      const s = current.state;
+      if (s.outcome) return null; // match already ended some other way
+      return {
+        status: "completed",
+        state: {
+          ...s,
+          outcome: {
+            winner: opponentTeam,
+            tensCaptured: s.tensCaptured,
+            tricksWon: s.tricksWon,
+            special: "forfeit",
+          },
+        },
+      };
+    }).catch(() => {});
+
+    // We're leaving, so we won't be around to click "Rewards" ourselves -
+    // take the loss on our own account right now instead.
+    processMatchEnd(false, "mindi");
+    const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
+    await updateMatchResult(myUid, false, "mindi", trophyMultiplier).catch(() => {});
+  }
+
   if (!match || !state) {
     return (
       <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
@@ -156,9 +184,15 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
             </motion.div>
             <div>
               <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[#3A3A3A]"}`}>
-                {youWon ? "You Won!" : "You Lost"}
+                {state.outcome.special === "forfeit"
+                  ? youWon
+                    ? "Opponent Forfeited"
+                    : "You Forfeited"
+                  : youWon
+                  ? "You Won!"
+                  : "You Lost"}
               </h1>
-              {state.outcome.special && (
+              {state.outcome.special && state.outcome.special !== "forfeit" && (
                 <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {state.outcome.special === "baga" ? "Baga — all 4 Tens!" : "Hukunbunye — clean sweep!"}
                 </p>
@@ -209,11 +243,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <Link href="/play">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A]">
-            <ArrowLeft size={20} className="text-[#D4AF37]" />
-          </motion.button>
-        </Link>
+        <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
           <p className="text-white text-sm font-semibold">Mindi — Ranked</p>
           <p className="text-[#3A3A3A] text-[10px] flex items-center justify-center gap-1">
