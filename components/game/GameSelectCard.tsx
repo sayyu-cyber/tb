@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Swords, Lock, Bot, Smartphone, KeyRound } from "lucide-react";
+import { Users, Swords, Lock, Bot, Smartphone, KeyRound, UsersRound } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
@@ -83,17 +83,40 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                     <Lock size={16} className="text-[rgb(var(--c4))]" />
                     <p className="text-[rgb(var(--c4))] text-sm">Please sign in to access Ranked Mode</p>
                   </div>
-                ) : (
-                  <Link href={`/play/${id}/ranked`}>
+                ) : id === "mindi" ? (
+                  <Link href={`/play/${id}/ranked-duo`}>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] font-semibold rounded-xl py-3 shadow-[0_4px_15px_rgba(212,175,55,0.3)]"
                     >
                       <Swords size={16} />
-                      <span>Play Ranked</span>
+                      <span>Play Ranked (2v2 with a partner)</span>
                     </motion.button>
                   </Link>
+                ) : (
+                  <>
+                    <Link href={`/play/${id}/ranked`}>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] font-semibold rounded-xl py-3 shadow-[0_4px_15px_rgba(212,175,55,0.3)]"
+                      >
+                        <Swords size={16} />
+                        <span>Ranked 1v1</span>
+                      </motion.button>
+                    </Link>
+                    <Link href={`/play/${id}/ranked-duo`}>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[#D4AF37]/30 text-[rgb(var(--text-primary))] font-medium rounded-xl py-3 mt-2"
+                      >
+                        <UsersRound size={16} className="text-[#D4AF37]" />
+                        <span className="text-sm">Ranked 2v2 (with a partner)</span>
+                      </motion.button>
+                    </Link>
+                  </>
                 )}
               </div>
 

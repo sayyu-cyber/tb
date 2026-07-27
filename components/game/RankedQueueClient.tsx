@@ -73,7 +73,13 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   // but never actually enforced - a player could keep queueing past 0
   // remaining. Now queueing is blocked once either cap is hit.
   const outOfMatches = matchLimits.dailyRemaining <= 0 || matchLimits.weeklyRemaining <= 0;
-  const canQueue = (!weekendMode || qualified) && !outOfMatches;
+  // Mindi's non-weekend Ranked queue is duo-only now (see RankedDuoClient) -
+  // players must bring a chosen partner instead of being randomly paired
+  // with a stranger into a partnership. Weekend League Mindi is untouched
+  // and still queues solo, since that's a separate, higher-stakes mode the
+  // user didn't ask to change.
+  const requiresDuo = gameType === "mindi" && !weekendMode;
+  const canQueue = (!weekendMode || qualified) && !outOfMatches && !requiresDuo;
   const pool: Pool = weekendMode ? "weekend" : "ranked";
 
   useEffect(() => {
@@ -149,6 +155,27 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
               : `Free players get ${matchLimits.dailyTotal} ranked matches a day (${matchLimits.weeklyTotal} a week). VIP raises the daily cap to ${VIP_DAILY_MATCHES}. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (requiresDuo) {
+    return (
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
+        <Link href="/play" className="absolute top-6 left-4">
+          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+            <X size={20} className="text-[rgb(var(--c4))]" />
+          </motion.button>
+        </Link>
+        <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">Mindi Ranked needs a partner</h2>
+        <p className="text-[rgb(var(--c4))] text-sm max-w-xs">
+          Mindi is always 2v2 — bring a friend as your fixed partner instead of being randomly paired. Start or join a party to queue together.
+        </p>
+        <Link href={`/play/${gameId}/ranked-duo`}>
+          <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
+            Go to Ranked Duo
+          </motion.button>
+        </Link>
       </div>
     );
   }

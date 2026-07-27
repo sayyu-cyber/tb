@@ -39,6 +39,11 @@ export interface RoomDoc {
   status: "waiting" | "started" | "closed";
   matchId: string | null;
   createdAt: number;
+  /** "rankedDuo" rooms are just a 2-person "bring your own partner" party
+   *  formed before Ranked queueing (see lib/matchmaking.ts's
+   *  tryFormDuoMatch) - not a casual private match. Defaults to "casual"
+   *  for every room created before this field existed. */
+  mode?: "casual" | "rankedDuo";
 }
 
 function generateRoomCode(): string {
@@ -49,7 +54,8 @@ function generateRoomCode(): string {
   return code;
 }
 
-function maxPlayersFor(gameType: GameType): number {
+function maxPlayersFor(gameType: GameType, mode: "casual" | "rankedDuo"): number {
+  if (mode === "rankedDuo") return 2; // always just you + one partner, regardless of game
   return gameType === "mindi" ? 4 : 2;
 }
 
@@ -57,7 +63,8 @@ export async function createRoom(
   ownerUid: string,
   ownerName: string,
   gameType: GameType,
-  password: string | null
+  password: string | null,
+  mode: "casual" | "rankedDuo" = "casual"
 ): Promise<string> {
   // Vanishingly unlikely to collide, but check anyway before committing.
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -71,12 +78,13 @@ export async function createRoom(
       gameType,
       ownerUid,
       password: password || null,
-      maxPlayers: maxPlayersFor(gameType),
+      maxPlayers: maxPlayersFor(gameType, mode),
       players: [ownerUid],
       playerNames: { [ownerUid]: ownerName },
       status: "waiting",
       matchId: null,
       createdAt: Date.now(),
+      mode,
     };
     await setDoc(ref, room);
     return code;

@@ -71,6 +71,115 @@ export async function leaveQueue(uid: string): Promise<void> {
  * the match document and returns its id. If not enough players are waiting
  * yet, returns null (caller should keep waiting and try again later).
  */
+export async function joinDuoQueue(uid: string, partyId: string, gameType: GameType, pool: Pool = "ranked"): Promise<void> {
+  await setDoc(doc(db, QUEUE_COLLECTION, uid), {
+    uid,
+    gameType,
+    pool,
+    partyId,
+    queuedAt: Date.now(),
+  });
+}
+
+/**
+ * Duo-based matchmaking: instead of pairing 4 random individuals, this
+ * pairs two pre-formed 2-player parties (see lib/rooms.ts's "rankedDuo"
+ * room mode, used to team up with a chosen friend before queueing).
+ *
+ * - Mindi: the two duos become the two fixed partnerships of one 4-seat
+ *   match (seats 0&2 = my duo, seats 1&3 = the other duo - matches
+ *   mindiEngine's teamOf(), which groups those seat pairs together).
+ * - Gin Rummy: there's no established 4-player form of the game, so
+ *   "2v2" here means each of my duo's members plays an ordinary 1v1
+ *   sub-match against one member of the other duo, simultaneously - two
+ *   independent match documents, created together. Wins/losses are
+ *   still per sub-match (documented trade-off - true combined team
+ *   scoring would need a bigger rework of GinRummyOnlineClient).
+ *
+ * Returns true if a match was formed (the caller's own client will then
+ * discover its match via the existing watchForMatch, unchanged).
+ */
+export async function tryFormDuoMatch<TState>(
+  myUid: string,
+  partyId: string,
+  gameType: GameType,
+  buildInitialState: (players: string[]) => TState,
+  pool: Pool = "ranked"
+): Promise<boolean> {
+  const cutoff = Date.now() - STALE_QUEUE_MS;
+  const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
+  const snap = await getDocs(q);
+  const entries = snap.docs
+    .map((d) => d.data() as { uid: string; queuedAt: number; pool?: Pool; partyId?: string })
+    .filter((e) => e.queuedAt >= cutoff && (e.pool ?? "ranked") === pool && e.partyId);
+
+  const myPartyMembers = entries.filter((e) => e.partyId === partyId);
+  if (myPartyMembers.length < 2) return false; // my own duo isn't both queued yet
+
+  const otherParties = new Map<string, typeof entries>();
+  for (const e of entries) {
+    if (e.partyId === partyId) continue;
+    if (!otherParties.has(e.partyId!)) otherParties.set(e.partyId!, []);
+    otherParties.get(e.partyId!)!.push(e);
+  }
+  const readyOther = Array.from(otherParties.entries()).find(([, members]) => members.length >= 2);
+  if (!readyOther) return false;
+
+  const [, otherMembers] = readyOther;
+  const myDuo = myPartyMembers.slice(0, 2).map((e) => e.uid);
+  const theirDuo = otherMembers.slice(0, 2).map((e) => e.uid);
+  const allFour = [...myDuo, ...theirDuo];
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      // Re-verify all 4 are still actually queued before committing -
+      // same accepted-race pattern as tryFormMatch above.
+      const refs = allFour.map((u) => doc(db, QUEUE_COLLECTION, u));
+      for (const ref of refs) {
+        const current = await transaction.get(ref);
+        if (!current.exists()) throw new Error("candidate-no-longer-queued");
+      }
+
+      if (gameType === "mindi") {
+        const players = [myDuo[0], theirDuo[0], myDuo[1], theirDuo[1]];
+        const matchRef = doc(collection(db, MATCHES_COLLECTION));
+        const matchDoc: MatchDoc<TState> = {
+          gameType,
+          pool,
+          players,
+          status: "active",
+          createdAt: Date.now(),
+          state: buildInitialState(players),
+        };
+        transaction.set(matchRef, matchDoc);
+      } else {
+        const pairs = [
+          [myDuo[0], theirDuo[0]],
+          [myDuo[1], theirDuo[1]],
+        ];
+        for (const players of pairs) {
+          const matchRef = doc(collection(db, MATCHES_COLLECTION));
+          const matchDoc: MatchDoc<TState> = {
+            gameType,
+            pool,
+            players,
+            status: "active",
+            createdAt: Date.now(),
+            state: buildInitialState(players),
+          };
+          transaction.set(matchRef, matchDoc);
+        }
+      }
+
+      for (const ref of refs) transaction.delete(ref);
+    });
+    return true;
+  } catch (err) {
+    console.error("tryFormDuoMatch failed:", err);
+    return false;
+  }
+}
+
 export async function tryFormMatch<TState>(
   uid: string,
   gameType: GameType,
