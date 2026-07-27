@@ -17,6 +17,7 @@ export interface PlayerStats {
   trophies: number;
   currentRank: string;
   weeklyTrophies?: number;
+  peakTrophies?: number;
 }
 
 export interface LeaderboardEntry {

@@ -53,6 +53,7 @@ export async function updateMatchResult(
         favoriteGame: gameType,
         weeklyTrophies: Math.max(0, trophyChange),
         weekStart: thisWeek,
+        peakTrophies: initialTrophies,
         updatedAt: serverTimestamp(),
       });
 
@@ -85,6 +86,11 @@ export async function updateMatchResult(
     const isNewWeek = data.weekStart !== thisWeek;
     const newWeeklyTrophies = Math.max(0, (isNewWeek ? 0 : data.weeklyTrophies || 0) + trophyChange);
 
+    // peakTrophies only ever ratchets up - it's the permanent "best ever"
+    // record used by the Hall of Fame, unlike `trophies` which can drop
+    // after losses.
+    const newPeakTrophies = Math.max(data.peakTrophies || 0, newTrophies);
+
     await updateDoc(playerRef, {
       trophies: increment(trophyChange),
       wins: increment(isWin ? 1 : 0),
@@ -95,6 +101,7 @@ export async function updateMatchResult(
       winPercentage: Math.round((wins / totalMatches) * 100),
       weeklyTrophies: newWeeklyTrophies,
       weekStart: thisWeek,
+      peakTrophies: newPeakTrophies,
       updatedAt: serverTimestamp(),
     });
 

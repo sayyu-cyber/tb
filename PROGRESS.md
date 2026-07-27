@@ -60,7 +60,7 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 ### Version 1.5
 - Collections — **Done** UI (`app/collection`).
 - Achievements — **Done** UI (`app/achievements`), tied to Economy context.
-- Hall of Fame — **Pending**. No code found.
+- Hall of Fame — **Done** (2026-07-27). New `/hall-of-fame` page (linked from Home) shows an all-time "best ever" list. Ranked by a new `peakTrophies` field (`lib/trophyUpdates.ts`) that only ever increases, rather than current trophies (which drop after a loss) - so a player's Hall of Fame placement can't be lost by a bad week, only improved. Reuses the same no-scheduled-job pattern as Weekend League: no Cloud Function needed, just a live Firestore query ordered by `peakTrophies`. Note: players who haven't played a match since this field was added will show with 0 peak trophies until their next match recalculates it - a one-time backfill gap that resolves itself as people keep playing.
 - Seasonal cosmetics — **Partial**. Cosmetic data model supports it (`data/cosmetics.ts`); no season-rotation logic found.
 
 ### Version 2.0
