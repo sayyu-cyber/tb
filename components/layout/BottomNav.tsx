@@ -6,23 +6,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import CoinBalance from "@/components/economy/CoinBalance";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const navItems = [
-  { icon: Home, label: "Home", href: "/home" },
-  { icon: Gamepad2, label: "Play", href: "/play" },
-  { icon: Flame, label: "Weekend", href: "/tournament" },
-  { icon: Users, label: "Friends", href: "/friends" },
-  { icon: MessageCircle, label: "Messages", href: "/messages" },
-  { icon: ShoppingBag, label: "Shop", href: "/shop" },
-  { icon: Target, label: "Missions", href: "/missions" },
-  { icon: Gift, label: "Rewards", href: "/rewards" },
-  { icon: Trophy, label: "Leaderboard", href: "/leaderboard" },
-  { icon: User, label: "Profile", href: "/profile" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: Home, key: "nav_home", href: "/home" },
+  { icon: Gamepad2, key: "nav_play", href: "/play" },
+  { icon: Flame, key: "nav_weekend", href: "/tournament" },
+  { icon: Users, key: "nav_friends", href: "/friends" },
+  { icon: MessageCircle, key: "nav_messages", href: "/messages" },
+  { icon: ShoppingBag, key: "nav_shop", href: "/shop" },
+  { icon: Target, key: "nav_missions", href: "/missions" },
+  { icon: Gift, key: "nav_rewards", href: "/rewards" },
+  { icon: Trophy, key: "nav_leaderboard", href: "/leaderboard" },
+  { icon: User, key: "nav_profile", href: "/profile" },
+  { icon: Settings, key: "nav_settings", href: "/settings" },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useTranslation();
 
   return (
     <motion.nav
@@ -75,7 +77,7 @@ export function BottomNav() {
                   isActive ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"
                 )}
               >
-                {item.label}
+                {t(item.key)}
               </span>
             </Link>
           );

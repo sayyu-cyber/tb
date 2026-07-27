@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AppSettings } from "@/types";
+import { LANGUAGE_DIRECTION } from "@/lib/i18n";
 
 interface SettingsContextType {
   settings: AppSettings;
@@ -13,6 +14,7 @@ const defaultSettings: AppSettings = {
   sound: true,
   music: false,
   darkTheme: true,
+  language: "en",
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -24,7 +26,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem("thaasbai_settings");
     if (saved) {
       try {
-        setSettings(JSON.parse(saved));
+        // Merge onto defaults so an older saved blob (from before
+        // `language` existed) still ends up with a valid value.
+        setSettings({ ...defaultSettings, ...JSON.parse(saved) });
       } catch {
         setSettings(defaultSettings);
       }
@@ -37,6 +41,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle("light", !settings.darkTheme);
   }, [settings.darkTheme]);
+
+  // Applies the selected language's text direction to <html> - Dhivehi
+  // (Thaana script) reads right-to-left, everything else left-to-right.
+  useEffect(() => {
+    document.documentElement.dir = LANGUAGE_DIRECTION[settings.language] ?? "ltr";
+    document.documentElement.lang = settings.language;
+  }, [settings.language]);
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings((prev) => {

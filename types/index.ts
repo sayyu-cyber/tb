@@ -51,9 +51,12 @@ export interface NewsItem {
   type: "announcement" | "update" | "event";
 }
 
+export type LanguageCode = "en" | "dv" | "hi" | "bn";
+
 export interface AppSettings {
   notifications: boolean;
   sound: boolean;
   music: boolean;
   darkTheme: boolean;
+  language: LanguageCode;
 }
