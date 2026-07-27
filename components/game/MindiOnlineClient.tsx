@@ -125,7 +125,8 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     setRewardsApplied(true);
     const youWon = state.outcome.winner === myTeam;
     processMatchEnd(youWon, "mindi");
-    await updateMatchResult(myUid, youWon, "mindi").catch(() => {});
+    const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
+    await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {});
     setShowRewardPopup(true);
   }
 

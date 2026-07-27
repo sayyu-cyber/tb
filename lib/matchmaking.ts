@@ -35,9 +35,12 @@ import {
 import { db } from "@/lib/firebase";
 
 export type GameType = "mindi" | "gin_rummy";
+/** Which queue a player is in - keeps casual Ranked matchmaking and Weekend League matchmaking from pairing with each other. */
+export type Pool = "ranked" | "weekend";
 
 export interface MatchDoc<TState = unknown> {
   gameType: GameType;
+  pool?: Pool;
   players: string[]; // uids, in seat order - seat index = players.indexOf(uid)
   status: "active" | "completed";
   createdAt: number;
@@ -48,10 +51,11 @@ const QUEUE_COLLECTION = "matchmakingQueue";
 const MATCHES_COLLECTION = "matches";
 const STALE_QUEUE_MS = 2 * 60 * 1000; // ignore queue entries older than this
 
-export async function joinQueue(uid: string, gameType: GameType): Promise<void> {
+export async function joinQueue(uid: string, gameType: GameType, pool: Pool = "ranked"): Promise<void> {
   await setDoc(doc(db, QUEUE_COLLECTION, uid), {
     uid,
     gameType,
+    pool,
     queuedAt: Date.now(),
   });
 }
@@ -71,7 +75,8 @@ export async function tryFormMatch<TState>(
   uid: string,
   gameType: GameType,
   neededPlayers: number,
-  buildInitialState: (orderedPlayerUids: string[]) => TState
+  buildInitialState: (orderedPlayerUids: string[]) => TState,
+  pool: Pool = "ranked"
 ): Promise<string | null> {
   const cutoff = Date.now() - STALE_QUEUE_MS;
   // Single equality filter only (no orderBy/limit in the query itself) so
@@ -80,8 +85,8 @@ export async function tryFormMatch<TState>(
   const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
   const snap = await getDocs(q);
   const others = snap.docs
-    .map((d) => d.data() as { uid: string; queuedAt: number })
-    .filter((d) => d.uid !== uid && d.queuedAt >= cutoff)
+    .map((d) => d.data() as { uid: string; queuedAt: number; pool?: Pool })
+    .filter((d) => d.uid !== uid && d.queuedAt >= cutoff && (d.pool ?? "ranked") === pool)
     .sort((a, b) => a.queuedAt - b.queuedAt)
     .slice(0, neededPlayers - 1);
 
@@ -106,6 +111,7 @@ export async function tryFormMatch<TState>(
       const matchRef = doc(collection(db, MATCHES_COLLECTION));
       const matchDoc: MatchDoc<TState> = {
         gameType,
+        pool,
         players: orderedPlayerUids,
         status: "active",
         createdAt: Date.now(),
@@ -140,7 +146,8 @@ export function watchForMatch(
   uid: string,
   gameType: GameType,
   onFound: (matchId: string, match: MatchDoc) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  pool: Pool = "ranked"
 ): Unsubscribe {
   const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid));
   return onSnapshot(
@@ -148,7 +155,7 @@ export function watchForMatch(
     (snap) => {
       const candidates = snap.docs
         .map((d) => ({ id: d.id, data: d.data() as MatchDoc }))
-        .filter((m) => m.data.gameType === gameType && m.data.status === "active")
+        .filter((m) => m.data.gameType === gameType && m.data.status === "active" && (m.data.pool ?? "ranked") === pool)
         .sort((a, b) => b.data.createdAt - a.data.createdAt);
       if (candidates.length > 0) {
         onFound(candidates[0].id, candidates[0].data);

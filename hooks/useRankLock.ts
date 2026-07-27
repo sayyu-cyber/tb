@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RANKED_DAYS, WEEKEND_LEAGUE_DAYS } from "@/constants/ranks";
+import { RANKED_DAYS } from "@/constants/ranks";
 
 interface RankLockStatus {
   isLocked: boolean;
@@ -28,7 +28,6 @@ export function useRankLock(): RankLockStatus {
       const minute = now.getMinutes();
 
       const isQualificationDay = RANKED_DAYS.includes(day);
-      const isWeekendDay = WEEKEND_LEAGUE_DAYS.includes(day);
 
       // Lock from Thursday 23:59 until Sunday 00:00
       const isThursdayNight = day === 4 && (hour > 23 || (hour === 23 && minute >= 59));
@@ -50,7 +49,12 @@ export function useRankLock(): RankLockStatus {
 
       setStatus({
         isLocked,
-        isWeekendLeague: isWeekendDay && !isLocked,
+        // The Weekend League window IS the lock window - ranked matchmaking
+        // is locked specifically because Weekend League is running instead
+        // (see RankLockBanner's copy). Previously this was computed as
+        // "weekend day AND NOT locked", which was never true on a Friday or
+        // Saturday (both are always locked), so the badge never showed.
+        isWeekendLeague: isLocked,
         isQualification: isQualificationDay && !isLocked,
         nextUnlockTime: isLocked ? nextUnlock.toLocaleDateString("en-US", { weekday: "long", hour: "2-digit", minute: "2-digit" }) : "",
         currentDay: days[day],

@@ -10,9 +10,10 @@ import { getRankFromTrophies } from "@/constants/ranks";
 import { useRankLock } from "@/hooks/useRankLock";
 import { useMatchLimits } from "@/hooks/useMatchLimits";
 import { RankLockBanner } from "@/components/game/RankLockBanner";
-import { joinQueue, leaveQueue, tryFormMatch, watchForMatch, GameType } from "@/lib/matchmaking";
+import { joinQueue, leaveQueue, tryFormMatch, watchForMatch, GameType, Pool } from "@/lib/matchmaking";
 import { dealMindiHand } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
+import { isQualified } from "@/lib/weekendLeague";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 
@@ -54,7 +55,7 @@ function buildInitialState(gameType: GameType, players: string[]): MindiOnlineSt
 export function RankedQueueClient({ gameId }: { gameId: string }) {
   const router = useRouter();
   const { playerStats, user } = useAuth();
-  const { isLocked } = useRankLock();
+  const { isLocked, isWeekendLeague } = useRankLock();
   const matchLimits = useMatchLimits(user?.uid);
   const [dots, setDots] = useState("");
   const [matchFound, setMatchFound] = useState(false);
@@ -64,6 +65,12 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   const trophies = playerStats?.trophies || 0;
   const rank = getRankFromTrophies(trophies);
   const { gameType, neededPlayers, label } = gameConfig(gameId);
+  const qualified = isQualified(rank);
+  // Casual Ranked is closed during the Weekend League window; qualified
+  // players (Silver+) queue into the Weekend League pool instead.
+  const weekendMode = isWeekendLeague;
+  const canQueue = !weekendMode || qualified;
+  const pool: Pool = weekendMode ? "weekend" : "ranked";
 
   useEffect(() => {
     const interval = setInterval(() => setDots((prev) => (prev.length >= 3 ? "" : prev + ".")), 500);
@@ -71,7 +78,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   }, []);
 
   useEffect(() => {
-    if (isLocked || !user?.uid) return;
+    if (!canQueue || !user?.uid) return;
 
     const uid = user.uid;
     let cancelled = false;
@@ -86,7 +93,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
       }, 900);
     }
 
-    joinQueue(uid, gameType).catch((err) => setDebugError(`Couldn't join queue: ${String(err)}`));
+    joinQueue(uid, gameType, pool).catch((err) => setDebugError(`Couldn't join queue: ${String(err)}`));
 
     const unwatch = watchForMatch(
       uid,
@@ -95,13 +102,14 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
         leaveQueue(uid);
         goToMatch(matchId);
       },
-      (err) => setDebugError(`Match lookup error: ${String(err)}`)
+      (err) => setDebugError(`Match lookup error: ${String(err)}`),
+      pool
     );
 
     const attempt = async () => {
       if (navigatedRef.current || cancelled) return;
       try {
-        const matchId = await tryFormMatch(uid, gameType, neededPlayers, (players) => buildInitialState(gameType, players));
+        const matchId = await tryFormMatch(uid, gameType, neededPlayers, (players) => buildInitialState(gameType, players), pool);
         if (matchId) goToMatch(matchId);
       } catch (err) {
         setDebugError(`Matchmaking error: ${String(err)}`);
@@ -117,9 +125,9 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
       if (!navigatedRef.current) leaveQueue(uid);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked, user?.uid, gameType, neededPlayers, gameId]);
+  }, [canQueue, pool, user?.uid, gameType, neededPlayers, gameId]);
 
-  if (isLocked) {
+  if (!canQueue) {
     return (
       <div className="min-h-screen bg-[#0F0F0F] flex flex-col items-center justify-center px-6">
         <Link href="/play" className="absolute top-6 left-4">
@@ -128,6 +136,11 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
           </motion.button>
         </Link>
         <RankLockBanner />
+        {weekendMode && (
+          <p className="text-[#3A3A3A] text-xs mt-4 max-w-xs text-center">
+            Weekend League is Silver rank and up. You&apos;re {rank} with {trophies} trophies — keep playing Ranked during the week to climb.
+          </p>
+        )}
       </div>
     );
   }
@@ -164,10 +177,13 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-white">Finding {label} Match{dots}</h2>
+          <h2 className="text-2xl font-bold text-white">
+            Finding {weekendMode ? "Weekend League " : ""}{label} Match{dots}
+          </h2>
           <p className="text-[#3A3A3A] text-sm mt-2">
             {gameType === "mindi" ? "Needs 4 real players — this can take a while" : "Waiting for another real player"}
           </p>
+          {weekendMode && <p className="text-orange-400 text-xs mt-1">Double trophies this match!</p>}
           {debugError && (
             <p className="text-red-400 text-xs mt-3 break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">
               {debugError}

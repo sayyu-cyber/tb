@@ -166,7 +166,8 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     const isVictory = state.result.winnerUid === myUid;
     processMatchEnd(isVictory, "gin_rummy");
     if (state.result.winnerUid !== "draw") {
-      await updateMatchResult(myUid, isVictory, "gin-rummy").catch(() => {});
+      const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
+      await updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {});
     }
     setShowRewardPopup(true);
   }
