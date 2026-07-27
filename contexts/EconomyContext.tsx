@@ -14,6 +14,14 @@ import {
   DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES,
   ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS, ROOM_CARD_PRICES, RANK_CONFIGS
 } from '../data/cosmetics';
+import {
+  MissionRewardOverrides,
+  RankRewardOverrides,
+  ShopOverrides,
+  watchMissionRewardOverrides,
+  watchRankRewardOverrides,
+  watchShopOverrides,
+} from '../lib/admin';
 
 // ─── ACTIONS ─────────────────────────────────────────
 type EconomyAction =
@@ -30,6 +38,9 @@ type EconomyAction =
   | { type: 'ADD_ROOM_CARD'; payload: { type: RoomCardType } }
   | { type: 'PURCHASE_ROOM_CARD'; payload: { type: RoomCardType; price: number } }
   | { type: 'GRANT_COSMETIC'; payload: { itemId: string } }
+  | { type: 'SET_MISSION_REWARD_OVERRIDES'; payload: MissionRewardOverrides | null }
+  | { type: 'SET_RANK_REWARD_OVERRIDES'; payload: RankRewardOverrides | null }
+  | { type: 'SET_SHOP_OVERRIDES'; payload: ShopOverrides | null }
   | { type: 'SHOW_REWARD'; payload: RewardPopup }
   | { type: 'CLEAR_REWARD'; payload: string }
   | { type: 'RESET_DAILY_MISSIONS' }
@@ -61,6 +72,13 @@ interface EconomyState {
     lastClaimed: number;
     pending: boolean;
   };
+  /** Admin panel overrides (lib/admin.ts) - null until the first load
+   *  completes; reducer cases that pay out missions/ranked rewards read
+   *  from here so admin edits apply retroactively to already-generated
+   *  missions (matched by templateId), not just newly-generated ones. */
+  missionRewardOverrides: MissionRewardOverrides | null;
+  rankRewardOverrides: RankRewardOverrides | null;
+  shopOverrides: ShopOverrides | null;
 }
 
 const generateDailyMissions = (): DailyMission[] => {
@@ -70,6 +88,7 @@ const generateDailyMissions = (): DailyMission[] => {
     progress: 0,
     completed: false,
     id: `${template.id}_${Date.now()}_${index}`,
+    templateId: template.id,
   }));
 };
 
@@ -80,6 +99,7 @@ const generateWeeklyMissions = (): WeeklyMission[] => {
     progress: 0,
     completed: false,
     id: `${template.id}_${Date.now()}_${index}`,
+    templateId: template.id,
   }));
 };
 
@@ -144,6 +164,9 @@ const initialState: EconomyState = {
     lastClaimed: 0,
     pending: false,
   },
+  missionRewardOverrides: null,
+  rankRewardOverrides: null,
+  shopOverrides: null,
 };
 
 const STORAGE_KEY = 'thaasbai-economy-state';
@@ -251,18 +274,22 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         );
         const completedMission = weekly.find(m => m.id === missionId);
         if (!completedMission) return state;
+        // Admin panel's per-mission reward override (lib/admin.ts), keyed
+        // by the stable templateId rather than the per-instance id, so an
+        // edit applies even to a mission that was already generated.
+        const reward = state.missionRewardOverrides?.weeklyRewards[completedMission.templateId] ?? completedMission.reward;
         return {
           ...state,
           missions: { ...state.missions, weekly },
           profile: {
             ...state.profile,
-            coins: state.profile.coins + completedMission.reward,
+            coins: state.profile.coins + reward,
             collection: grantCosmeticToCollection(state.profile.collection, completedMission.rewardCosmeticId),
           },
           economy: {
             ...state.economy,
-            coins: state.economy.coins + completedMission.reward,
-            totalEarned: state.economy.totalEarned + completedMission.reward,
+            coins: state.economy.coins + reward,
+            totalEarned: state.economy.totalEarned + reward,
           },
         };
       } else {
@@ -271,16 +298,17 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         );
         const completedMission = daily.find(m => m.id === missionId);
         if (!completedMission) return state;
+        const reward = state.missionRewardOverrides?.dailyRewards[completedMission.templateId] ?? completedMission.reward;
         const allDailyComplete = daily.every(m => m.completed);
         const bonus = allDailyComplete && !state.missions.daily.every(m => m.completed) ? state.missions.dailyAllBonus : 0;
         return {
           ...state,
           missions: { ...state.missions, daily },
-          profile: { ...state.profile, coins: state.profile.coins + completedMission.reward + bonus },
+          profile: { ...state.profile, coins: state.profile.coins + reward + bonus },
           economy: {
             ...state.economy,
-            coins: state.economy.coins + completedMission.reward + bonus,
-            totalEarned: state.economy.totalEarned + completedMission.reward + bonus,
+            coins: state.economy.coins + reward + bonus,
+            totalEarned: state.economy.totalEarned + reward + bonus,
           },
         };
       }
@@ -382,20 +410,23 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
     case 'PURCHASE_COSMETIC': {
       const { itemId } = action.payload;
       const item = ALL_COSMETICS.find(c => c.id === itemId);
-      if (!item || state.economy.coins < item.price) return state;
+      if (!item) return state;
+      if (state.shopOverrides?.hiddenItemIds.includes(itemId)) return state; // admin-hidden - not purchasable
+      const price = state.shopOverrides?.priceOverrides[itemId] ?? item.price;
+      if (state.economy.coins < price) return state;
       const collectionKey = CATEGORY_TO_COLLECTION_KEY[item.category];
       if (!collectionKey || state.profile.collection[collectionKey].includes(itemId)) return state;
       return {
         ...state,
         profile: {
           ...state.profile,
-          coins: state.profile.coins - item.price,
+          coins: state.profile.coins - price,
           collection: grantCosmeticToCollection(state.profile.collection, itemId),
         },
         economy: {
           ...state.economy,
-          coins: state.economy.coins - item.price,
-          totalSpent: state.economy.totalSpent + item.price,
+          coins: state.economy.coins - price,
+          totalSpent: state.economy.totalSpent + price,
         },
       };
     }
@@ -491,6 +522,15 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         },
       };
     }
+
+    case 'SET_MISSION_REWARD_OVERRIDES':
+      return { ...state, missionRewardOverrides: action.payload };
+
+    case 'SET_RANK_REWARD_OVERRIDES':
+      return { ...state, rankRewardOverrides: action.payload };
+
+    case 'SET_SHOP_OVERRIDES':
+      return { ...state, shopOverrides: action.payload };
 
     case 'GRANT_COSMETIC': {
       const { itemId } = action.payload;
@@ -729,6 +769,23 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  // Admin panel overrides (lib/admin.ts). Guests never actually sign into
+  // Firebase (see signInAsGuest), so `appConfig` reads would be denied for
+  // them - only subscribe when there's a real signed-in user.
+  useEffect(() => {
+    if (!user) return;
+    const unsubMissions = watchMissionRewardOverrides((data) =>
+      dispatch({ type: 'SET_MISSION_REWARD_OVERRIDES', payload: data })
+    );
+    const unsubRanks = watchRankRewardOverrides((data) => dispatch({ type: 'SET_RANK_REWARD_OVERRIDES', payload: data }));
+    const unsubShop = watchShopOverrides((data) => dispatch({ type: 'SET_SHOP_OVERRIDES', payload: data }));
+    return () => {
+      unsubMissions();
+      unsubRanks();
+      unsubShop();
+    };
+  }, [user]);
+
   const addCoins = useCallback((amount: number, source: CoinSource, description: string) => {
     dispatch({ type: 'ADD_COINS', payload: { amount, source, description } });
   }, [dispatch]);
@@ -758,10 +815,12 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   const purchaseCosmetic = useCallback((itemId: string): boolean => {
     const item = ALL_COSMETICS.find(c => c.id === itemId);
     if (!item) return false;
-    if (state.economy.coins < item.price) return false;
+    if (state.shopOverrides?.hiddenItemIds.includes(itemId)) return false;
+    const price = state.shopOverrides?.priceOverrides[itemId] ?? item.price;
+    if (state.economy.coins < price) return false;
     dispatch({ type: 'PURCHASE_COSMETIC', payload: { itemId } });
     return true;
-  }, [dispatch, state.economy.coins]);
+  }, [dispatch, state.economy.coins, state.shopOverrides]);
 
   const equipCosmetic = useCallback((category: string, itemId: string) => {
     dispatch({ type: 'EQUIP_COSMETIC', payload: { category, itemId } });
@@ -882,7 +941,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
 
     if (state.weeklyRankReward.lastClaimed < lastThursday) {
       const rankConfig = RANK_CONFIGS.find(r => r.tier === currentRank);
-      const reward = rankConfig?.weeklyReward ?? 50;
+      const reward = state.rankRewardOverrides?.weeklyRewards[currentRank] ?? rankConfig?.weeklyReward ?? 50;
       const cosmeticId = rankConfig?.weeklyRewardCosmeticId;
       const cosmetic = cosmeticId ? ALL_COSMETICS.find(c => c.id === cosmeticId) : undefined;
 

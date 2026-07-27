@@ -1,6 +1,53 @@
 ﻿rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Admin panel access - a hardcoded allowlist of emails rather than a
+    // separate Firestore collection, so there's no bootstrap problem (no
+    // "who's allowed to write the list of who's allowed" chicken-and-egg).
+    // See lib/admin.ts's ADMIN_EMAILS - keep these two in sync if it ever
+    // changes.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email in ['sayyu9898@gmail.com'];
+    }
+
+    // Admin-controlled config (season override, shop price/visibility
+    // overrides, mission + ranked reward overrides - lib/admin.ts). Every
+    // signed-in client needs to read these to apply them; only an admin
+    // may write.
+    match /appConfig/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Coin top-up approval gate (lib/coinTopups.ts): "coin wont be
+    // credited till an admin approves." A player can create their own
+    // pending request and read it; only an admin can approve/reject it.
+    // The player's own client is allowed to flip an *already-approved*
+    // request to "credited" (so they can apply the coins to their own
+    // economy doc), but never allowed to approve their own request - that
+    // would defeat the entire point of the gate.
+    match /coinTopupRequests/{requestId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid || isAdmin());
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.uid && request.resource.data.status == 'pending';
+      allow update: if request.auth != null && (
+        isAdmin() ||
+        (request.auth.uid == resource.data.uid &&
+          resource.data.status == 'approved' && request.resource.data.status == 'credited')
+      );
+      allow delete: if false;
+    }
+
+    // Hall of Fame manual entries (lib/hallOfFame.ts) - admin-added
+    // players/teams shown alongside the real computed ranking. Readable by
+    // anyone signed in (same as the rest of Hall of Fame); only an admin
+    // may add, remove, or reset them.
+    match /hallOfFameManual/{entryId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // Used by AuthContext + trophyUpdates for login/profile/stats.
     // Read is open to any signed-in user so the leaderboard can query
     // across all players' trophy counts; writes stay owner-only.

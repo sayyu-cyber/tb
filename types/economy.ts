@@ -67,6 +67,8 @@ export interface CollectionProgress {
 
 export interface DailyMission {
   id: string;
+  /** The static template id (data/cosmetics.ts's DAILY_MISSION_TEMPLATES) this was generated from - `id` itself is unique per-instance, this is stable, so the admin panel's per-mission reward override (lib/admin.ts) can target it. */
+  templateId: string;
   title: string;
   description: string;
   target: number;
@@ -79,6 +81,8 @@ export interface DailyMission {
 
 export interface WeeklyMission {
   id: string;
+  /** See DailyMission.templateId - same idea, for WEEKLY_MISSION_TEMPLATES. */
+  templateId: string;
   title: string;
   description: string;
   target: number;

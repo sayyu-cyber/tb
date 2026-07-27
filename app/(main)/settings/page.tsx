@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Bell, Volume2, Music, Moon, LogOut, Shield, HelpCircle, Info } from "lucide-react";
+import { Settings, Bell, Volume2, Music, Moon, LogOut, Shield, HelpCircle, Info, LayoutDashboard } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { SettingToggle } from "@/components/settings/SettingToggle";
 import { SettingButton } from "@/components/settings/SettingButton";
+import { isAdminEmail } from "@/lib/admin";
 
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
   const { logout, user } = useAuth();
+  const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = async () => {
@@ -90,6 +93,13 @@ export default function SettingsPage() {
         className="glass-card rounded-2xl p-4"
       >
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-2 px-1">Account</h3>
+
+        {isAdminEmail(user?.email) && (
+          <>
+            <SettingButton icon={LayoutDashboard} label="Admin Panel" description="Manage the app" onClick={() => router.push("/admin")} />
+            <div className="h-px bg-[rgb(var(--c2))] mx-1" />
+          </>
+        )}
 
         <SettingButton
           icon={Shield}

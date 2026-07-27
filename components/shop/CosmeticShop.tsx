@@ -7,6 +7,8 @@ import { useEconomy } from '../../contexts/EconomyContext';
 import { CosmeticItem, Rarity } from '../../types/economy';
 import { ALL_COSMETICS, RARITY_COLORS, RARITY_GLOW, COIN_PACKS } from '../../data/cosmetics';
 import { getWeeklyFeaturedRotation } from '../../lib/cosmeticRotation';
+import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '../../lib/coinTopups';
+import { useAuth } from '../../contexts/AuthContext';
 import CoinBalance from '../economy/CoinBalance';
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
@@ -24,13 +26,14 @@ function RarityBadge({ rarity }: { rarity: Rarity }) {
   );
 }
 
-function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, isEquipped = false }: {
+function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, isEquipped = false, price }: {
   item: CosmeticItem;
   isOwned: boolean;
   isFeatured?: boolean;
   onPurchase: () => void;
   onEquip: () => void;
   isEquipped?: boolean;
+  price?: number;
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -107,7 +110,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
               whileTap={{ scale: 0.95 }}
             >
               <span>🪙</span>
-              <span>{item.price.toLocaleString()}</span>
+              <span>{(price ?? item.price).toLocaleString()}</span>
             </motion.button>
           )}
         </div>
@@ -157,7 +160,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
         Purchase
       </motion.button>
 
-      <p className="text-center text-gray-600 text-xs mt-2">Payment gateway coming soon</p>
+      <p className="text-center text-gray-600 text-xs mt-2">Requires admin approval before coins are credited</p>
     </motion.div>
   );
 }
@@ -171,10 +174,36 @@ const VIP_PLANS = [
 
 export default function CosmeticShop() {
   const { state, purchaseCosmetic, equipCosmetic, activateVip } = useEconomy();
+  const { user, isGuest } = useAuth();
   const [activeTab, setActiveTab] = useState<'featured' | 'permanent' | 'coins' | 'vip'>('featured');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [timeLeft, setTimeLeft] = useState('');
   const [selectedVipPlan, setSelectedVipPlan] = useState<'weekly' | 'monthly'>('weekly');
+  const [myTopups, setMyTopups] = useState<CoinTopupRequest[]>([]);
+  const shopOverrides = state.shopOverrides;
+
+  useEffect(() => {
+    if (!user?.uid || isGuest) return;
+    return watchMyTopups(user.uid, setMyTopups);
+  }, [user?.uid, isGuest]);
+
+  function priceFor(item: CosmeticItem): number {
+    return shopOverrides?.priceOverrides[item.id] ?? item.price;
+  }
+  function isHidden(item: CosmeticItem): boolean {
+    return shopOverrides?.hiddenItemIds.includes(item.id) ?? false;
+  }
+
+  const pendingTopup = myTopups.find((t) => t.status === 'pending');
+
+  async function handlePurchaseCoinPack(pack: typeof COIN_PACKS[0]) {
+    if (!user?.uid || isGuest) {
+      alert('Sign in to top up coins.');
+      return;
+    }
+    await requestCoinTopup(user.uid, user.displayName ?? 'Player', pack.coins, pack.priceMVR, pack.name);
+    alert(`Your ${pack.name} top-up is pending admin approval - coins will be credited once approved.`);
+  }
 
   useEffect(() => {
     const updateTimer = () => {
@@ -210,10 +239,11 @@ export default function CosmeticShop() {
   // calendar week, automatically swapping out the following week. VIP
   // members get one extra featured slot, matching the perk called out
   // in the banner below.
-  const featuredItems = getWeeklyFeaturedRotation(state.profile.vip.active ? 7 : 6);
-  const permanentItems = selectedCategory === 'all'
+  const featuredItems = getWeeklyFeaturedRotation(state.profile.vip.active ? 7 : 6).filter((c) => !isHidden(c));
+  const permanentItems = (selectedCategory === 'all'
     ? ALL_COSMETICS.filter(c => !c.isVipExclusive)
-    : ALL_COSMETICS.filter(c => c.category === selectedCategory && !c.isVipExclusive);
+    : ALL_COSMETICS.filter(c => c.category === selectedCategory && !c.isVipExclusive)
+  ).filter((c) => !isHidden(c));
 
   const isItemEquipped = (item: CosmeticItem) => {
     const map: Record<string, string> = {
@@ -297,6 +327,7 @@ export default function CosmeticShop() {
                   onPurchase={() => purchaseCosmetic(item.id)}
                   onEquip={() => equipCosmetic(item.category, item.id)}
                   isEquipped={isItemEquipped(item)}
+                  price={priceFor(item)}
                 />
               ))}
             </div>
@@ -338,6 +369,7 @@ export default function CosmeticShop() {
                   onPurchase={() => purchaseCosmetic(item.id)}
                   onEquip={() => equipCosmetic(item.category, item.id)}
                   isEquipped={isItemEquipped(item)}
+                  price={priceFor(item)}
                 />
               ))}
             </div>
@@ -351,15 +383,16 @@ export default function CosmeticShop() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
+            {pendingTopup && (
+              <div className="mb-4 p-3 bg-amber-900/20 rounded-xl border border-amber-500/20">
+                <p className="text-amber-300 text-sm">
+                  ⏳ Your {pendingTopup.packName} top-up ({pendingTopup.coins.toLocaleString()} coins) is pending admin approval.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {COIN_PACKS.map((pack) => (
-                <CoinPackCard
-                  key={pack.id}
-                  pack={pack}
-                  onPurchase={() => {
-                    alert(`Purchase ${pack.name} - Payment gateway integration coming soon`);
-                  }}
-                />
+                <CoinPackCard key={pack.id} pack={pack} onPurchase={() => handlePurchaseCoinPack(pack)} />
               ))}
             </div>
           </motion.div>
