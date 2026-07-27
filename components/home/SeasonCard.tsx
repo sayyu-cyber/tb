@@ -7,9 +7,19 @@ import { useCountdown } from "@/hooks/useCountdown";
 
 export function SeasonCard() {
   const season = useSeasonInfo();
-const { days, hours } = useCountdown(season?.endDate ?? new Date());
+  const { days, hours } = useCountdown(season?.endDate ?? new Date());
 
-if (!season) return null;
+  if (!season) return null;
+
+  // Real progress through the current month-long season, replacing what
+  // used to be a hardcoded 65% bar.
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const monthEnd = season.endDate.getTime();
+  const progressPct = Math.min(
+    100,
+    Math.max(0, Math.round(((now.getTime() - monthStart) / (monthEnd - monthStart)) * 100))
+  );
 
   return (
     <motion.div
@@ -43,7 +53,7 @@ if (!season) return null;
         <motion.div
           className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
           initial={{ width: 0 }}
-          animate={{ width: "65%" }}
+          animate={{ width: `${progressPct}%` }}
           transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
         />
       </div>

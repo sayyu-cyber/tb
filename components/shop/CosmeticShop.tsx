@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { CosmeticItem, Rarity } from '../../types/economy';
 import { ALL_COSMETICS, RARITY_COLORS, RARITY_GLOW, COIN_PACKS } from '../../data/cosmetics';
+import { getWeeklyFeaturedRotation } from '../../lib/cosmeticRotation';
 import CoinBalance from '../economy/CoinBalance';
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
@@ -195,7 +196,11 @@ export default function CosmeticShop() {
     { id: 'victoryAnimation', label: 'Victory', icon: '✨' },
   ];
 
-  const featuredItems = ALL_COSMETICS.filter(c => c.isFeatured || (c.rarity === 'Legendary' && !c.isVipExclusive)).slice(0, 6);
+  // Deterministic rotation: same featured set for everyone during a given
+  // calendar week, automatically swapping out the following week. VIP
+  // members get one extra featured slot, matching the perk called out
+  // in the banner below.
+  const featuredItems = getWeeklyFeaturedRotation(state.profile.vip.active ? 7 : 6);
   const permanentItems = selectedCategory === 'all'
     ? ALL_COSMETICS.filter(c => !c.isVipExclusive)
     : ALL_COSMETICS.filter(c => c.category === selectedCategory && !c.isVipExclusive);
