@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ProfileCard } from "@/components/home/ProfileCard";
 import { SeasonCard } from "@/components/home/SeasonCard";
@@ -43,21 +44,27 @@ export default function HomePage() {
         transition={{ delay: 0.5 }}
         className="space-y-2"
       >
-        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
-          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Friends (Coming Soon)</p>
-        </div>
-        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
-          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Private Rooms (Coming Soon)</p>
-        </div>
+        <Link href="/friends">
+          <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
+            <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Friends</p>
+          </div>
+        </Link>
+        <Link href="/play">
+          <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
+            <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Private Rooms</p>
+          </div>
+        </Link>
         <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
           <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Weekend Tournament (Coming Soon)</p>
         </div>
         <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
           <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">VIP Pass (Coming Soon)</p>
         </div>
-        <div className="glass-card rounded-xl p-3 border border-dashed border-[#2A2A2A]">
-          <p className="text-[#2A2A2A] text-[10px] text-center tracking-wider uppercase">Cosmetic Shop (Coming Soon)</p>
-        </div>
+        <Link href="/shop">
+          <div className="glass-card rounded-xl p-3 border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
+            <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase">Cosmetic Shop</p>
+          </div>
+        </Link>
       </motion.div>
     </div>
   );

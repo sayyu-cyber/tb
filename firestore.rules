@@ -45,5 +45,27 @@ service cloud.firestore {
         (request.auth.uid == resource.data.ownerUid || request.auth.uid in request.resource.data.players);
       allow delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
     }
+
+    // Friends (lib/friends.ts). A request document belongs to neither side
+    // exclusively - either the sender or recipient may read, update
+    // (accept/decline), or delete (cancel/unfriend) it, which avoids ever
+    // needing to write into someone else's personal document.
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.from;
+      allow update, delete: if request.auth != null &&
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+    }
+
+    // Room invites (lib/friends.ts) - a lightweight notification, not an
+    // access grant (the room's own rules and code/password still apply).
+    match /roomInvites/{inviteId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.from;
+      allow delete: if request.auth != null &&
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+    }
   }
 }
