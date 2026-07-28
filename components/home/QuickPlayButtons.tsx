@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const games = [
   {
@@ -24,6 +25,7 @@ const games = [
 ];
 
 export function QuickPlayButtons() {
+  const t = useTranslation();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -32,7 +34,7 @@ export function QuickPlayButtons() {
     >
       <div className="flex items-center gap-2 mb-3 px-1">
         <Sparkles size={16} className="text-[#D4AF37]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Quick Play</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_quickPlay")}</h3>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

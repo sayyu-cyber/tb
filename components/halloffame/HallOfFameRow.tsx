@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Crown, Medal, Star } from "lucide-react";
 import { RANKS } from "@/constants/ranks";
 import { HallOfFameEntry } from "@/lib/hallOfFame";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface HallOfFameRowProps {
   entry: HallOfFameEntry;
@@ -45,6 +46,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
   };
 
   const winPct = entry.totalMatches > 0 ? Math.round((entry.wins / entry.totalMatches) * 100) : 0;
+  const t = useTranslation();
 
   return (
     <Link href={`/player?uid=${entry.uid}`}>
@@ -71,7 +73,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
             {entry.highestRank}
           </span>
           <span className="text-[rgb(var(--c3))] text-[10px]">•</span>
-          <span className="text-[rgb(var(--c4))] text-[10px]">{entry.wins} wins ({winPct}%)</span>
+          <span className="text-[rgb(var(--c4))] text-[10px]">{entry.wins} {t("hof_wins")} ({winPct}%)</span>
         </div>
       </div>
 

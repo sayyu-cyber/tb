@@ -5,18 +5,20 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { ALL_COSMETICS, RARITY_COLORS } from '../../data/cosmetics';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export default function CollectionPage() {
   const { state, equipCosmetic } = useEconomy();
   const { profile } = state;
   const [activeCategory, setActiveCategory] = useState<string>('cardBack');
+  const t = useTranslation();
 
   const categories = [
-    { key: 'cardBack', label: 'Card Backs', icon: '🃏', owned: profile.collection.cardBacks, total: 25 },
-    { key: 'tableTheme', label: 'Table Themes', icon: '🎰', owned: profile.collection.tableThemes, total: 12 },
-    { key: 'profileFrame', label: 'Profile Frames', icon: '🖼️', owned: profile.collection.profileFrames, total: 18 },
-    { key: 'emote', label: 'Emotes', icon: '😊', owned: profile.collection.emotes, total: 30 },
-    { key: 'victoryAnimation', label: 'Victory Animations', icon: '✨', owned: profile.collection.victoryAnimations, total: 8 },
+    { key: 'cardBack', label: t("collection_cardBacks"), icon: '🃏', owned: profile.collection.cardBacks, total: 25 },
+    { key: 'tableTheme', label: t("collection_tableThemes"), icon: '🎰', owned: profile.collection.tableThemes, total: 12 },
+    { key: 'profileFrame', label: t("collection_profileFrames"), icon: '🖼️', owned: profile.collection.profileFrames, total: 18 },
+    { key: 'emote', label: t("collection_emotes"), icon: '😊', owned: profile.collection.emotes, total: 30 },
+    { key: 'victoryAnimation', label: t("collection_victoryAnimations"), icon: '✨', owned: profile.collection.victoryAnimations, total: 8 },
   ];
 
   const totalOwned = categories.reduce((acc, c) => acc + c.owned.length, 0);
@@ -41,13 +43,13 @@ export default function CollectionPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-3xl font-bold text-amber-300 mb-2">Collection</h1>
-        <p className="text-gray-500 mb-6">Track and equip your cosmetics</p>
+        <h1 className="text-3xl font-bold text-amber-300 mb-2">{t("collection_title")}</h1>
+        <p className="text-gray-500 mb-6">{t("collection_subtitle")}</p>
 
         {/* Overall Progress */}
         <div className="bg-gradient-to-r from-neutral-900 to-black border border-amber-500/20 rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-amber-200">Overall Progress</h2>
+            <h2 className="text-xl font-bold text-amber-200">{t("collection_overallProgress")}</h2>
             <span className="text-2xl font-bold text-amber-400">{percentage}%</span>
           </div>
           <div className="w-full bg-neutral-800 rounded-full h-3 overflow-hidden">
@@ -58,7 +60,7 @@ export default function CollectionPage() {
               transition={{ duration: 1 }}
             />
           </div>
-          <p className="text-gray-500 text-sm mt-2">{totalOwned} / {totalItems} Cosmetics Collected</p>
+          <p className="text-gray-500 text-sm mt-2">{t("collection_collected").replace("{owned}", String(totalOwned)).replace("{total}", String(totalItems))}</p>
         </div>
 
         {/* Category Tabs */}
@@ -126,7 +128,7 @@ export default function CollectionPage() {
                       {item.rarity}
                     </span>
                     {isEquipped && (
-                      <span className="text-amber-400 text-xs font-bold">Equipped</span>
+                      <span className="text-amber-400 text-xs font-bold">{t("collection_equipped")}</span>
                     )}
                   </div>
                 )}
@@ -137,13 +139,13 @@ export default function CollectionPage() {
                     onClick={() => equipCosmetic(activeCategory, item.id)}
                     whileTap={{ scale: 0.95 }}
                   >
-                    Equip
+                    {t("collection_equip")}
                   </motion.button>
                 )}
 
                 {!isOwned && (
                   <p className="text-gray-700 text-xs mt-1 text-center">
-                    {item.rarity === 'Legendary' ? 'Legendary Cosmetic' : 'Locked'}
+                    {item.rarity === 'Legendary' ? t("collection_legendary") : t("collection_locked")}
                   </p>
                 )}
               </motion.div>

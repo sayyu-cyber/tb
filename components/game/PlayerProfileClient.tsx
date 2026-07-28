@@ -29,7 +29,7 @@ export function PlayerProfileClient() {
   useEffect(() => {
     if (!uid) {
       setLoading(false);
-      setError("No player specified.");
+      setError(t("playerprofile_noPlayer"));
       return;
     }
     let cancelled = false;
@@ -37,7 +37,7 @@ export function PlayerProfileClient() {
     getPublicProfile(uid)
       .then((p) => {
         if (cancelled) return;
-        if (!p) setError("Player not found.");
+        if (!p) setError(t("playerprofile_notFound"));
         setProfile(p);
       })
       .catch((err) => {
@@ -54,7 +54,7 @@ export function PlayerProfileClient() {
     return () => {
       cancelled = true;
     };
-  }, [uid]);
+  }, [uid, t]);
 
   return (
     <div className="pt-4 pb-32 px-4">
@@ -72,7 +72,7 @@ export function PlayerProfileClient() {
             <Link href={`/spectate?m=${liveMatchId}`}>
               <div className="glass-card rounded-xl p-3 flex items-center justify-center gap-2 border border-[#D4AF37]/30 bg-[#D4AF37]/5">
                 <Eye size={14} className="text-[#D4AF37]" />
-                <span className="text-[#D4AF37] text-sm font-medium">Currently in a match — Watch Live</span>
+                <span className="text-[#D4AF37] text-sm font-medium">{t("playerprofile_watchingLive")}</span>
               </div>
             </Link>
           )}
@@ -91,19 +91,19 @@ export function PlayerProfileClient() {
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Trophy size={14} className="text-[#D4AF37]" /> Trophies
+                <Trophy size={14} className="text-[#D4AF37]" /> {t("profile_trophies")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">{profile.trophies.toLocaleString()}</p>
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Star size={14} className="text-[#D4AF37]" /> Peak Trophies
+                <Star size={14} className="text-[#D4AF37]" /> {t("playerprofile_peakTrophies")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">{profile.peakTrophies.toLocaleString()}</p>
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Swords size={14} className="text-[#D4AF37]" /> Matches
+                <Swords size={14} className="text-[#D4AF37]" /> {t("profile_matches")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">
                 {profile.wins}W - {profile.losses}L
@@ -111,14 +111,14 @@ export function PlayerProfileClient() {
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Percent size={14} className="text-[#D4AF37]" /> Win Rate
+                <Percent size={14} className="text-[#D4AF37]" /> {t("playerprofile_winRate")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">{profile.winPercentage}%</p>
             </div>
           </div>
 
           <div className="glass-card rounded-xl p-4 flex items-center justify-between">
-            <span className="text-[rgb(var(--c4))] text-sm">Highest Rank Reached</span>
+            <span className="text-[rgb(var(--c4))] text-sm">{t("playerprofile_highestRankReached")}</span>
             <span className="font-semibold text-sm" style={{ color: rankColor(profile.highestRank) }}>
               {profile.highestRank}
             </span>
@@ -126,7 +126,7 @@ export function PlayerProfileClient() {
 
           {profile.favoriteGame && (
             <div className="glass-card rounded-xl p-4 flex items-center justify-between">
-              <span className="text-[rgb(var(--c4))] text-sm">Favorite Game</span>
+              <span className="text-[rgb(var(--c4))] text-sm">{t("profile_favoriteGame")}</span>
               <span className="text-[rgb(var(--text-primary))] text-sm font-medium capitalize">{profile.favoriteGame.replace("_", " ")}</span>
             </div>
           )}

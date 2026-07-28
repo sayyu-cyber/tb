@@ -13,6 +13,7 @@ import {
 } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * Read-only Spectator Mode view. Deliberately never renders the contents of
@@ -26,6 +27,7 @@ import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 export function SpectateClient({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchDoc<unknown> | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
+  const t = useTranslation();
 
   useEffect(() => {
     const unsub = watchMatch<unknown>(matchId, setMatch);
@@ -45,7 +47,7 @@ export function SpectateClient({ matchId }: { matchId: string }) {
   if (!match) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-        <p className="text-[rgb(var(--c4))] text-sm">Loading match…</p>
+        <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
       </div>
     );
   }
@@ -59,7 +61,7 @@ export function SpectateClient({ matchId }: { matchId: string }) {
           </button>
         </Link>
         <div className="flex items-center gap-1.5 text-[rgb(var(--c4))] text-xs">
-          <Eye size={14} className="text-[#D4AF37]" /> Spectating
+          <Eye size={14} className="text-[#D4AF37]" /> {t("spectate_spectating")}
         </div>
         <div className="w-9" />
       </div>
@@ -75,15 +77,16 @@ export function SpectateClient({ matchId }: { matchId: string }) {
 
 function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>; names: Record<string, string> }) {
   const state = match.state;
+  const t = useTranslation();
 
   if (state.outcome) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))] text-lg font-bold">
-          {state.outcome.special === "forfeit" ? "Match ended by forfeit" : `Team ${state.outcome.winner} won`}
+          {state.outcome.special === "forfeit" ? t("spectate_matchEndedForfeit") : t("spectate_teamWon").replace("{team}", state.outcome.winner)}
         </p>
         <p className="text-[rgb(var(--c4))] text-sm">
-          Tens: A {state.outcome.tensCaptured.A} — B {state.outcome.tensCaptured.B}
+          {t("spectate_tens").replace("{a}", String(state.outcome.tensCaptured.A)).replace("{b}", String(state.outcome.tensCaptured.B))}
         </p>
       </div>
     );
@@ -93,13 +96,13 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
     <div className="flex-1 flex flex-col px-4 py-2 space-y-4">
       <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
         <span className="text-[rgb(var(--text-primary))]">
-          Team A — <span className="text-[#D4AF37] font-bold">{state.tensCaptured.A} tens</span>
+          {t("roomlobby_teamA")} — <span className="text-[#D4AF37] font-bold">{state.tensCaptured.A} {t("spectate_tensLabel")}</span>
         </span>
         <span className="text-[rgb(var(--c4))]">
-          Trump: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
+          {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
         </span>
         <span className="text-[rgb(var(--text-primary))]">
-          Team B — <span className="text-[#D4AF37] font-bold">{state.tensCaptured.B} tens</span>
+          {t("roomlobby_teamB")} — <span className="text-[#D4AF37] font-bold">{state.tensCaptured.B} {t("spectate_tensLabel")}</span>
         </span>
       </div>
 
@@ -109,9 +112,9 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
             key={uid}
             className={`rounded-xl border p-3 ${state.turnSeat === seat ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
           >
-            <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? "Player"}</p>
+            <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? t("profile_player")}</p>
             <p className="text-[rgb(var(--c4))] text-xs">
-              Team {teamOf(seat as SeatIndex)} · {state.handsByUid[uid]?.length ?? 0} cards
+              {teamOf(seat as SeatIndex) === "A" ? t("roomlobby_teamA") : t("roomlobby_teamB")} · {state.handsByUid[uid]?.length ?? 0} {t("spectate_cards")}
             </p>
           </div>
         ))}
@@ -120,7 +123,7 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center gap-1.5 flex-wrap justify-center">
           {state.trick.length === 0 ? (
-            <span className="text-[rgb(var(--c3))] text-xs">Waiting for the next trick…</span>
+            <span className="text-[rgb(var(--c3))] text-xs">{t("spectate_waitingNextTrick")}</span>
           ) : (
             state.trick.map((play) => (
               <div key={cardId(play.card)} className="w-10 h-14 rounded-md flex flex-col items-center justify-center border bg-[rgb(var(--c2))] border-[rgb(var(--c3))]">
@@ -138,14 +141,15 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
 function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; names: Record<string, string> }) {
   const state = match.state;
   const topDiscard = state.discard.length > 0 ? state.discard[state.discard.length - 1] : null;
+  const t = useTranslation();
 
   if (state.result) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))] text-lg font-bold">
-          {state.result.winnerUid === "draw" ? "Match ended in a draw" : `${names[state.result.winnerUid] ?? "A player"} won`}
+          {state.result.winnerUid === "draw" ? t("spectate_matchDraw") : t("spectate_playerWon").replace("{name}", names[state.result.winnerUid] ?? t("profile_player"))}
         </p>
-        {state.result.gin && <p className="text-[#D4AF37] text-sm font-semibold">Gin!</p>}
+        {state.result.gin && <p className="text-[#D4AF37] text-sm font-semibold">{t("spectate_gin")}</p>}
       </div>
     );
   }
@@ -158,8 +162,8 @@ function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; na
             key={uid}
             className={`rounded-xl border p-3 ${state.turn === uid ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
           >
-            <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? "Player"}</p>
-            <p className="text-[rgb(var(--c4))] text-xs">{state.hands[uid]?.length ?? 0} cards</p>
+            <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? t("profile_player")}</p>
+            <p className="text-[rgb(var(--c4))] text-xs">{state.hands[uid]?.length ?? 0} {t("spectate_cards")}</p>
           </div>
         ))}
       </div>
@@ -169,7 +173,7 @@ function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; na
           <div className="w-12 h-16 rounded-md border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] flex items-center justify-center">
             <Trophy size={16} className="text-[rgb(var(--c3))]" />
           </div>
-          <p className="text-[rgb(var(--c4))] text-[10px] mt-1">Stock ({state.stock.length})</p>
+          <p className="text-[rgb(var(--c4))] text-[10px] mt-1">{t("spectate_stock").replace("{n}", String(state.stock.length))}</p>
         </div>
         <div className="text-center">
           {topDiscard ? (
@@ -180,12 +184,12 @@ function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; na
           ) : (
             <div className="w-12 h-16 rounded-md border border-dashed border-[rgb(var(--c3))]" />
           )}
-          <p className="text-[rgb(var(--c4))] text-[10px] mt-1">Discard</p>
+          <p className="text-[rgb(var(--c4))] text-[10px] mt-1">{t("spectate_discard")}</p>
         </div>
       </div>
 
       <p className="text-[rgb(var(--c4))] text-xs text-center">
-        {names[state.turn] ?? "Player"}&apos;s turn — {state.phase === "draw" ? "drawing" : "discarding"}
+        {t("spectate_playerTurn").replace("{name}", names[state.turn] ?? t("profile_player")).replace("{phase}", state.phase === "draw" ? t("spectate_turnDrawing") : t("spectate_turnDiscarding"))}
       </p>
     </div>
   );

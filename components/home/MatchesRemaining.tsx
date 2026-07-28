@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Swords } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface MatchesRemainingProps {
   remaining: number;
@@ -10,6 +11,7 @@ interface MatchesRemainingProps {
 
 export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
   const percentage = ((total - remaining) / total) * 100;
+  const t = useTranslation();
 
   return (
     <motion.div
@@ -20,7 +22,7 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
     >
       <div className="flex items-center gap-2 mb-3">
         <Swords size={18} className="text-[#D4AF37]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Ranked Matches</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_rankedMatches")}</h3>
       </div>
 
       <div className="flex items-baseline gap-1 mb-3">
@@ -32,7 +34,7 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
         >
           {remaining}
         </motion.span>
-        <span className="text-[rgb(var(--c4))] text-sm">/ {total} remaining</span>
+        <span className="text-[rgb(var(--c4))] text-sm">{t("home_remainingOf").replace("{n}", String(total))}</span>
       </div>
 
       <div className="flex gap-1.5">

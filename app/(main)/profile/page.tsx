@@ -8,10 +8,12 @@ import { RankBadge } from "@/components/ui/RankBadge";
 import { StatCard } from "@/components/profile/StatCard";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ProfilePage() {
   const { user, playerStats } = useAuth();
   const [editing, setEditing] = useState(false);
+  const t = useTranslation();
 
   if (!user) return null;
 
@@ -19,16 +21,16 @@ export default function ProfilePage() {
   const bannerPreset = getBannerPreset(playerStats?.bannerPreset);
 
   const stats = [
-    { icon: Swords, label: "Matches", value: playerStats?.totalMatches || 0 },
-    { icon: Trophy, label: "Wins", value: playerStats?.wins || 0, highlight: true },
-    { icon: Target, label: "Losses", value: playerStats?.losses || 0 },
-    { icon: TrendingUp, label: "Win %", value: `${playerStats?.winPercentage || 0}%` },
+    { icon: Swords, label: t("profile_matches"), value: playerStats?.totalMatches || 0 },
+    { icon: Trophy, label: t("profile_wins"), value: playerStats?.wins || 0, highlight: true },
+    { icon: Target, label: t("profile_losses"), value: playerStats?.losses || 0 },
+    { icon: TrendingUp, label: t("profile_winPct"), value: `${playerStats?.winPercentage || 0}%` },
   ];
 
   const extraStats = [
-    { icon: Star, label: "Highest Rank", value: playerStats?.highestRank || "Unranked" },
-    { icon: Heart, label: "Favorite Game", value: playerStats?.favoriteGame || "None" },
-    { icon: Award, label: "Trophies", value: (playerStats?.trophies || 0).toLocaleString(), highlight: true },
+    { icon: Star, label: t("profile_highestRank"), value: playerStats?.highestRank || t("profile_unranked") },
+    { icon: Heart, label: t("profile_favoriteGame"), value: playerStats?.favoriteGame || t("profile_none") },
+    { icon: Award, label: t("profile_trophies"), value: (playerStats?.trophies || 0).toLocaleString(), highlight: true },
   ];
 
   return (
@@ -43,8 +45,8 @@ export default function ProfilePage() {
           <User size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Profile</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">Your stats & achievements</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("profile_title")}</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">{t("profile_subtitle")}</p>
         </div>
       </motion.div>
 
@@ -80,8 +82,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <h2 className="text-xl font-bold text-[rgb(var(--text-primary))] mt-2">{user.displayName || "Player"}</h2>
-        <p className="text-[rgb(var(--c4))] text-sm">{user.email || "Guest Player"}</p>
+        <h2 className="text-xl font-bold text-[rgb(var(--text-primary))] mt-2">{user.displayName || t("profile_player")}</h2>
+        <p className="text-[rgb(var(--c4))] text-sm">{user.email || t("profile_guestPlayer")}</p>
 
         {/* Trophy display */}
         <div className="flex items-center justify-center gap-2 mt-3">
@@ -89,7 +91,7 @@ export default function ProfilePage() {
           <span className="text-[#D4AF37] font-bold text-lg">
             {(playerStats?.trophies || 0).toLocaleString()}
           </span>
-          <span className="text-[rgb(var(--c4))] text-xs">trophies</span>
+          <span className="text-[rgb(var(--c4))] text-xs">{t("profile_trophies").toLowerCase()}</span>
         </div>
       </motion.div>
 
@@ -99,7 +101,7 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">Statistics</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">{t("profile_statistics")}</h3>
         <div className="grid grid-cols-2 gap-3">
           {stats.map((stat, index) => (
             <StatCard key={stat.label} {...stat} delay={0.25 + index * 0.05} />
@@ -113,7 +115,7 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
       >
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">Achievements</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">{t("profile_achievements")}</h3>
         <div className="space-y-2">
           {extraStats.map((stat, index) => (
             <motion.div
@@ -146,7 +148,7 @@ export default function ProfilePage() {
         transition={{ delay: 0.5 }}
         className="text-center py-4"
       >
-        <p className="text-[rgb(var(--c3))] text-[10px] tracking-wider uppercase">More features coming soon</p>
+        <p className="text-[rgb(var(--c3))] text-[10px] tracking-wider uppercase">{t("profile_moreComingSoon")}</p>
       </motion.div>
 
       <EditProfileModal

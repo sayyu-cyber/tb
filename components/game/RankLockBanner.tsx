@@ -3,9 +3,11 @@
 import { motion } from "framer-motion";
 import { Lock, Clock } from "lucide-react";
 import { useRankLock } from "@/hooks/useRankLock";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function RankLockBanner() {
   const { isLocked, nextUnlockTime } = useRankLock();
+  const t = useTranslation();
 
   if (!isLocked) return null;
 
@@ -20,8 +22,8 @@ export function RankLockBanner() {
           <Lock size={20} className="text-[#D4AF37]" />
         </div>
         <div className="flex-1">
-          <h3 className="text-[#D4AF37] font-semibold text-sm">Ranks Locked</h3>
-          <p className="text-[rgb(var(--c4))] text-xs">Weekend League is active. Ranked matches resume Sunday.</p>
+          <h3 className="text-[#D4AF37] font-semibold text-sm">{t("home_ranksLocked")}</h3>
+          <p className="text-[rgb(var(--c4))] text-xs">{t("home_ranksLockedDesc")}</p>
         </div>
         <div className="flex items-center gap-1 text-[rgb(var(--c4))]">
           <Clock size={12} />

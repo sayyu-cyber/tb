@@ -3,9 +3,11 @@
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
 import { useRankLock } from "@/hooks/useRankLock";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function WeekendLeagueBadge() {
   const { isWeekendLeague } = useRankLock();
+  const t = useTranslation();
 
   if (!isWeekendLeague) return null;
 
@@ -21,8 +23,8 @@ export function WeekendLeagueBadge() {
       >
         <Flame size={14} className="text-orange-400" />
       </motion.div>
-      <span className="text-orange-400 text-xs font-semibold">Weekend League</span>
-      <span className="text-[rgb(var(--c4))] text-[10px]">Double Trophies!</span>
+      <span className="text-orange-400 text-xs font-semibold">{t("home_weekendLeagueBadge")}</span>
+      <span className="text-[rgb(var(--c4))] text-[10px]">{t("home_doubleTrophies")}</span>
     </motion.div>
   );
 }

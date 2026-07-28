@@ -430,7 +430,7 @@ export default function CosmeticShop() {
                   >
                     👑
                   </motion.div>
-                  <h2 className="text-3xl font-bold text-purple-300 mb-2">VIP Pass</h2>
+                  <h2 className="text-3xl font-bold text-purple-300 mb-2">{t('vip_pass')}</h2>
                   <p className="text-purple-200/60 mb-6">{VIP_PLANS.find(p => p.id === selectedVipPlan)?.sub}</p>
 
                   <div className="grid grid-cols-2 gap-3 mb-6">
@@ -449,7 +449,7 @@ export default function CosmeticShop() {
                             SAVE
                           </span>
                         )}
-                        <p className="text-purple-200 text-sm font-bold">{plan.label}</p>
+                        <p className="text-purple-200 text-sm font-bold">{plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')}</p>
                         <p className="text-2xl font-bold text-[rgb(var(--text-primary))] mt-1">
                           MVR <span className="text-purple-400">{plan.priceMVR}</span>
                         </p>
@@ -460,12 +460,12 @@ export default function CosmeticShop() {
 
                   <ul className="text-left space-y-3 mb-8">
                     {[
-                      '4 Ranked Matches per Day',
-                      'VIP Badge on Profile',
-                      'Exclusive Profile Frame',
-                      'VIP Shop Section Access',
-                      '1x 24-Hour Room Card',
-                      'VIP Exclusive Cosmetics',
+                      t('vip_benefit1'),
+                      t('vip_benefit2'),
+                      t('vip_benefit3'),
+                      t('vip_benefit4'),
+                      t('vip_benefit5'),
+                      t('vip_benefit6'),
                     ].map((benefit, i) => (
                       <motion.li
                         key={i}
@@ -490,7 +490,7 @@ export default function CosmeticShop() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Activate {VIP_PLANS.find(p => p.id === selectedVipPlan)?.label} VIP
+                    {t('vip_activateBtn').replace('{plan}', selectedVipPlan === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel'))}
                   </motion.button>
 
                   {state.profile.vip.active && (
@@ -500,7 +500,7 @@ export default function CosmeticShop() {
                       animate={{ opacity: 1 }}
                     >
                       <p className="text-green-300 text-sm">
-                        ✅ VIP Active — {state.profile.vip.remainingDays} days remaining
+                        ✅ {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
                       </p>
                     </motion.div>
                   )}

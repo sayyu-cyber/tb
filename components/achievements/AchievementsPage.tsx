@@ -4,10 +4,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export default function AchievementsPage() {
   const { state } = useEconomy();
   const { achievements } = state;
+  const t = useTranslation();
 
   const unlockedCount = achievements.filter(a => a.unlocked).length;
   const totalCount = achievements.length;
@@ -19,12 +21,12 @@ export default function AchievementsPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-amber-300">Achievements</h1>
+          <h1 className="text-3xl font-bold text-amber-300">{t("achievements_title")}</h1>
           <span className="text-amber-400 font-bold text-lg">
             {unlockedCount}/{totalCount}
           </span>
         </div>
-        <p className="text-gray-500 mb-6">Permanent milestones and rewards</p>
+        <p className="text-gray-500 mb-6">{t("achievements_subtitle")}</p>
 
         <div className="w-full bg-neutral-800 rounded-full h-2 mb-6 overflow-hidden">
           <motion.div
@@ -74,7 +76,7 @@ export default function AchievementsPage() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                   >
-                    Unlocked!
+                    {t("achievements_unlocked")}
                   </motion.span>
                 )}
               </div>

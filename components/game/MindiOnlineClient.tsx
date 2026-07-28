@@ -28,6 +28,7 @@ import {
   checkHandOutcome,
   HandOutcome,
 } from "@/lib/mindiEngine";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export interface MindiOnlineState {
   handsByUid: Record<string, Card[]>;
@@ -44,12 +45,12 @@ export interface MindiOnlineState {
   numPlayers?: 2 | 4;
 }
 
-const SEAT_NAMES = ["You", "Left opponent", "Partner", "Right opponent"];
-
 export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const { user } = useAuth();
   const { processMatchEnd } = useEconomy();
   const myUid = user?.uid ?? "";
+  const t = useTranslation();
+  const SEAT_NAMES = [t("mindi_you"), t("mindi_leftOpponent"), t("mindi_partner"), t("mindi_rightOpponent")];
 
   const [match, setMatch] = useState<MatchDoc<MindiOnlineState> | null>(null);
   const [showRewardPopup, setShowRewardPopup] = useState(false);
@@ -73,7 +74,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const legalForMe = state ? getLegalPlays(myHand, ledSuit) : [];
 
   function seatLabelFor(seat: SeatIndex): string {
-    if (numPlayers === 2) return "Opponent";
+    if (numPlayers === 2) return t("mindi_opponent");
     // Relative to the viewer: same seat = You, +2 = Partner, others = opponents.
     const relative = (((seat - mySeat) % 4) + 4) % 4;
     return SEAT_NAMES[relative];
@@ -177,7 +178,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   if (!match || !state) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-        <p className="text-[rgb(var(--c4))] text-sm">Loading match…</p>
+        <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
       </div>
     );
   }
@@ -202,25 +203,25 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
               <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
                 {state.outcome.special === "forfeit"
                   ? youWon
-                    ? "Opponent Forfeited"
-                    : "You Forfeited"
+                    ? t("mindi_opponentForfeited")
+                    : t("mindi_youForfeited")
                   : youWon
-                  ? "You Won!"
-                  : "You Lost"}
+                  ? t("mindi_youWon")
+                  : t("mindi_youLost")}
               </h1>
               {state.outcome.special && state.outcome.special !== "forfeit" && (
                 <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {state.outcome.special === "baga" ? "Baga — all 4 Tens!" : "Hukunbunye — clean sweep!"}
+                  {state.outcome.special === "baga" ? t("mindi_baga") : t("mindi_hukunbunye")}
                 </p>
               )}
             </div>
             <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? "You" : "Your team"} — Tens</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? t("mindi_you") : t("mindi_yourTeam")} — {t("spectate_tensLabel")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{state.outcome.tensCaptured[myTeam]} / 4</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? "Opponent" : "Opponents"} — Tens</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? t("mindi_opponent") : t("mindi_opponents")} — {t("spectate_tensLabel")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{state.outcome.tensCaptured[myTeam === "A" ? "B" : "A"]} / 4</span>
               </div>
             </div>
@@ -228,7 +229,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
               <Link href="/play" className="flex-1">
                 <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2">
                   <Home size={16} />
-                  Exit
+                  {t("common_exit")}
                 </motion.button>
               </Link>
               <motion.button
@@ -237,7 +238,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
                 className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
               >
                 <Sparkles size={16} />
-                Rewards
+                {t("common_rewards")}
               </motion.button>
             </div>
           </motion.div>
@@ -260,10 +261,10 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
           <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
-            Mindi — {match.pool === "casual" ? "Casual" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+            Mindi — {match.pool === "casual" ? t("gamesel_online") : match.pool === "weekend" ? t("page_weekendLeague") : t("mindi_poolRanked")}
           </p>
           <p className="text-[rgb(var(--c4))] text-[10px] flex items-center justify-center gap-1">
-            Trump: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
+            {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
           </p>
         </div>
         <div className="w-10" />
@@ -273,12 +274,12 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <Users size={14} className="text-[#D4AF37]" />
-            <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? "You" : "Your team"}</span>
-            <span className="text-[#D4AF37] font-bold">{state.tensCaptured[myTeam]} tens</span>
+            <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? t("mindi_you") : t("mindi_yourTeam")}</span>
+            <span className="text-[#D4AF37] font-bold">{state.tensCaptured[myTeam]} {t("spectate_tensLabel")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[#D4AF37] font-bold">{state.tensCaptured[myTeam === "A" ? "B" : "A"]} tens</span>
-            <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? "Opponent" : "Opponents"}</span>
+            <span className="text-[#D4AF37] font-bold">{state.tensCaptured[myTeam === "A" ? "B" : "A"]} {t("spectate_tensLabel")}</span>
+            <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? t("mindi_opponent") : t("mindi_opponents")}</span>
           </div>
         </div>
       </div>
@@ -301,7 +302,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
 
           <div className="relative w-32 h-32 flex items-center justify-center flex-wrap gap-1 mx-auto">
             {state.trick.length === 0 ? (
-              <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? "Your turn" : "Waiting…"}</span>
+              <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? t("mindi_yourTurn") : t("mindi_waiting")}</span>
             ) : (
               state.trick.map((play) => (
                 <div key={cardId(play.card)} className="w-10 h-14 rounded-md flex flex-col items-center justify-center border bg-[rgb(var(--c2))] border-[rgb(var(--c3))]">
@@ -318,7 +319,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         </div>
 
         <div className="w-full">
-          <p className="text-[rgb(var(--c4))] text-xs mb-2 text-center">{isMyTurn ? "Select a card to play" : "Waiting for other players…"}</p>
+          <p className="text-[rgb(var(--c4))] text-xs mb-2 text-center">{isMyTurn ? t("mindi_selectCard") : t("mindi_waitingOthers")}</p>
           <div className="flex justify-center gap-1.5 flex-wrap">
             {myHand.map((card) => {
               const canPlay = isMyTurn && legalForMe.some((c) => cardId(c) === cardId(card));
@@ -344,10 +345,11 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
 }
 
 function SeatRow({ label, count, active }: { label: string; count: number; active: boolean }) {
+  const t = useTranslation();
   return (
     <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-colors ${active ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}>
       <span className={`text-[10px] font-medium ${active ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>{label}</span>
-      <span className="text-[rgb(var(--c4))] text-[10px]">{count} cards</span>
+      <span className="text-[rgb(var(--c4))] text-[10px]">{count} {t("spectate_cards")}</span>
     </div>
   );
 }

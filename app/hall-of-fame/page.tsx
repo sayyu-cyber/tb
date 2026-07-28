@@ -21,8 +21,8 @@ export default function HallOfFamePage() {
         className="flex items-center gap-2 mb-6 bg-[#D4AF37]/5 border border-[#D4AF37]/10 rounded-xl px-4 py-3"
       >
         <Award size={16} className="text-[#D4AF37]" />
-        <span className="text-[#D4AF37] text-sm font-medium">All-Time Greats</span>
-        <span className="text-[rgb(var(--c4))] text-xs ml-auto">Ranked by peak trophies</span>
+        <span className="text-[#D4AF37] text-sm font-medium">{t("hof_allTimeGreats")}</span>
+        <span className="text-[rgb(var(--c4))] text-xs ml-auto">{t("hof_rankedByPeak")}</span>
       </motion.div>
 
       {loading ? (
@@ -35,7 +35,7 @@ export default function HallOfFamePage() {
         <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">{error}</div>
       ) : entries.length === 0 ? (
         <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">
-          No legends yet — climb the ranks to be the first name in the Hall of Fame.
+          {t("hof_noLegendsYet")}
         </div>
       ) : (
         <div className="space-y-1">

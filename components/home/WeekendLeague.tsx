@@ -3,8 +3,10 @@
 import { motion } from "framer-motion";
 import { Timer } from "lucide-react";
 import { CountdownTimer } from "@/components/ui/CountdownTimer";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function WeekendLeague() {
+  const t = useTranslation();
   // Next Friday at 20:00
   const now = new Date();
   const nextFriday = new Date(now);
@@ -26,17 +28,17 @@ export function WeekendLeague() {
 
       <div className="flex items-center gap-2 mb-4">
         <Timer size={18} className="text-[#D4AF37]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Weekend League</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_weekendLeagueTitle")}</h3>
       </div>
 
       <CountdownTimer
         targetDate={nextFriday}
-        label="Starts in"
+        label={t("home_startsIn")}
       />
 
       <div className="mt-4 flex items-center gap-2 text-[rgb(var(--c4))] text-[10px]">
         <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
-        Double trophies during Weekend League
+        {t("home_doubleTrophiesDuring")}
       </div>
     </motion.div>
   );

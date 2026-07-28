@@ -4,9 +4,11 @@ import { motion } from "framer-motion";
 import { User, Trophy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { RankBadge } from "@/components/ui/RankBadge";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function ProfileCard() {
   const { user, playerStats } = useAuth();
+  const t = useTranslation();
 
   if (!user) return null;
 
@@ -41,7 +43,7 @@ export function ProfileCard() {
           </div>
           {user.isGuest && (
             <div className="absolute -bottom-1 -right-1 bg-[rgb(var(--c3))] text-[rgb(var(--c5))] text-[9px] px-1.5 py-0.5 rounded-full border border-[rgb(var(--c4))]">
-              GUEST
+              {t("home_guestBadge")}
             </div>
           )}
         </motion.div>
@@ -49,7 +51,7 @@ export function ProfileCard() {
         {/* User info */}
         <div className="flex-1 min-w-0">
           <h3 className="text-[rgb(var(--text-primary))] font-semibold text-lg truncate">
-            {user.displayName || "Player"}
+            {user.displayName || t("profile_player")}
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <RankBadge rank={playerStats?.currentRank || "Unranked"} size="sm" />
@@ -64,7 +66,7 @@ export function ProfileCard() {
               {playerStats?.trophies?.toLocaleString() || 0}
             </span>
           </div>
-          <span className="text-[rgb(var(--c4))] text-[10px] uppercase tracking-wider">Trophies</span>
+          <span className="text-[rgb(var(--c4))] text-[10px] uppercase tracking-wider">{t("home_trophiesLabel")}</span>
         </div>
       </div>
     </motion.div>

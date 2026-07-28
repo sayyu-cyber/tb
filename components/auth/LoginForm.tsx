@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, Chrome, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoldButton } from "@/components/ui/GoldButton";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function LoginForm() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -16,6 +17,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInAsGuest } = useAuth();
+  const t = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,10 +89,10 @@ export function LoginForm() {
       </div>
 
       <h2 className="text-2xl font-bold text-center mb-1 gold-text-gradient">
-        {mode === "login" ? "Welcome Back" : "Join Thaasbai"}
+        {mode === "login" ? t("login_welcomeBack") : t("login_joinThaasbai")}
       </h2>
       <p className="text-[rgb(var(--c4))] text-sm text-center mb-8">
-        {mode === "login" ? "Sign in to continue" : "Create your account"}
+        {mode === "login" ? t("login_signInToContinue") : t("login_createAccount")}
       </p>
 
       {/* Error message */}
@@ -116,12 +118,12 @@ export function LoginForm() {
         className="w-full flex items-center justify-center gap-3 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[rgb(var(--c4))] text-[rgb(var(--text-primary))] rounded-xl py-3.5 mb-4 transition-colors disabled:opacity-50"
       >
         <Chrome size={20} className="text-[#D4AF37]" />
-        <span className="text-sm font-medium">Continue with Google</span>
+        <span className="text-sm font-medium">{t("login_continueGoogle")}</span>
       </motion.button>
 
       <div className="flex items-center gap-4 my-6">
         <div className="flex-1 h-px bg-[rgb(var(--c3))]" />
-        <span className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">or</span>
+        <span className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">{t("login_or")}</span>
         <div className="flex-1 h-px bg-[rgb(var(--c3))]" />
       </div>
 
@@ -136,7 +138,7 @@ export function LoginForm() {
             <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
             <input
               type="text"
-              placeholder="Username"
+              placeholder={t("login_usernamePlaceholder")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
@@ -149,7 +151,7 @@ export function LoginForm() {
           <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
           <input
             type="email"
-            placeholder="Email address"
+            placeholder={t("login_emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
@@ -161,7 +163,7 @@ export function LoginForm() {
           <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
           <input
             type={showPassword ? "text" : "password"}
-            placeholder="Password"
+            placeholder={t("login_passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-12 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
@@ -177,13 +179,13 @@ export function LoginForm() {
         </div>
 
         <GoldButton type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
+          {loading ? t("login_loading") : mode === "login" ? t("login_signIn") : t("login_createAccountBtn")}
         </GoldButton>
       </form>
 
       {/* Toggle mode */}
       <p className="text-center mt-6 text-sm text-[rgb(var(--c4))]">
-        {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+        {mode === "login" ? t("login_noAccount") : t("login_haveAccount")}{" "}
         <button
           onClick={() => {
             setMode(mode === "login" ? "signup" : "login");
@@ -191,7 +193,7 @@ export function LoginForm() {
           }}
           className="text-[#D4AF37] hover:text-[#E8C84A] font-medium transition-colors"
         >
-          {mode === "login" ? "Sign Up" : "Sign In"}
+          {mode === "login" ? t("login_signUp") : t("login_signIn")}
         </button>
       </p>
 
@@ -202,10 +204,10 @@ export function LoginForm() {
           disabled={loading}
           className="w-full text-[rgb(var(--c4))] hover:text-[#D4AF37] text-sm font-medium transition-colors disabled:opacity-50"
         >
-          Continue as Guest
+          {t("login_continueAsGuest")}
         </button>
         <p className="text-[rgb(var(--c3))] text-[10px] text-center mt-2">
-          Guest users can only access Casual Mode
+          {t("login_guestNote")}
         </p>
       </div>
     </motion.div>

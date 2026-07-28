@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Users, Swords, Lock, Bot, Smartphone, KeyRound, UsersRound, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface GameSelectCardProps {
   id: string;
@@ -19,6 +20,7 @@ interface GameSelectCardProps {
 export function GameSelectCard({ id, name, description, icon, players, index }: GameSelectCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { isGuest } = useAuth();
+  const t = useTranslation();
 
   return (
     <motion.div
@@ -50,7 +52,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
             >
               {/* Casual Mode */}
               <div className="space-y-2">
-                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Casual Mode</p>
+                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">{t("gamesel_casualMode")}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Link href={`/play/${id}/casual/ai`}>
                     <motion.button
@@ -59,7 +61,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                       className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <Bot size={16} className="text-[#D4AF37]" />
-                      <span className="text-sm">vs AI</span>
+                      <span className="text-sm">{t("gamesel_vsAI")}</span>
                     </motion.button>
                   </Link>
                   <Link href={`/play/${id}/casual/passplay`}>
@@ -69,14 +71,14 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                       className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <Smartphone size={16} className="text-[#D4AF37]" />
-                      <span className="text-sm">Pass & Play</span>
+                      <span className="text-sm">{t("gamesel_passPlay")}</span>
                     </motion.button>
                   </Link>
                 </div>
                 {isGuest ? (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
                     <Lock size={16} className="text-[rgb(var(--c4))]" />
-                    <p className="text-[rgb(var(--c4))] text-sm">Sign in for Casual Online matches</p>
+                    <p className="text-[rgb(var(--c4))] text-sm">{t("gamesel_signInCasualOnline")}</p>
                   </div>
                 ) : (
                   <Link href={`/play/${id}/casual/online`}>
@@ -86,7 +88,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                       className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <Globe size={16} className="text-[#D4AF37]" />
-                      <span className="text-sm">{id === "mindi" ? "Online (auto-teamed, no partner needed)" : "Online"}</span>
+                      <span className="text-sm">{id === "mindi" ? t("gamesel_onlineMindi") : t("gamesel_online")}</span>
                     </motion.button>
                   </Link>
                 )}
@@ -94,11 +96,11 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
 
               {/* Ranked Mode */}
               <div className="space-y-2 pt-2">
-                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Ranked Mode</p>
+                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">{t("gamesel_rankedMode")}</p>
                 {isGuest ? (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
                     <Lock size={16} className="text-[rgb(var(--c4))]" />
-                    <p className="text-[rgb(var(--c4))] text-sm">Please sign in to access Ranked Mode</p>
+                    <p className="text-[rgb(var(--c4))] text-sm">{t("gamesel_signInRanked")}</p>
                   </div>
                 ) : id === "mindi" ? (
                   <Link href={`/play/${id}/ranked-duo`}>
@@ -108,7 +110,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] font-semibold rounded-xl py-3 shadow-[0_4px_15px_rgba(212,175,55,0.3)]"
                     >
                       <Swords size={16} />
-                      <span>Play Ranked (2v2 with a partner)</span>
+                      <span>{t("gamesel_playRankedDuo")}</span>
                     </motion.button>
                   </Link>
                 ) : (
@@ -120,7 +122,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] font-semibold rounded-xl py-3 shadow-[0_4px_15px_rgba(212,175,55,0.3)]"
                       >
                         <Swords size={16} />
-                        <span>Ranked 1v1</span>
+                        <span>{t("gamesel_ranked1v1")}</span>
                       </motion.button>
                     </Link>
                     <Link href={`/play/${id}/ranked-duo`}>
@@ -130,7 +132,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                         className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[#D4AF37]/30 text-[rgb(var(--text-primary))] font-medium rounded-xl py-3 mt-2"
                       >
                         <UsersRound size={16} className="text-[#D4AF37]" />
-                        <span className="text-sm">Ranked 2v2 (with a partner)</span>
+                        <span className="text-sm">{t("gamesel_ranked2v2")}</span>
                       </motion.button>
                     </Link>
                   </>
@@ -139,11 +141,11 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
 
               {/* Private Room */}
               <div className="space-y-2 pt-2">
-                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Play with Friends</p>
+                <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">{t("gamesel_playWithFriends")}</p>
                 {isGuest ? (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
                     <Lock size={16} className="text-[rgb(var(--c4))]" />
-                    <p className="text-[rgb(var(--c4))] text-sm">Please sign in to use Private Rooms</p>
+                    <p className="text-[rgb(var(--c4))] text-sm">{t("gamesel_signInPrivateRooms")}</p>
                   </div>
                 ) : (
                   <Link href={`/play/${id}/room`}>
@@ -153,7 +155,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
                       className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/30 text-[rgb(var(--text-primary))] rounded-xl py-3 transition-colors"
                     >
                       <KeyRound size={16} className="text-[#D4AF37]" />
-                      <span className="text-sm">Private Room</span>
+                      <span className="text-sm">{t("gamesel_privateRoom")}</span>
                     </motion.button>
                   </Link>
                 )}
@@ -168,7 +170,7 @@ export function GameSelectCard({ id, name, description, icon, players, index }: 
           onClick={() => setExpanded(!expanded)}
           className="w-full mt-4 py-2 text-[#D4AF37] text-sm font-medium border border-[#D4AF37]/20 rounded-xl hover:bg-[#D4AF37]/5 transition-colors"
         >
-          {expanded ? "Close" : "Select Mode"}
+          {expanded ? t("gamesel_close") : t("gamesel_selectMode")}
         </motion.button>
       </div>
     </motion.div>

@@ -24,6 +24,7 @@ import {
   watchRoom,
   RoomDoc,
 } from "@/lib/rooms";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function gameTypeFor(gameId: string): GameType {
   return gameId === "mindi" ? "mindi" : "gin_rummy";
@@ -98,6 +99,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
   const [mindiMode, setMindiMode] = useState<"team2v2" | "ffa1v1">("team2v2");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useTranslation();
 
   // Rooms can only be opened while a Room Card is active - once activated,
   // any number of rooms can be created until it expires (see
@@ -147,8 +149,8 @@ function RoomChooser({ gameId }: { gameId: string }) {
 
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[rgb(var(--text-primary))]">Private Room</h1>
-          <p className="text-[rgb(var(--c4))] text-sm mt-1">Play with friends using a room code</p>
+          <h1 className="text-2xl font-bold text-[rgb(var(--text-primary))]">{t("roomlobby_title")}</h1>
+          <p className="text-[rgb(var(--c4))] text-sm mt-1">{t("roomlobby_subtitle")}</p>
         </div>
 
         {error && (
@@ -163,15 +165,15 @@ function RoomChooser({ gameId }: { gameId: string }) {
                 onClick={() => setMode("create")}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
               >
-                Create a Room
+                {t("roomlobby_createRoom")}
               </motion.button>
             ) : (
               <div className="space-y-2 p-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-                <p className="text-[rgb(var(--text-primary))] text-sm font-medium">You need an active Room Card to create a room</p>
-                <p className="text-[rgb(var(--c4))] text-xs">Activate or buy one - once active, you can create unlimited rooms until it expires.</p>
+                <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{t("roomlobby_needCard")}</p>
+                <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_needCardDesc")}</p>
                 <Link href="/room-cards">
                   <motion.button whileTap={{ scale: 0.98 }} className="w-full mt-1 py-2.5 rounded-lg bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
-                    Go to Room Cards
+                    {t("roomlobby_goToRoomCards")}
                   </motion.button>
                 </Link>
               </div>
@@ -181,7 +183,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
               onClick={() => setMode("join")}
               className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] font-medium"
             >
-              Join with a Code
+              {t("roomlobby_joinWithCode")}
             </motion.button>
           </div>
         )}
@@ -190,7 +192,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
           <div className="space-y-3 glass-card rounded-2xl p-5">
             {gameId === "mindi" && (
               <div className="space-y-2">
-                <p className="text-[rgb(var(--c4))] text-xs">Mode</p>
+                <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_mode")}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setMindiMode("team2v2")}
@@ -200,7 +202,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
                         : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
                     }`}
                   >
-                    Team 2v2 (4 players)
+                    {t("roomlobby_team2v2")}
                   </button>
                   <button
                     onClick={() => setMindiMode("ffa1v1")}
@@ -210,17 +212,17 @@ function RoomChooser({ gameId }: { gameId: string }) {
                         : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
                     }`}
                   >
-                    1v1 (2 players)
+                    {t("roomlobby_ffa1v1")}
                   </button>
                 </div>
-                <p className="text-[rgb(var(--c3))] text-[11px]">1v1v1 and 1v1v1v1 free-for-all modes are coming in a future update.</p>
+                <p className="text-[rgb(var(--c3))] text-[11px]">{t("roomlobby_ffaComingSoon")}</p>
               </div>
             )}
-            <p className="text-[rgb(var(--c4))] text-xs">Optional password (leave blank for no password)</p>
+            <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_optionalPassword")}</p>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Room password (optional)"
+              placeholder={t("roomlobby_passwordPlaceholder")}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <motion.button
@@ -229,7 +231,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
               onClick={handleCreate}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold disabled:opacity-50"
             >
-              {busy ? "Creating…" : "Create Room"}
+              {busy ? t("common_creating") : t("roomlobby_createRoomBtn")}
             </motion.button>
           </div>
         )}
@@ -239,14 +241,14 @@ function RoomChooser({ gameId }: { gameId: string }) {
             <input
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="Room code"
+              placeholder={t("roomlobby_roomCodePlaceholder")}
               maxLength={6}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm tracking-widest text-center font-bold outline-none focus:border-[#D4AF37]/50"
             />
             <input
               value={joinPassword}
               onChange={(e) => setJoinPassword(e.target.value)}
-              placeholder="Password (if required)"
+              placeholder={t("roomlobby_passwordIfRequired")}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <motion.button
@@ -255,14 +257,14 @@ function RoomChooser({ gameId }: { gameId: string }) {
               onClick={handleJoin}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold disabled:opacity-50"
             >
-              {busy ? "Joining…" : "Join Room"}
+              {busy ? t("common_joining") : t("roomlobby_joinRoomBtn")}
             </motion.button>
           </div>
         )}
 
         {mode !== "choose" && (
           <button onClick={() => setMode("choose")} className="w-full text-center text-[rgb(var(--c4))] text-sm">
-            Back
+            {t("common_back")}
           </button>
         )}
       </div>
@@ -291,6 +293,7 @@ function RoomLobby({
   // very first snapshot before our own join has propagated.
   const [wasSeated, setWasSeated] = useState(false);
   const [removedAs, setRemovedAs] = useState<"kicked" | "banned" | null>(null);
+  const t = useTranslation();
 
   useEffect(() => watchRoom(code, setRoom), [code]);
 
@@ -354,7 +357,7 @@ function RoomLobby({
   if (room === null) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
-        <p className="text-[rgb(var(--c4))] text-sm">Loading room…</p>
+        <p className="text-[rgb(var(--c4))] text-sm">{t("roomlobby_loadingRoom")}</p>
       </div>
     );
   }
@@ -363,10 +366,10 @@ function RoomLobby({
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))] font-semibold">
-          {removedAs === "banned" ? "You were banned from this room by the owner." : "You were removed from this room by the owner."}
+          {removedAs === "banned" ? t("roomlobby_bannedMsg") : t("roomlobby_removedMsg")}
         </p>
         <Link href="/play" className="text-[#D4AF37] text-sm underline">
-          Back to Play
+          {t("roomlobby_backToPlay")}
         </Link>
       </div>
     );
@@ -375,9 +378,9 @@ function RoomLobby({
   if (room.status === "closed") {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
-        <p className="text-[rgb(var(--text-primary))]">This room has closed.</p>
+        <p className="text-[rgb(var(--text-primary))]">{t("roomlobby_closed")}</p>
         <Link href="/play" className="text-[#D4AF37] text-sm underline">
-          Back to Play
+          {t("roomlobby_backToPlay")}
         </Link>
       </div>
     );
@@ -392,12 +395,12 @@ function RoomLobby({
         <button onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </button>
-        <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{gameType === "mindi" ? "Mindi" : "Gin Rummy"} Room</p>
+        <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{t("roomlobby_roomTitle").replace("{game}", gameType === "mindi" ? "Mindi" : "Gin Rummy")}</p>
         <div className="w-10" />
       </div>
 
       <div className="glass-card rounded-2xl p-5 mb-4 text-center">
-        <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Room Code</p>
+        <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("roomlobby_roomCode")}</p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl font-bold text-[#D4AF37] tracking-widest">{code}</span>
           <button onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
@@ -406,7 +409,7 @@ function RoomLobby({
         </div>
         {room.password && (
           <p className="text-[rgb(var(--c4))] text-xs mt-2 flex items-center justify-center gap-1">
-            <Lock size={12} /> Password: {room.password}
+            <Lock size={12} /> {t("roomlobby_password").replace("{p}", room.password)}
           </p>
         )}
       </div>
@@ -417,23 +420,23 @@ function RoomLobby({
 
       <div className="glass-card rounded-2xl p-4 mb-4 flex-1">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Users size={14} /> Players ({room.players.length}/{room.maxPlayers})
+          <Users size={14} /> {t("roomlobby_players").replace("{n}", String(room.players.length)).replace("{m}", String(room.maxPlayers))}
         </p>
         <div className="space-y-2">
           {room.players.map((uid) => (
             <div key={uid} className="flex items-center justify-between bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3">
               <div className="flex items-center gap-2">
                 {uid === room.ownerUid && <Crown size={14} className="text-[#D4AF37]" />}
-                <span className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || "Player"}</span>
-                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">(you)</span>}
+                <span className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || t("profile_player")}</span>
+                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("common_you")}</span>}
               </div>
               {isOwner && uid !== myUid && (
                 <div className="flex items-center gap-3">
                   <button onClick={() => handleKick(uid)} className="text-orange-400 text-xs">
-                    Kick
+                    {t("common_kick")}
                   </button>
                   <button onClick={() => handleBan(uid)} className="text-red-400 text-xs">
-                    Ban
+                    {t("common_ban")}
                   </button>
                 </div>
               )}
@@ -441,7 +444,7 @@ function RoomLobby({
           ))}
           {Array.from({ length: room.maxPlayers - room.players.length }).map((_, i) => (
             <div key={`empty-${i}`} className="flex items-center justify-center bg-[rgb(var(--c1))] border border-dashed border-[rgb(var(--c3))] rounded-xl px-4 py-3">
-              <span className="text-[rgb(var(--c3))] text-xs">Waiting for player…</span>
+              <span className="text-[rgb(var(--c3))] text-xs">{t("roomlobby_waitingForPlayer")}</span>
             </div>
           ))}
         </div>
@@ -453,18 +456,18 @@ function RoomLobby({
         const teamB = [seatOrder[1], seatOrder[3]];
         return (
           <div className="glass-card rounded-2xl p-4 mb-4">
-            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3">Teams</p>
+            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3">{t("roomlobby_teams")}</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#D4AF37] text-xs font-bold mb-1">Team A</p>
+                <p className="text-[#D4AF37] text-xs font-bold mb-1">{t("roomlobby_teamA")}</p>
                 {teamA.map((uid) => (
-                  <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || "Player"}</p>
+                  <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || t("profile_player")}</p>
                 ))}
               </div>
               <div className="space-y-1">
-                <p className="text-[#D4AF37] text-xs font-bold mb-1">Team B</p>
+                <p className="text-[#D4AF37] text-xs font-bold mb-1">{t("roomlobby_teamB")}</p>
                 {teamB.map((uid) => (
-                  <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || "Player"}</p>
+                  <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || t("profile_player")}</p>
                 ))}
               </div>
             </div>
@@ -473,7 +476,7 @@ function RoomLobby({
                 onClick={() => handleSwapSeats(teamA[0], teamB[0])}
                 className="w-full mt-3 py-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-xs font-medium"
               >
-                Swap Team A / Team B (partner 1)
+                {t("roomlobby_swapTeams")}
               </button>
             )}
           </div>
@@ -488,12 +491,12 @@ function RoomLobby({
           className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
         >
           <Play size={16} />
-          {isFull ? "Start Match" : "Waiting for players…"}
+          {isFull ? t("roomlobby_startMatch") : t("roomlobby_waitingForPlayers")}
         </motion.button>
       ) : (
         <button onClick={handleLeave} className="w-full py-3.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] font-medium flex items-center justify-center gap-2">
           <LogOut size={16} />
-          Leave Room
+          {t("roomlobby_leaveRoom")}
         </button>
       )}
     </div>

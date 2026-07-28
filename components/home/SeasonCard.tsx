@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 import { Crown, Calendar } from "lucide-react";
 import { useSeasonInfo } from "@/hooks/useSeasonInfo";
 import { useCountdown } from "@/hooks/useCountdown";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function SeasonCard() {
   const season = useSeasonInfo();
   const { days, hours } = useCountdown(season?.endDate ?? new Date());
+  const t = useTranslation();
 
   if (!season) return null;
 
@@ -38,15 +40,15 @@ export function SeasonCard() {
         </div>
         <div className="flex items-center gap-1 text-[rgb(var(--c4))]">
           <Calendar size={14} />
-          <span className="text-xs">Ends in</span>
+          <span className="text-xs">{t("home_seasonEndsIn")}</span>
         </div>
       </div>
 
       <div className="flex items-end gap-2">
         <span className="text-4xl font-bold text-[#D4AF37]">{days}</span>
-        <span className="text-[rgb(var(--c4))] text-sm mb-1">days</span>
+        <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_days")}</span>
         <span className="text-4xl font-bold text-[#D4AF37] ml-2">{hours}</span>
-        <span className="text-[rgb(var(--c4))] text-sm mb-1">hours</span>
+        <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_hours")}</span>
       </div>
 
       <div className="mt-4 h-1.5 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
@@ -57,7 +59,7 @@ export function SeasonCard() {
           transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
         />
       </div>
-      <p className="text-[rgb(var(--c4))] text-[10px] mt-1.5">Season progress</p>
+      <p className="text-[rgb(var(--c4))] text-[10px] mt-1.5">{t("home_seasonProgress")}</p>
     </motion.div>
   );
 }

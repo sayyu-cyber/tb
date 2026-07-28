@@ -10,15 +10,17 @@ import { CosmeticCategory } from "@/types/economy";
 import RoomCardManager from "@/components/roomcards/RoomCardManager";
 import { useTranslation } from "@/hooks/useTranslation";
 
-const CATEGORY_TABS: { id: CosmeticCategory; label: string; icon: string }[] = [
-  { id: "cardBack", label: "Card Backs", icon: "🃏" },
-  { id: "tableTheme", label: "Tables", icon: "🎰" },
-  { id: "profileFrame", label: "Frames", icon: "🖼️" },
-  { id: "emote", label: "Emotes", icon: "😊" },
-  { id: "victoryAnimation", label: "Victory", icon: "✨" },
-  { id: "sticker", label: "Stickers", icon: "🏷️" },
-  { id: "banner", label: "Banners", icon: "🚩" },
-];
+function getCategoryTabs(t: (key: string) => string): { id: CosmeticCategory; label: string; icon: string }[] {
+  return [
+    { id: "cardBack", label: t("inv_cardBacks"), icon: "🃏" },
+    { id: "tableTheme", label: t("inv_tables"), icon: "🎰" },
+    { id: "profileFrame", label: t("inv_frames"), icon: "🖼️" },
+    { id: "emote", label: t("inv_emotes"), icon: "😊" },
+    { id: "victoryAnimation", label: t("inv_victory"), icon: "✨" },
+    { id: "sticker", label: t("inv_stickers"), icon: "🏷️" },
+    { id: "banner", label: t("inv_banners"), icon: "🚩" },
+  ];
+}
 
 const COLLECTION_KEY: Record<CosmeticCategory, string> = {
   cardBack: "cardBacks",
@@ -50,6 +52,7 @@ export default function InventoryPage() {
   // Emotes and stickers are used contextually in-match, not persistently
   // equipped - only these categories have a single "equipped" slot.
   const canEquip = category !== "emote" && category !== "sticker";
+  const categoryTabs = getCategoryTabs(t);
 
   return (
     <div className="pt-4 pb-32 px-4">
@@ -62,7 +65,7 @@ export default function InventoryPage() {
             tab === "cosmetics" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
         >
-          <Package size={16} /> Cosmetics
+          <Package size={16} /> {t("inventory_cosmetics")}
         </button>
         <button
           onClick={() => setTab("roomCards")}
@@ -70,14 +73,14 @@ export default function InventoryPage() {
             tab === "roomCards" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
         >
-          <Ticket size={16} /> Room Cards
+          <Ticket size={16} /> {t("inventory_roomCards")}
         </button>
       </div>
 
       {tab === "cosmetics" ? (
         <>
           <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-            {CATEGORY_TABS.map((cat) => (
+            {categoryTabs.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
@@ -94,7 +97,7 @@ export default function InventoryPage() {
           {ownedItems.length === 0 ? (
             <div className="glass-card rounded-2xl p-6 text-center">
               <Package size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-              <p className="text-[rgb(var(--c4))] text-sm">Nothing here yet — earn or buy items from the Shop.</p>
+              <p className="text-[rgb(var(--c4))] text-sm">{t("inventory_nothingHere")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -122,11 +125,11 @@ export default function InventoryPage() {
                           isEquipped ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
                         }`}
                       >
-                        {isEquipped ? "Equipped" : "Equip"}
+                        {isEquipped ? t("collection_equipped") : t("collection_equip")}
                       </button>
                     ) : (
                       <span className="block w-full text-center py-1.5 rounded-lg text-xs font-medium bg-[rgb(var(--c3))] text-[rgb(var(--c5))]">
-                        Owned
+                        {t("inventory_owned")}
                       </span>
                     )}
                   </motion.div>

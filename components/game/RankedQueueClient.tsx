@@ -16,6 +16,7 @@ import { dealGinHand } from "@/lib/ginRummyEngine";
 import { isQualified } from "@/lib/weekendLeague";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function gameConfig(gameId: string): { gameType: GameType; neededPlayers: number; label: string } {
   if (gameId === "mindi") return { gameType: "mindi", neededPlayers: 4, label: "Mindi" };
@@ -61,6 +62,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   const [matchFound, setMatchFound] = useState(false);
   const [debugError, setDebugError] = useState<string | null>(null);
   const navigatedRef = useRef(false);
+  const t = useTranslation();
 
   const trophies = playerStats?.trophies || 0;
   const rank = getRankFromTrophies(trophies);
@@ -148,11 +150,18 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
         </Link>
         <div className="text-center space-y-3 max-w-xs">
           <Clock size={32} className="text-[#D4AF37] mx-auto" />
-          <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">Out of {reason} matches</h2>
+          <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">{t("rankedq_outOfMatches").replace("{reason}", reason)}</h2>
           <p className="text-[rgb(var(--c4))] text-sm">
             {matchLimits.isVip
-              ? `You've used all ${reason === "weekly" ? matchLimits.weeklyTotal : matchLimits.dailyTotal} of your ${reason} ranked matches. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`
-              : `Free players get ${matchLimits.dailyTotal} ranked matches a day (${matchLimits.weeklyTotal} a week). VIP raises the daily cap to ${VIP_DAILY_MATCHES}. Come back ${reason === "weekly" ? "next week" : "tomorrow"}.`}
+              ? t("rankedq_vipMsg")
+                  .replace("{reason}", reason)
+                  .replace("{total}", String(reason === "weekly" ? matchLimits.weeklyTotal : matchLimits.dailyTotal))
+                  .replace("{when}", reason === "weekly" ? t("rankedq_nextWeek") : t("rankedq_tomorrow"))
+              : t("rankedq_freeMsg")
+                  .replace("{daily}", String(matchLimits.dailyTotal))
+                  .replace("{weekly}", String(matchLimits.weeklyTotal))
+                  .replace("{vip}", String(VIP_DAILY_MATCHES))
+                  .replace("{when}", reason === "weekly" ? t("rankedq_nextWeek") : t("rankedq_tomorrow"))}
           </p>
         </div>
       </div>
@@ -167,13 +176,13 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
             <X size={20} className="text-[rgb(var(--c4))]" />
           </motion.button>
         </Link>
-        <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">Mindi Ranked needs a partner</h2>
+        <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">{t("rankedq_needsPartner")}</h2>
         <p className="text-[rgb(var(--c4))] text-sm max-w-xs">
-          Mindi is always 2v2 — bring a friend as your fixed partner instead of being randomly paired. Start or join a party to queue together.
+          {t("rankedq_needsPartnerDesc")}
         </p>
         <Link href={`/play/${gameId}/ranked-duo`}>
           <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
-            Go to Ranked Duo
+            {t("rankedq_goToRankedDuo")}
           </motion.button>
         </Link>
       </div>
@@ -191,7 +200,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
         <RankLockBanner />
         {weekendMode && (
           <p className="text-[rgb(var(--c4))] text-xs mt-4 max-w-xs text-center">
-            Weekend League is Silver rank and up. You&apos;re {rank} with {trophies} trophies — keep playing Ranked during the week to climb.
+            {t("rankedq_weekendReq").replace("{rank}", String(rank)).replace("{trophies}", String(trophies))}
           </p>
         )}
       </div>
@@ -205,8 +214,8 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[#D4AF37] mx-auto flex items-center justify-center">
             <span className="text-[#D4AF37] text-xs font-bold">VS</span>
           </motion.div>
-          <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">Match Found!</h2>
-          <p className="text-[rgb(var(--c4))] text-sm">Starting {label}…</p>
+          <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("rankedq_matchFound")}</h2>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("rankedq_starting").replace("{label}", label)}</p>
         </motion.div>
       </motion.div>
     );
@@ -231,12 +240,15 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
         <div>
           <h2 className="text-2xl font-bold text-[rgb(var(--text-primary))]">
-            Finding {weekendMode ? "Weekend League " : ""}{label} Match{dots}
+            {t("rankedq_finding")
+              .replace("{prefix}", weekendMode ? `${t("page_weekendLeague")} ` : "")
+              .replace("{label}", label)
+              .replace("{dots}", dots)}
           </h2>
           <p className="text-[rgb(var(--c4))] text-sm mt-2">
-            {gameType === "mindi" ? "Needs 4 real players — this can take a while" : "Waiting for another real player"}
+            {gameType === "mindi" ? t("rankedq_mindiNeeds4") : t("rankedq_waitingReal")}
           </p>
-          {weekendMode && <p className="text-orange-400 text-xs mt-1">Double trophies this match!</p>}
+          {weekendMode && <p className="text-orange-400 text-xs mt-1">{t("rankedq_doubleTrophies")}</p>}
           {debugError && (
             <p className="text-red-400 text-xs mt-3 break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">
               {debugError}
@@ -246,25 +258,25 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[rgb(var(--c4))] text-sm">Rank</span>
+            <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_rank")}</span>
             <span className="text-[#D4AF37] font-semibold text-sm">{rank}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[rgb(var(--c4))] text-sm">Trophies</span>
+            <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_trophies")}</span>
             <div className="flex items-center gap-1">
               <Trophy size={14} className="text-[#D4AF37]" />
               <span className="text-[#D4AF37] font-semibold text-sm">{trophies}</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[rgb(var(--c4))] text-sm">Daily Left</span>
+            <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_dailyLeft")}</span>
             <div className="flex items-center gap-1">
               <Swords size={14} className="text-[#D4AF37]" />
               <span className="text-[rgb(var(--text-primary))] font-semibold text-sm">{matchLimits.dailyRemaining} / {matchLimits.dailyTotal}</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[rgb(var(--c4))] text-sm">Weekly Left</span>
+            <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_weeklyLeft")}</span>
             <div className="flex items-center gap-1">
               <Clock size={14} className="text-[#D4AF37]" />
               <span className="text-[rgb(var(--text-primary))] font-semibold text-sm">{matchLimits.weeklyRemaining} / {matchLimits.weeklyTotal}</span>
@@ -274,7 +286,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
         <Link href="/play">
           <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium hover:text-[rgb(var(--text-primary))] transition-colors">
-            Cancel
+            {t("rankedq_cancel")}
           </motion.button>
         </Link>
       </motion.div>

@@ -47,22 +47,22 @@ export default function TournamentPage() {
         <div className="flex items-center gap-2 mb-2">
           <Flame size={18} className="text-orange-400" />
           <h2 className="text-[rgb(var(--text-primary))] font-semibold">
-            {isWeekendLeague ? "Weekend League is live" : "Weekend League"}
+            {isWeekendLeague ? t("tournament_isLive") : t("page_weekendLeague")}
           </h2>
         </div>
         {isWeekendLeague ? (
           <p className="text-[rgb(var(--c4))] text-sm">
-            Silver rank and up, double trophies every match. Ends {nextUnlockTime}.
+            {t("tournament_liveDesc").replace("{time}", String(nextUnlockTime))}
           </p>
         ) : (
           <p className="text-[rgb(var(--c4))] text-sm">
-            Runs every Friday-Saturday. Reach Silver rank or higher during the week to qualify. Opens {nextUnlockTime}.
+            {t("tournament_defaultDesc").replace("{time}", String(nextUnlockTime))}
           </p>
         )}
 
         {!qualified && (
           <p className="text-[rgb(var(--c4))] text-xs mt-3">
-            You&apos;re {rank} with {trophies} trophies — climb to Silver in Ranked to qualify.
+            {t("tournament_notQualified").replace("{rank}", String(rank)).replace("{trophies}", String(trophies))}
           </p>
         )}
 
@@ -90,7 +90,7 @@ export default function TournamentPage() {
 
       <div className="flex items-center gap-2 mb-3">
         <Trophy size={16} className="text-[#D4AF37]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">This Week&apos;s Standings</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("tournament_standings")}</h3>
       </div>
 
       {loading ? (
@@ -104,7 +104,7 @@ export default function TournamentPage() {
       ) : standings.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center">
           <Clock size={24} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">No qualified players yet this week.</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("tournament_noQualified")}</p>
         </div>
       ) : (
         <div className="space-y-1">

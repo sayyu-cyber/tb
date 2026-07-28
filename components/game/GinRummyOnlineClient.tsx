@@ -19,6 +19,7 @@ import {
   bestMeldArrangement,
   scoreKnock,
 } from "@/lib/ginRummyEngine";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export interface GinOnlineState {
   hands: Record<string, Card[]>;
@@ -46,6 +47,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const [selectedDiscard, setSelectedDiscard] = useState<Card | null>(null);
   const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
+  const t = useTranslation();
 
   useEffect(() => {
     const unsub = watchMatch<GinOnlineState>(matchId, setMatch);
@@ -213,7 +215,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   if (!match || !state) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-        <p className="text-[rgb(var(--c4))] text-sm">Loading match…</p>
+        <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
       </div>
     );
   }
@@ -240,34 +242,34 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
               <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
                 {result.forfeitedBy
                   ? youWon
-                    ? "Opponent Forfeited"
-                    : "You Forfeited"
+                    ? t("mindi_opponentForfeited")
+                    : t("mindi_youForfeited")
                   : isDraw
-                  ? "Stock Ran Out — Draw"
+                  ? t("gin_stockRanOut")
                   : youWon
-                  ? "You Won!"
-                  : "You Lost"}
+                  ? t("mindi_youWon")
+                  : t("mindi_youLost")}
               </h1>
               {!isDraw && !result.forfeitedBy && (result.gin || result.undercut) && (
                 <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {result.gin ? "Gin!" : "Undercut!"}
+                  {result.gin ? t("gin_gin") : t("gin_undercut")}
                 </p>
               )}
             </div>
             <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Your deadwood</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("gin_yourDeadwood")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{result.deadwood[myUid] ?? 0}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Opponent deadwood</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("gin_opponentDeadwood")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{result.deadwood[opponentUid] ?? 0}</span>
               </div>
               {!isDraw && (
                 <>
                   <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
-                    <span className="text-[rgb(var(--c4))] text-xs">Points</span>
+                    <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
                     <span className="text-[#D4AF37] font-bold">{result.score}</span>
                   </div>
                 </>
@@ -277,7 +279,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
               <Link href="/play" className="flex-1">
                 <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2">
                   <Home size={16} />
-                  Exit
+                  {t("common_exit")}
                 </motion.button>
               </Link>
               {!isDraw && (
@@ -287,7 +289,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                   className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
                 >
                   <Sparkles size={16} />
-                  Rewards
+                  {t("common_rewards")}
                 </motion.button>
               )}
             </div>
@@ -313,10 +315,10 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
         <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
           <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
-            Gin Rummy — {match.pool === "casual" ? "Casual" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+            Gin Rummy — {match.pool === "casual" ? t("gamesel_online") : match.pool === "weekend" ? t("page_weekendLeague") : t("mindi_poolRanked")}
           </p>
           <p className="text-[rgb(var(--c4))] text-[10px]">
-            {isMyTurn ? "Your turn" : "Opponent's turn"} · Deadwood: {bestMeldArrangement(myHand).deadwoodValue}
+            {isMyTurn ? t("gin_yourTurn") : t("gin_opponentTurn")} · {t("gin_deadwood")}: {bestMeldArrangement(myHand).deadwoodValue}
           </p>
         </div>
         <div className="w-10" />
@@ -331,7 +333,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--c3))] flex items-center justify-center">
             <Layers size={20} className="text-[rgb(var(--c4))]" />
           </div>
-          <span className="text-[10px] text-[rgb(var(--c4))]">Stock ({state.stock.length})</span>
+          <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_stock").replace("{n}", String(state.stock.length))}</span>
         </button>
 
         <button
@@ -351,13 +353,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           ) : (
             <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
           )}
-          <span className="text-[10px] text-[rgb(var(--c4))]">Discard pile</span>
+          <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_discardPile")}</span>
         </button>
       </div>
 
       <div className="flex-1 flex flex-col justify-end px-4 pb-6">
         <p className="text-[rgb(var(--c4))] text-xs mb-3 text-center">
-          {!isMyTurn ? "Waiting for opponent…" : state.phase === "draw" ? "Draw a card" : "Select a card to discard"}
+          {!isMyTurn ? t("gin_waitingOpponent") : state.phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
         </p>
         <div className="flex justify-center gap-1.5 flex-wrap">
           {sortedHand.map((card) => {
@@ -388,11 +390,11 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           {selectedDiscard && state.phase === "discard" && isMyTurn && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="flex justify-center gap-3 mt-4">
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleConfirmDiscard} className="px-6 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium">
-                Discard
+                {t("gin_discard")}
               </motion.button>
               {canKnock && (
                 <motion.button whileTap={{ scale: 0.95 }} onClick={handleKnock} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold">
-                  Knock
+                  {t("gin_knock")}
                 </motion.button>
               )}
             </motion.div>

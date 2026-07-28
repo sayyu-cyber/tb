@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Newspaper, ChevronRight, X } from "lucide-react";
 import { useNews } from "@/hooks/useNews";
 import { NewsItem } from "@/types";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const typeColors = {
   announcement: "text-[#D4AF37]",
@@ -52,6 +53,7 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
 export function NewsSection() {
   const { news, loading } = useNews();
   const [selected, setSelected] = useState<NewsItem | null>(null);
+  const t = useTranslation();
 
   return (
     <motion.div
@@ -61,7 +63,7 @@ export function NewsSection() {
     >
       <div className="flex items-center gap-2 mb-3 px-1">
         <Newspaper size={16} className="text-[#D4AF37]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">News & Updates</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_newsUpdates")}</h3>
       </div>
 
       <div className="space-y-2">

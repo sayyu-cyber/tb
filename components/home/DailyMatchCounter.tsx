@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function DailyMatchCounter() {
   const used = 1;
   const total = 3;
   const remaining = total - used;
+  const t = useTranslation();
 
   return (
     <motion.div
@@ -18,7 +20,7 @@ export function DailyMatchCounter() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Calendar size={18} className="text-[#D4AF37]" />
-          <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Daily Matches</h3>
+          <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_dailyMatches")}</h3>
         </div>
         <span className="text-[#D4AF37] font-bold text-sm">{remaining} / {total}</span>
       </div>
@@ -40,7 +42,7 @@ export function DailyMatchCounter() {
       </div>
 
       <p className="text-[rgb(var(--c4))] text-[10px] mt-2">
-        Resets at midnight • Free users: 3/day
+        {t("home_resetsMidnight")}
       </p>
     </motion.div>
   );
