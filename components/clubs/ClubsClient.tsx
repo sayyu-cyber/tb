@@ -41,7 +41,7 @@ export function ClubsClient() {
       <div className="pt-4 pb-32 px-4">
         <PageHeader title={t("page_clubs")} />
         <div className="glass-card rounded-2xl p-6 text-center">
-          <p className="text-[rgb(var(--c4))] text-sm">Sign in to join or create a club.</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_signInPrompt")}</p>
         </div>
       </div>
     );
@@ -51,7 +51,7 @@ export function ClubsClient() {
     return (
       <div className="pt-4 pb-32 px-4">
         <PageHeader title={t("page_clubs")} />
-        <p className="text-[rgb(var(--c4))] text-sm text-center mt-6">Loading…</p>
+        <p className="text-[rgb(var(--c4))] text-sm text-center mt-6">{t("clubs_loading")}</p>
       </div>
     );
   }
@@ -110,13 +110,13 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
           onClick={() => setMode("browse")}
           className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "browse" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
-          Browse
+          {t("clubs_browse")}
         </button>
         <button
           onClick={() => setMode("create")}
           className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "create" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
-          Create
+          {t("clubs_create")}
         </button>
       </div>
 
@@ -125,21 +125,21 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Club name"
+            placeholder={t("clubs_namePlaceholder")}
             maxLength={30}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
           />
           <input
             value={tag}
             onChange={(e) => setTag(e.target.value.toUpperCase())}
-            placeholder="Tag (e.g. MLE)"
+            placeholder={t("clubs_tagPlaceholder")}
             maxLength={5}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description (optional)"
+            placeholder={t("clubs_descriptionPlaceholder")}
             maxLength={200}
             rows={3}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50 resize-none"
@@ -150,13 +150,13 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             onClick={handleCreate}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold disabled:opacity-50"
           >
-            {busy ? "Creating…" : "Create Club"}
+            {busy ? t("clubs_creating") : t("clubs_createClub")}
           </motion.button>
         </div>
       ) : clubs.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center">
           <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">No clubs yet — be the first to create one.</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_noClubsYet")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -167,14 +167,14 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
                   {c.name} <span className="text-[#D4AF37] text-xs">[{c.tag}]</span>
                 </p>
                 <p className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
-                  <Users size={10} /> {c.members.length} members
+                  <Users size={10} /> {c.members.length} {t("clubs_members")}
                 </p>
               </div>
               <button
                 onClick={() => handleJoin(c.id)}
                 className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-xs font-semibold shrink-0"
               >
-                Join
+                {t("clubs_join")}
               </button>
             </div>
           ))}
@@ -191,6 +191,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isOwner = club.ownerUid === myUid;
+  const t = useTranslation();
 
   useEffect(() => {
     if (tab !== "chat") return;
@@ -236,13 +237,13 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
           onClick={() => setTab("members")}
           className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "members" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
-          Members ({club.members.length})
+          {t("clubs_membersTab").replace("{n}", String(club.members.length))}
         </button>
         <button
           onClick={() => setTab("chat")}
           className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "chat" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
-          Club Chat
+          {t("clubs_chatTab")}
         </button>
       </div>
 
@@ -253,7 +254,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
               <div className="flex items-center gap-2">
                 {uid === club.ownerUid && <Crown size={14} className="text-[#D4AF37]" />}
                 <span className="text-[rgb(var(--text-primary))] text-sm">{club.memberNames[uid] || "Player"}</span>
-                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">(you)</span>}
+                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("clubs_you")}</span>}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
@@ -261,7 +262,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
                 </span>
                 {isOwner && uid !== myUid && (
                   <button onClick={() => handleKick(uid)} className="text-red-400 text-xs">
-                    Kick
+                    {t("clubs_kick")}
                   </button>
                 )}
               </div>
@@ -271,14 +272,14 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
             onClick={handleLeave}
             className="w-full mt-3 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium flex items-center justify-center gap-2"
           >
-            <LogOut size={14} /> Leave Club
+            <LogOut size={14} /> {t("clubs_leaveClub")}
           </button>
         </div>
       ) : (
         <div className="flex flex-col" style={{ height: "50vh" }}>
           <div className="flex-1 overflow-y-auto space-y-2 mb-2">
             {messages.length === 0 && (
-              <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">No messages yet — say hi to your club.</p>
+              <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">{t("clubs_noMessagesYet")}</p>
             )}
             {messages.map((m) => {
               const mine = m.senderUid === myUid;
@@ -304,7 +305,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Message the club…"
+              placeholder={t("clubs_messagePlaceholder")}
               maxLength={500}
               className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />

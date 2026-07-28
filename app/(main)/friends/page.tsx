@@ -97,7 +97,7 @@ export default function FriendsPage() {
       <div className="pt-4 pb-32 px-4">
         <PageHeader title={t("page_friends")} />
         <div className="glass-card rounded-2xl p-6 text-center">
-          <p className="text-[rgb(var(--c4))] text-sm">Sign in to add friends and send invites.</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("friends_signInPrompt")}</p>
         </div>
       </div>
     );
@@ -105,14 +105,14 @@ export default function FriendsPage() {
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Friends" />
+      <PageHeader title={t("page_friends")} />
 
       {invites.length > 0 && (
         <div className="space-y-2 mb-4">
           {invites.map((invite) => (
             <div key={invite.id} className="glass-card rounded-xl p-3 flex items-center justify-between border border-[#D4AF37]/30">
               <p className="text-[rgb(var(--text-primary))] text-sm">
-                <span className="text-[#D4AF37] font-semibold">{invite.fromName}</span> invited you to a room
+                <span className="text-[#D4AF37] font-semibold">{invite.fromName}</span> {t("friends_invitedToRoom")}
               </p>
               <div className="flex gap-2">
                 <button
@@ -122,10 +122,10 @@ export default function FriendsPage() {
                   }}
                   className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-xs font-semibold"
                 >
-                  Join
+                  {t("friends_join")}
                 </button>
                 <button onClick={() => dismissRoomInvite(invite.id)} className="px-3 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-xs">
-                  Dismiss
+                  {t("friends_dismiss")}
                 </button>
               </div>
             </div>
@@ -164,7 +164,7 @@ export default function FriendsPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Search by username"
+              placeholder={t("friends_searchPlaceholder")}
               className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <button onClick={handleSearch} className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
@@ -172,7 +172,7 @@ export default function FriendsPage() {
             </button>
           </div>
 
-          {searching && <p className="text-[rgb(var(--c4))] text-sm text-center">Searching…</p>}
+          {searching && <p className="text-[rgb(var(--c4))] text-sm text-center">{t("friends_searching")}</p>}
 
           <div className="space-y-2">
             {results.map((r) => {
@@ -187,9 +187,9 @@ export default function FriendsPage() {
                     </p>
                   </div>
                   {alreadyFriend ? (
-                    <span className="text-[rgb(var(--c4))] text-xs">Friends</span>
+                    <span className="text-[rgb(var(--c4))] text-xs">{t("friends_alreadyFriends")}</span>
                   ) : alreadySent ? (
-                    <span className="text-[rgb(var(--c4))] text-xs">Requested</span>
+                    <span className="text-[rgb(var(--c4))] text-xs">{t("friends_requested")}</span>
                   ) : (
                     <button onClick={() => handleAddFriend(r)} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[#D4AF37]/30">
                       <UserPlus size={16} className="text-[#D4AF37]" />
@@ -205,9 +205,9 @@ export default function FriendsPage() {
       {tab === "requests" && (
         <div className="space-y-5">
           <div>
-            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Incoming</p>
+            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("friends_incoming")}</p>
             {incoming.length === 0 ? (
-              <p className="text-[rgb(var(--c3))] text-xs">No pending requests</p>
+              <p className="text-[rgb(var(--c3))] text-xs">{t("friends_noPendingRequests")}</p>
             ) : (
               <div className="space-y-2">
                 {incoming.map((r) => (
@@ -228,16 +228,16 @@ export default function FriendsPage() {
           </div>
 
           <div>
-            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Sent</p>
+            <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("friends_sent")}</p>
             {outgoing.length === 0 ? (
-              <p className="text-[rgb(var(--c3))] text-xs">No outgoing requests</p>
+              <p className="text-[rgb(var(--c3))] text-xs">{t("friends_noOutgoingRequests")}</p>
             ) : (
               <div className="space-y-2">
                 {outgoing.map((r) => (
                   <div key={r.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
                     <p className="text-[rgb(var(--text-primary))] text-sm">{r.toName}</p>
                     <button onClick={() => cancelOrRemove(r.id)} className="text-[rgb(var(--c4))] text-xs">
-                      Cancel
+                      {t("friends_cancel")}
                     </button>
                   </div>
                 ))}
@@ -252,7 +252,7 @@ export default function FriendsPage() {
           {friends.length === 0 ? (
             <div className="glass-card rounded-2xl p-6 text-center">
               <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-              <p className="text-[rgb(var(--c4))] text-sm">No friends yet — search for players to add them.</p>
+              <p className="text-[rgb(var(--c4))] text-sm">{t("friends_noFriendsYet")}</p>
             </div>
           ) : (
             friends.map((f) => (
@@ -266,7 +266,7 @@ export default function FriendsPage() {
                       whileTap={{ scale: 0.95 }}
                       className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[#D4AF37] text-xs flex items-center gap-1"
                     >
-                      <MessageCircle size={12} /> Message
+                      <MessageCircle size={12} /> {t("friends_message")}
                     </motion.button>
                   </Link>
                   <motion.button
@@ -284,7 +284,7 @@ export default function FriendsPage() {
                     <Gamepad2 size={12} /> Gin
                   </motion.button>
                   <button onClick={() => cancelOrRemove(f.requestId)} className="text-red-400/70 text-xs">
-                    Remove
+                    {t("friends_remove")}
                   </button>
                 </div>
               </div>

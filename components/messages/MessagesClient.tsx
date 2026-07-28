@@ -22,12 +22,13 @@ export function MessagesClient() {
   const { user, isGuest } = useAuth();
   const withUid = searchParams.get("with");
   const withName = searchParams.get("name") ?? "Player";
+  const t = useTranslation();
 
   if (isGuest) {
     return (
       <div className="pt-4 pb-32 px-4">
         <div className="glass-card rounded-2xl p-6 text-center">
-          <p className="text-[rgb(var(--c4))] text-sm">Sign in to message your friends.</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("messages_signInPrompt")}</p>
         </div>
       </div>
     );
@@ -54,7 +55,7 @@ function ConversationList({ myUid }: { myUid: string }) {
       {conversations.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center mt-4">
           <MessageCircle size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">No conversations yet — message a friend from the Friends tab.</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("messages_noConversationsYet")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -67,8 +68,8 @@ function ConversationList({ myUid }: { myUid: string }) {
                   <div className="min-w-0">
                     <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{otherName}</p>
                     <p className="text-[rgb(var(--c4))] text-xs truncate max-w-[220px]">
-                      {c.lastSenderUid === myUid && c.lastMessage ? "You: " : ""}
-                      {c.lastMessage || "No messages yet"}
+                      {c.lastSenderUid === myUid && c.lastMessage ? t("messages_youPrefix") : ""}
+                      {c.lastMessage || t("messages_noMessagesYet")}
                     </p>
                   </div>
                   {c.lastMessageAt > 0 && (
@@ -92,6 +93,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const t = useTranslation();
 
   useEffect(() => {
     if (!myUid || !otherUid) return;
@@ -134,7 +136,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
 
       <div className="flex-1 overflow-y-auto px-4 space-y-2">
         {messages.length === 0 && (
-          <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">Say hello to {otherName}!</p>
+          <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">{t("messages_sayHelloTo").replace("{name}", otherName)}</p>
         )}
         {messages.map((m) => {
           const mine = m.senderUid === myUid;
@@ -160,7 +162,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Message…"
+          placeholder={t("messages_placeholder")}
           maxLength={500}
           className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
         />

@@ -169,6 +169,53 @@ export const TRANSLATIONS: Record<string, Translations> = {
   rewards_claimedThisCycle: { en: "{n} / 7 claimed this cycle", dv: "މި ސައިކަލްގައި {n} / 7 ނަންގަވައިފި", hi: "इस चक्र में {n} / 7 दावा किया गया", bn: "এই চক্রে {n} / 7 দাবি করা হয়েছে" },
   rewards_dayClaimed: { en: "Day {n} Claimed!", dv: "ދުވަސް {n} ނަންގަވައިފި!", hi: "दिन {n} का दावा किया गया!", bn: "দিন {n} দাবি করা হয়েছে!" },
   rewards_roomCardBonus: { en: "+ 1-Hour Room Card Bonus!", dv: "+ 1 ގަޑިއިރުގެ ރޫމް ކާޑް ބޯނަސް!", hi: "+ 1 घंटे का रूम कार्ड बोनस!", bn: "+ ১ ঘণ্টার রুম কার্ড বোনাস!" },
+
+  // Friends page body (app/(main)/friends/page.tsx)
+  friends_signInPrompt: { en: "Sign in to add friends and send invites.", dv: "ރަޙްމަތްތެރިން އިތުރުކުރެއްވުމަށާއި ދައުވަތު ފޮނުއްވުމަށް ސައިން އިން ކުރައްވާ.", hi: "दोस्त जोड़ने और आमंत्रण भेजने के लिए साइन इन करें।", bn: "বন্ধু যোগ করতে এবং আমন্ত্রণ পাঠাতে সাইন ইন করুন।" },
+  friends_invitedToRoom: { en: "invited you to a room", dv: "ރޫމަކަށް ދައުވަތު ދެއްވައިފި", hi: "ने आपको एक रूम में आमंत्रित किया", bn: "আপনাকে একটি রুমে আমন্ত্রণ জানিয়েছে" },
+  friends_join: { en: "Join", dv: "ބައިވެރިވޭ", hi: "शामिल हों", bn: "যোগ দিন" },
+  friends_dismiss: { en: "Dismiss", dv: "ބާތިލްކުރޭ", hi: "खारिज करें", bn: "খারিজ করুন" },
+  friends_searchPlaceholder: { en: "Search by username", dv: "ޔޫސަރނޭމުން ސާރޗްކުރައްވާ", hi: "उपयोगकर्ता नाम से खोजें", bn: "ইউজারনেম দিয়ে অনুসন্ধান করুন" },
+  friends_searching: { en: "Searching…", dv: "ސާރޗްކުރަނީ…", hi: "खोज रहे हैं…", bn: "অনুসন্ধান করা হচ্ছে…" },
+  friends_alreadyFriends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "दोस्त", bn: "বন্ধু" },
+  friends_requested: { en: "Requested", dv: "ރިކުއެސްޓްކުރެވިއްޖެ", hi: "अनुरोध किया गया", bn: "অনুরোধ করা হয়েছে" },
+  friends_incoming: { en: "Incoming", dv: "ލިބެމުންދާ", hi: "आने वाले", bn: "ইনকামিং" },
+  friends_noPendingRequests: { en: "No pending requests", dv: "މަޑުކުރެވިފައިވާ ރިކުއެސްޓެއް ނެތް", hi: "कोई लंबित अनुरोध नहीं", bn: "কোনো মুলতুবি অনুরোধ নেই" },
+  friends_sent: { en: "Sent", dv: "ފޮނުއްވި", hi: "भेजे गए", bn: "পাঠানো হয়েছে" },
+  friends_noOutgoingRequests: { en: "No outgoing requests", dv: "ފޮނުއްވި ރިކުއެސްޓެއް ނެތް", hi: "कोई आउटगोइंग अनुरोध नहीं", bn: "কোনো আউটগোয়িং অনুরোধ নেই" },
+  friends_cancel: { en: "Cancel", dv: "ކެންސަލް", hi: "रद्द करें", bn: "বাতিল" },
+  friends_noFriendsYet: { en: "No friends yet — search for players to add them.", dv: "އަދި ރަޙްމަތްތެރިއެއް ނެތް — ކުޅުންތެރިން ހޯއްދަވައި އިތުރުކުރައްވާ.", hi: "अभी तक कोई दोस्त नहीं — जोड़ने के लिए खिलाड़ी खोजें।", bn: "এখনো কোনো বন্ধু নেই — যোগ করতে খেলোয়াড় খুঁজুন।" },
+  friends_message: { en: "Message", dv: "މެސެޖް", hi: "संदेश", bn: "বার্তা" },
+  friends_remove: { en: "Remove", dv: "ނަގާ", hi: "हटाएं", bn: "সরান" },
+
+  // Clubs (components/clubs/ClubsClient.tsx)
+  clubs_signInPrompt: { en: "Sign in to join or create a club.", dv: "ކްލަބެއްގައި ބައިވެރިވުމަށް ނުވަތަ ހެއްދެވުމަށް ސައިން އިން ކުރައްވާ.", hi: "क्लब में शामिल होने या बनाने के लिए साइन इन करें।", bn: "ক্লাবে যোগ দিতে বা তৈরি করতে সাইন ইন করুন।" },
+  clubs_loading: { en: "Loading…", dv: "ލޯޑިންގ…", hi: "लोड हो रहा है…", bn: "লোড হচ্ছে…" },
+  clubs_browse: { en: "Browse", dv: "ބްރައުޒް", hi: "ब्राउज़ करें", bn: "ব্রাউজ করুন" },
+  clubs_create: { en: "Create", dv: "ހަދާ", hi: "बनाएं", bn: "তৈরি করুন" },
+  clubs_namePlaceholder: { en: "Club name", dv: "ކްލަބުގެ ނަން", hi: "क्लब का नाम", bn: "ক্লাবের নাম" },
+  clubs_tagPlaceholder: { en: "Tag (e.g. MLE)", dv: "ޓެގް (މިސާލު MLE)", hi: "टैग (जैसे MLE)", bn: "ট্যাগ (যেমন MLE)" },
+  clubs_descriptionPlaceholder: { en: "Description (optional)", dv: "ތަފްޞީލް (އިޚްތިޔާރީ)", hi: "विवरण (वैकल्पिक)", bn: "বিবরণ (ঐচ্ছিক)" },
+  clubs_creating: { en: "Creating…", dv: "ހަދަނީ…", hi: "बनाया जा रहा है…", bn: "তৈরি করা হচ্ছে…" },
+  clubs_createClub: { en: "Create Club", dv: "ކްލަބް ހަދާ", hi: "क्लब बनाएं", bn: "ক্লাব তৈরি করুন" },
+  clubs_noClubsYet: { en: "No clubs yet — be the first to create one.", dv: "އަދި ކްލަބެއް ނެތް — ފުރަތަމަ ކްލަބް ހައްދަވާ ފަރާތަށްވެވަޑައިގަންނަވާ.", hi: "अभी तक कोई क्लब नहीं — पहला बनाने वाले बनें।", bn: "এখনো কোনো ক্লাব নেই — প্রথম তৈরি করুন।" },
+  clubs_members: { en: "members", dv: "މެމްބަރުން", hi: "सदस्य", bn: "সদস্য" },
+  clubs_join: { en: "Join", dv: "ބައިވެރިވޭ", hi: "शामिल हों", bn: "যোগ দিন" },
+  clubs_membersTab: { en: "Members ({n})", dv: "މެމްބަރުން ({n})", hi: "सदस्य ({n})", bn: "সদস্য ({n})" },
+  clubs_chatTab: { en: "Club Chat", dv: "ކްލަބް ޗެޓް", hi: "क्लब चैट", bn: "ক্লাব চ্যাট" },
+  clubs_you: { en: "(you)", dv: "(ތިބާ)", hi: "(आप)", bn: "(আপনি)" },
+  clubs_kick: { en: "Kick", dv: "ނެރޭ", hi: "निकालें", bn: "বহিষ্কার" },
+  clubs_leaveClub: { en: "Leave Club", dv: "ކްލަބުން ނުކުމޭ", hi: "क्लब छोड़ें", bn: "ক্লাব ত্যাগ করুন" },
+  clubs_noMessagesYet: { en: "No messages yet — say hi to your club.", dv: "އަދި މެސެޖެއް ނެތް — ކްލަބަށް ސަލާމް ދަންނަވާ.", hi: "अभी तक कोई संदेश नहीं — अपने क्लब को नमस्ते कहें।", bn: "এখনো কোনো বার্তা নেই — আপনার ক্লাবকে হ্যালো বলুন।" },
+  clubs_messagePlaceholder: { en: "Message the club…", dv: "ކްލަބަށް މެސެޖްކުރައްވާ…", hi: "क्लब को संदेश भेजें…", bn: "ক্লাবে বার্তা পাঠান…" },
+
+  // Messages (components/messages/MessagesClient.tsx)
+  messages_signInPrompt: { en: "Sign in to message your friends.", dv: "ރަޙްމަތްތެރިންނަށް މެސެޖްކުރެއްވުމަށް ސައިން އިން ކުރައްވާ.", hi: "अपने दोस्तों को संदेश भेजने के लिए साइन इन करें।", bn: "বন্ধুদের বার্তা পাঠাতে সাইন ইন করুন।" },
+  messages_noConversationsYet: { en: "No conversations yet — message a friend from the Friends tab.", dv: "އަދި ވާހަކައެއް ނެތް — ރަޙްމަތްތެރިން ޓެބުން ރަޙްމަތްތެރިއަކަށް މެސެޖްކުރައްވާ.", hi: "अभी तक कोई बातचीत नहीं — दोस्त टैब से किसी दोस्त को संदेश भेजें।", bn: "এখনো কোনো কথোপকথন নেই — বন্ধু ট্যাব থেকে বার্তা পাঠান।" },
+  messages_youPrefix: { en: "You: ", dv: "ތިބާ: ", hi: "आप: ", bn: "আপনি: " },
+  messages_noMessagesYet: { en: "No messages yet", dv: "އަދި މެސެޖެއް ނެތް", hi: "अभी तक कोई संदेश नहीं", bn: "এখনো কোনো বার্তা নেই" },
+  messages_sayHelloTo: { en: "Say hello to {name}!", dv: "{name} އަށް ސަލާމް ދަންނަވާ!", hi: "{name} को नमस्ते कहें!", bn: "{name} কে হ্যালো বলুন!" },
+  messages_placeholder: { en: "Message…", dv: "މެސެޖް…", hi: "संदेश…", bn: "বার্তা…" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {
