@@ -10,6 +10,7 @@ import { getWeeklyFeaturedRotation } from '../../lib/cosmeticRotation';
 import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '../../lib/coinTopups';
 import { useAuth } from '../../contexts/AuthContext';
 import CoinBalance from '../economy/CoinBalance';
+import { useTranslation } from '../../hooks/useTranslation';
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
   return (
@@ -36,6 +37,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
   price?: number;
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const t = useTranslation();
 
   return (
     <motion.div
@@ -101,7 +103,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
               onClick={onEquip}
               whileTap={{ scale: 0.95 }}
             >
-              {isEquipped ? 'Equipped' : 'Equip'}
+              {isEquipped ? t('shop_equipped') : t('shop_equip')}
             </motion.button>
           ) : (
             <motion.button
@@ -120,6 +122,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
 }
 
 function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurchase: () => void }) {
+  const t = useTranslation();
   return (
     <motion.div
       className={`
@@ -157,7 +160,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
         onClick={onPurchase}
         whileTap={{ scale: 0.95 }}
       >
-        Purchase
+        {t('shop_purchase')}
       </motion.button>
 
       <p className="text-center text-gray-600 text-xs mt-2">Requires admin approval before coins are credited</p>
@@ -181,6 +184,7 @@ export default function CosmeticShop() {
   const [selectedVipPlan, setSelectedVipPlan] = useState<'weekly' | 'monthly'>('weekly');
   const [myTopups, setMyTopups] = useState<CoinTopupRequest[]>([]);
   const shopOverrides = state.shopOverrides;
+  const t = useTranslation();
 
   useEffect(() => {
     if (!user?.uid || isGuest) return;
@@ -194,7 +198,7 @@ export default function CosmeticShop() {
     return shopOverrides?.hiddenItemIds.includes(item.id) ?? false;
   }
 
-  const pendingTopup = myTopups.find((t) => t.status === 'pending');
+  const pendingTopup = myTopups.find((topup) => topup.status === 'pending');
 
   async function handlePurchaseCoinPack(pack: typeof COIN_PACKS[0]) {
     if (!user?.uid || isGuest) {
@@ -225,14 +229,14 @@ export default function CosmeticShop() {
   }, []);
 
   const categories = [
-    { id: 'all', label: 'All', icon: '🛍️' },
-    { id: 'cardBack', label: 'Card Backs', icon: '🃏' },
-    { id: 'tableTheme', label: 'Tables', icon: '🎰' },
-    { id: 'profileFrame', label: 'Frames', icon: '🖼️' },
-    { id: 'emote', label: 'Emotes', icon: '😊' },
-    { id: 'victoryAnimation', label: 'Victory', icon: '✨' },
-    { id: 'sticker', label: 'Stickers', icon: '🏷️' },
-    { id: 'banner', label: 'Banners', icon: '🚩' },
+    { id: 'all', label: t('shop_catAll'), icon: '🛍️' },
+    { id: 'cardBack', label: t('shop_catCardBacks'), icon: '🃏' },
+    { id: 'tableTheme', label: t('shop_catTables'), icon: '🎰' },
+    { id: 'profileFrame', label: t('shop_catFrames'), icon: '🖼️' },
+    { id: 'emote', label: t('shop_catEmotes'), icon: '😊' },
+    { id: 'victoryAnimation', label: t('shop_catVictory'), icon: '✨' },
+    { id: 'sticker', label: t('shop_catStickers'), icon: '🏷️' },
+    { id: 'banner', label: t('shop_catBanners'), icon: '🚩' },
   ];
 
   // Deterministic rotation: same featured set for everyone during a given
@@ -264,18 +268,18 @@ export default function CosmeticShop() {
     <div className="w-full max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-amber-300">Shop</h1>
-          <p className="text-gray-500 text-sm">Premium cosmetics and coin packs</p>
+          <h1 className="text-3xl font-bold text-amber-300">{t('shop_headerTitle')}</h1>
+          <p className="text-gray-500 text-sm">{t('shop_headerSubtitle')}</p>
         </div>
         <CoinBalance size="lg" />
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {[
-          { id: 'featured', label: 'Featured', icon: '⭐' },
-          { id: 'permanent', label: 'Permanent', icon: '🛒' },
-          { id: 'coins', label: 'Coin Packs', icon: '🪙' },
-          { id: 'vip', label: 'VIP Pass', icon: '👑' },
+          { id: 'featured', label: t('shop_tabFeatured'), icon: '⭐' },
+          { id: 'permanent', label: t('shop_tabPermanent'), icon: '🛒' },
+          { id: 'coins', label: t('shop_tabCoins'), icon: '🪙' },
+          { id: 'vip', label: t('shop_tabVip'), icon: '👑' },
         ].map((tab) => (
           <motion.button
             key={tab.id}
@@ -304,7 +308,7 @@ export default function CosmeticShop() {
             exit={{ opacity: 0, y: -20 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-amber-200">Weekly Featured</h2>
+              <h2 className="text-xl font-bold text-amber-200">{t('shop_weeklyFeatured')}</h2>
               <div className="flex items-center gap-2 bg-neutral-900/60 rounded-full px-4 py-1.5 border border-amber-500/20">
                 <span className="text-amber-400 text-sm">⏰</span>
                 <span className="text-amber-200 text-sm font-mono">{timeLeft}</span>

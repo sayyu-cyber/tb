@@ -5,10 +5,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { DAILY_LOGIN_REWARDS } from '../../data/cosmetics';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export default function DailyLoginCalendar() {
   const { state, claimDailyReward } = useEconomy();
   const { dailyLogin } = state;
+  const t = useTranslation();
   const [showPopup, setShowPopup] = useState(false);
   const [claimedDay, setClaimedDay] = useState<number | null>(null);
 
@@ -35,11 +37,11 @@ export default function DailyLoginCalendar() {
         transition={{ duration: 0.5 }}
       >
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-amber-300">Daily Login Rewards</h2>
-          <p className="text-gray-400 text-sm mt-1">Come back every day for premium rewards</p>
+          <h2 className="text-2xl font-bold text-amber-300">{t('rewards_title')}</h2>
+          <p className="text-gray-400 text-sm mt-1">{t('rewards_subtitle')}</p>
           <div className="mt-2 inline-flex items-center gap-2 bg-amber-900/30 rounded-full px-3 py-1">
             <span className="text-amber-400 text-sm">🔥</span>
-            <span className="text-amber-200 text-sm font-medium">Streak: {dailyLogin.streak} days</span>
+            <span className="text-amber-200 text-sm font-medium">{t('rewards_streak').replace('{n}', String(dailyLogin.streak))}</span>
           </div>
         </div>
 
@@ -71,7 +73,7 @@ export default function DailyLoginCalendar() {
                 transition={{ delay: index * 0.05 }}
               >
                 <span className={`text-xs font-bold ${isClaimed ? 'text-amber-600' : isNext ? 'text-amber-300' : 'text-gray-500'}`}>
-                  Day {day}
+                  {t('rewards_day').replace('{n}', String(day))}
                 </span>
                 <span className="text-lg">{isClaimed ? '✅' : day === 7 ? '🎁' : '🪙'}</span>
                 <span className={`text-xs font-semibold ${isClaimed ? 'text-amber-700' : isNext ? 'text-amber-200' : 'text-gray-600'}`}>
@@ -106,7 +108,7 @@ export default function DailyLoginCalendar() {
             />
           </div>
           <p className="text-gray-500 text-xs mt-2">
-            {dailyLogin.rewards.filter(r => r.claimed).length} / 7 claimed this cycle
+            {t('rewards_claimedThisCycle').replace('{n}', String(dailyLogin.rewards.filter(r => r.claimed).length))}
           </p>
         </div>
       </motion.div>
@@ -133,13 +135,13 @@ export default function DailyLoginCalendar() {
               >
                 🎉
               </motion.div>
-              <h3 className="text-2xl font-bold text-amber-300 mb-2">Day {claimedDay} Claimed!</h3>
+              <h3 className="text-2xl font-bold text-amber-300 mb-2">{t('rewards_dayClaimed').replace('{n}', String(claimedDay))}</h3>
               <p className="text-amber-100 text-lg font-semibold">
                 +{DAILY_LOGIN_REWARDS[claimedDay - 1].coins} Coins
               </p>
               {DAILY_LOGIN_REWARDS[claimedDay - 1].bonusItem && (
                 <p className="text-amber-400 text-sm mt-1">
-                  + 1-Hour Room Card Bonus!
+                  {t('rewards_roomCardBonus')}
                 </p>
               )}
             </motion.div>

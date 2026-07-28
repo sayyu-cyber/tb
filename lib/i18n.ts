@@ -115,6 +115,60 @@ export const TRANSLATIONS: Record<string, Translations> = {
   friends_tabFriends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "दोस्त", bn: "বন্ধুরা" },
   friends_tabRequests: { en: "Requests", dv: "ރިކުއެސްޓްތައް", hi: "अनुरोध", bn: "অনুরোধ" },
   friends_tabSearch: { en: "Search", dv: "ސާރޗް", hi: "खोजें", bn: "অনুসন্ধান" },
+
+  // Shop (components/shop/CosmeticShop.tsx)
+  shop_headerTitle: { en: "Shop", dv: "ފިހާރަ", hi: "दुकान", bn: "দোকান" },
+  shop_headerSubtitle: {
+    en: "Premium cosmetics and coin packs",
+    dv: "ޕްރިމިއަމް ކޮސްމެޓިކްސް އަދި ކޮއިން ޕެކްތައް",
+    hi: "प्रीमियम कॉस्मेटिक्स और कॉइन पैक",
+    bn: "প্রিমিয়াম কসমেটিক্স এবং কয়েন প্যাক",
+  },
+  shop_tabFeatured: { en: "Featured", dv: "ފީޗާޑް", hi: "फ़ीचर्ड", bn: "ফিচারড" },
+  shop_tabPermanent: { en: "Permanent", dv: "ދާއިމީ", hi: "स्थायी", bn: "স্থায়ী" },
+  shop_tabCoins: { en: "Coin Packs", dv: "ކޮއިން ޕެކް", hi: "कॉइन पैक", bn: "কয়েন প্যাক" },
+  shop_tabVip: { en: "VIP Pass", dv: "ވީއައިޕީ ޕާސް", hi: "वीआईपी पास", bn: "ভিআইপি পাস" },
+  shop_catAll: { en: "All", dv: "ހުރިހާ", hi: "सभी", bn: "সব" },
+  shop_catCardBacks: { en: "Card Backs", dv: "ކާޑް ބެކްސް", hi: "कार्ड बैक्स", bn: "কার্ড ব্যাক" },
+  shop_catTables: { en: "Tables", dv: "މޭޒުތައް", hi: "टेबल", bn: "টেবিল" },
+  shop_catFrames: { en: "Frames", dv: "ފްރޭމް", hi: "फ्रेम", bn: "ফ্রেম" },
+  shop_catEmotes: { en: "Emotes", dv: "އިމޯޓް", hi: "इमोट", bn: "ইমোট" },
+  shop_catVictory: { en: "Victory", dv: "ކާމިޔާބު", hi: "विजय", bn: "বিজয়" },
+  shop_catStickers: { en: "Stickers", dv: "ސްޓިކާ", hi: "स्टिकर", bn: "স্টিকার" },
+  shop_catBanners: { en: "Banners", dv: "ބެނާ", hi: "बैनर", bn: "ব্যানার" },
+  shop_equip: { en: "Equip", dv: "އިކުއިޕް", hi: "इक्विप", bn: "ইকুইপ" },
+  shop_equipped: { en: "Equipped", dv: "އިކުއިޕްކުރެވިއްޖެ", hi: "इक्विप्ड", bn: "ইকুইপড" },
+  shop_purchase: { en: "Purchase", dv: "ގަންނާ", hi: "खरीदें", bn: "ক্রয় করুন" },
+  shop_weeklyFeatured: { en: "Weekly Featured", dv: "ހަފުތާގެ ފީޗާޑް", hi: "साप्ताहिक फ़ीचर्ड", bn: "সাপ্তাহিক ফিচারড" },
+
+  // Missions panel (components/missions/MissionsPanel.tsx) - mission
+  // title/description text itself comes from data templates and is not
+  // translated in this pass, only the surrounding chrome.
+  missions_dailyTitle: { en: "Daily Missions", dv: "ދުވަހީ މިޝަންތައް", hi: "दैनिक मिशन", bn: "দৈনিক মিশন" },
+  missions_dailyReset: { en: "Resets at 00:00", dv: "00:00 ގައި ރީސެޓްވޭ", hi: "00:00 पर रीसेट होता है", bn: "০০:০০ এ রিসেট হয়" },
+  missions_weeklyTitle: { en: "Weekly Missions", dv: "ހަފުތާގެ މިޝަންތައް", hi: "साप्ताहिक मिशन", bn: "সাপ্তাহিক মিশন" },
+  missions_weeklyReset: { en: "Resets every Sunday", dv: "ކޮންމެ އާދިއްތަދުވަހަކު ރީސެޓްވޭ", hi: "हर रविवार रीसेट होता है", bn: "প্রতি রবিবার রিসেট হয়" },
+  missions_completed: { en: "completed", dv: "ފުރިހަމަވެއްޖެ", hi: "पूर्ण", bn: "সম্পন্ন" },
+  missions_allDailyComplete: {
+    en: "All Daily Missions Complete! Bonus: +{n} Coins",
+    dv: "ހުރިހާ ދުވަހީ މިޝަންތައް ފުރިހަމަވެއްޖެ! ބޯނަސް: +{n} ކޮއިން",
+    hi: "सभी दैनिक मिशन पूर्ण! बोनस: +{n} सिक्के",
+    bn: "সব দৈনিক মিশন সম্পন্ন! বোনাস: +{n} কয়েন",
+  },
+
+  // Daily Login Rewards (components/rewards/DailyLoginCalendar.tsx)
+  rewards_title: { en: "Daily Login Rewards", dv: "ދުވަހީ ލޮގިން އިނާމް", hi: "दैनिक लॉगिन पुरस्कार", bn: "দৈনিক লগইন পুরস্কার" },
+  rewards_subtitle: {
+    en: "Come back every day for premium rewards",
+    dv: "ޕްރިމިއަމް އިނާމް ހޯއްދެވުމަށް ކޮންމެ ދުވަހަކުވެސް އަނބުރާ ވަޑައިގަންނަވާ",
+    hi: "प्रीमियम पुरस्कारों के लिए हर दिन वापस आएं",
+    bn: "প্রিমিয়াম পুরস্কারের জন্য প্রতিদিন ফিরে আসুন",
+  },
+  rewards_streak: { en: "Streak: {n} days", dv: "ސްޓްރީކް: {n} ދުވަސް", hi: "स्ट्रीक: {n} दिन", bn: "স্ট্রিক: {n} দিন" },
+  rewards_day: { en: "Day {n}", dv: "ދުވަސް {n}", hi: "दिन {n}", bn: "দিন {n}" },
+  rewards_claimedThisCycle: { en: "{n} / 7 claimed this cycle", dv: "މި ސައިކަލްގައި {n} / 7 ނަންގަވައިފި", hi: "इस चक्र में {n} / 7 दावा किया गया", bn: "এই চক্রে {n} / 7 দাবি করা হয়েছে" },
+  rewards_dayClaimed: { en: "Day {n} Claimed!", dv: "ދުވަސް {n} ނަންގަވައިފި!", hi: "दिन {n} का दावा किया गया!", bn: "দিন {n} দাবি করা হয়েছে!" },
+  rewards_roomCardBonus: { en: "+ 1-Hour Room Card Bonus!", dv: "+ 1 ގަޑިއިރުގެ ރޫމް ކާޑް ބޯނަސް!", hi: "+ 1 घंटे का रूम कार्ड बोनस!", bn: "+ ১ ঘণ্টার রুম কার্ড বোনাস!" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

@@ -5,6 +5,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { DailyMission, WeeklyMission } from '../../types/economy';
+import { useTranslation } from '../../hooks/useTranslation';
 
 function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | WeeklyMission; isWeekly?: boolean }) {
   const progressPercent = Math.min((mission.progress / mission.target) * 100, 100);
@@ -80,6 +81,7 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
 export default function MissionsPanel() {
   const { state } = useEconomy();
   const { missions } = state;
+  const t = useTranslation();
 
   const dailyCompleted = missions.daily.filter(m => m.completed).length;
   const allDailyComplete = dailyCompleted === missions.daily.length;
@@ -95,13 +97,13 @@ export default function MissionsPanel() {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-amber-300">Daily Missions</h2>
-            <p className="text-gray-500 text-sm">Resets at 00:00</p>
+            <h2 className="text-xl font-bold text-amber-300">{t('missions_dailyTitle')}</h2>
+            <p className="text-gray-500 text-sm">{t('missions_dailyReset')}</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
               <span className="text-amber-400 font-bold">{dailyCompleted}/{missions.daily.length}</span>
-              <span className="text-gray-500 text-sm ml-1">completed</span>
+              <span className="text-gray-500 text-sm ml-1">{t('missions_completed')}</span>
             </div>
           </div>
         </div>
@@ -120,7 +122,9 @@ export default function MissionsPanel() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <span className="text-amber-300 font-bold">🎉 All Daily Missions Complete! Bonus: +{missions.dailyAllBonus} Coins</span>
+            <span className="text-amber-300 font-bold">
+              🎉 {t('missions_allDailyComplete').replace('{n}', String(missions.dailyAllBonus))}
+            </span>
           </motion.div>
         )}
       </motion.div>
@@ -134,12 +138,12 @@ export default function MissionsPanel() {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-amber-300">Weekly Missions</h2>
-            <p className="text-gray-500 text-sm">Resets every Sunday</p>
+            <h2 className="text-xl font-bold text-amber-300">{t('missions_weeklyTitle')}</h2>
+            <p className="text-gray-500 text-sm">{t('missions_weeklyReset')}</p>
           </div>
           <div className="text-right">
             <span className="text-amber-400 font-bold">{weeklyCompleted}/{missions.weekly.length}</span>
-            <span className="text-gray-500 text-sm ml-1">completed</span>
+            <span className="text-gray-500 text-sm ml-1">{t('missions_completed')}</span>
           </div>
         </div>
 
