@@ -81,6 +81,40 @@ export const TRANSLATIONS: Record<string, Translations> = {
     hi: "मालदीव के कार्ड गेम्स का घर",
     bn: "মালদ্বীপের কার্ড গেমসের ঘর",
   },
+
+  // Shared PageHeader titles (components/layout/PageHeader.tsx) - used
+  // across most secondary screens, so translating this one list covers a
+  // lot of ground cheaply and consistently.
+  page_collection: { en: "Collection", dv: "ކަލެކްޝަން", hi: "संग्रह", bn: "সংগ্রহ" },
+  page_achievements: { en: "Achievements", dv: "ހާސިލްކުރުންތައް", hi: "उपलब्धियां", bn: "অর্জনসমূহ" },
+  page_hallOfFame: { en: "Hall of Fame", dv: "ފޭމް ހޯލް", hi: "हॉल ऑफ़ फ़ेम", bn: "হল অফ ফেম" },
+  page_inventory: { en: "Inventory", dv: "އިންވެންޓްރީ", hi: "इन्वेंटरी", bn: "ইনভেন্টরি" },
+  page_friends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "दोस्त", bn: "বন্ধুরা" },
+  page_clubs: { en: "Clubs", dv: "ކްލަބްތައް", hi: "क्लब", bn: "ক্লাব" },
+  page_admin: { en: "Admin", dv: "އެޑްމިން", hi: "एडमिन", bn: "অ্যাডমিন" },
+  page_adminPanel: { en: "Admin Panel", dv: "އެޑްމިން ޕެނަލް", hi: "एडमिन पैनल", bn: "অ্যাডমিন প্যানেল" },
+  page_weekendLeague: { en: "Weekend League", dv: "ވީކެންޑް ލީގު", hi: "वीकेंड लीग", bn: "সাপ্তাহিক লিগ" },
+  page_shop: { en: "Shop", dv: "ފިހާރަ", hi: "दुकान", bn: "দোকান" },
+  page_roomCards: { en: "Room Cards", dv: "ރޫމް ކާޑް", hi: "रूम कार्ड", bn: "রুম কার্ড" },
+  page_dailyRewards: { en: "Daily Rewards", dv: "ދުވަހީ އިނާމް", hi: "दैनिक पुरस्कार", bn: "দৈনিক পুরস্কার" },
+  page_missions: { en: "Missions", dv: "މިޝަންތައް", hi: "मिशन", bn: "মিশন" },
+  page_messages: { en: "Messages", dv: "މެސެޖް", hi: "संदेश", bn: "বার্তা" },
+  page_playerProfile: { en: "Player Profile", dv: "ކުޅުންތެރިޔާގެ ޕްރޮފައިލް", hi: "खिलाड़ी प्रोफ़ाइल", bn: "খেলোয়াড়ের প্রোফাইল" },
+
+  // Play page
+  play_title: { en: "Play", dv: "ކުޅޭ", hi: "खेलें", bn: "খেলুন" },
+  play_subtitle: { en: "Choose your game", dv: "ތިބާގެ ގޭމް ހޮއްވަވާ", hi: "अपना गेम चुनें", bn: "আপনার গেম বেছে নিন" },
+
+  // Leaderboard page
+  leaderboard_title: { en: "Leaderboard", dv: "ލީޑަރބޯޑް", hi: "लीडरबोर्ड", bn: "লিডারবোর্ড" },
+  leaderboard_subtitle: { en: "Top players this week", dv: "މިހަފުތާގެ އެންމެ މޮޅު ކުޅުންތެރިން", hi: "इस सप्ताह के शीर्ष खिलाड़ी", bn: "এই সপ্তাহের সেরা খেলোয়াড়" },
+  leaderboard_weeklyRankings: { en: "Weekly Rankings", dv: "ހަފުތާގެ ރޭންކިންގް", hi: "साप्ताहिक रैंकिंग", bn: "সাপ্তাহিক র‍্যাংকিং" },
+  leaderboard_resetsMonday: { en: "Resets every Monday", dv: "ކޮންމެ ހޯމަދުވަހަކު ރީސެޓްވޭ", hi: "हर सोमवार रीसेट होता है", bn: "প্রতি সোমবার রিসেট হয়" },
+
+  // Friends page
+  friends_tabFriends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "दोस्त", bn: "বন্ধুরা" },
+  friends_tabRequests: { en: "Requests", dv: "ރިކުއެސްޓްތައް", hi: "अनुरोध", bn: "অনুরোধ" },
+  friends_tabSearch: { en: "Search", dv: "ސާރޗް", hi: "खोजें", bn: "অনুসন্ধান" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

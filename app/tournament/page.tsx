@@ -9,9 +9,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRankLock } from "@/hooks/useRankLock";
 import { getRankFromTrophies } from "@/constants/ranks";
 import { isQualified, getWeeklyStandings, WeeklyStanding } from "@/lib/weekendLeague";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function TournamentPage() {
   const { playerStats, user } = useAuth();
+  const t = useTranslation();
   const { isWeekendLeague, nextUnlockTime } = useRankLock();
   const [standings, setStandings] = useState<WeeklyStanding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export default function TournamentPage() {
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Weekend League" />
+      <PageHeader title={t("page_weekendLeague")} />
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}

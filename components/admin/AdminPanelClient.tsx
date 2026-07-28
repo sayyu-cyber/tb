@@ -20,17 +20,19 @@ import {
 import { CoinTopupRequest, watchAllTopups, decideTopup } from "@/lib/coinTopups";
 import { ManualHallOfFameEntry, watchManualHallOfFameEntries, addManualHallOfFameEntry, removeManualHallOfFameEntry, resetManualHallOfFame } from "@/lib/hallOfFame";
 import { ALL_COSMETICS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, RANK_CONFIGS } from "@/data/cosmetics";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Tab = "topups" | "season" | "hof" | "shop" | "missions" | "ranked";
 
 export function AdminPanelClient() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("topups");
+  const t = useTranslation();
 
   if (!isAdminEmail(user?.email)) {
     return (
       <div className="pt-4 pb-32 px-4">
-        <PageHeader title="Admin" />
+        <PageHeader title={t("page_admin")} />
         <div className="glass-card rounded-2xl p-6 text-center">
           <p className="text-[rgb(var(--c4))] text-sm">You don&apos;t have access to this page.</p>
         </div>
@@ -49,7 +51,7 @@ export function AdminPanelClient() {
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Admin Panel" />
+      <PageHeader title={t("page_adminPanel")} />
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {tabs.map((t) => (
           <button

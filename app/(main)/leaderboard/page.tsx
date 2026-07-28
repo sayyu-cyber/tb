@@ -6,10 +6,12 @@ import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { Podium } from "@/components/leaderboard/Podium";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function LeaderboardPage() {
   const { entries, loading, error } = useLeaderboard();
   const { user } = useAuth();
+  const t = useTranslation();
 
   const topThree = entries.slice(0, 3);
   const rest = entries.slice(3);
@@ -26,8 +28,8 @@ export default function LeaderboardPage() {
           <Trophy size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Leaderboard</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">Top players this week</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("leaderboard_title")}</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">{t("leaderboard_subtitle")}</p>
         </div>
       </motion.div>
 
@@ -39,8 +41,8 @@ export default function LeaderboardPage() {
         className="flex items-center gap-2 mb-6 bg-[#D4AF37]/5 border border-[#D4AF37]/10 rounded-xl px-4 py-3"
       >
         <TrendingUp size={16} className="text-[#D4AF37]" />
-        <span className="text-[#D4AF37] text-sm font-medium">Weekly Rankings</span>
-        <span className="text-[rgb(var(--c4))] text-xs ml-auto">Resets every Monday</span>
+        <span className="text-[#D4AF37] text-sm font-medium">{t("leaderboard_weeklyRankings")}</span>
+        <span className="text-[rgb(var(--c4))] text-xs ml-auto">{t("leaderboard_resetsMonday")}</span>
       </motion.div>
 
       {loading ? (

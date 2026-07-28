@@ -24,12 +24,14 @@ import {
   RoomInviteDoc,
 } from "@/lib/friends";
 import { createRoom } from "@/lib/rooms";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function FriendsPage() {
   const router = useRouter();
   const { user, isGuest } = useAuth();
   const uid = user?.uid ?? "";
   const myName = user?.displayName ?? "Player";
+  const t = useTranslation();
 
   const [tab, setTab] = useState<"friends" | "requests" | "search">("friends");
   const [searchText, setSearchText] = useState("");
@@ -93,7 +95,7 @@ export default function FriendsPage() {
   if (isGuest) {
     return (
       <div className="pt-4 pb-32 px-4">
-        <PageHeader title="Friends" />
+        <PageHeader title={t("page_friends")} />
         <div className="glass-card rounded-2xl p-6 text-center">
           <p className="text-[rgb(var(--c4))] text-sm">Sign in to add friends and send invites.</p>
         </div>
@@ -132,15 +134,21 @@ export default function FriendsPage() {
       )}
 
       <div className="flex gap-2 mb-4">
-        {(["friends", "requests", "search"] as const).map((t) => (
+        {(["friends", "requests", "search"] as const).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize ${
-              tab === t ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
+            className={`flex-1 py-2 rounded-xl text-sm font-medium ${
+              tab === tabKey ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
             }`}
           >
-            {t === "requests" && incoming.length > 0 ? `Requests (${incoming.length})` : t}
+            {tabKey === "requests"
+              ? incoming.length > 0
+                ? `${t("friends_tabRequests")} (${incoming.length})`
+                : t("friends_tabRequests")
+              : tabKey === "search"
+              ? t("friends_tabSearch")
+              : t("friends_tabFriends")}
           </button>
         ))}
       </div>

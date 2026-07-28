@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import { GameSelectCard } from "@/components/game/GameSelectCard";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const games = [
   {
@@ -24,6 +25,7 @@ const games = [
 ];
 
 export default function PlayPage() {
+  const t = useTranslation();
   return (
     <div className="px-4 pt-6 pb-6 space-y-6">
       <motion.div
@@ -35,8 +37,8 @@ export default function PlayPage() {
           <Gamepad2 size={20} className="text-[#D4AF37]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Play</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">Choose your game</p>
+          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("play_title")}</h1>
+          <p className="text-[rgb(var(--c4))] text-xs">{t("play_subtitle")}</p>
         </div>
       </motion.div>
 

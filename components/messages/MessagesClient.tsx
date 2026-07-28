@@ -15,6 +15,7 @@ import {
   DmMessage,
   DmConversation,
 } from "@/lib/messages";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function MessagesClient() {
   const searchParams = useSearchParams();
@@ -40,6 +41,7 @@ export function MessagesClient() {
 
 function ConversationList({ myUid }: { myUid: string }) {
   const [conversations, setConversations] = useState<DmConversation[]>([]);
+  const t = useTranslation();
 
   useEffect(() => {
     if (!myUid) return;
@@ -48,7 +50,7 @@ function ConversationList({ myUid }: { myUid: string }) {
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Messages" />
+      <PageHeader title={t("page_messages")} />
       {conversations.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center mt-4">
           <MessageCircle size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />

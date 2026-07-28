@@ -5,13 +5,15 @@ import { Award } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useHallOfFame } from "@/hooks/useHallOfFame";
 import { HallOfFameRow } from "@/components/halloffame/HallOfFameRow";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function HallOfFamePage() {
   const { entries, loading, error } = useHallOfFame();
+  const t = useTranslation();
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Hall of Fame" />
+      <PageHeader title={t("page_hallOfFame")} />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}

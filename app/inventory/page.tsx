@@ -8,6 +8,7 @@ import { useEconomy } from "@/contexts/EconomyContext";
 import { ALL_COSMETICS, RARITY_COLORS } from "@/data/cosmetics";
 import { CosmeticCategory } from "@/types/economy";
 import RoomCardManager from "@/components/roomcards/RoomCardManager";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const CATEGORY_TABS: { id: CosmeticCategory; label: string; icon: string }[] = [
   { id: "cardBack", label: "Card Backs", icon: "🃏" },
@@ -31,6 +32,7 @@ const COLLECTION_KEY: Record<CosmeticCategory, string> = {
 
 export default function InventoryPage() {
   const { state, equipCosmetic } = useEconomy();
+  const t = useTranslation();
   const [tab, setTab] = useState<"cosmetics" | "roomCards">("cosmetics");
   const [category, setCategory] = useState<CosmeticCategory>("cardBack");
 
@@ -51,7 +53,7 @@ export default function InventoryPage() {
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Inventory" />
+      <PageHeader title={t("page_inventory")} />
 
       <div className="flex gap-2 mb-4">
         <button

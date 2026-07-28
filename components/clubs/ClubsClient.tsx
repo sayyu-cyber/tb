@@ -17,12 +17,14 @@ import {
   kickMember,
   sendClubMessage,
 } from "@/lib/clubs";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function ClubsClient() {
   const { user, playerStats, isGuest } = useAuth();
   const myUid = user?.uid ?? "";
   const myName = user?.displayName ?? "Player";
   const myTrophies = playerStats?.trophies ?? 0;
+  const t = useTranslation();
 
   const [myClub, setMyClub] = useState<ClubDoc | null | undefined>(undefined);
 
@@ -37,7 +39,7 @@ export function ClubsClient() {
   if (isGuest) {
     return (
       <div className="pt-4 pb-32 px-4">
-        <PageHeader title="Clubs" />
+        <PageHeader title={t("page_clubs")} />
         <div className="glass-card rounded-2xl p-6 text-center">
           <p className="text-[rgb(var(--c4))] text-sm">Sign in to join or create a club.</p>
         </div>
@@ -48,7 +50,7 @@ export function ClubsClient() {
   if (myClub === undefined) {
     return (
       <div className="pt-4 pb-32 px-4">
-        <PageHeader title="Clubs" />
+        <PageHeader title={t("page_clubs")} />
         <p className="text-[rgb(var(--c4))] text-sm text-center mt-6">Loading…</p>
       </div>
     );
@@ -69,6 +71,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const t = useTranslation();
 
   useEffect(() => watchClubList(setClubs), []);
 
@@ -96,7 +99,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Clubs" />
+      <PageHeader title={t("page_clubs")} />
 
       {error && (
         <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mb-4">{error}</p>

@@ -10,6 +10,7 @@ import { getPublicProfile, PublicProfile } from "@/lib/publicProfile";
 import { getActiveMatchId } from "@/lib/matchmaking";
 import { RANKS } from "@/constants/ranks";
 import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function rankColor(rank: string): string {
   const match = Object.values(RANKS).find((r) => r.name === rank);
@@ -23,6 +24,7 @@ export function PlayerProfileClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [liveMatchId, setLiveMatchId] = useState<string | null>(null);
+  const t = useTranslation();
 
   useEffect(() => {
     if (!uid) {
@@ -56,7 +58,7 @@ export function PlayerProfileClient() {
 
   return (
     <div className="pt-4 pb-32 px-4">
-      <PageHeader title="Player Profile" />
+      <PageHeader title={t("page_playerProfile")} />
 
       {loading ? (
         <div className="h-40 bg-[rgb(var(--c2))] rounded-2xl animate-pulse" />
