@@ -26,7 +26,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/15 bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] group"
+      className="relative overflow-hidden rounded-3xl border border-[rgb(var(--gold)/15%)] bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] group"
     >
       {/* Animated background glow */}
       <motion.div
@@ -52,8 +52,8 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
             <p className="text-[rgb(var(--c4))] text-sm mt-1">{description}</p>
           </div>
           <div className="flex items-center gap-1 bg-[rgb(var(--c2))] rounded-full px-3 py-1.5 border border-[rgb(var(--c3))]">
-            <Users size={14} className="text-[#D4AF37]" />
-            <span className="text-[#D4AF37] text-xs font-medium">{players}</span>
+            <Users size={14} className="text-[rgb(var(--gold))]" />
+            <span className="text-[rgb(var(--gold))] text-xs font-medium">{players}</span>
           </div>
         </div>
 
@@ -71,8 +71,8 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
           </motion.div>
           {/* Decorative lines */}
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-1/2 left-0 right-0 h-px bg-[#D4AF37]" />
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#D4AF37]" />
+            <div className="absolute top-1/2 left-0 right-0 h-px bg-[rgb(var(--gold))]" />
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[rgb(var(--gold))]" />
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
             className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold tracking-wide transition-all duration-300 ${
               isGuest
                 ? "bg-[rgb(var(--c2))] text-[rgb(var(--c3))] border border-[rgb(var(--c3))] cursor-not-allowed"
-                : "bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_25px_rgba(212,175,55,0.5)]"
+                : "bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-[#0F0F0F] shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_25px_rgba(212,175,55,0.5)]"
             }`}
           >
             {isGuest ? (
@@ -122,7 +122,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
 
       {/* Bottom decorative line */}
       <motion.div
-        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent"
+        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[rgb(var(--gold))] to-transparent"
         animate={{ opacity: isHovered ? 1 : 0.3 }}
         transition={{ duration: 0.3 }}
       />

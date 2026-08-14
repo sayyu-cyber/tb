@@ -124,7 +124,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <Link href="/messages">
           <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            <ArrowLeft size={18} className="text-[#D4AF37]" />
+            <ArrowLeft size={18} className="text-[rgb(var(--gold))]" />
           </button>
         </Link>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{otherName}</p>
@@ -145,7 +145,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
               <div
                 className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
                   mine
-                    ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]"
+                    ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]"
                     : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))]"
                 }`}
               >
@@ -165,14 +165,14 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder={t("messages_placeholder")}
           maxLength={500}
-          className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
+          className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
         />
         <motion.button
           aria-label={t("a11y_sendMessage")}
           whileTap={{ scale: 0.9 }}
           onClick={handleSend}
           disabled={!text.trim()}
-          className="p-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] disabled:opacity-40"
+          className="p-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] disabled:opacity-40"
         >
           <Send size={16} />
         </motion.button>

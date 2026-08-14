@@ -87,8 +87,8 @@ export default function HomePage() {
         >
           {SHORTCUTS.map(({ href, key }) => (
             <Link key={key} href={href}>
-              <div className="h-full glass-card rounded-xl p-3 flex items-center justify-center border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 transition-colors">
-                <p className="text-[#D4AF37] text-[10px] text-center tracking-wider uppercase leading-tight">
+              <div className="h-full glass-card rounded-xl p-3 flex items-center justify-center border border-[rgb(var(--gold)/15%)] hover:border-[rgb(var(--gold)/30%)] transition-colors">
+                <p className="text-[rgb(var(--gold))] text-[10px] text-center tracking-wider uppercase leading-tight">
                   {t(key)}
                 </p>
               </div>

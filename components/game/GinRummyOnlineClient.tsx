@@ -243,7 +243,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
+                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
               <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
@@ -261,7 +261,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                   : t("mindi_youLost")}
               </h1>
               {!isDraw && !result.forfeitedBy && (result.gin || result.undercut) && (
-                <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
+                <p className="text-[rgb(var(--gold))] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {result.gin ? t("gin_gin") : t("gin_undercut")}
                 </p>
               )}
@@ -280,7 +280,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                   <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
                     <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
-                    <span className="text-[#D4AF37] font-bold">{result.score}</span>
+                    <span className="text-[rgb(var(--gold))] font-bold">{result.score}</span>
                   </div>
                 </>
               )}
@@ -296,7 +296,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleShowRewards}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
                 >
                   <Sparkles size={16} />
                   {t("common_rewards")}
@@ -352,7 +352,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           className="flex flex-col items-center gap-1 disabled:opacity-40"
         >
           {topDiscard ? (
-            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[#D4AF37]/40 flex flex-col items-center justify-center">
+            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/40%)] flex flex-col items-center justify-center">
               <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
                 {rankLabel(topDiscard.rank)}
               </span>
@@ -382,13 +382,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                 onClick={() => handleSelectDiscard(card)}
                 disabled={!isMyTurn || state.phase !== "discard"}
                 className={`w-11 h-16 rounded-lg border flex flex-col items-center justify-center disabled:opacity-70 ${
-                  selected ? "bg-[#D4AF37]/20 border-[#D4AF37] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
+                  selected ? "bg-[rgb(var(--gold)/20%)] border-[rgb(var(--gold))] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
                 }`}
               >
-                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
                   {rankLabel(card.rank)}
                 </span>
-                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
                   {SUIT_SYMBOLS[card.suit]}
                 </span>
               </motion.button>
@@ -403,7 +403,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                 {t("gin_discard")}
               </motion.button>
               {canKnock && (
-                <motion.button whileTap={{ scale: 0.95 }} onClick={handleKnock} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold">
+                <motion.button whileTap={{ scale: 0.95 }} onClick={handleKnock} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold">
                   {t("gin_knock")}
                 </motion.button>
               )}

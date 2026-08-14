@@ -18,8 +18,8 @@ export function TrophyBadge({ count, size = "md" }: TrophyBadgeProps) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <Trophy size={s.icon} className="text-[#D4AF37]" />
-      <span className={`${s.text} font-semibold text-[#D4AF37]`}>
+      <Trophy size={s.icon} className="text-[rgb(var(--gold))]" />
+      <span className={`${s.text} font-semibold text-[rgb(var(--gold))]`}>
         {count.toLocaleString()}
       </span>
     </div>

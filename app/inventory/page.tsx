@@ -62,7 +62,7 @@ export default function InventoryPage() {
         <button
           onClick={() => setTab("cosmetics")}
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-            tab === "cosmetics" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
+            tab === "cosmetics" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
         >
           <Package size={16} /> {t("inventory_cosmetics")}
@@ -70,7 +70,7 @@ export default function InventoryPage() {
         <button
           onClick={() => setTab("roomCards")}
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-            tab === "roomCards" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
+            tab === "roomCards" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
         >
           <Ticket size={16} /> {t("inventory_roomCards")}
@@ -85,7 +85,7 @@ export default function InventoryPage() {
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap ${
-                  category === cat.id ? "bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
+                  category === cat.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
                 }`}
               >
                 <span className="mr-1">{cat.icon}</span>
@@ -109,7 +109,7 @@ export default function InventoryPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className={`rounded-xl border p-3 ${isEquipped ? "border-[#D4AF37]/50 bg-[#D4AF37]/5" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2)/50%)]"}`}
+                    className={`rounded-xl border p-3 ${isEquipped ? "border-[rgb(var(--gold)/50%)] bg-[rgb(var(--gold)/5%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2)/50%)]"}`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-[rgb(var(--text-primary))] truncate">{item.name}</span>
@@ -122,7 +122,7 @@ export default function InventoryPage() {
                       <button
                         onClick={() => equipCosmetic(item.category, item.id)}
                         className={`w-full py-1.5 rounded-lg text-xs font-semibold ${
-                          isEquipped ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
+                          isEquipped ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
                         }`}
                       >
                         {isEquipped ? t("collection_equipped") : t("collection_equip")}

@@ -25,9 +25,9 @@ export function GoldButton({
   const baseStyles = "relative overflow-hidden rounded-xl font-semibold tracking-wide transition-all duration-300";
 
   const variants = {
-    primary: "bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_25px_rgba(212,175,55,0.5)]",
-    secondary: "bg-[rgb(var(--c2))] text-[#D4AF37] border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[rgb(var(--c3))]",
-    outline: "bg-transparent text-[#D4AF37] border-2 border-[#D4AF37]/40 hover:border-[#D4AF37] hover:bg-[#D4AF37]/5",
+    primary: "bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-[#0F0F0F] shadow-[0_4px_15px_rgba(212,175,55,0.3)] hover:shadow-[0_6px_25px_rgba(212,175,55,0.5)]",
+    secondary: "bg-[rgb(var(--c2))] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)] hover:border-[rgb(var(--gold)/60%)] hover:bg-[rgb(var(--c3))]",
+    outline: "bg-transparent text-[rgb(var(--gold))] border-2 border-[rgb(var(--gold)/40%)] hover:border-[rgb(var(--gold))] hover:bg-[rgb(var(--gold)/5%)]",
   };
 
   const sizes = {
@@ -53,7 +53,7 @@ export function GoldButton({
     >
       <span className="relative z-10">{children}</span>
       {variant === "primary" && (
-        <div className="absolute inset-0 bg-gradient-to-r from-[#E8C84A] via-[#D4AF37] to-[#B8962E] opacity-0 hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[rgb(var(--gold-bright))] via-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] opacity-0 hover:opacity-100 transition-opacity duration-300" />
       )}
     </motion.button>
   );

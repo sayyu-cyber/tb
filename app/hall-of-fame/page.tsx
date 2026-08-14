@@ -18,10 +18,10 @@ export default function HallOfFamePage() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex items-center gap-2 mb-6 bg-[#D4AF37]/5 border border-[#D4AF37]/10 rounded-xl px-4 py-3"
+        className="flex items-center gap-2 mb-6 bg-[rgb(var(--gold)/5%)] border border-[rgb(var(--gold)/10%)] rounded-xl px-4 py-3"
       >
-        <Award size={16} className="text-[#D4AF37]" />
-        <span className="text-[#D4AF37] text-sm font-medium">{t("hof_allTimeGreats")}</span>
+        <Award size={16} className="text-[rgb(var(--gold))]" />
+        <span className="text-[rgb(var(--gold))] text-sm font-medium">{t("hof_allTimeGreats")}</span>
         <span className="text-[rgb(var(--c4))] text-xs ml-auto">{t("hof_rankedByPeak")}</span>
       </motion.div>
 

@@ -41,8 +41,8 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center">
-          <User size={20} className="text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
+          <User size={20} className="text-[rgb(var(--gold))]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("profile_title")}</h1>
@@ -57,14 +57,14 @@ export default function ProfilePage() {
         transition={{ delay: 0.1 }}
         className={`glass-card rounded-2xl p-6 text-center relative overflow-hidden bg-gradient-to-b ${bannerPreset.gradient}`}
       >
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[rgb(var(--gold))] to-transparent" />
 
         <button
           aria-label={t("a11y_editProfile")}
           onClick={() => setEditing(true)}
           className="absolute top-3 right-3 p-2 rounded-lg bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] z-10"
         >
-          <Pencil size={14} className="text-[#D4AF37]" />
+          <Pencil size={14} className="text-[rgb(var(--gold))]" />
         </button>
 
         {/* Avatar */}
@@ -88,8 +88,8 @@ export default function ProfilePage() {
 
         {/* Trophy display */}
         <div className="flex items-center justify-center gap-2 mt-3">
-          <Trophy size={18} className="text-[#D4AF37]" />
-          <span className="text-[#D4AF37] font-bold text-lg">
+          <Trophy size={18} className="text-[rgb(var(--gold))]" />
+          <span className="text-[rgb(var(--gold))] font-bold text-lg">
             {(playerStats?.trophies || 0).toLocaleString()}
           </span>
           <span className="text-[rgb(var(--c4))] text-xs">{t("profile_trophies").toLowerCase()}</span>
@@ -128,13 +128,13 @@ export default function ProfilePage() {
             >
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  stat.highlight ? "bg-[#D4AF37]/10" : "bg-[rgb(var(--c2))]"
+                  stat.highlight ? "bg-[rgb(var(--gold)/10%)]" : "bg-[rgb(var(--c2))]"
                 }`}>
-                  <stat.icon size={18} className={stat.highlight ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
+                  <stat.icon size={18} className={stat.highlight ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
                 </div>
                 <span className="text-[rgb(var(--c4))] text-sm">{stat.label}</span>
               </div>
-              <span className={`font-semibold text-sm ${stat.highlight ? "text-[#D4AF37]" : "text-[rgb(var(--text-primary))]"}`}>
+              <span className={`font-semibold text-sm ${stat.highlight ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--text-primary))]"}`}>
                 {stat.value}
               </span>
             </motion.div>

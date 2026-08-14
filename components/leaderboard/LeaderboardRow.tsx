@@ -17,7 +17,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
   const getRankStyle = () => {
     switch (rank) {
       case 1:
-        return "bg-gradient-to-r from-[#D4AF37]/20 to-transparent border-l-2 border-[#D4AF37]";
+        return "bg-gradient-to-r from-[rgb(var(--gold)/20%)] to-transparent border-l-2 border-[rgb(var(--gold))]";
       case 2:
         return "bg-gradient-to-r from-[#C0C0C0]/10 to-transparent border-l-2 border-[#C0C0C0]";
       case 3:
@@ -30,7 +30,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
   const getRankIcon = () => {
     switch (rank) {
       case 1:
-        return <Crown size={18} className="text-[#D4AF37]" />;
+        return <Crown size={18} className="text-[rgb(var(--gold))]" />;
       case 2:
         return <Medal size={18} className="text-[#C0C0C0]" />;
       case 3:
@@ -51,16 +51,16 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
       className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${getRankStyle()} ${
-        isCurrentUser ? "bg-[#D4AF37]/5 border-[#D4AF37]/30" : ""
+        isCurrentUser ? "bg-[rgb(var(--gold)/5%)] border-[rgb(var(--gold)/30%)]" : ""
       }`}
     >
       {/* Rank */}
       <div className="w-8 flex justify-center">{getRankIcon()}</div>
 
       {/* Avatar */}
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[1.5px]">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] p-[1.5px]">
         <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
-          <span className="text-[#D4AF37] text-sm font-bold">
+          <span className="text-[rgb(var(--gold))] text-sm font-bold">
             {entry.username.charAt(0).toUpperCase()}
           </span>
         </div>
@@ -72,14 +72,14 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
           {entry.username}
         </p>
         {isCurrentUser && (
-          <span className="text-[9px] text-[#D4AF37] uppercase tracking-wider">You</span>
+          <span className="text-[9px] text-[rgb(var(--gold))] uppercase tracking-wider">You</span>
         )}
       </div>
 
       {/* Trophies */}
       <div className="flex items-center gap-1.5">
-        <Trophy size={14} className={rank <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
-        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
+        <Trophy size={14} className={rank <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
+        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
           {entry.trophies.toLocaleString()}
         </span>
       </div>

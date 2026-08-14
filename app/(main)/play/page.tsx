@@ -11,7 +11,7 @@ const games = [
     name: "Mindi",
     description: "The classic Maldivian card game. Outsmart your opponents with strategy and skill.",
     icon: "♠",
-    color: "#D4AF37",
+    color: "rgb(var(--gold))",
     players: "2-4 Players",
   },
   {
@@ -19,7 +19,7 @@ const games = [
     name: "Gin Rummy",
     description: "Form sets and runs to declare Gin. A timeless card game of skill and luck.",
     icon: "♥",
-    color: "#D4AF37",
+    color: "rgb(var(--gold))",
     players: "2 Players",
   },
 ];
@@ -33,8 +33,8 @@ export default function PlayPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center">
-          <Gamepad2 size={20} className="text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
+          <Gamepad2 size={20} className="text-[rgb(var(--gold))]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("play_title")}</h1>

@@ -22,7 +22,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
   const getRowStyle = () => {
     switch (position) {
       case 1:
-        return "bg-gradient-to-r from-[#D4AF37]/20 to-transparent border-l-2 border-[#D4AF37]";
+        return "bg-gradient-to-r from-[rgb(var(--gold)/20%)] to-transparent border-l-2 border-[rgb(var(--gold))]";
       case 2:
         return "bg-gradient-to-r from-[#C0C0C0]/10 to-transparent border-l-2 border-[#C0C0C0]";
       case 3:
@@ -35,7 +35,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
   const getRowIcon = () => {
     switch (position) {
       case 1:
-        return <Crown size={18} className="text-[#D4AF37]" />;
+        return <Crown size={18} className="text-[rgb(var(--gold))]" />;
       case 2:
         return <Medal size={18} className="text-[#C0C0C0]" />;
       case 3:
@@ -58,9 +58,9 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
     >
       <div className="w-8 flex justify-center">{getRowIcon()}</div>
 
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[1.5px]">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] p-[1.5px]">
         <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
-          <span className="text-[#D4AF37] text-sm font-bold">{entry.displayName.charAt(0).toUpperCase()}</span>
+          <span className="text-[rgb(var(--gold))] text-sm font-bold">{entry.displayName.charAt(0).toUpperCase()}</span>
         </div>
       </div>
 
@@ -78,8 +78,8 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Star size={14} className={position <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
-        <span className={`text-sm font-semibold ${position <= 3 ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
+        <Star size={14} className={position <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
+        <span className={`text-sm font-semibold ${position <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
           {entry.peakTrophies.toLocaleString()}
         </span>
       </div>

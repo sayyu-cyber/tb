@@ -20,11 +20,11 @@ export function StatCard({ icon: Icon, label, value, delay = 0, highlight = fals
       whileHover={{ y: -2 }}
       className={`rounded-xl p-4 border ${
         highlight
-          ? "bg-gradient-to-br from-[#D4AF37]/10 to-transparent border-[#D4AF37]/20"
+          ? "bg-gradient-to-br from-[rgb(var(--gold)/10%)] to-transparent border-[rgb(var(--gold)/20%)]"
           : "bg-[rgb(var(--c2)/50%)] border-[rgb(var(--c3))]"
       }`}
     >
-      <Icon size={18} className={highlight ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
+      <Icon size={18} className={highlight ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
       <p className="text-[rgb(var(--text-primary))] text-lg font-bold mt-2">{value}</p>
       <p className="text-[rgb(var(--c4))] text-[10px] uppercase tracking-wider mt-0.5">{label}</p>
     </motion.div>

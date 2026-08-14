@@ -21,13 +21,13 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
       className="glass-card rounded-2xl p-5"
     >
       <div className="flex items-center gap-2 mb-3">
-        <Swords size={18} className="text-[#D4AF37]" />
+        <Swords size={18} className="text-[rgb(var(--gold))]" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_rankedMatches")}</h3>
       </div>
 
       <div className="flex items-baseline gap-1 mb-3">
         <motion.span
-          className="text-3xl font-bold text-[#D4AF37]"
+          className="text-3xl font-bold text-[rgb(var(--gold))]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -46,7 +46,7 @@ export function MatchesRemaining({ remaining, total }: MatchesRemainingProps) {
             transition={{ delay: 0.2 + i * 0.1, type: "spring" }}
             className={`flex-1 h-2 rounded-full ${
               i < remaining
-                ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37]"
+                ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))]"
                 : "bg-[rgb(var(--c3))]"
             }`}
           />

@@ -2,34 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
-    /* Dark theme (default) - RGB triplets so Tailwind's arbitrary-value
-       opacity modifiers (e.g. bg-[rgb(var(--c2))]/50]) work correctly.
-       See PROGRESS.md for the full retrofit notes. */
-    --c1: 15 15 15;      /* was #0F0F0F - page/screen background */
-    --c2: 26 26 26;      /* was #1A1A1A - card/surface background */
-    --c3: 42 42 42;      /* was #2A2A2A - borders / dividers */
-    --c4: 58 58 58;      /* was #3A3A3A - muted/secondary text */
-    --c5: 136 136 136;   /* was #888888 - secondary text */
-    --text-primary: 255 255 255;
+    /* ------------------------------------------------------------------
+       BRAND PALETTE — "Maldivian lagoon"
 
-    --background: #0F0F0F;
-    --foreground: #FFFFFF;
+       The app used to be a single colour (#D4AF37) repeated ~373 times,
+       which made every screen look interchangeable and left gold meaning
+       nothing in particular. Gold is now reserved for achievement and
+       premium; the rest of the palette is drawn from Maldivian lagoon
+       water, reef coral and deep ocean, so each game and mode can own a
+       hue instead of all being gold.
+
+       Stored as RGB triplets so Tailwind's arbitrary-value opacity
+       modifiers work: bg-[rgb(var(--lagoon)/20%)].
+       ------------------------------------------------------------------ */
+    --gold: 212 175 55;         /* #D4AF37 - brand, rank, trophies, premium */
+    --gold-bright: 232 200 74;  /* #E8C84A - highlight / gradient top */
+    --gold-deep: 184 150 46;    /* #B8962E - gradient bottom, pressed */
+
+    --lagoon: 45 212 191;       /* #2DD4BF - Mindi, casual play, success  */
+    --lagoon-deep: 13 148 136;  /* #0D9488 - pressed / dark lagoon        */
+    --coral: 255 107 91;        /* #FF6B5B - live, weekend league, streak */
+    --coral-deep: 219 68 55;    /* #DB4437 - destructive                  */
+    --deep: 56 118 191;         /* #3876BF - Gin Rummy, info              */
+    --deep-dark: 30 58 95;      /* #1E3A5F - deep ocean surface           */
+    --orchid: 167 139 250;      /* #A78BFA - VIP                          */
+
+    /* Card suits — real playing-card red/black, not theme colours. */
+    --suit-red: 220 38 38;
+    --suit-black: 24 24 27;
+
+    /* ------------------------------------------------------------------
+       SURFACE / TEXT SCALE (dark theme default)
+       --c1 page bg · --c2 surface · --c3 border · --c4 muted · --c5 secondary
+       Warmed very slightly toward blue so the neutrals sit under the
+       lagoon accents rather than fighting them.
+       ------------------------------------------------------------------ */
+    --c1: 12 14 18;
+    --c2: 22 26 33;
+    --c3: 38 44 54;
+    --c4: 88 98 114;
+    --c5: 148 160 178;
+    --text-primary: 245 247 250;
+
+    /* Elevation. Real shadows give the card stack depth instead of every
+       surface sharing one flat glass treatment. */
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.25);
+    --shadow-md: 0 4px 16px -2px rgb(0 0 0 / 0.35);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.45);
+    --shadow-glow-gold: 0 0 24px -4px rgb(var(--gold) / 0.35);
+    --shadow-glow-lagoon: 0 0 24px -4px rgb(var(--lagoon) / 0.35);
+
+    --background: #0C0E12;
+    --foreground: #F5F7FA;
   }
 
   html.light {
-    /* Light theme overrides - same tone roles, flipped. Gold brand
-       accents (#D4AF37 and friends) intentionally stay the same in
-       both themes. */
-    --c1: 245 243 237;
+    /* Sand-and-shallow-water light theme. The accents above are tuned to
+       stay legible on both, so they are NOT redefined here. */
+    --c1: 247 245 240;
     --c2: 255 255 255;
-    --c3: 224 219 208;
-    --c4: 120 113 99;
-    --c5: 92 86 72;
-    --text-primary: 26 26 26;
+    --c3: 226 221 211;
+    --c4: 122 116 104;
+    --c5: 88 83 74;
+    --text-primary: 24 27 32;
+
+    --gold: 176 137 26;         /* darkened so gold text passes contrast  */
+    --lagoon-deep: 15 118 110;
+    --shadow-sm: 0 1px 2px rgb(24 27 32 / 0.06);
+    --shadow-md: 0 4px 16px -2px rgb(24 27 32 / 0.10);
+    --shadow-lg: 0 12px 32px -8px rgb(24 27 32 / 0.16);
   }
 
   * {
@@ -47,59 +92,149 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Tabular figures stop scores, trophy counts and timers from jittering
+       as digits change. */
+    font-variant-numeric: tabular-nums;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 4px;
+  /* Visible focus ring for keyboard users. There was none at all before,
+     so tabbing through the app gave no indication of position. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--gold));
+    outline-offset: 2px;
+    border-radius: 6px;
   }
 
-  ::-webkit-scrollbar-track {
-    background: rgb(var(--c1));
-  }
-
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: #D4AF37;
-    border-radius: 2px;
+    background: rgb(var(--c3));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--c4)); }
+
+  /* Respect the OS "reduce motion" setting. The app previously animated
+     unconditionally, which is a vestibular-safety problem. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
+  /* ---------------------------------------------------------------------
+     SURFACES
+     Three deliberate tiers instead of `glass-card` on all 71 surfaces, so
+     the eye can tell a page background from a card from a highlighted one.
+     --------------------------------------------------------------------- */
+  .surface {
+    background: rgb(var(--c2));
+    border: 1px solid rgb(var(--c3));
+    box-shadow: var(--shadow-sm);
+  }
+
+  .surface-raised {
+    background: linear-gradient(160deg, rgb(var(--c2)), rgb(var(--c2) / 0.72));
+    border: 1px solid rgb(var(--c3));
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Kept for backwards compatibility with existing markup, but retuned:
+     less blur, a warmer hairline, and a real shadow. */
   .glass-card {
-    background: rgb(var(--c2) / 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(212, 175, 55, 0.15);
+    background: rgb(var(--c2) / 0.72);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgb(var(--c3) / 0.9);
+    box-shadow: var(--shadow-md);
   }
 
-  .gold-border {
-    border: 1px solid rgba(212, 175, 55, 0.3);
+  /* A surface that belongs to a domain. Set --accent on the element and
+     the tint, hairline and glow all follow:
+       <div class="surface-accent" style={{ '--accent': 'var(--lagoon)' }}> */
+  .surface-accent {
+    background:
+      linear-gradient(160deg, rgb(var(--accent) / 0.12), transparent 60%),
+      rgb(var(--c2));
+    border: 1px solid rgb(var(--accent) / 0.28);
+    box-shadow: var(--shadow-md);
   }
 
+  /* ---------------------------------------------------------------------
+     TEXT + BORDER HELPERS
+     --------------------------------------------------------------------- */
   .gold-text-gradient {
-    background: linear-gradient(135deg, #D4AF37 0%, #E8C84A 50%, #D4AF37 100%);
+    background: linear-gradient(135deg,
+      rgb(var(--gold)) 0%,
+      rgb(var(--gold-bright)) 45%,
+      rgb(var(--gold)) 100%);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
   }
 
   .gold-bg-gradient {
-    background: linear-gradient(135deg, #D4AF37 0%, #B8962E 100%);
+    background: linear-gradient(135deg, rgb(var(--gold-bright)), rgb(var(--gold-deep)));
+  }
+
+  .gold-border { border: 1px solid rgb(var(--gold) / 0.3); }
+
+  /* Hairline that catches light along the top edge of a card - cheap way
+     to read as a physical object rather than a flat rectangle. */
+  .edge-light {
+    position: relative;
+  }
+  .edge-light::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgb(var(--accent, var(--gold)) / 0.55),
+      transparent);
+    pointer-events: none;
   }
 
   .card-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
   .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.15);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
   }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+
+  /* Slow sheen used sparingly on premium surfaces (VIP, victory). */
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
+  .shimmer {
+    background-image: linear-gradient(105deg,
+      transparent 40%,
+      rgb(var(--gold-bright) / 0.14) 50%,
+      transparent 60%);
+    background-size: 200% 100%;
+    animation: shimmer 4.5s ease-in-out infinite;
+  }
+
+  /* Soft pulsing halo for live/active state (a match in progress). */
+  @keyframes halo {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(var(--accent, var(--coral)) / 0.45); }
+    70%      { box-shadow: 0 0 0 10px rgb(var(--accent, var(--coral)) / 0); }
+  }
+  .halo { animation: halo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 }

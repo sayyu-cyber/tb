@@ -71,7 +71,7 @@ export default function TournamentPage() {
             <Link href="/play/mindi/ranked" className="flex-1">
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] font-semibold rounded-xl py-3"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-[#0F0F0F] font-semibold rounded-xl py-3"
               >
                 <Swords size={16} /> Mindi
               </motion.button>
@@ -79,7 +79,7 @@ export default function TournamentPage() {
             <Link href="/play/gin-rummy/ranked" className="flex-1">
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] text-[#0F0F0F] font-semibold rounded-xl py-3"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-[#0F0F0F] font-semibold rounded-xl py-3"
               >
                 <Swords size={16} /> Gin Rummy
               </motion.button>
@@ -89,7 +89,7 @@ export default function TournamentPage() {
       </motion.div>
 
       <div className="flex items-center gap-2 mb-3">
-        <Trophy size={16} className="text-[#D4AF37]" />
+        <Trophy size={16} className="text-[rgb(var(--gold))]" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("tournament_standings")}</h3>
       </div>
 
@@ -115,7 +115,7 @@ export default function TournamentPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
                 className={`flex items-center gap-3 p-3 rounded-xl ${
-                  s.uid === user?.uid ? "bg-[#D4AF37]/5 border border-[#D4AF37]/20" : "hover:bg-[rgb(var(--c2)/50%)]"
+                  s.uid === user?.uid ? "bg-[rgb(var(--gold)/5%)] border border-[rgb(var(--gold)/20%)]" : "hover:bg-[rgb(var(--c2)/50%)]"
                 }`}
               >
                 <span className="text-[rgb(var(--c4))] font-bold text-sm w-6 text-center">{i + 1}</span>
@@ -123,7 +123,7 @@ export default function TournamentPage() {
                   <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{s.displayName}</p>
                   <p className="text-[rgb(var(--c4))] text-[10px]">{s.currentRank}</p>
                 </div>
-                <span className="text-[#D4AF37] font-semibold text-sm">{s.weeklyTrophies.toLocaleString()}</span>
+                <span className="text-[rgb(var(--gold))] font-semibold text-sm">{s.weeklyTrophies.toLocaleString()}</span>
               </motion.div>
             </Link>
           ))}

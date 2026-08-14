@@ -27,10 +27,10 @@ export function RankProgress() {
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Award size={18} className="text-[#D4AF37]" />
+          <Award size={18} className="text-[rgb(var(--gold))]" />
           <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_currentRank")}</h3>
         </div>
-        <span className="text-[#D4AF37] font-bold text-sm">{currentRank}</span>
+        <span className="text-[rgb(var(--gold))] font-bold text-sm">{currentRank}</span>
       </div>
 
       <div className="flex items-baseline gap-1 mb-3">
@@ -40,7 +40,7 @@ export function RankProgress() {
 
       <div className="h-2 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
+          className="h-full bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}

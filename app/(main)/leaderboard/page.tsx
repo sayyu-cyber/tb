@@ -24,8 +24,8 @@ export default function LeaderboardPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3 mb-6"
       >
-        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center">
-          <Trophy size={20} className="text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
+          <Trophy size={20} className="text-[rgb(var(--gold))]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("leaderboard_title")}</h1>
@@ -38,10 +38,10 @@ export default function LeaderboardPage() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
-        className="flex items-center gap-2 mb-6 bg-[#D4AF37]/5 border border-[#D4AF37]/10 rounded-xl px-4 py-3"
+        className="flex items-center gap-2 mb-6 bg-[rgb(var(--gold)/5%)] border border-[rgb(var(--gold)/10%)] rounded-xl px-4 py-3"
       >
-        <TrendingUp size={16} className="text-[#D4AF37]" />
-        <span className="text-[#D4AF37] text-sm font-medium">{t("leaderboard_weeklyRankings")}</span>
+        <TrendingUp size={16} className="text-[rgb(var(--gold))]" />
+        <span className="text-[rgb(var(--gold))] text-sm font-medium">{t("leaderboard_weeklyRankings")}</span>
         <span className="text-[rgb(var(--c4))] text-xs ml-auto">{t("leaderboard_resetsMonday")}</span>
       </motion.div>
 

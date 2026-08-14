@@ -24,10 +24,10 @@ export function WeekendLeague() {
       className="glass-card rounded-2xl p-5 relative overflow-hidden"
     >
       {/* Decorative corner */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 bg-[#D4AF37]/5 rounded-full blur-xl" />
+      <div className="absolute -top-8 -right-8 w-24 h-24 bg-[rgb(var(--gold)/5%)] rounded-full blur-xl" />
 
       <div className="flex items-center gap-2 mb-4">
-        <Timer size={18} className="text-[#D4AF37]" />
+        <Timer size={18} className="text-[rgb(var(--gold))]" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_weekendLeagueTitle")}</h3>
       </div>
 
@@ -37,7 +37,7 @@ export function WeekendLeague() {
       />
 
       <div className="mt-4 flex items-center gap-2 text-[rgb(var(--c4))] text-[10px]">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--gold))] animate-pulse" />
         {t("home_doubleTrophiesDuring")}
       </div>
     </motion.div>

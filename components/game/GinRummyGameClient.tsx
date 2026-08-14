@@ -197,7 +197,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
+                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
               <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
@@ -207,7 +207,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                 {isDraw ? t("gin_stockRanOut") : youWon ? t("mindi_youWon") : t("mindi_youLost")}
               </h1>
               {!isDraw && (result.gin || result.undercut) && (
-                <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
+                <p className="text-[rgb(var(--gold))] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {result.gin ? t("gin_gin") : t("gin_undercut")}
                 </p>
               )}
@@ -226,7 +226,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                   <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
                     <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
-                    <span className="text-[#D4AF37] font-bold">{result.score}</span>
+                    <span className="text-[rgb(var(--gold))] font-bold">{result.score}</span>
                   </div>
                 </>
               )}
@@ -242,7 +242,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleShowRewards}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
                 >
                   <Sparkles size={16} />
                   Rewards
@@ -268,14 +268,14 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   if (needsPassScreen) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center">
-        <Smartphone size={40} className="text-[#D4AF37] mb-4" />
+        <Smartphone size={40} className="text-[rgb(var(--gold))] mb-4" />
         <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">{t("offline_passDeviceTo")}</h2>
-        <p className="text-[#D4AF37] text-2xl font-bold mb-6">{turn === "player" ? t("offline_player1") : t("offline_player2")}</p>
+        <p className="text-[rgb(var(--gold))] text-2xl font-bold mb-6">{turn === "player" ? t("offline_player1") : t("offline_player2")}</p>
         <p className="text-[rgb(var(--c4))] text-xs mb-8">{t("offline_hideScreen")}</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setRevealedSide(turn)}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
+          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold"
         >
           I&apos;m ready — show my hand
         </motion.button>
@@ -319,7 +319,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
           className="flex flex-col items-center gap-1 disabled:opacity-40"
         >
           {topDiscard ? (
-            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[#D4AF37]/40 flex flex-col items-center justify-center">
+            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/40%)] flex flex-col items-center justify-center">
               <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
                 {rankLabel(topDiscard.rank)}
               </span>
@@ -350,13 +350,13 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                 onClick={() => isMyTurn && handleSelectDiscard(card)}
                 disabled={!isMyTurn || phase !== "discard"}
                 className={`w-11 h-16 rounded-lg border flex flex-col items-center justify-center disabled:opacity-70 ${
-                  selected ? "bg-[#D4AF37]/20 border-[#D4AF37] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
+                  selected ? "bg-[rgb(var(--gold)/20%)] border-[rgb(var(--gold))] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
                 }`}
               >
-                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
                   {rankLabel(card.rank)}
                 </span>
-                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
                   {SUIT_SYMBOLS[card.suit]}
                 </span>
               </motion.button>
@@ -383,7 +383,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleKnock}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold"
                 >
                   Knock
                 </motion.button>

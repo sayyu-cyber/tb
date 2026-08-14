@@ -129,8 +129,8 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-center space-y-6">
-          <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[#D4AF37] mx-auto flex items-center justify-center">
-            <span className="text-[#D4AF37] text-xs font-bold">VS</span>
+          <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[rgb(var(--gold))] mx-auto flex items-center justify-center">
+            <span className="text-[rgb(var(--gold))] text-xs font-bold">VS</span>
           </motion.div>
           <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("rankedq_matchFound")}</h2>
           <p className="text-[rgb(var(--c4))] text-sm">{t("rankedq_starting").replace("{label}", label)}</p>
@@ -149,10 +149,10 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
 
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 w-full max-w-sm">
         <div className="relative w-32 h-32 mx-auto">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37]" />
-          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-3 rounded-full border-2 border-[#D4AF37]/10 border-b-[#D4AF37]/50" />
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
+          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-3 rounded-full border-2 border-[rgb(var(--gold)/10%)] border-b-[rgb(var(--gold)/50%)]" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Search size={32} className="text-[#D4AF37]" />
+            <Search size={32} className="text-[rgb(var(--gold))]" />
           </div>
         </div>
 
@@ -164,7 +164,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
             {gameType === "mindi" ? t("casual_mindiNeeds4") : t("rankedq_waitingReal")}
           </p>
           <div className="flex items-center justify-center gap-2 mt-3 text-[rgb(var(--c4))] text-xs">
-            <Users2 size={14} className="text-[#D4AF37]" />
+            <Users2 size={14} className="text-[rgb(var(--gold))]" />
             <span>{t("casual_noStakes")}</span>
           </div>
           {debugError && (

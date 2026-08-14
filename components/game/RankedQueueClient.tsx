@@ -149,7 +149,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
           </motion.button>
         </Link>
         <div className="text-center space-y-3 max-w-xs">
-          <Clock size={32} className="text-[#D4AF37] mx-auto" />
+          <Clock size={32} className="text-[rgb(var(--gold))] mx-auto" />
           <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">{t("rankedq_outOfMatches").replace("{reason}", reason)}</h2>
           <p className="text-[rgb(var(--c4))] text-sm">
             {matchLimits.isVip
@@ -181,7 +181,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
           {t("rankedq_needsPartnerDesc")}
         </p>
         <Link href={`/play/${gameId}/ranked-duo`}>
-          <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
+          <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm">
             {t("rankedq_goToRankedDuo")}
           </motion.button>
         </Link>
@@ -211,8 +211,8 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-center space-y-6">
-          <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[#D4AF37] mx-auto flex items-center justify-center">
-            <span className="text-[#D4AF37] text-xs font-bold">VS</span>
+          <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[rgb(var(--gold))] mx-auto flex items-center justify-center">
+            <span className="text-[rgb(var(--gold))] text-xs font-bold">VS</span>
           </motion.div>
           <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("rankedq_matchFound")}</h2>
           <p className="text-[rgb(var(--c4))] text-sm">{t("rankedq_starting").replace("{label}", label)}</p>
@@ -231,10 +231,10 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
 
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 w-full max-w-sm">
         <div className="relative w-32 h-32 mx-auto">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37]" />
-          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-3 rounded-full border-2 border-[#D4AF37]/10 border-b-[#D4AF37]/50" />
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
+          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-3 rounded-full border-2 border-[rgb(var(--gold)/10%)] border-b-[rgb(var(--gold)/50%)]" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Search size={32} className="text-[#D4AF37]" />
+            <Search size={32} className="text-[rgb(var(--gold))]" />
           </div>
         </div>
 
@@ -259,26 +259,26 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_rank")}</span>
-            <span className="text-[#D4AF37] font-semibold text-sm">{rank}</span>
+            <span className="text-[rgb(var(--gold))] font-semibold text-sm">{rank}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_trophies")}</span>
             <div className="flex items-center gap-1">
-              <Trophy size={14} className="text-[#D4AF37]" />
-              <span className="text-[#D4AF37] font-semibold text-sm">{trophies}</span>
+              <Trophy size={14} className="text-[rgb(var(--gold))]" />
+              <span className="text-[rgb(var(--gold))] font-semibold text-sm">{trophies}</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_dailyLeft")}</span>
             <div className="flex items-center gap-1">
-              <Swords size={14} className="text-[#D4AF37]" />
+              <Swords size={14} className="text-[rgb(var(--gold))]" />
               <span className="text-[rgb(var(--text-primary))] font-semibold text-sm">{matchLimits.dailyRemaining} / {matchLimits.dailyTotal}</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[rgb(var(--c4))] text-sm">{t("rankedq_weeklyLeft")}</span>
             <div className="flex items-center gap-1">
-              <Clock size={14} className="text-[#D4AF37]" />
+              <Clock size={14} className="text-[rgb(var(--gold))]" />
               <span className="text-[rgb(var(--text-primary))] font-semibold text-sm">{matchLimits.weeklyRemaining} / {matchLimits.weeklyTotal}</span>
             </div>
           </div>

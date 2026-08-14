@@ -81,7 +81,7 @@ export default function PostMatchPage() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full"
+          className="w-10 h-10 border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))] rounded-full"
         />
       </div>
     );
@@ -102,7 +102,7 @@ export default function PostMatchPage() {
           transition={{ type: "spring", stiffness: 200 }}
           className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
             isVictory 
-              ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]" 
+              ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" 
               : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
           }`}
         >
@@ -137,8 +137,8 @@ export default function PostMatchPage() {
             <span className="text-[rgb(var(--c4))]">{matchData.oldTrophies}</span>
             <div className="flex-1 h-px bg-[rgb(var(--c3))] mx-3" />
             <div className="flex items-center gap-1">
-              <Trophy size={14} className="text-[#D4AF37]" />
-              <span className="text-[#D4AF37] font-bold">{matchData.newTrophies}</span>
+              <Trophy size={14} className="text-[rgb(var(--gold))]" />
+              <span className="text-[rgb(var(--gold))] font-bold">{matchData.newTrophies}</span>
             </div>
           </div>
 
@@ -158,7 +158,7 @@ export default function PostMatchPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
             onClick={() => setShowPromotion(true)}
-            className="text-[#D4AF37] text-sm underline"
+            className="text-[rgb(var(--gold))] text-sm underline"
           >
             View Promotion
           </motion.button>
@@ -177,7 +177,7 @@ export default function PostMatchPage() {
           <Link href="/play" className="flex-1">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
             >
               <RotateCcw size={16} />
               Play Again
@@ -199,7 +199,7 @@ function VictoryParticles() {
       {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-1 h-1 bg-[#D4AF37] rounded-full"
+          className="absolute w-1 h-1 bg-[rgb(var(--gold))] rounded-full"
           initial={{ x: "50%", y: "50%", opacity: 1, scale: 0 }}
           animate={{
             x: `${20 + Math.random() * 60}%`,
@@ -240,7 +240,7 @@ function PromotionAnimation({ rank, onClose }: { rank: string; onClose: () => vo
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onClose}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
+          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold"
         >
           Continue
         </motion.button>
@@ -248,7 +248,7 @@ function PromotionAnimation({ rank, onClose }: { rank: string; onClose: () => vo
       {[...Array(30)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-2 h-2 bg-[#D4AF37] rounded-full"
+          className="absolute w-2 h-2 bg-[rgb(var(--gold))] rounded-full"
           initial={{ x: "50%", y: "50%", opacity: 1 }}
           animate={{ x: `${Math.random() * 100}%`, y: `${Math.random() * 100}%`, opacity: 0 }}
           transition={{ duration: 2, delay: Math.random() * 0.5 }}

@@ -21,7 +21,7 @@ export default function Loading() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37]"
+          className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]"
         />
       </div>
       <p className="text-[rgb(var(--c5))] text-xs">{t("error_loading")}</p>

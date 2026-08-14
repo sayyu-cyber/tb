@@ -45,7 +45,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
         onClick={() => setConfirming(true)}
         className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
       >
-        <ArrowLeft size={20} className="text-[#D4AF37]" />
+        <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
       </motion.button>
 
       <AnimatePresence>

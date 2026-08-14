@@ -72,9 +72,9 @@ export function LoginForm() {
           <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]">
             <defs>
               <linearGradient id="goldGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: "#E8C84A" }} />
-                <stop offset="50%" style={{ stopColor: "#D4AF37" }} />
-                <stop offset="100%" style={{ stopColor: "#B8962E" }} />
+                <stop offset="0%" style={{ stopColor: "rgb(var(--gold-bright))" }} />
+                <stop offset="50%" style={{ stopColor: "rgb(var(--gold))" }} />
+                <stop offset="100%" style={{ stopColor: "rgb(var(--gold-deep))" }} />
               </linearGradient>
             </defs>
             <path
@@ -117,7 +117,7 @@ export function LoginForm() {
         disabled={loading}
         className="w-full flex items-center justify-center gap-3 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[rgb(var(--c4))] text-[rgb(var(--text-primary))] rounded-xl py-3.5 mb-4 transition-colors disabled:opacity-50"
       >
-        <Chrome size={20} className="text-[#D4AF37]" />
+        <Chrome size={20} className="text-[rgb(var(--gold))]" />
         <span className="text-sm font-medium">{t("login_continueGoogle")}</span>
       </motion.button>
 
@@ -143,7 +143,7 @@ export function LoginForm() {
               maxLength={24}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[rgb(var(--gold)/50%)] transition-colors text-sm"
               required
             />
           </motion.div>
@@ -158,7 +158,7 @@ export function LoginForm() {
             maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[rgb(var(--gold)/50%)] transition-colors text-sm"
             required
           />
         </div>
@@ -172,14 +172,14 @@ export function LoginForm() {
             maxLength={128}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-12 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-12 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[rgb(var(--gold)/50%)] transition-colors text-sm"
             required
           />
           <button
             type="button"
             aria-label={showPassword ? t("a11y_hidePassword") : t("a11y_showPassword")}
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))] hover:text-[#D4AF37] transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))] hover:text-[rgb(var(--gold))] transition-colors"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -198,7 +198,7 @@ export function LoginForm() {
             setMode(mode === "login" ? "signup" : "login");
             setError("");
           }}
-          className="text-[#D4AF37] hover:text-[#E8C84A] font-medium transition-colors"
+          className="text-[rgb(var(--gold))] hover:text-[rgb(var(--gold-bright))] font-medium transition-colors"
         >
           {mode === "login" ? t("login_signUp") : t("login_signIn")}
         </button>
@@ -209,7 +209,7 @@ export function LoginForm() {
         <button
           onClick={handleGuestMode}
           disabled={loading}
-          className="w-full text-[rgb(var(--c4))] hover:text-[#D4AF37] text-sm font-medium transition-colors disabled:opacity-50"
+          className="w-full text-[rgb(var(--c4))] hover:text-[rgb(var(--gold))] text-sm font-medium transition-colors disabled:opacity-50"
         >
           {t("login_continueAsGuest")}
         </button>

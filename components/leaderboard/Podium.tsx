@@ -23,7 +23,7 @@ export function Podium({ topThree }: PodiumProps) {
         if (!player) return null;
 
         const isFirst = order === 1;
-        const crownColor = order === 1 ? "#D4AF37" : order === 2 ? "#C0C0C0" : "#CD7F32";
+        const crownColor = order === 1 ? "rgb(var(--gold))" : order === 2 ? "#C0C0C0" : "#CD7F32";
 
         return (
           <Link key={player.rank} href={`/player?uid=${player.uid}`} style={{ order }}>
@@ -47,7 +47,7 @@ export function Podium({ topThree }: PodiumProps) {
               <div
                 className={`w-12 h-12 rounded-full mx-auto mb-1.5 flex items-center justify-center ${
                   isFirst
-                    ? "bg-gradient-to-br from-[#D4AF37] to-[#B8962E]"
+                    ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))]"
                     : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
                 }`}
               >
@@ -55,7 +55,7 @@ export function Podium({ topThree }: PodiumProps) {
                   {player.username.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
+              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
                 {player.username}
               </p>
               <p className="text-[10px] text-[rgb(var(--c4))]">{player.trophies.toLocaleString()}</p>
@@ -77,7 +77,7 @@ export function Podium({ topThree }: PodiumProps) {
               <div className="absolute inset-0 flex items-center justify-center">
                 <span
                   className={`text-2xl font-bold ${
-                    isFirst ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"
+                    isFirst ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"
                   }`}
                 >
                   {order}

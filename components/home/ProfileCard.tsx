@@ -20,7 +20,7 @@ export function ProfileCard() {
       className="glass-card rounded-2xl p-5 relative overflow-hidden"
     >
       {/* Decorative gold line */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[rgb(var(--gold))] to-transparent" />
 
       <div className="flex items-center gap-4">
         {/* Avatar */}
@@ -28,7 +28,7 @@ export function ProfileCard() {
           whileHover={{ scale: 1.05 }}
           className="relative"
         >
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8962E] p-[2px]">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] p-[2px]">
             <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center overflow-hidden">
               {user.photoURL ? (
                 <img
@@ -37,7 +37,7 @@ export function ProfileCard() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={28} className="text-[#D4AF37]" />
+                <User size={28} className="text-[rgb(var(--gold))]" />
               )}
             </div>
           </div>
@@ -61,8 +61,8 @@ export function ProfileCard() {
         {/* Trophy count */}
         <div className="flex flex-col items-end">
           <div className="flex items-center gap-1.5">
-            <Trophy size={16} className="text-[#D4AF37]" />
-            <span className="text-[#D4AF37] font-bold text-lg">
+            <Trophy size={16} className="text-[rgb(var(--gold))]" />
+            <span className="text-[rgb(var(--gold))] font-bold text-lg">
               {playerStats?.trophies?.toLocaleString() || 0}
             </span>
           </div>

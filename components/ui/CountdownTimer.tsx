@@ -15,9 +15,9 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
         key={value}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-14 h-14 bg-[rgb(var(--c2))] rounded-xl border border-[#D4AF37]/20 flex items-center justify-center"
+        className="w-14 h-14 bg-[rgb(var(--c2))] rounded-xl border border-[rgb(var(--gold)/20%)] flex items-center justify-center"
       >
-        <span className="text-2xl font-bold text-[#D4AF37]">
+        <span className="text-2xl font-bold text-[rgb(var(--gold))]">
           {value.toString().padStart(2, "0")}
         </span>
       </motion.div>
@@ -32,7 +32,7 @@ export function CountdownTimer({ targetDate, label }: CountdownTimerProps) {
   if (isExpired) {
     return (
       <div className="text-center py-4">
-        <p className="text-[#D4AF37] font-semibold">Event has started!</p>
+        <p className="text-[rgb(var(--gold))] font-semibold">Event has started!</p>
       </div>
     );
   }
@@ -44,11 +44,11 @@ export function CountdownTimer({ targetDate, label }: CountdownTimerProps) {
       )}
       <div className="flex items-center justify-center gap-3">
         <TimeUnit value={days} label="Days" />
-        <span className="text-[#D4AF37] text-2xl font-light -mt-4">:</span>
+        <span className="text-[rgb(var(--gold))] text-2xl font-light -mt-4">:</span>
         <TimeUnit value={hours} label="Hours" />
-        <span className="text-[#D4AF37] text-2xl font-light -mt-4">:</span>
+        <span className="text-[rgb(var(--gold))] text-2xl font-light -mt-4">:</span>
         <TimeUnit value={minutes} label="Mins" />
-        <span className="text-[#D4AF37] text-2xl font-light -mt-4">:</span>
+        <span className="text-[rgb(var(--gold))] text-2xl font-light -mt-4">:</span>
         <TimeUnit value={seconds} label="Secs" />
       </div>
     </div>

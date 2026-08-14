@@ -30,7 +30,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full"
+          className="w-10 h-10 border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))] rounded-full"
         />
       </div>
     );

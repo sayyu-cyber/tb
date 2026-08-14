@@ -39,8 +39,8 @@ export default function Error({
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm space-y-6"
       >
-        <div className="w-16 h-16 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center mx-auto">
-          <AlertTriangle size={28} className="text-[#D4AF37]" />
+        <div className="w-16 h-16 rounded-full bg-[rgb(var(--gold)/10%)] border border-[rgb(var(--gold)/20%)] flex items-center justify-center mx-auto">
+          <AlertTriangle size={28} className="text-[rgb(var(--gold))]" />
         </div>
 
         <div className="space-y-2">
@@ -59,7 +59,7 @@ export default function Error({
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={reset}
-            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
           >
             <RotateCcw size={16} />
             {t("error_tryAgain")}

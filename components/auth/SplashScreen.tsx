@@ -10,7 +10,7 @@ export function SplashScreen() {
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1.5 h-1.5 bg-[#D4AF37] rounded-full"
+            className="absolute w-1.5 h-1.5 bg-[rgb(var(--gold))] rounded-full"
             initial={{ opacity: 0 }}
             animate={{
               opacity: [0, 0.3, 0],
@@ -70,21 +70,21 @@ export function SplashScreen() {
           <svg viewBox="0 0 100 100" className="w-full h-full">
             <defs>
               <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: "#E8C84A" }} />
-                <stop offset="50%" style={{ stopColor: "#D4AF37" }} />
-                <stop offset="100%" style={{ stopColor: "#B8962E" }} />
+                <stop offset="0%" style={{ stopColor: "rgb(var(--gold-bright))" }} />
+                <stop offset="50%" style={{ stopColor: "rgb(var(--gold))" }} />
+                <stop offset="100%" style={{ stopColor: "rgb(var(--gold-deep))" }} />
               </linearGradient>
             </defs>
             <path
               d="M10 70 L10 40 L25 55 L40 30 L50 50 L60 30 L75 55 L90 40 L90 70 Q90 80 80 80 L20 80 Q10 80 10 70Z"
               fill="url(#goldGrad)"
-              stroke="#D4AF37"
+              stroke="rgb(var(--gold))"
               strokeWidth="1.5"
             />
             <circle cx="25" cy="55" r="3" fill="#0F0F0F" />
             <circle cx="50" cy="50" r="4" fill="#0F0F0F" />
             <circle cx="75" cy="55" r="3" fill="#0F0F0F" />
-            <rect x="15" y="72" width="70" height="4" rx="2" fill="#B8962E" />
+            <rect x="15" y="72" width="70" height="4" rx="2" fill="rgb(var(--gold-deep))" />
           </svg>
         </motion.div>
 
@@ -103,7 +103,7 @@ export function SplashScreen() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.8 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="text-[#D4AF37] text-sm tracking-[0.3em] uppercase"
+          className="text-[rgb(var(--gold))] text-sm tracking-[0.3em] uppercase"
         >
           The Home of Maldivian Card Games
         </motion.p>
@@ -116,7 +116,7 @@ export function SplashScreen() {
           className="mt-10 w-48 h-1 bg-[rgb(var(--c2))] rounded-full overflow-hidden"
         >
           <motion.div
-            className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
+            className="h-full bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
             initial={{ x: "-100%" }}
             animate={{ x: ["-100%", "200%"] }}
             transition={{

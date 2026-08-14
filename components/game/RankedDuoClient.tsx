@@ -99,7 +99,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
         <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[#D4AF37]" />
+          <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
         </motion.button>
       </Link>
 
@@ -119,7 +119,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
               whileTap={{ scale: 0.98 }}
               disabled={busy}
               onClick={handleCreate}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold disabled:opacity-50"
             >
               {busy ? t("common_creating") : t("rankedduo_startParty")}
             </motion.button>
@@ -141,13 +141,13 @@ function PartyChooser({ gameId }: { gameId: string }) {
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder={t("rankedduo_partyCode")}
               maxLength={6}
-              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm tracking-widest text-center font-bold outline-none focus:border-[#D4AF37]/50"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm tracking-widest text-center font-bold outline-none focus:border-[rgb(var(--gold)/50%)]"
             />
             <motion.button
               whileTap={{ scale: 0.98 }}
               disabled={busy}
               onClick={handleJoin}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold disabled:opacity-50"
             >
               {busy ? t("common_joining") : t("rankedduo_joinParty")}
             </motion.button>
@@ -265,7 +265,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))]">{t("rankedduo_closed")}</p>
-        <Link href="/play" className="text-[#D4AF37] text-sm underline">
+        <Link href="/play" className="text-[rgb(var(--gold))] text-sm underline">
           {t("roomlobby_backToPlay")}
         </Link>
       </div>
@@ -279,7 +279,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))]">{t("rankedduo_weekendReq")}</p>
         <p className="text-[rgb(var(--c4))] text-sm">{t("rankedduo_climbMsg").replace("{rank}", String(rank)).replace("{trophies}", String(trophies))}</p>
-        <button onClick={handleLeave} className="text-[#D4AF37] text-sm underline">
+        <button onClick={handleLeave} className="text-[rgb(var(--gold))] text-sm underline">
           {t("roomlobby_backToPlay")}
         </button>
       </div>
@@ -290,9 +290,9 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-6">
         <div className="relative w-24 h-24 mx-auto">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37]" />
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Search size={28} className="text-[#D4AF37]" />
+            <Search size={28} className="text-[rgb(var(--gold))]" />
           </div>
         </div>
         <div>
@@ -313,7 +313,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[#D4AF37]" />
+          <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
         </button>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
           {t("rankedduo_title2").replace("{game}", gameType === "mindi" ? "Mindi" : "Gin Rummy")}
@@ -324,7 +324,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
       <div className="glass-card rounded-2xl p-5 mb-4 text-center">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("rankedduo_partyCodeLabel")}</p>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-3xl font-bold text-[#D4AF37] tracking-widest">{code}</span>
+          <span className="text-3xl font-bold text-[rgb(var(--gold))] tracking-widest">{code}</span>
           <button aria-label={t("a11y_copyCode")} onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
           </button>
@@ -359,7 +359,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
         whileTap={{ scale: 0.95 }}
         disabled={!isFull}
         onClick={handleJoinQueue}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
+        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
       >
         <Search size={16} />
         {isFull ? t("rankedduo_findMatchTogether") : t("rankedduo_waitingPartnerBtn")}

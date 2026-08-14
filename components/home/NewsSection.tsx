@@ -8,9 +8,9 @@ import { NewsItem } from "@/types";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const typeColors = {
-  announcement: "text-[#D4AF37]",
+  announcement: "text-[rgb(var(--gold))]",
   update: "text-[#3EB489]",
-  event: "text-[#E8C84A]",
+  event: "text-[rgb(var(--gold-bright))]",
 };
 
 const typeLabels = {
@@ -29,7 +29,7 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
       transition={{ delay: 0.3 + index * 0.1 }}
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full flex items-start gap-3 p-3 rounded-xl bg-[rgb(var(--c2)/50%)] border border-[rgb(var(--c3))] hover:border-[#D4AF37]/20 transition-colors cursor-pointer group text-left"
+      className="w-full flex items-start gap-3 p-3 rounded-xl bg-[rgb(var(--c2)/50%)] border border-[rgb(var(--c3))] hover:border-[rgb(var(--gold)/20%)] transition-colors cursor-pointer group text-left"
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
@@ -40,12 +40,12 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
             {item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </span>
         </div>
-        <h4 className="text-[rgb(var(--text-primary))] text-sm font-medium truncate group-hover:text-[#D4AF37] transition-colors">
+        <h4 className="text-[rgb(var(--text-primary))] text-sm font-medium truncate group-hover:text-[rgb(var(--gold))] transition-colors">
           {item.title}
         </h4>
         <p className="text-[rgb(var(--c4))] text-xs mt-0.5 line-clamp-1">{item.content}</p>
       </div>
-      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[#D4AF37] transition-colors mt-1 shrink-0" />
+      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[rgb(var(--gold))] transition-colors mt-1 shrink-0" />
     </motion.button>
   );
 }
@@ -62,7 +62,7 @@ export function NewsSection() {
       transition={{ duration: 0.4, delay: 0.25 }}
     >
       <div className="flex items-center gap-2 mb-3 px-1">
-        <Newspaper size={16} className="text-[#D4AF37]" />
+        <Newspaper size={16} className="text-[rgb(var(--gold))]" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_newsUpdates")}</h3>
       </div>
 
@@ -93,7 +93,7 @@ export function NewsSection() {
               exit={{ opacity: 0, y: 40, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card rounded-2xl p-5 w-full max-w-sm border border-[#D4AF37]/20"
+              className="glass-card rounded-2xl p-5 w-full max-w-sm border border-[rgb(var(--gold)/20%)]"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>

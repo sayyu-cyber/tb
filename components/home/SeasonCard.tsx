@@ -31,11 +31,11 @@ export function SeasonCard() {
       className="glass-card rounded-2xl p-5 relative overflow-hidden"
     >
       {/* Background decoration */}
-      <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#D4AF37]/5 rounded-full blur-2xl" />
+      <div className="absolute -right-4 -top-4 w-24 h-24 bg-[rgb(var(--gold)/5%)] rounded-full blur-2xl" />
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Crown size={18} className="text-[#D4AF37]" />
+          <Crown size={18} className="text-[rgb(var(--gold))]" />
           <h3 className="text-[rgb(var(--text-primary))] font-semibold">{season.name}</h3>
         </div>
         <div className="flex items-center gap-1 text-[rgb(var(--c4))]">
@@ -45,15 +45,15 @@ export function SeasonCard() {
       </div>
 
       <div className="flex items-end gap-2">
-        <span className="text-4xl font-bold text-[#D4AF37]">{days}</span>
+        <span className="text-4xl font-bold text-[rgb(var(--gold))]">{days}</span>
         <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_days")}</span>
-        <span className="text-4xl font-bold text-[#D4AF37] ml-2">{hours}</span>
+        <span className="text-4xl font-bold text-[rgb(var(--gold))] ml-2">{hours}</span>
         <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_hours")}</span>
       </div>
 
       <div className="mt-4 h-1.5 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-[#B8962E] via-[#D4AF37] to-[#E8C84A] rounded-full"
+          className="h-full bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progressPct}%` }}
           transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}

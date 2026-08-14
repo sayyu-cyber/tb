@@ -58,7 +58,7 @@ export function AdminPanelClient() {
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
-              tab === t.id ? "bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
+              tab === t.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
             }`}
           >
             {t.label}
@@ -173,7 +173,7 @@ function SeasonTab() {
           type="number"
           className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none"
         />
-        <button onClick={handleSet} className="px-4 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold">
+        <button onClick={handleSet} className="px-4 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold">
           {saved ? "Saved!" : "Set"}
         </button>
       </div>
@@ -216,7 +216,7 @@ function HallOfFameTab() {
         <input
   aria-label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)"
               maxLength={120} className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
-        <button onClick={handleAdd} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
+        <button onClick={handleAdd} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm">
           Add Entry
         </button>
       </div>
@@ -272,7 +272,7 @@ function ShopTab() {
 
   return (
     <div className="space-y-3">
-      <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm sticky top-0 z-10">
+      <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm sticky top-0 z-10">
         {saved ? "Saved!" : "Save Shop Changes"}
       </button>
       {ALL_COSMETICS.filter((c) => !c.isVipExclusive && c.price > 0).map((item) => {
@@ -310,7 +310,7 @@ function MissionsTab() {
 
   return (
     <div className="space-y-3">
-      <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
+      <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm">
         {saved ? "Saved!" : "Save Mission Rewards"}
       </button>
       <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Daily</p>
@@ -355,7 +355,7 @@ function RankedTab() {
 
   return (
     <div className="space-y-3">
-      <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
+      <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm">
         {saved ? "Saved!" : "Save Ranked Rewards"}
       </button>
       <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Weekly reward per rank tier</p>

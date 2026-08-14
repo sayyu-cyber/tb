@@ -187,7 +187,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
                 youWon
-                  ? "bg-gradient-to-br from-[#D4AF37] to-[#E8C84A] shadow-[0_0_40px_rgba(212,175,55,0.3)]"
+                  ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]"
                   : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
@@ -199,7 +199,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
                 {youWon ? t("mindi_youWon") : t("mindi_youLost")}
               </h1>
               {outcome.special && (
-                <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
+                <p className="text-[rgb(var(--gold))] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {outcome.special === "baga" ? t("mindi_baga") : t("mindi_hukunbunye")}
                 </p>
               )}
@@ -238,7 +238,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleShowRewards}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
               >
                 <Sparkles size={16} />
                 Rewards
@@ -261,14 +261,14 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
   if (needsPassScreen) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center">
-        <Smartphone size={40} className="text-[#D4AF37] mb-4" />
+        <Smartphone size={40} className="text-[rgb(var(--gold))] mb-4" />
         <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">{t("offline_passDeviceTo")}</h2>
-        <p className="text-[#D4AF37] text-2xl font-bold mb-6">{seatNames[turnSeat]}</p>
+        <p className="text-[rgb(var(--gold))] text-2xl font-bold mb-6">{seatNames[turnSeat]}</p>
         <p className="text-[rgb(var(--c4))] text-xs mb-8">{t("offline_hideScreen")}</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setRevealedSeat(turnSeat)}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold"
+          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold"
         >
           I&apos;m ready — show my hand
         </motion.button>
@@ -293,14 +293,14 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
       <div className="px-4 py-2">
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <Users size={14} className="text-[#D4AF37]" />
+            <Users size={14} className="text-[rgb(var(--gold))]" />
             <span className="text-[rgb(var(--text-primary))] font-medium">Your team</span>
-            <span className="text-[#D4AF37] font-bold">{tensCaptured.A} tens</span>
+            <span className="text-[rgb(var(--gold))] font-bold">{tensCaptured.A} tens</span>
             <span className="text-[rgb(var(--c4))]">· {tricksWon.A} tricks</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[rgb(var(--c4))]">{tricksWon.B} tricks ·</span>
-            <span className="text-[#D4AF37] font-bold">{tensCaptured.B} tens</span>
+            <span className="text-[rgb(var(--gold))] font-bold">{tensCaptured.B} tens</span>
             <span className="text-[rgb(var(--text-primary))] font-medium">Opponents</span>
           </div>
         </div>
@@ -373,12 +373,12 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
                   whileTap={canPlay ? { scale: 0.95 } : {}}
                   onClick={() => canPlay && handleCardSelect(card)}
                   disabled={!canPlay}
-                  className="w-12 h-16 rounded-lg bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[#D4AF37]/30 flex flex-col items-center justify-center disabled:opacity-40 disabled:border-[rgb(var(--c3))]"
+                  className="w-12 h-16 rounded-lg bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/30%)] flex flex-col items-center justify-center disabled:opacity-40 disabled:border-[rgb(var(--c3))]"
                 >
-                  <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                  <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
                     {rankLabel(card.rank)}
                   </span>
-                  <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[#D4AF37]"}`}>
+                  <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
                     {SUIT_SYMBOLS[card.suit]}
                   </span>
                 </motion.button>
@@ -409,7 +409,7 @@ function MiniCard({ card, trumpSuit }: { card: Card; trumpSuit: Card["suit"] }) 
   return (
     <div
       className={`w-10 h-14 rounded-md flex flex-col items-center justify-center border ${
-        isTrump ? "bg-[#D4AF37]/10 border-[#D4AF37]/60" : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))]"
+        isTrump ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold)/60%)]" : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))]"
       }`}
     >
       <span className={`text-xs font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
@@ -436,10 +436,10 @@ function SeatBadge({
   return (
     <div
       className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-colors ${
-        active ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"
+        active ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"
       }`}
     >
-      <span className={`text-[10px] font-medium ${active ? "text-[#D4AF37]" : "text-[rgb(var(--c5))]"}`}>
+      <span className={`text-[10px] font-medium ${active ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
         {name} {isPartner ? "· Partner" : ""}
       </span>
       <span className="text-[rgb(var(--c4))] text-[10px]">{cardCount} cards</span>

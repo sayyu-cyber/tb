@@ -19,10 +19,10 @@ export function DailyMatchCounter() {
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Calendar size={18} className="text-[#D4AF37]" />
+          <Calendar size={18} className="text-[rgb(var(--gold))]" />
           <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_dailyMatches")}</h3>
         </div>
-        <span className="text-[#D4AF37] font-bold text-sm">{remaining} / {total}</span>
+        <span className="text-[rgb(var(--gold))] font-bold text-sm">{remaining} / {total}</span>
       </div>
 
       <div className="flex gap-2">
@@ -34,7 +34,7 @@ export function DailyMatchCounter() {
             transition={{ delay: 0.15 + i * 0.1, type: "spring" }}
             className={`flex-1 h-3 rounded-full ${
               i < remaining
-                ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37]"
+                ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))]"
                 : "bg-[rgb(var(--c3))]"
             }`}
           />

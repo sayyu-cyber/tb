@@ -22,7 +22,7 @@ export function SettingButton({ icon: Icon, label, description, danger = false, 
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
           danger ? "bg-red-500/10" : "bg-[rgb(var(--c2))]"
         }`}>
-          <Icon size={18} className={danger ? "text-red-400" : "text-[rgb(var(--c4))] group-hover:text-[#D4AF37]"} />
+          <Icon size={18} className={danger ? "text-red-400" : "text-[rgb(var(--c4))] group-hover:text-[rgb(var(--gold))]"} />
         </div>
         <div className="text-left">
           <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{label}</p>
@@ -31,7 +31,7 @@ export function SettingButton({ icon: Icon, label, description, danger = false, 
           )}
         </div>
       </div>
-      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[#D4AF37] transition-colors" />
+      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[rgb(var(--gold))] transition-colors" />
     </motion.button>
   );
 }

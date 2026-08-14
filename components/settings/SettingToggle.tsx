@@ -16,9 +16,9 @@ export function SettingToggle({ icon: Icon, label, description, enabled, onChang
     <div className="flex items-center justify-between py-4 px-1">
       <div className="flex items-center gap-3">
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-          enabled ? "bg-[#D4AF37]/10" : "bg-[rgb(var(--c2))]"
+          enabled ? "bg-[rgb(var(--gold)/10%)]" : "bg-[rgb(var(--c2))]"
         }`}>
-          <Icon size={18} className={enabled ? "text-[#D4AF37]" : "text-[rgb(var(--c4))]"} />
+          <Icon size={18} className={enabled ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
         </div>
         <div>
           <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{label}</p>
@@ -32,7 +32,7 @@ export function SettingToggle({ icon: Icon, label, description, enabled, onChang
         whileTap={{ scale: 0.95 }}
         onClick={onChange}
         className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${
-          enabled ? "bg-[#D4AF37]" : "bg-[rgb(var(--c3))]"
+          enabled ? "bg-[rgb(var(--gold))]" : "bg-[rgb(var(--c3))]"
         }`}
       >
         <motion.div

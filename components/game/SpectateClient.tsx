@@ -57,11 +57,11 @@ export function SpectateClient({ matchId }: { matchId: string }) {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <Link href="/play">
           <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            <ArrowLeft size={18} className="text-[#D4AF37]" />
+            <ArrowLeft size={18} className="text-[rgb(var(--gold))]" />
           </button>
         </Link>
         <div className="flex items-center gap-1.5 text-[rgb(var(--c4))] text-xs">
-          <Eye size={14} className="text-[#D4AF37]" /> {t("spectate_spectating")}
+          <Eye size={14} className="text-[rgb(var(--gold))]" /> {t("spectate_spectating")}
         </div>
         <div className="w-9" />
       </div>
@@ -96,13 +96,13 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
     <div className="flex-1 flex flex-col px-4 py-2 space-y-4">
       <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
         <span className="text-[rgb(var(--text-primary))]">
-          {t("roomlobby_teamA")} — <span className="text-[#D4AF37] font-bold">{state.tensCaptured.A} {t("spectate_tensLabel")}</span>
+          {t("roomlobby_teamA")} — <span className="text-[rgb(var(--gold))] font-bold">{state.tensCaptured.A} {t("spectate_tensLabel")}</span>
         </span>
         <span className="text-[rgb(var(--c4))]">
           {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
         </span>
         <span className="text-[rgb(var(--text-primary))]">
-          {t("roomlobby_teamB")} — <span className="text-[#D4AF37] font-bold">{state.tensCaptured.B} {t("spectate_tensLabel")}</span>
+          {t("roomlobby_teamB")} — <span className="text-[rgb(var(--gold))] font-bold">{state.tensCaptured.B} {t("spectate_tensLabel")}</span>
         </span>
       </div>
 
@@ -110,7 +110,7 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
         {match.players.map((uid, seat) => (
           <div
             key={uid}
-            className={`rounded-xl border p-3 ${state.turnSeat === seat ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
+            className={`rounded-xl border p-3 ${state.turnSeat === seat ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
           >
             <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? t("profile_player")}</p>
             <p className="text-[rgb(var(--c4))] text-xs">
@@ -149,7 +149,7 @@ function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; na
         <p className="text-[rgb(var(--text-primary))] text-lg font-bold">
           {state.result.winnerUid === "draw" ? t("spectate_matchDraw") : t("spectate_playerWon").replace("{name}", names[state.result.winnerUid] ?? t("profile_player"))}
         </p>
-        {state.result.gin && <p className="text-[#D4AF37] text-sm font-semibold">{t("spectate_gin")}</p>}
+        {state.result.gin && <p className="text-[rgb(var(--gold))] text-sm font-semibold">{t("spectate_gin")}</p>}
       </div>
     );
   }
@@ -160,7 +160,7 @@ function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; na
         {match.players.map((uid) => (
           <div
             key={uid}
-            className={`rounded-xl border p-3 ${state.turn === uid ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
+            className={`rounded-xl border p-3 ${state.turn === uid ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
           >
             <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? t("profile_player")}</p>
             <p className="text-[rgb(var(--c4))] text-xs">{state.hands[uid]?.length ?? 0} {t("spectate_cards")}</p>

@@ -61,7 +61,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             onClick={(e) => e.stopPropagation()}
-            className="glass-card rounded-2xl p-5 w-full max-w-sm border border-[#D4AF37]/20 max-h-[85vh] overflow-y-auto"
+            className="glass-card rounded-2xl p-5 w-full max-w-sm border border-[rgb(var(--gold)/20%)] max-h-[85vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[rgb(var(--text-primary))] font-bold text-lg">{t("editprofile_title")}</h3>
@@ -83,7 +83,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
               onChange={(e) => setName(e.target.value)}
               maxLength={24}
               placeholder={t("editprofile_usernamePlaceholder")}
-              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50 mb-4"
+              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)] mb-4"
             />
 
             <label className="block text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("editprofile_avatarColor")}</label>
@@ -131,7 +131,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
               whileTap={{ scale: 0.97 }}
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm disabled:opacity-50"
             >
               {saving ? t("editprofile_saving") : t("editprofile_save")}
             </motion.button>

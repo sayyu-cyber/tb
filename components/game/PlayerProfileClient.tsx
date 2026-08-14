@@ -73,9 +73,9 @@ export function PlayerProfileClient() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           {liveMatchId && (
             <Link href={`/spectate?m=${liveMatchId}`}>
-              <div className="glass-card rounded-xl p-3 flex items-center justify-center gap-2 border border-[#D4AF37]/30 bg-[#D4AF37]/5">
-                <Eye size={14} className="text-[#D4AF37]" />
-                <span className="text-[#D4AF37] text-sm font-medium">{t("playerprofile_watchingLive")}</span>
+              <div className="glass-card rounded-xl p-3 flex items-center justify-center gap-2 border border-[rgb(var(--gold)/30%)] bg-[rgb(var(--gold)/5%)]">
+                <Eye size={14} className="text-[rgb(var(--gold))]" />
+                <span className="text-[rgb(var(--gold))] text-sm font-medium">{t("playerprofile_watchingLive")}</span>
               </div>
             </Link>
           )}
@@ -94,19 +94,19 @@ export function PlayerProfileClient() {
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Trophy size={14} className="text-[#D4AF37]" /> {t("profile_trophies")}
+                <Trophy size={14} className="text-[rgb(var(--gold))]" /> {t("profile_trophies")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">{profile.trophies.toLocaleString()}</p>
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Star size={14} className="text-[#D4AF37]" /> {t("playerprofile_peakTrophies")}
+                <Star size={14} className="text-[rgb(var(--gold))]" /> {t("playerprofile_peakTrophies")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">{profile.peakTrophies.toLocaleString()}</p>
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Swords size={14} className="text-[#D4AF37]" /> {t("profile_matches")}
+                <Swords size={14} className="text-[rgb(var(--gold))]" /> {t("profile_matches")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">
                 {profile.wins}W - {profile.losses}L
@@ -114,7 +114,7 @@ export function PlayerProfileClient() {
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
-                <Percent size={14} className="text-[#D4AF37]" /> {t("playerprofile_winRate")}
+                <Percent size={14} className="text-[rgb(var(--gold))]" /> {t("playerprofile_winRate")}
               </div>
               <p className="text-[rgb(var(--text-primary))] font-bold text-lg">{profile.winPercentage}%</p>
             </div>

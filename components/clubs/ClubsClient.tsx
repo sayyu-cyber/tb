@@ -108,13 +108,13 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setMode("browse")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "browse" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
+          className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "browse" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
           {t("clubs_browse")}
         </button>
         <button
           onClick={() => setMode("create")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "create" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
+          className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "create" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
           {t("clubs_create")}
         </button>
@@ -128,7 +128,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             onChange={(e) => setName(e.target.value)}
             placeholder={t("clubs_namePlaceholder")}
             maxLength={30}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
           />
           <input
             aria-label={t("clubs_tagPlaceholder")}
@@ -136,7 +136,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             onChange={(e) => setTag(e.target.value.toUpperCase())}
             placeholder={t("clubs_tagPlaceholder")}
             maxLength={5}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
           />
           <textarea
             value={description}
@@ -144,13 +144,13 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             placeholder={t("clubs_descriptionPlaceholder")}
             maxLength={200}
             rows={3}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50 resize-none"
+            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)] resize-none"
           />
           <motion.button
             whileTap={{ scale: 0.98 }}
             disabled={busy || !name.trim() || !tag.trim()}
             onClick={handleCreate}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold disabled:opacity-50"
           >
             {busy ? t("clubs_creating") : t("clubs_createClub")}
           </motion.button>
@@ -166,7 +166,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             <div key={c.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div className="min-w-0">
                 <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">
-                  {c.name} <span className="text-[#D4AF37] text-xs">[{c.tag}]</span>
+                  {c.name} <span className="text-[rgb(var(--gold))] text-xs">[{c.tag}]</span>
                 </p>
                 <p className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
                   <Users size={10} /> {c.members.length} {t("clubs_members")}
@@ -174,7 +174,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
               </div>
               <button
                 onClick={() => handleJoin(c.id)}
-                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] text-xs font-semibold shrink-0"
+                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-xs font-semibold shrink-0"
               >
                 {t("clubs_join")}
               </button>
@@ -226,7 +226,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
       <PageHeader title={club.name} />
 
       <div className="glass-card rounded-2xl p-4 mb-4">
-        <p className="text-[#D4AF37] text-sm font-bold">[{club.tag}]</p>
+        <p className="text-[rgb(var(--gold))] text-sm font-bold">[{club.tag}]</p>
         {club.description && <p className="text-[rgb(var(--c4))] text-xs mt-1">{club.description}</p>}
       </div>
 
@@ -237,13 +237,13 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setTab("members")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "members" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
+          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "members" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
           {t("clubs_membersTab").replace("{n}", String(club.members.length))}
         </button>
         <button
           onClick={() => setTab("chat")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "chat" ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
+          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "chat" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
         >
           {t("clubs_chatTab")}
         </button>
@@ -254,13 +254,13 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
           {sortedMembers.map((uid) => (
             <div key={uid} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {uid === club.ownerUid && <Crown size={14} className="text-[#D4AF37]" />}
+                {uid === club.ownerUid && <Crown size={14} className="text-[rgb(var(--gold))]" />}
                 <span className="text-[rgb(var(--text-primary))] text-sm">{club.memberNames[uid] || "Player"}</span>
                 {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("clubs_you")}</span>}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
-                  <Trophy size={10} className="text-[#D4AF37]" /> {club.memberTrophies[uid] ?? 0}
+                  <Trophy size={10} className="text-[rgb(var(--gold))]" /> {club.memberTrophies[uid] ?? 0}
                 </span>
                 {isOwner && uid !== myUid && (
                   <button onClick={() => handleKick(uid)} className="text-red-400 text-xs">
@@ -290,11 +290,11 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
                   <div
                     className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
                       mine
-                        ? "bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F]"
+                        ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]"
                         : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))]"
                     }`}
                   >
-                    {!mine && <p className="text-[10px] text-[#D4AF37] font-semibold mb-0.5">{m.senderName}</p>}
+                    {!mine && <p className="text-[10px] text-[rgb(var(--gold))] font-semibold mb-0.5">{m.senderName}</p>}
                     {m.text}
                   </div>
                 </div>
@@ -310,13 +310,13 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={t("clubs_messagePlaceholder")}
               maxLength={500}
-              className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
+              className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
             />
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={handleSend}
               disabled={!text.trim()}
-              className="p-3 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] disabled:opacity-40"
+              className="p-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] disabled:opacity-40"
             >
               <Send size={16} />
             </motion.button>

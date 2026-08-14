@@ -35,8 +35,8 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center">
-          <Settings size={20} className="text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
+          <Settings size={20} className="text-[rgb(var(--gold))]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("settings_title")}</h1>
@@ -117,7 +117,7 @@ export default function SettingsPage() {
                   }}
                   className={`py-2 rounded-xl text-sm font-medium transition-colors ${
                     settings.language === code
-                      ? "bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30"
+                      ? "bg-[rgb(var(--gold)/15%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]"
                       : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))]"
                   }`}
                 >
