@@ -123,6 +123,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
       {mode === "create" ? (
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <input
+            aria-label={t("clubs_namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t("clubs_namePlaceholder")}
@@ -130,6 +131,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
           />
           <input
+            aria-label={t("clubs_tagPlaceholder")}
             value={tag}
             onChange={(e) => setTag(e.target.value.toUpperCase())}
             placeholder={t("clubs_tagPlaceholder")}
@@ -302,6 +304,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
           </div>
           <div className="flex items-center gap-2">
             <input
+              aria-label={t("clubs_messagePlaceholder")}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}

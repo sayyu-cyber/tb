@@ -22,6 +22,8 @@ export function CoinTopupWatcher() {
         if (req.status !== "approved" || processingRef.current.has(req.id)) continue;
         processingRef.current.add(req.id);
         addCoins(req.coins, "purchase", `Coin top-up approved: ${req.packName}`);
+        // Intentionally silent: if this write loses a race it retries on
+        // the next snapshot, and the coins are already credited locally.
         markTopupCredited(req.id).catch(() => {});
       }
     });

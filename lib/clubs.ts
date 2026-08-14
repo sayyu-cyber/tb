@@ -78,7 +78,9 @@ export function watchClubList(onUpdate: (clubs: ClubDoc[]) => void): Unsubscribe
 
 /** The club a player currently belongs to, if any (a player is in at most one). */
 export function watchMyClub(uid: string, onUpdate: (club: ClubDoc | null) => void): Unsubscribe {
-  const q = query(collection(db, CLUBS_COLLECTION), where("members", "array-contains", uid));
+  // A player belongs to at most one club, so only the first doc is read
+  // below - fetching more would be pure waste.
+  const q = query(collection(db, CLUBS_COLLECTION), where("members", "array-contains", uid), limit(1));
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.length > 0 ? { id: snap.docs[0].id, ...(snap.docs[0].data() as Omit<ClubDoc, "id">) } : null);
   });

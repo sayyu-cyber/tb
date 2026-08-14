@@ -123,7 +123,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
     <div className="flex flex-col h-[calc(100vh-4rem)] pb-24">
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <Link href="/messages">
-          <button className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             <ArrowLeft size={18} className="text-[#D4AF37]" />
           </button>
         </Link>
@@ -159,6 +159,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
 
       <div className="flex items-center gap-2 px-4 pt-2">
         <input
+          aria-label={t("messages_placeholder")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -167,6 +168,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
           className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
         />
         <motion.button
+          aria-label={t("a11y_sendMessage")}
           whileTap={{ scale: 0.9 }}
           onClick={handleSend}
           disabled={!text.trim()}

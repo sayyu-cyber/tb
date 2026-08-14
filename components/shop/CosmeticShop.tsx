@@ -11,6 +11,7 @@ import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '../../lib/coi
 import { useAuth } from '../../contexts/AuthContext';
 import CoinBalance from '../economy/CoinBalance';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useToast } from '../../contexts/ToastContext';
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
   return (
@@ -185,6 +186,7 @@ export default function CosmeticShop() {
   const [myTopups, setMyTopups] = useState<CoinTopupRequest[]>([]);
   const shopOverrides = state.shopOverrides;
   const t = useTranslation();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!user?.uid || isGuest) return;
@@ -202,11 +204,18 @@ export default function CosmeticShop() {
 
   async function handlePurchaseCoinPack(pack: typeof COIN_PACKS[0]) {
     if (!user?.uid || isGuest) {
-      alert('Sign in to top up coins.');
+      showToast(t('toast_signInToTopUp'), 'info');
       return;
     }
-    await requestCoinTopup(user.uid, user.displayName ?? 'Player', pack.coins, pack.priceMVR, pack.name);
-    alert(`Your ${pack.name} top-up is pending admin approval - coins will be credited once approved.`);
+    // This used to fire-and-forget: a rejected write (offline, rules
+    // change) still showed the "pending approval" alert, so the player
+    // believed a request existed that never did.
+    try {
+      await requestCoinTopup(user.uid, user.displayName ?? 'Player', pack.coins, pack.priceMVR, pack.name);
+      showToast(t('toast_topupPending').replace('{pack}', pack.name), 'success');
+    } catch {
+      showToast(t('toast_topupFailed'), 'error');
+    }
   }
 
   useEffect(() => {
@@ -485,7 +494,13 @@ export default function CosmeticShop() {
                     onClick={() => {
                       const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
                       activateVip(plan.days);
-                      alert(`VIP activated (${plan.label})! (Payment gateway placeholder)`);
+                      showToast(
+                        t('toast_vipActivated').replace(
+                          '{plan}',
+                          plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')
+                        ),
+                        'success'
+                      );
                     }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}

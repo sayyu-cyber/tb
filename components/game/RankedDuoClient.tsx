@@ -16,6 +16,7 @@ import { dealGinHand } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/contexts/ToastContext";
 
 function gameTypeFor(gameId: string): GameType {
   return gameId === "mindi" ? "mindi" : "gin_rummy";
@@ -97,7 +98,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
-        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+        <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </motion.button>
       </Link>
@@ -135,6 +136,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
         {mode === "join" && (
           <div className="space-y-3 glass-card rounded-2xl p-5">
             <input
+              aria-label={t("rankedduo_partyCode")}
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder={t("rankedduo_partyCode")}
@@ -169,6 +171,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
   const [error, setError] = useState<string | null>(null);
   const navigatedRef = useRef(false);
   const t = useTranslation();
+  const { showToast } = useToast();
 
   const gameType = gameTypeFor(gameId);
   const trophies = playerStats?.trophies || 0;
@@ -181,10 +184,17 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
   useEffect(() => watchRoom(code, setRoom), [code]);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard?.writeText(code).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [code]);
+    // Previously this flipped to the "copied" checkmark unconditionally and
+    // swallowed the rejection, so on an insecure origin or with clipboard
+    // permission denied the player saw a tick but had nothing to paste.
+    navigator.clipboard
+      ?.writeText(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => showToast(t("toast_copyFailed"), "error"));
+  }, [code, showToast, t]);
 
   useEffect(() => {
     if (!queueing || !canQueue) return;
@@ -235,6 +245,9 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
   }
 
   async function handleLeave() {
+    // Intentionally silent: we navigate away on the next line, so a toast
+    // would flash and vanish. Both are best-effort cleanup - a stale queue
+    // entry is reaped by the matchmaker's own staleness check.
     if (queueing) await leaveQueue(myUid).catch(() => {});
     await leaveRoom(code, myUid).catch(() => {});
     router.push("/play");
@@ -299,7 +312,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
-        <button onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+        <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </button>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
@@ -312,7 +325,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("rankedduo_partyCodeLabel")}</p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl font-bold text-[#D4AF37] tracking-widest">{code}</span>
-          <button onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <button aria-label={t("a11y_copyCode")} onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
           </button>
         </div>

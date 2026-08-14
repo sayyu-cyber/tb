@@ -14,7 +14,7 @@
 // For now, standings are a live leaderboard of this week's qualified
 // players, which is a fair proxy for "who's winning" during the window.
 
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const QUALIFYING_RANKS = ["Silver", "Gold", "Platinum"];
@@ -32,7 +32,8 @@ export function isQualified(rank: string): boolean {
 
 /** Live standings among qualified (Silver+) players this week, highest weeklyTrophies first. */
 export async function getWeeklyStandings(limitCount = 50): Promise<WeeklyStanding[]> {
-  const q = query(collection(db, "players"), where("currentRank", "in", QUALIFYING_RANKS));
+  const q = // Standings only ever render a leaderboard-sized page.
+    query(collection(db, "players"), where("currentRank", "in", QUALIFYING_RANKS), limit(100));
   const snap = await getDocs(q);
   return snap.docs
     .map((d) => {

@@ -161,13 +161,15 @@ export default function FriendsPage() {
         <div className="space-y-4">
           <div className="flex gap-2">
             <input
+              aria-label={t("friends_searchPlaceholder")}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder={t("friends_searchPlaceholder")}
+              maxLength={24}
               className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
-            <button onClick={handleSearch} className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+            <button aria-label={t("a11y_search")} onClick={handleSearch} className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
               <Search size={18} className="text-[#D4AF37]" />
             </button>
           </div>
@@ -191,7 +193,7 @@ export default function FriendsPage() {
                   ) : alreadySent ? (
                     <span className="text-[rgb(var(--c4))] text-xs">{t("friends_requested")}</span>
                   ) : (
-                    <button onClick={() => handleAddFriend(r)} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[#D4AF37]/30">
+                    <button aria-label={t("a11y_addFriend")} onClick={() => handleAddFriend(r)} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[#D4AF37]/30">
                       <UserPlus size={16} className="text-[#D4AF37]" />
                     </button>
                   )}
@@ -214,10 +216,10 @@ export default function FriendsPage() {
                   <div key={r.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
                     <p className="text-[rgb(var(--text-primary))] text-sm">{r.fromName}</p>
                     <div className="flex gap-2">
-                      <button onClick={() => respondToRequest(r.id, true)} className="p-2 rounded-lg bg-green-900/30 border border-green-700/40">
+                      <button aria-label={t("a11y_acceptRequest")} onClick={() => respondToRequest(r.id, true)} className="p-2 rounded-lg bg-green-900/30 border border-green-700/40">
                         <Check size={14} className="text-green-400" />
                       </button>
-                      <button onClick={() => respondToRequest(r.id, false)} className="p-2 rounded-lg bg-red-900/30 border border-red-700/40">
+                      <button aria-label={t("a11y_declineRequest")} onClick={() => respondToRequest(r.id, false)} className="p-2 rounded-lg bg-red-900/30 border border-red-700/40">
                         <X size={14} className="text-red-400" />
                       </button>
                     </div>

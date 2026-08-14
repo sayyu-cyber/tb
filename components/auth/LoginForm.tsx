@@ -137,8 +137,10 @@ export function LoginForm() {
           >
             <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
             <input
+              aria-label={t("login_usernamePlaceholder")}
               type="text"
               placeholder={t("login_usernamePlaceholder")}
+              maxLength={24}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
@@ -150,8 +152,10 @@ export function LoginForm() {
         <div className="relative">
           <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
           <input
+            aria-label={t("login_emailPlaceholder")}
             type="email"
             placeholder={t("login_emailPlaceholder")}
+            maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-4 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
@@ -162,8 +166,10 @@ export function LoginForm() {
         <div className="relative">
           <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))]" />
           <input
+            aria-label={t("login_passwordPlaceholder")}
             type={showPassword ? "text" : "password"}
             placeholder={t("login_passwordPlaceholder")}
+            maxLength={128}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl py-3.5 pl-12 pr-12 text-[rgb(var(--text-primary))] placeholder-[rgb(var(--c4))] focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
@@ -171,6 +177,7 @@ export function LoginForm() {
           />
           <button
             type="button"
+            aria-label={showPassword ? t("a11y_hidePassword") : t("a11y_showPassword")}
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))] hover:text-[#D4AF37] transition-colors"
           >

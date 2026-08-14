@@ -60,6 +60,7 @@ export default function ProfilePage() {
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
 
         <button
+          aria-label={t("a11y_editProfile")}
           onClick={() => setEditing(true)}
           className="absolute top-3 right-3 p-2 rounded-lg bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] z-10"
         >

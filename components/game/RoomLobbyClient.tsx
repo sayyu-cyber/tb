@@ -25,6 +25,7 @@ import {
   RoomDoc,
 } from "@/lib/rooms";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/contexts/ToastContext";
 
 function gameTypeFor(gameId: string): GameType {
   return gameId === "mindi" ? "mindi" : "gin_rummy";
@@ -142,7 +143,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
-        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+        <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </motion.button>
       </Link>
@@ -220,9 +221,11 @@ function RoomChooser({ gameId }: { gameId: string }) {
             )}
             <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_optionalPassword")}</p>
             <input
+              aria-label={t("roomlobby_passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t("roomlobby_passwordPlaceholder")}
+              maxLength={32}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <motion.button
@@ -239,6 +242,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
         {mode === "join" && (
           <div className="space-y-3 glass-card rounded-2xl p-5">
             <input
+              aria-label={t("roomlobby_roomCodePlaceholder")}
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder={t("roomlobby_roomCodePlaceholder")}
@@ -246,9 +250,11 @@ function RoomChooser({ gameId }: { gameId: string }) {
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm tracking-widest text-center font-bold outline-none focus:border-[#D4AF37]/50"
             />
             <input
+              aria-label={t("roomlobby_passwordIfRequired")}
               value={joinPassword}
               onChange={(e) => setJoinPassword(e.target.value)}
               placeholder={t("roomlobby_passwordIfRequired")}
+              maxLength={32}
               className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[#D4AF37]/50"
             />
             <motion.button
@@ -294,6 +300,7 @@ function RoomLobby({
   const [wasSeated, setWasSeated] = useState(false);
   const [removedAs, setRemovedAs] = useState<"kicked" | "banned" | null>(null);
   const t = useTranslation();
+  const { showToast } = useToast();
 
   useEffect(() => watchRoom(code, setRoom), [code]);
 
@@ -316,10 +323,17 @@ function RoomLobby({
   }, [room, myUid, wasSeated]);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard?.writeText(code).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [code]);
+    // Previously this flipped to the "copied" checkmark unconditionally and
+    // swallowed the rejection, so on an insecure origin or with clipboard
+    // permission denied the player saw a tick but had nothing to paste.
+    navigator.clipboard
+      ?.writeText(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => showToast(t("toast_copyFailed"), "error"));
+  }, [code, showToast, t]);
 
   async function handleStart() {
     if (!room) return;
@@ -350,6 +364,8 @@ function RoomLobby({
   }
 
   async function handleLeave() {
+    // Intentionally silent: best-effort cleanup immediately before
+    // navigating away (see RankedDuoClient.handleLeave).
     await leaveRoom(code, myUid).catch(() => {});
     router.push("/play");
   }
@@ -392,7 +408,7 @@ function RoomLobby({
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
-        <button onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+        <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[#D4AF37]" />
         </button>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{t("roomlobby_roomTitle").replace("{game}", gameType === "mindi" ? "Mindi" : "Gin Rummy")}</p>
@@ -403,7 +419,7 @@ function RoomLobby({
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("roomlobby_roomCode")}</p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl font-bold text-[#D4AF37] tracking-widest">{code}</span>
-          <button onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <button aria-label={t("a11y_copyCode")} onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
           </button>
         </div>

@@ -23,6 +23,7 @@ import { dealMindiHand } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function gameConfig(gameId: string): { gameType: GameType; neededPlayers: number; label: string } {
   if (gameId === "mindi") return { gameType: "mindi", neededPlayers: 4, label: "Mindi" };
@@ -66,6 +67,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
   const [matchFound, setMatchFound] = useState(false);
   const [debugError, setDebugError] = useState<string | null>(null);
   const navigatedRef = useRef(false);
+  const t = useTranslation();
 
   const { gameType, neededPlayers, label } = gameConfig(gameId);
 
@@ -130,8 +132,8 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[#D4AF37] mx-auto flex items-center justify-center">
             <span className="text-[#D4AF37] text-xs font-bold">VS</span>
           </motion.div>
-          <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">Match Found!</h2>
-          <p className="text-[rgb(var(--c4))] text-sm">Starting {label}…</p>
+          <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("rankedq_matchFound")}</h2>
+          <p className="text-[rgb(var(--c4))] text-sm">{t("rankedq_starting").replace("{label}", label)}</p>
         </motion.div>
       </motion.div>
     );
@@ -140,7 +142,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 relative">
       <Link href="/play" className="absolute top-6 left-4">
-        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+        <motion.button aria-label={t("a11y_cancel")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <X size={20} className="text-[rgb(var(--c4))]" />
         </motion.button>
       </Link>
@@ -156,16 +158,14 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
 
         <div>
           <h2 className="text-2xl font-bold text-[rgb(var(--text-primary))]">
-            Finding Casual {label} Match{dots}
+            {t("casual_finding").replace("{label}", label).replace("{dots}", dots)}
           </h2>
           <p className="text-[rgb(var(--c4))] text-sm mt-2">
-            {gameType === "mindi"
-              ? "Needs 4 real players — you'll be auto-teamed with a random partner"
-              : "Waiting for another real player"}
+            {gameType === "mindi" ? t("casual_mindiNeeds4") : t("rankedq_waitingReal")}
           </p>
           <div className="flex items-center justify-center gap-2 mt-3 text-[rgb(var(--c4))] text-xs">
             <Users2 size={14} className="text-[#D4AF37]" />
-            <span>No trophies, no daily limits — just for fun</span>
+            <span>{t("casual_noStakes")}</span>
           </div>
           {debugError && (
             <p className="text-red-400 text-xs mt-3 break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">
@@ -176,7 +176,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
 
         <Link href="/play">
           <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium hover:text-[rgb(var(--text-primary))] transition-colors">
-            Cancel
+            {t("rankedq_cancel")}
           </motion.button>
         </Link>
       </motion.div>

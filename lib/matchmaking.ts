@@ -22,6 +22,7 @@
 import {
   collection,
   doc,
+  limit,
   deleteDoc,
   setDoc,
   getDocs,
@@ -114,6 +115,10 @@ export async function tryFormDuoMatch<TState>(
   pool: Pool = "ranked"
 ): Promise<boolean> {
   const cutoff = Date.now() - STALE_QUEUE_MS;
+  // Deliberately unbounded: this has to see every player currently
+  // waiting for this game type in order to pair them. The queue is
+  // self-limiting (an entry exists only while someone is actively
+  // waiting) and stale entries are filtered out below.
   const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
   const snap = await getDocs(q);
   const entries = snap.docs
@@ -198,6 +203,10 @@ export async function tryFormMatch<TState>(
   // Single equality filter only (no orderBy/limit in the query itself) so
   // this never depends on a manually-created composite index - queues are
   // small, so sorting/slicing the result client-side is cheap.
+  // Deliberately unbounded: this has to see every player currently
+  // waiting for this game type in order to pair them. The queue is
+  // self-limiting (an entry exists only while someone is actively
+  // waiting) and stale entries are filtered out below.
   const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
   const snap = await getDocs(q);
   const others = snap.docs
@@ -265,7 +274,7 @@ export function watchForMatch(
   onError?: (err: unknown) => void,
   pool: Pool = "ranked"
 ): Unsubscribe {
-  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid));
+  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid), limit(20));
   return onSnapshot(
     q,
     (snap) => {
@@ -296,7 +305,7 @@ export async function getMatch<TState>(matchId: string): Promise<MatchDoc<TState
  * they're somehow in more than one (shouldn't normally happen).
  */
 export async function getActiveMatchId(uid: string): Promise<{ matchId: string; gameType: GameType } | null> {
-  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid));
+  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid), limit(20));
   const snap = await getDocs(q);
   const active = snap.docs
     .map((d) => ({ id: d.id, data: d.data() as MatchDoc }))

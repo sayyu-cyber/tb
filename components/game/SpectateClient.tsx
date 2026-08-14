@@ -56,7 +56,7 @@ export function SpectateClient({ matchId }: { matchId: string }) {
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <Link href="/play">
-          <button className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             <ArrowLeft size={18} className="text-[#D4AF37]" />
           </button>
         </Link>

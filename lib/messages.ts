@@ -20,6 +20,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
   Unsubscribe,
 } from "firebase/firestore";
@@ -91,7 +92,10 @@ export async function sendMessage(conversationId: string, senderUid: string, tex
 /** Ordered oldest-to-newest, live - a plain orderBy with no other filter needs no composite index. */
 export function watchMessages(conversationId: string, onUpdate: (messages: DmMessage[]) => void): Unsubscribe {
   const ref = doc(db, CONVERSATIONS_COLLECTION, conversationId);
-  const q = query(collection(ref, "messages"), orderBy("createdAt", "asc"));
+  // Cap the history a conversation loads. Matches the 200 already used
+  // for club chat (lib/clubs.ts) - without it, a long-running DM thread
+  // re-downloads its entire history on every new message.
+  const q = query(collection(ref, "messages"), orderBy("createdAt", "asc"), limit(200));
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DmMessage, "id">) })));
   });
@@ -107,7 +111,7 @@ export function watchMessages(conversationId: string, onUpdate: (messages: DmMes
  * pattern used throughout this codebase for matchmaking/leaderboards.
  */
 export function watchConversations(uid: string, onUpdate: (conversations: DmConversation[]) => void): Unsubscribe {
-  const q = query(collection(db, CONVERSATIONS_COLLECTION), where("participants", "array-contains", uid));
+  const q = query(collection(db, CONVERSATIONS_COLLECTION), where("participants", "array-contains", uid), limit(100));
   return onSnapshot(q, (snap) => {
     const all = snap.docs
       .map((d) => ({ id: d.id, ...(d.data() as Omit<DmConversation, "id">) }))

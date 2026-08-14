@@ -19,6 +19,7 @@ import {
   getDocs,
   query,
   where,
+  limit,
   onSnapshot,
   Unsubscribe,
 } from "firebase/firestore";
@@ -60,7 +61,12 @@ export async function searchPlayers(uid: string, prefix: string): Promise<Player
   const q = query(
     collection(db, "players"),
     where("displayName", ">=", trimmed),
-    where("displayName", "<=", trimmed + "")
+    where("displayName", "<=", trimmed + ""),
+    // Bound the read itself rather than fetching every match and slicing
+    // client-side. 16 (not 15) so filtering out the caller below can't
+    // leave a short page. Note this is a prefix match and Firestore range
+    // queries are case-sensitive, so it finds "Sayyu" but not "sayyu".
+    limit(16)
   );
   const snap = await getDocs(q);
   return snap.docs
@@ -114,14 +120,24 @@ export async function cancelOrRemove(requestId: string): Promise<void> {
 }
 
 export function watchIncomingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void): Unsubscribe {
-  const q = query(collection(db, REQUESTS_COLLECTION), where("to", "==", uid), where("status", "==", "pending"));
+  const q = query(
+    collection(db, REQUESTS_COLLECTION),
+    where("to", "==", uid),
+    where("status", "==", "pending"),
+    limit(100)
+  );
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
   });
 }
 
 export function watchOutgoingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void): Unsubscribe {
-  const q = query(collection(db, REQUESTS_COLLECTION), where("from", "==", uid), where("status", "==", "pending"));
+  const q = query(
+    collection(db, REQUESTS_COLLECTION),
+    where("from", "==", uid),
+    where("status", "==", "pending"),
+    limit(100)
+  );
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
   });
@@ -147,14 +163,14 @@ export function watchFriends(uid: string, onUpdate: (friends: Friend[]) => void)
   };
 
   const unsubFrom = onSnapshot(
-    query(collection(db, REQUESTS_COLLECTION), where("from", "==", uid), where("status", "==", "accepted")),
+    query(collection(db, REQUESTS_COLLECTION), where("from", "==", uid), where("status", "==", "accepted"), limit(250)),
     (snap) => {
       fromResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
       emit();
     }
   );
   const unsubTo = onSnapshot(
-    query(collection(db, REQUESTS_COLLECTION), where("to", "==", uid), where("status", "==", "accepted")),
+    query(collection(db, REQUESTS_COLLECTION), where("to", "==", uid), where("status", "==", "accepted"), limit(250)),
     (snap) => {
       toResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
       emit();
@@ -185,7 +201,7 @@ export async function sendRoomInvite(
 }
 
 export function watchRoomInvites(uid: string, onUpdate: (invites: RoomInviteDoc[]) => void): Unsubscribe {
-  const q = query(collection(db, INVITES_COLLECTION), where("to", "==", uid));
+  const q = query(collection(db, INVITES_COLLECTION), where("to", "==", uid), limit(50));
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RoomInviteDoc, "id">) })));
   });

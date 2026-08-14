@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface LeaveMatchButtonProps {
   /** Where to navigate once the player confirms leaving. */
@@ -25,6 +26,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const t = useTranslation();
 
   async function handleConfirm() {
     setLeaving(true);
@@ -38,6 +40,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
   return (
     <>
       <motion.button
+        aria-label={t("a11y_leaveMatch")}
         whileTap={{ scale: 0.9 }}
         onClick={() => setConfirming(true)}
         className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
@@ -65,11 +68,9 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
                 <AlertTriangle size={22} className="text-red-400" />
               </div>
               <div>
-                <h3 className="text-[rgb(var(--text-primary))] font-bold text-base">Leave match?</h3>
+                <h3 className="text-[rgb(var(--text-primary))] font-bold text-base">{t("leave_title")}</h3>
                 <p className="text-[rgb(var(--c4))] text-xs mt-1">
-                  {isOnlineMatch
-                    ? "Leaving now ends the match as a forfeit — your opponent will be awarded the win."
-                    : "Leaving now ends the match and your progress will be lost."}
+                  {isOnlineMatch ? t("leave_onlineDesc") : t("leave_casualDesc")}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -79,7 +80,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
                   disabled={leaving}
                   className="flex-1 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium disabled:opacity-50"
                 >
-                  Continue Playing
+                  {t("leave_continuePlaying")}
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.97 }}
@@ -87,7 +88,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
                   disabled={leaving}
                   className="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold disabled:opacity-50"
                 >
-                  {leaving ? "Leaving…" : "Leave"}
+                  {leaving ? t("leave_leaving") : t("leave_confirm")}
                 </motion.button>
               </div>
             </motion.div>

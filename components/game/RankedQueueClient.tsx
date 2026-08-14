@@ -144,7 +144,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <Link href="/play" className="absolute top-6 left-4">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <motion.button aria-label={t("a11y_cancel")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             <X size={20} className="text-[rgb(var(--c4))]" />
           </motion.button>
         </Link>
@@ -172,7 +172,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <Link href="/play" className="absolute top-6 left-4">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <motion.button aria-label={t("a11y_cancel")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             <X size={20} className="text-[rgb(var(--c4))]" />
           </motion.button>
         </Link>
@@ -193,7 +193,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <Link href="/play" className="absolute top-6 left-4">
-          <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+          <motion.button aria-label={t("a11y_cancel")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
             <X size={20} className="text-[rgb(var(--c4))]" />
           </motion.button>
         </Link>
@@ -224,7 +224,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 relative">
       <Link href="/play" className="absolute top-6 left-4">
-        <motion.button whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+        <motion.button aria-label={t("a11y_cancel")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <X size={20} className="text-[rgb(var(--c4))]" />
         </motion.button>
       </Link>

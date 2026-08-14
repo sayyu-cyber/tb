@@ -36,6 +36,9 @@ export function BackgroundMusicPlayer() {
         // Blocked until a user gesture happens - retry once on the next
         // click anywhere in the app.
         const retry = () => {
+          // Intentionally silent: browsers reject play() until the user
+          // has interacted with the page. That's expected, not an error
+          // worth surfacing - the next tap starts playback.
           audio.play().catch(() => {});
           window.removeEventListener("click", retry);
         };

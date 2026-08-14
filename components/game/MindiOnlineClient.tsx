@@ -29,6 +29,7 @@ import {
   HandOutcome,
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/contexts/ToastContext";
 
 export interface MindiOnlineState {
   handsByUid: Record<string, Card[]>;
@@ -50,6 +51,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const { processMatchEnd } = useEconomy();
   const myUid = user?.uid ?? "";
   const t = useTranslation();
+  const { showToast } = useToast();
   const SEAT_NAMES = [t("mindi_you"), t("mindi_leftOpponent"), t("mindi_partner"), t("mindi_rightOpponent")];
 
   const [match, setMatch] = useState<MatchDoc<MindiOnlineState> | null>(null);
@@ -141,7 +143,12 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     // only, so skip updateMatchResult entirely for a casual match.
     if (match?.pool !== "casual") {
       const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
-      await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {});
+      // A failure here means the player's trophies/rank silently didn't
+      // move after a match they just finished - previously swallowed, so
+      // it looked like the game simply forgot the result.
+      await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {
+        showToast(t("toast_trophiesFailed"), "error");
+      });
     }
     setShowRewardPopup(true);
   }
@@ -164,14 +171,20 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
           },
         },
       };
-    }).catch(() => {});
+    }).catch(() => {
+      // If the forfeit write fails the match never actually ends, so the
+      // opponent is left waiting on a player who has already gone.
+      showToast(t("toast_forfeitFailed"), "error");
+    });
 
     // We're leaving, so we won't be around to click "Rewards" ourselves -
     // take the loss on our own account right now instead.
     processMatchEnd(false, "mindi");
     if (match.pool !== "casual") {
       const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
-      await updateMatchResult(myUid, false, "mindi", trophyMultiplier).catch(() => {});
+      await updateMatchResult(myUid, false, "mindi", trophyMultiplier).catch(() => {
+        showToast(t("toast_trophiesFailed"), "error");
+      });
     }
   }
 

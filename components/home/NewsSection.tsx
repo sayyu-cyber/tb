@@ -104,7 +104,7 @@ export function NewsSection() {
                     {selected.date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                   </p>
                 </div>
-                <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+                <button aria-label={t("a11y_close")} onClick={() => setSelected(null)} className="p-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
                   <X size={16} className="text-[rgb(var(--c4))]" />
                 </button>
               </div>

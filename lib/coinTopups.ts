@@ -18,6 +18,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
   Unsubscribe,
 } from "firebase/firestore";
@@ -56,7 +57,9 @@ export async function requestCoinTopup(
 }
 
 export function watchMyTopups(uid: string, onUpdate: (requests: CoinTopupRequest[]) => void): Unsubscribe {
-  const q = query(collection(db, COLLECTION), where("uid", "==", uid));
+  // A single player will never have a meaningful number of top-ups; cap it
+  // so a long-lived account does not grow this listener without bound.
+  const q = query(collection(db, COLLECTION), where("uid", "==", uid), limit(50));
   return onSnapshot(q, (snap) => {
     onUpdate(
       snap.docs
@@ -68,7 +71,9 @@ export function watchMyTopups(uid: string, onUpdate: (requests: CoinTopupRequest
 
 /** Admin-only in practice (firestore.rules restricts reading every request to the admin email). */
 export function watchAllTopups(onUpdate: (requests: CoinTopupRequest[]) => void): Unsubscribe {
-  const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"));
+  // Admin view: newest first, one page at a time. Without a limit this
+  // re-read the entire top-up history on every single write.
+  const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"), limit(200));
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<CoinTopupRequest, "id">) })));
   });

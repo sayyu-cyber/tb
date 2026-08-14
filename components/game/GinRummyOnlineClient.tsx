@@ -20,6 +20,7 @@ import {
   scoreKnock,
 } from "@/lib/ginRummyEngine";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/contexts/ToastContext";
 
 export interface GinOnlineState {
   hands: Record<string, Card[]>;
@@ -48,6 +49,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
   const t = useTranslation();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const unsub = watchMatch<GinOnlineState>(matchId, setMatch);
@@ -173,7 +175,11 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     // trophy/rank update, same treatment as Mindi's casual pool.
     if (state.result.winnerUid !== "draw" && match?.pool !== "casual") {
       const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
-      await updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {});
+      // See MindiOnlineClient - a swallowed failure here reads to the
+      // player as "I won and got nothing".
+      await updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {
+        showToast(t("toast_trophiesFailed"), "error");
+      });
     }
     setShowRewardPopup(true);
   }
@@ -201,14 +207,18 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           },
         },
       };
-    }).catch(() => {});
+    }).catch(() => {
+      showToast(t("toast_forfeitFailed"), "error");
+    });
 
     // We're leaving, so we won't be around to click "Rewards" ourselves -
     // take the loss on our own account right now instead.
     processMatchEnd(false, "gin_rummy");
     if (match.pool !== "casual") {
       const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
-      await updateMatchResult(myUid, false, "gin-rummy", trophyMultiplier).catch(() => {});
+      await updateMatchResult(myUid, false, "gin-rummy", trophyMultiplier).catch(() => {
+        showToast(t("toast_trophiesFailed"), "error");
+      });
     }
   }
 

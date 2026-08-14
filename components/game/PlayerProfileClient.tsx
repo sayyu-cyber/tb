@@ -50,6 +50,9 @@ export function PlayerProfileClient() {
       .then((m) => {
         if (!cancelled) setLiveMatchId(m?.matchId ?? null);
       })
+      // Intentionally silent: the live-match banner is optional
+      // enrichment - failing to resolve it should not surface an error on
+      // an otherwise fine profile page.
       .catch(() => {});
     return () => {
       cancelled = true;

@@ -217,6 +217,77 @@ export const TRANSLATIONS: Record<string, Translations> = {
   messages_sayHelloTo: { en: "Say hello to {name}!", dv: "{name} އަށް ސަލާމް ދަންނަވާ!", hi: "{name} को नमस्ते कहें!", bn: "{name} কে হ্যালো বলুন!" },
   messages_placeholder: { en: "Message…", dv: "މެސެޖް…", hi: "संदेश…", bn: "বার্তা…" },
 
+  // Accessible names for icon-only buttons. These are never rendered as
+  // visible text - they're passed to aria-label so a screen reader
+  // announces something meaningful instead of "button". Keep them short
+  // and verb-first; that's how they're read out.
+  a11y_goBack: { en: "Go back", dv: "ފަހަތަށް ދޭ", hi: "वापस जाएं", bn: "ফিরে যান" },
+  a11y_close: { en: "Close", dv: "ބަންދުކުރޭ", hi: "बंद करें", bn: "বন্ধ করুন" },
+  a11y_cancel: { en: "Cancel and go back", dv: "ކެންސަލްކޮށް ފަހަތަށް ދޭ", hi: "रद्द करके वापस जाएं", bn: "বাতিল করে ফিরে যান" },
+  a11y_copyCode: { en: "Copy code", dv: "ކޯޑް ކޮޕީކުރޭ", hi: "कोड कॉपी करें", bn: "কোড কপি করুন" },
+  a11y_sendMessage: { en: "Send message", dv: "މެސެޖް ފޮނުވާ", hi: "संदेश भेजें", bn: "বার্তা পাঠান" },
+  a11y_search: { en: "Search", dv: "ހޯދާ", hi: "खोजें", bn: "অনুসন্ধান" },
+  a11y_showPassword: { en: "Show password", dv: "ޕާސްވޯޑް ދައްކާ", hi: "पासवर्ड दिखाएं", bn: "পাসওয়ার্ড দেখান" },
+  a11y_hidePassword: { en: "Hide password", dv: "ޕާސްވޯޑް ފޮރުވާ", hi: "पासवर्ड छिपाएं", bn: "পাসওয়ার্ড লুকান" },
+  a11y_editProfile: { en: "Edit profile", dv: "ޕްރޮފައިލް އެޑިޓްކުރޭ", hi: "प्रोफ़ाइल संपादित करें", bn: "প্রোফাইল সম্পাদনা করুন" },
+  a11y_acceptRequest: { en: "Accept friend request", dv: "ރަޙްމަތްތެރިކަމުގެ އެދުން ޤަބޫލުކުރޭ", hi: "मित्र अनुरोध स्वीकार करें", bn: "বন্ধুত্বের অনুরোধ গ্রহণ করুন" },
+  a11y_declineRequest: { en: "Decline friend request", dv: "ރަޙްމަތްތެރިކަމުގެ އެދުން ދޫކޮށްލާ", hi: "मित्र अनुरोध अस्वीकार करें", bn: "বন্ধুত্বের অনুরোধ প্রত্যাখ্যান করুন" },
+  a11y_addFriend: { en: "Send friend request", dv: "ރަޙްމަތްތެރިކަމުގެ އެދުން ފޮނުވާ", hi: "मित्र अनुरोध भेजें", bn: "বন্ধুত্বের অনুরোধ পাঠান" },
+  a11y_openNews: { en: "Open news item", dv: "ޚަބަރު ހުޅުވާ", hi: "समाचार खोलें", bn: "সংবাদ খুলুন" },
+  a11y_leaveMatch: { en: "Leave match", dv: "މެޗުން ނުކުމޭ", hi: "मैच छोड़ें", bn: "ম্যাচ ত্যাগ করুন" },
+
+  // Leave-match confirmation (components/game/LeaveMatchButton.tsx) -
+  // missed by the earlier translation rounds.
+  leave_title: { en: "Leave match?", dv: "މެޗުން ނުކުންނަވަންތޯ؟", hi: "मैच छोड़ें?", bn: "ম্যাচ ত্যাগ করবেন?" },
+  leave_onlineDesc: { en: "Leaving now ends the match as a forfeit — your opponent will be awarded the win.", dv: "މިހާރު ނުކުތުމުން މެޗް ފޯފީޓަކުން ނިމޭނެ — ކާމިޔާބު ލިބޭނީ ދެކޮޅު ފަރާތަށް.", hi: "अभी छोड़ने पर मैच फ़ॉरफ़ीट के रूप में समाप्त होगा — जीत आपके प्रतिद्वंद्वी को मिलेगी।", bn: "এখন চলে গেলে ম্যাচটি ফরফিট হিসেবে শেষ হবে — জয় আপনার প্রতিপক্ষ পাবে।" },
+  leave_casualDesc: { en: "Leaving now ends the match and your progress will be lost.", dv: "މިހާރު ނުކުތުމުން މެޗް ނިމި، ތިބާގެ ކުރިއެރުން ގެއްލޭނެ.", hi: "अभी छोड़ने पर मैच समाप्त हो जाएगा और आपकी प्रगति खो जाएगी।", bn: "এখন চলে গেলে ম্যাচ শেষ হবে এবং আপনার অগ্রগতি হারিয়ে যাবে।" },
+  leave_continuePlaying: { en: "Continue Playing", dv: "ކުޅުން ކުރިއަށް", hi: "खेलना जारी रखें", bn: "খেলা চালিয়ে যান" },
+  leave_confirm: { en: "Leave", dv: "ނުކުމޭ", hi: "छोड़ें", bn: "ত্যাগ করুন" },
+  leave_leaving: { en: "Leaving…", dv: "ނުކުންނަނީ…", hi: "छोड़ रहे हैं…", bn: "প্রস্থান করছে…" },
+
+  // Casual Online queue (components/game/CasualOnlineClient.tsx) - also
+  // missed by the earlier translation rounds.
+  casual_finding: { en: "Finding Casual {label} Match{dots}", dv: "ކެޝުއަލް {label} މެޗް ހޯދަނީ{dots}", hi: "कैज़ुअल {label} मैच खोज रहे हैं{dots}", bn: "ক্যাজুয়াল {label} ম্যাচ খোঁজা হচ্ছে{dots}" },
+  casual_mindiNeeds4: { en: "Needs 4 real players — you'll be auto-teamed with a random partner", dv: "4 ހަގީގީ ކުޅުންތެރިން ބޭނުންވޭ — ރެންޑަމް ޕާޓްނަރަކާއެކު އޮޓޯ-ޓީމްކުރެވޭނެ", hi: "4 असली खिलाड़ी चाहिए — आपको एक यादृच्छिक पार्टनर के साथ जोड़ा जाएगा", bn: "৪ জন প্রকৃত খেলোয়াড় প্রয়োজন — আপনাকে একজন এলোমেলো পার্টনারের সাথে দলবদ্ধ করা হবে" },
+  // Edit Profile modal (components/profile/EditProfileModal.tsx) - also
+  // missed by the earlier translation rounds.
+  editprofile_title: { en: "Edit Profile", dv: "ޕްރޮފައިލް އެޑިޓްކުރޭ", hi: "प्रोफ़ाइल संपादित करें", bn: "প্রোফাইল সম্পাদনা" },
+  editprofile_guestNote: { en: "You're playing as a guest — changes won't be saved after you sign out.", dv: "ތިބާ ކުޅުއްވަނީ މެހްމާނެއްގެ ގޮތުގައި — ސައިން އައުޓް ކުރެއްވުމުން ބަދަލުތައް ރައްކާނުވާނެ.", hi: "आप अतिथि के रूप में खेल रहे हैं — साइन आउट करने के बाद बदलाव सहेजे नहीं जाएंगे।", bn: "আপনি অতিথি হিসেবে খেলছেন — সাইন আউট করার পর পরিবর্তন সংরক্ষিত হবে না।" },
+  editprofile_username: { en: "Username", dv: "ޔޫސަރނޭމް", hi: "उपयोगकर्ता नाम", bn: "ইউজারনেম" },
+  editprofile_usernamePlaceholder: { en: "Your username", dv: "ތިބާގެ ޔޫސަރނޭމް", hi: "आपका उपयोगकर्ता नाम", bn: "আপনার ইউজারনেম" },
+  editprofile_avatarColor: { en: "Avatar Color", dv: "އެވަޓާ ކުލަ", hi: "अवतार रंग", bn: "অবতার রঙ" },
+  editprofile_banner: { en: "Banner", dv: "ބެނާ", hi: "बैनर", bn: "ব্যানার" },
+  editprofile_save: { en: "Save Changes", dv: "ބަދަލުތައް ރައްކާކުރޭ", hi: "बदलाव सहेजें", bn: "পরিবর্তন সংরক্ষণ করুন" },
+  editprofile_saving: { en: "Saving…", dv: "ރައްކާކުރަނީ…", hi: "सहेजा जा रहा है…", bn: "সংরক্ষণ করা হচ্ছে…" },
+  editprofile_emptyName: { en: "Username can't be empty.", dv: "ޔޫސަރނޭމް ހުސްކޮށް ނުބެހެއްޓޭނެ.", hi: "उपयोगकर्ता नाम खाली नहीं हो सकता।", bn: "ইউজারনেম খালি রাখা যাবে না।" },
+  editprofile_longName: { en: "Username must be 24 characters or fewer.", dv: "ޔޫސަރނޭމް ވާންޖެހޭނީ 24 އަކުރު ނުވަތަ އެއަށްވުރެ ކުރު އެއްޗަކަށް.", hi: "उपयोगकर्ता नाम 24 अक्षर या उससे कम होना चाहिए।", bn: "ইউজারনেম ২৪ অক্ষর বা তার কম হতে হবে।" },
+
+  // Toast messages (contexts/ToastContext.tsx call sites). These replaced
+  // blocking window.alert() dialogs, which were untranslated by nature.
+  toast_signInToTopUp: { en: "Sign in to top up coins.", dv: "ކޮއިން އިތުރުކުރެއްވުމަށް ސައިން އިން ކުރައްވާ.", hi: "सिक्के टॉप अप करने के लिए साइन इन करें।", bn: "কয়েন টপ আপ করতে সাইন ইন করুন।" },
+  toast_topupPending: { en: "Your {pack} top-up is pending admin approval — coins will be credited once approved.", dv: "ތިބާގެ {pack} ޓޮޕްއަޕް އެޑްމިންގެ ހުއްދައަށް ބަލަނީ — ހުއްދަ ލިބުމުން ކޮއިން ޖަމާވާނެ.", hi: "आपका {pack} टॉप-अप एडमिन की मंज़ूरी की प्रतीक्षा में है — मंज़ूरी मिलते ही सिक्के जमा हो जाएंगे।", bn: "আপনার {pack} টপ-আপ অ্যাডমিনের অনুমোদনের অপেক্ষায় — অনুমোদন পেলে কয়েন জমা হবে।" },
+  toast_topupFailed: { en: "Couldn't submit your top-up request. Please try again.", dv: "ޓޮޕްއަޕް އެދުން ފޮނުވޭގޮތެއް ނުވި. އަލުން މަސައްކަތްކުރައްވާ.", hi: "आपका टॉप-अप अनुरोध सबमिट नहीं हो सका। कृपया फिर से कोशिश करें।", bn: "আপনার টপ-আপ অনুরোধ জমা দেওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।" },
+  toast_vipActivated: { en: "{plan} VIP activated!", dv: "{plan} ވީއައިޕީ އެކްޓިވޭޓްވެއްޖެ!", hi: "{plan} VIP सक्रिय हो गया!", bn: "{plan} VIP সক্রিয় হয়েছে!" },
+  toast_actionFailed: { en: "Something went wrong. Please try again.", dv: "ކަމެއް ގޯސްވެއްޖެ. އަލުން މަސައްކަތްކުރައްވާ.", hi: "कुछ गलत हो गया। कृपया फिर से कोशिश करें।", bn: "কিছু ভুল হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।" },
+  toast_copied: { en: "Copied to clipboard", dv: "ކްލިޕްބޯޑަށް ކޮޕީވެއްޖެ", hi: "क्लिपबोर्ड पर कॉपी किया गया", bn: "ক্লিপবোর্ডে কপি হয়েছে" },
+  toast_copyFailed: { en: "Couldn't copy — select the code and copy it manually.", dv: "ކޮޕީނުވި — ކޯޑް ސެލެކްޓްކޮށް އަމިއްލައަށް ކޮޕީކުރައްވާ.", hi: "कॉपी नहीं हो सका — कोड चुनकर मैन्युअल रूप से कॉपी करें।", bn: "কপি করা যায়নি — কোডটি নির্বাচন করে হাতে কপি করুন।" },
+  toast_trophiesFailed: { en: "Couldn't save your match result — your trophies may not have updated.", dv: "މެޗްގެ ނަތީޖާ ރައްކާނުކުރެވުނު — ތިބާގެ ތަށިތައް އަޕްޑޭޓްނުވެ ހުރެދާނެ.", hi: "आपका मैच परिणाम सहेजा नहीं जा सका — हो सकता है आपकी ट्रॉफियां अपडेट न हुई हों।", bn: "আপনার ম্যাচের ফলাফল সংরক্ষণ করা যায়নি — আপনার ট্রফি আপডেট নাও হতে পারে।" },
+  toast_forfeitFailed: { en: "Couldn't end the match cleanly — your opponent may still be waiting.", dv: "މެޗް ރަނގަޅަށް ނިންމާނުލެވުނު — ދެކޮޅު ފަރާތް އަދިވެސް ބަލަން ހުރެދާނެ.", hi: "मैच ठीक से समाप्त नहीं हो सका — आपका प्रतिद्वंद्वी अभी भी प्रतीक्षा कर सकता है।", bn: "ম্যাচটি সঠিকভাবে শেষ করা যায়নি — আপনার প্রতিপক্ষ এখনও অপেক্ষা করতে পারে।" },
+
+  casual_noStakes: { en: "No trophies, no daily limits — just for fun", dv: "ތަށްޓެއް ނެތް، ދުވަހީ ލިމިޓެއް ނެތް — ހަމައެކަނި މަޖަލަށް", hi: "कोई ट्रॉफी नहीं, कोई दैनिक सीमा नहीं — बस मनोरंजन के लिए", bn: "কোনো ট্রফি নেই, কোনো দৈনিক সীমা নেই — শুধু মজার জন্য" },
+
+  // Error / empty-state screens (app/error.tsx, app/not-found.tsx,
+  // app/loading.tsx). global-error.tsx deliberately does NOT use these -
+  // it replaces the root layout, so no provider (and therefore no
+  // language setting) is available there and it stays English-only.
+  error_title: { en: "Something went wrong", dv: "ކަމެއް ގޯސްވެއްޖެ", hi: "कुछ गलत हो गया", bn: "কিছু ভুল হয়েছে" },
+  error_desc: { en: "That screen ran into a problem. You can try again, or head back to the home screen.", dv: "އެ ސްކްރީނަށް މައްސަލައެއް ދިމާވެއްޖެ. އަލުން މަސައްކަތްކުރެއްވިދާނެ، ނުވަތަ ހޯމް ސްކްރީނަށް އެނބުރި ވަޑައިގަންނަވާ.", hi: "उस स्क्रीन में समस्या आ गई। आप फिर से कोशिश कर सकते हैं, या होम स्क्रीन पर वापस जा सकते हैं।", bn: "সেই স্ক্রিনে একটি সমস্যা হয়েছে। আপনি আবার চেষ্টা করতে পারেন, বা হোম স্ক্রিনে ফিরে যেতে পারেন।" },
+  error_tryAgain: { en: "Try Again", dv: "އަލުން މަސައްކަތްކުރޭ", hi: "फिर से कोशिश करें", bn: "আবার চেষ্টা করুন" },
+  error_goHome: { en: "Go Home", dv: "ހޯމަށް ދޭ", hi: "होम पर जाएं", bn: "হোমে যান" },
+  error_notFoundTitle: { en: "Page Not Found", dv: "ޞަފްޙާ ނުފެނުނު", hi: "पेज नहीं मिला", bn: "পৃষ্ঠা পাওয়া যায়নি" },
+  error_notFoundDesc: { en: "That page doesn't exist, or it may have moved.", dv: "އެ ޞަފްޙާއެއް ނެތް، ނުވަތަ ބަދަލުވެފައި ވެދާނެ.", hi: "वह पेज मौजूद नहीं है, या हो सकता है वह हटा दिया गया हो।", bn: "সেই পৃষ্ঠাটি নেই, অথবা এটি সরিয়ে নেওয়া হয়েছে।" },
+  error_loading: { en: "Loading…", dv: "ލޯޑްވަނީ…", hi: "लोड हो रहा है…", bn: "লোড হচ্ছে…" },
+
   // Shared strings reused across several screens (game lobbies, match
   // results) - kept generic on purpose to avoid near-duplicate entries.
   common_exit: { en: "Exit", dv: "ނުކުމޭ", hi: "बाहर निकलें", bn: "প্রস্থান" },

@@ -165,9 +165,11 @@ function SeasonTab() {
       </p>
       <div className="flex gap-2">
         <input
+          aria-label="Season number"
           value={seasonNumber}
           onChange={(e) => setSeasonNumberInput(e.target.value)}
           placeholder="Season number"
+              maxLength={4}
           type="number"
           className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none"
         />
@@ -205,9 +207,15 @@ function HallOfFameTab() {
     <div className="space-y-4">
       <div className="glass-card rounded-2xl p-4 space-y-2">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Add a player or team</p>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
-        <input value={trophies} onChange={(e) => setTrophies(e.target.value)} type="number" placeholder="Peak trophies" className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
+        <input
+  aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name"
+              maxLength={24} className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
+        <input
+  aria-label="Peak trophies" value={trophies} onChange={(e) => setTrophies(e.target.value)} type="number" placeholder="Peak trophies"
+              maxLength={7} className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
+        <input
+  aria-label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)"
+              maxLength={120} className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none" />
         <button onClick={handleAdd} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#B8962E] to-[#D4AF37] text-[#0F0F0F] font-semibold text-sm">
           Add Entry
         </button>
