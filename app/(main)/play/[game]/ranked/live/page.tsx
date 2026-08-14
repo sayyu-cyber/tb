@@ -1,23 +1,18 @@
-"use client";
+import { Suspense } from "react";
+import { RankedLiveClient } from "@/components/game/RankedLiveClient";
+import { LoadingScreen } from "@/components/layout/LoadingScreen";
 
+// Must stay a SERVER component: a file cannot both be marked "use client"
+// and export generateStaticParams(), which output:'export' needs in order
+// to pre-render the two [game] values. The translated loading state lives
+// in <LoadingScreen>, which is the client component instead.
 export function generateStaticParams() {
   return [{ game: "mindi" }, { game: "gin-rummy" }];
 }
 
-import { Suspense } from "react";
-import { RankedLiveClient } from "@/components/game/RankedLiveClient";
-import { useTranslation } from "@/hooks/useTranslation";
-
 export default function RankedLivePage({ params }: { params: { game: string } }) {
-  const t = useTranslation();
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-          <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingScreen labelKey="common_loadingMatch" />}>
       <RankedLiveClient gameId={params.game} />
     </Suspense>
   );
