@@ -23,7 +23,7 @@ export default function VipStatusBar() {
       </div>
       <div className="flex items-center gap-3">
         <span className="text-purple-200/60 text-sm">{profile.vip.remainingDays} days left</span>
-        <div className="w-24 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+        <div className="w-24 bg-[rgb(var(--c3))] rounded-full h-1.5 overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-purple-500 to-violet-400 rounded-full"
             initial={{ width: 0 }}

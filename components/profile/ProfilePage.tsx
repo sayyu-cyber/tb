@@ -61,8 +61,8 @@ export default function ProfilePage() {
               <p className="text-amber-400/60 font-medium">{profile.title}</p>
               <div className="flex items-center gap-3 mt-2">
                 <CoinBalance size="md" />
-                <span className="text-gray-400 text-sm">🏆 {profile.trophies} Trophies</span>
-                <span className="text-gray-400 text-sm" style={{ color: profile.rankColor }}>
+                <span className="text-[rgb(var(--c5))] text-sm">🏆 {profile.trophies} Trophies</span>
+                <span className="text-[rgb(var(--c5))] text-sm" style={{ color: profile.rankColor }}>
                   ● {profile.rank}
                 </span>
               </div>
@@ -71,17 +71,17 @@ export default function ProfilePage() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mt-6">
-            <div className="bg-neutral-900/60 rounded-xl p-3 text-center border border-neutral-700/20">
+            <div className="bg-[rgb(var(--c2)/60%)] rounded-xl p-3 text-center border border-[rgb(var(--c3)/20%)]">
               <div className="text-2xl font-bold text-amber-300">{profile.stats.matchesPlayed}</div>
-              <div className="text-gray-500 text-xs">Matches Played</div>
+              <div className="text-[rgb(var(--c4))] text-xs">Matches Played</div>
             </div>
-            <div className="bg-neutral-900/60 rounded-xl p-3 text-center border border-neutral-700/20">
+            <div className="bg-[rgb(var(--c2)/60%)] rounded-xl p-3 text-center border border-[rgb(var(--c3)/20%)]">
               <div className="text-2xl font-bold text-green-400">{profile.stats.matchesWon}</div>
-              <div className="text-gray-500 text-xs">Wins</div>
+              <div className="text-[rgb(var(--c4))] text-xs">Wins</div>
             </div>
-            <div className="bg-neutral-900/60 rounded-xl p-3 text-center border border-neutral-700/20">
+            <div className="bg-[rgb(var(--c2)/60%)] rounded-xl p-3 text-center border border-[rgb(var(--c3)/20%)]">
               <div className="text-2xl font-bold text-amber-400">{profile.stats.winRate}%</div>
-              <div className="text-gray-500 text-xs">Win Rate</div>
+              <div className="text-[rgb(var(--c4))] text-xs">Win Rate</div>
             </div>
           </div>
         </div>
@@ -110,8 +110,8 @@ export default function ProfilePage() {
 
         {/* Room Cards */}
         {(activeRoomCards.length > 0 || availableRoomCards.length > 0) && (
-          <div className="bg-neutral-900/60 border border-neutral-700/30 rounded-xl p-4 mb-6">
-            <h3 className="text-sm font-bold text-gray-300 mb-3">Room Cards</h3>
+          <div className="bg-[rgb(var(--c2)/60%)] border border-[rgb(var(--c3)/30%)] rounded-xl p-4 mb-6">
+            <h3 className="text-sm font-bold text-[rgb(var(--c5))] mb-3">Room Cards</h3>
             <div className="flex gap-2 flex-wrap">
               {activeRoomCards.map(card => (
                 <div
@@ -129,7 +129,7 @@ export default function ProfilePage() {
               {availableRoomCards.map(card => (
                 <div
                   key={card.id}
-                  className="px-3 py-1.5 rounded-lg text-sm bg-neutral-800 text-gray-400"
+                  className="px-3 py-1.5 rounded-lg text-sm bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
                 >
                   {card.type === '1h' ? '1-Hour' : '24-Hour'} Available
                 </div>
@@ -139,7 +139,7 @@ export default function ProfilePage() {
         )}
 
         {/* Equip Section */}
-        <div className="bg-neutral-900/60 border border-neutral-700/30 rounded-2xl p-6">
+        <div className="bg-[rgb(var(--c2)/60%)] border border-[rgb(var(--c3)/30%)] rounded-2xl p-6">
           <h2 className="text-xl font-bold text-amber-200 mb-4">Equip Cosmetics</h2>
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
             {equipTabs.map(tab => (
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                   activeEquipTab === tab.id
                     ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30'
-                    : 'bg-neutral-800 text-gray-500 hover:text-gray-300'
+                    : 'bg-[rgb(var(--c3))] text-[rgb(var(--c4))] hover:text-[rgb(var(--c5))]'
                 }`}
               >
                 <span className="mr-1">{tab.icon}</span>
@@ -168,14 +168,14 @@ export default function ProfilePage() {
                   className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
                     isEquipped
                       ? 'border-amber-500 bg-amber-900/20'
-                      : 'border-neutral-700 hover:border-amber-500/30'
+                      : 'border-[rgb(var(--c3))] hover:border-amber-500/30'
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
                   <span className="text-2xl opacity-50">
                     {activeEquipTab === 'cardBack' ? '🃏' : activeEquipTab === 'tableTheme' ? '🎰' : activeEquipTab === 'profileFrame' ? '🖼️' : '✨'}
                   </span>
-                  <span className="text-xs text-gray-300 truncate w-full text-center px-1">{item.name}</span>
+                  <span className="text-xs text-[rgb(var(--c5))] truncate w-full text-center px-1">{item.name}</span>
                   {isEquipped && (
                     <span className="text-amber-400 text-xs font-bold">Equipped</span>
                   )}

@@ -30,9 +30,8 @@ export default function RoomCardManager() {
   const activeCards = profile.roomCards.filter(c => c.activated && c.remainingTime && c.remainingTime > 0);
 
   return (
-    <div className="w-full max-w-lg mx-auto p-4">
-      <h2 className="text-2xl font-bold text-amber-300 mb-1">{t("roomcards_title")}</h2>
-      <p className="text-gray-500 text-sm mb-4">{t("roomcards_desc")}</p>
+    <div className="w-full p-4">
+      <p className="text-[rgb(var(--c4))] text-sm mb-4">{t("roomcards_desc")}</p>
 
       {activeCards.length > 0 && (
         <div className="mb-6">
@@ -60,16 +59,16 @@ export default function RoomCardManager() {
 
       {availableCards.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-bold text-gray-400 mb-2">{t("roomcards_available")}</h3>
+          <h3 className="text-sm font-bold text-[rgb(var(--c5))] mb-2">{t("roomcards_available")}</h3>
           <div className="space-y-2">
             {availableCards.map(card => (
               <div
                 key={card.id}
-                className="bg-neutral-900/60 border border-neutral-700/30 rounded-xl p-4 flex items-center justify-between"
+                className="bg-[rgb(var(--c2)/60%)] border border-[rgb(var(--c3)/30%)] rounded-xl p-4 flex items-center justify-between"
               >
                 <div>
-                  <span className="text-gray-200 font-bold">{t("roomcards_roomCard").replace("{type}", ROOM_CARD_LABELS[card.type])}</span>
-                  <p className="text-gray-500 text-sm">{t("roomcards_activateToCreate")}</p>
+                  <span className="text-[rgb(var(--text-primary))] font-bold">{t("roomcards_roomCard").replace("{type}", ROOM_CARD_LABELS[card.type])}</span>
+                  <p className="text-[rgb(var(--c4))] text-sm">{t("roomcards_activateToCreate")}</p>
                 </div>
                 <motion.button
                   className="px-4 py-2 rounded-lg bg-amber-600 text-[rgb(var(--text-primary))] text-sm font-bold hover:bg-amber-500 transition-all"
@@ -85,7 +84,7 @@ export default function RoomCardManager() {
       )}
 
       {availableCards.length === 0 && activeCards.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-[rgb(var(--c4))]">
           <p className="text-4xl mb-2">🎫</p>
           <p>{t("roomcards_noneAvailable")}</p>
           <p className="text-sm">{t("roomcards_getFrom")}</p>
@@ -93,13 +92,13 @@ export default function RoomCardManager() {
       )}
 
       <div>
-        <h3 className="text-sm font-bold text-gray-400 mb-2">{t("roomcards_buyWithCoins")}</h3>
+        <h3 className="text-sm font-bold text-[rgb(var(--c5))] mb-2">{t("roomcards_buyWithCoins")}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {ROOM_CARD_TYPES.map((type) => (
-            <div key={type} className="bg-neutral-900/60 border border-neutral-700/30 rounded-xl p-3 flex flex-col items-center gap-2">
-              <span className="text-gray-200 text-sm font-bold">{ROOM_CARD_LABELS[type]}</span>
+            <div key={type} className="bg-[rgb(var(--c2)/60%)] border border-[rgb(var(--c3)/30%)] rounded-xl p-3 flex flex-col items-center gap-2">
+              <span className="text-[rgb(var(--text-primary))] text-sm font-bold">{ROOM_CARD_LABELS[type]}</span>
               <motion.button
-                className="w-full px-3 py-2 rounded-lg bg-neutral-800 text-amber-300 text-xs font-bold hover:bg-neutral-700 transition-all flex items-center justify-center gap-1"
+                className="w-full px-3 py-2 rounded-lg bg-[rgb(var(--c3))] text-amber-300 text-xs font-bold hover:bg-[rgb(var(--c3))] transition-all flex items-center justify-center gap-1"
                 onClick={() => purchaseRoomCard(type)}
                 whileTap={{ scale: 0.95 }}
               >

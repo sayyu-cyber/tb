@@ -100,7 +100,7 @@ export default function InventoryPage() {
               <p className="text-[rgb(var(--c4))] text-sm">{t("inventory_nothingHere")}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {ownedItems.map((item, i) => {
                 const isEquipped = canEquip && equippedMap[item.category] === item.id;
                 return (

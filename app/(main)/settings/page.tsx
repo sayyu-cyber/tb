@@ -185,7 +185,7 @@ export default function SettingsPage() {
               exit={{ opacity: 0, height: 0 }}
               className="glass-card rounded-2xl p-4 space-y-3"
             >
-              <p className="text-[rgb(var(--text-primary))] text-sm text-center">Are you sure you want to log out?</p>
+              <p className="text-[rgb(var(--text-primary))] text-sm text-center">{t("settings_logoutConfirm")}</p>
               <div className="flex gap-3">
                 <motion.button
                   whileTap={{ scale: 0.97 }}

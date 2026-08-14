@@ -28,14 +28,20 @@ import {
   chooseBotPlay,
   HandOutcome,
 } from "@/lib/mindiEngine";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface MindiGameClientProps {
   /** "ai": you (seat 0) + 3 bots. "passplay": you + a local partner (seats 0 & 2) vs 2 bots. */
   mode: "ai" | "passplay";
 }
 
-const SEAT_LABELS_AI = ["You", "West", "Partner", "East"];
-const SEAT_LABELS_PASSPLAY = ["Player 1", "West (bot)", "Player 2 (Partner)", "East (bot)"];
+// Built inside the component now so the seat names follow the language
+// setting; they were module-level English constants before.
+function seatLabels(t: (k: string) => string, mode: "ai" | "passplay"): string[] {
+  return mode === "ai"
+    ? [t("mindi_you"), t("offline_west"), t("mindi_partner"), t("offline_east")]
+    : [t("offline_player1"), t("offline_westBot"), t("offline_player2Partner"), t("offline_eastBot")];
+}
 
 function pickBotNames(): string[] {
   const shuffled = [...BOT_NAMES].sort(() => Math.random() - 0.5);
@@ -45,10 +51,11 @@ function pickBotNames(): string[] {
 export function MindiGameClient({ mode }: MindiGameClientProps) {
   const router = useRouter();
   const { processMatchEnd } = useEconomy();
+  const t = useTranslation();
 
   const humanSeats: SeatIndex[] = useMemo(() => (mode === "ai" ? [0] : [0, 2]), [mode]);
   const isHuman = useCallback((seat: SeatIndex) => humanSeats.includes(seat), [humanSeats]);
-  const seatLabels = mode === "ai" ? SEAT_LABELS_AI : SEAT_LABELS_PASSPLAY;
+  const seatNames = seatLabels(t, mode);
   const botNamesRef = useRef(pickBotNames());
 
   const [deal, setDeal] = useState(() => dealMindiHand(3));
@@ -189,31 +196,31 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
 
             <div>
               <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
-                {youWon ? "You Won!" : "You Lost"}
+                {youWon ? t("mindi_youWon") : t("mindi_youLost")}
               </h1>
               {outcome.special && (
                 <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {outcome.special === "baga" ? "Baga — all 4 Tens!" : "Hukunbunye — clean sweep!"}
+                  {outcome.special === "baga" ? t("mindi_baga") : t("mindi_hukunbunye")}
                 </p>
               )}
             </div>
 
             <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Your team — Tens</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("mindi_yourTeam")} — {t("spectate_tensLabel")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tensCaptured.A} / 4</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Opponents — Tens</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("mindi_opponents")} — {t("spectate_tensLabel")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tensCaptured.B} / 4</span>
               </div>
               <div className="h-px bg-[rgb(var(--c3))]" />
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Your team — Tricks</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("offline_yourTeamTricks")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tricksWon.A}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Opponents — Tricks</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("offline_opponentsTricks")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tricksWon.B}</span>
               </div>
             </div>
@@ -255,9 +262,9 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center">
         <Smartphone size={40} className="text-[#D4AF37] mb-4" />
-        <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">Pass the device to</h2>
-        <p className="text-[#D4AF37] text-2xl font-bold mb-6">{seatLabels[turnSeat]}</p>
-        <p className="text-[rgb(var(--c4))] text-xs mb-8">Make sure no one else can see the screen</p>
+        <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">{t("offline_passDeviceTo")}</h2>
+        <p className="text-[#D4AF37] text-2xl font-bold mb-6">{seatNames[turnSeat]}</p>
+        <p className="text-[rgb(var(--c4))] text-xs mb-8">{t("offline_hideScreen")}</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setRevealedSeat(turnSeat)}
@@ -274,7 +281,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch={false} />
         <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Mindi — Casual</p>
+          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Mindi — {t("offline_casualSuffix")}</p>
           <p className="text-[rgb(var(--c4))] text-[10px] flex items-center justify-center gap-1">
             Trump: <span className={SUIT_COLOR[deal.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[deal.trumpSuit]}</span>
           </p>
@@ -302,7 +309,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
       {/* Table */}
       <div className="flex-1 flex flex-col items-center justify-between py-4 px-4">
         <SeatBadge
-          name={mode === "ai" ? botNamesRef.current[2] : seatLabels[2]}
+          name={mode === "ai" ? botNamesRef.current[2] : seatNames[2]}
           cardCount={hands[2].length}
           active={turnSeat === 2 && !resolvingTrick}
           isPartner
@@ -310,7 +317,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
 
         <div className="flex items-center justify-between w-full max-w-sm">
           <SeatBadge
-            name={mode === "ai" ? botNamesRef.current[1] : seatLabels[1]}
+            name={mode === "ai" ? botNamesRef.current[1] : seatNames[1]}
             cardCount={hands[1].length}
             active={turnSeat === 1 && !resolvingTrick}
           />
@@ -333,13 +340,13 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
             </AnimatePresence>
             {trick.length === 0 && (
               <span className="text-[rgb(var(--c3))] text-xs">
-                {resolvingTrick ? "" : `${seatLabels[turnSeat]}'s turn`}
+                {resolvingTrick ? "" : `${seatNames[turnSeat]}'s turn`}
               </span>
             )}
           </div>
 
           <SeatBadge
-            name={mode === "ai" ? botNamesRef.current[3] : seatLabels[3]}
+            name={mode === "ai" ? botNamesRef.current[3] : seatNames[3]}
             cardCount={hands[3].length}
             active={turnSeat === 3 && !resolvingTrick}
           />
@@ -349,8 +356,8 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
         <div className="w-full">
           <p className="text-[rgb(var(--c4))] text-xs mb-2 text-center">
             {isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat)
-              ? "Select a card to play"
-              : `Waiting for ${seatLabels[turnSeat]}…`}
+              ? t("mindi_selectCard")
+              : `Waiting for ${seatNames[turnSeat]}…`}
           </p>
           <div className="flex justify-center gap-1.5 flex-wrap">
             {(mode === "ai" ? yourHand : hands[turnSeat] ?? []).map((card) => {

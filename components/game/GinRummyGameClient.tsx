@@ -20,6 +20,7 @@ import {
   botChooseDiscard,
   GinHandResult,
 } from "@/lib/ginRummyEngine";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface GinRummyGameClientProps {
   /** "ai": you vs a bot. "passplay": two local players alternating with a pass-the-device screen. */
@@ -31,6 +32,7 @@ type Phase = "draw" | "discard";
 
 export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   const { processMatchEnd } = useEconomy();
+  const t = useTranslation();
   const [showRewardPopup, setShowRewardPopup] = useState(false);
 
   const [initialDeal] = useState(() => dealGinHand());
@@ -202,28 +204,28 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
             </motion.div>
             <div>
               <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
-                {isDraw ? "Stock Ran Out — Draw" : youWon ? "You Won!" : "You Lost"}
+                {isDraw ? t("gin_stockRanOut") : youWon ? t("mindi_youWon") : t("mindi_youLost")}
               </h1>
               {!isDraw && (result.gin || result.undercut) && (
                 <p className="text-[#D4AF37] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {result.gin ? "Gin!" : "Undercut!"}
+                  {result.gin ? t("gin_gin") : t("gin_undercut")}
                 </p>
               )}
             </div>
             <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Your deadwood</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("gin_yourDeadwood")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{result.playerDeadwood}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">Opponent deadwood</span>
+                <span className="text-[rgb(var(--c4))] text-xs">{t("gin_opponentDeadwood")}</span>
                 <span className="text-[rgb(var(--text-primary))] font-bold">{result.opponentDeadwood}</span>
               </div>
               {!isDraw && (
                 <>
                   <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
-                    <span className="text-[rgb(var(--c4))] text-xs">Points</span>
+                    <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
                     <span className="text-[#D4AF37] font-bold">{result.score}</span>
                   </div>
                 </>
@@ -267,9 +269,9 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center">
         <Smartphone size={40} className="text-[#D4AF37] mb-4" />
-        <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">Pass the device to</h2>
-        <p className="text-[#D4AF37] text-2xl font-bold mb-6">{turn === "player" ? "Player 1" : "Player 2"}</p>
-        <p className="text-[rgb(var(--c4))] text-xs mb-8">Make sure no one else can see the screen</p>
+        <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">{t("offline_passDeviceTo")}</h2>
+        <p className="text-[#D4AF37] text-2xl font-bold mb-6">{turn === "player" ? t("offline_player1") : t("offline_player2")}</p>
+        <p className="text-[rgb(var(--c4))] text-xs mb-8">{t("offline_hideScreen")}</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setRevealedSide(turn)}
@@ -290,9 +292,9 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch={false} />
         <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Gin Rummy — Casual</p>
+          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Gin Rummy — {t("offline_casualSuffix")}</p>
           <p className="text-[rgb(var(--c4))] text-[10px]">
-            {isMyTurn ? "Your turn" : "Opponent's turn"} · Deadwood: {deadwoodShown}
+            {isMyTurn ? t("gin_yourTurn") : t("gin_opponentTurn")} · Deadwood: {deadwoodShown}
           </p>
         </div>
         <div className="w-10" />
@@ -328,14 +330,14 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
           ) : (
             <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
           )}
-          <span className="text-[10px] text-[rgb(var(--c4))]">Discard pile</span>
+          <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_discardPile")}</span>
         </button>
       </div>
 
       {/* Hand */}
       <div className="flex-1 flex flex-col justify-end px-4 pb-6">
         <p className="text-[rgb(var(--c4))] text-xs mb-3 text-center">
-          {!isMyTurn ? "Waiting for opponent…" : phase === "draw" ? "Draw a card" : "Select a card to discard"}
+          {!isMyTurn ? t("gin_waitingOpponent") : phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
         </p>
         <div className="flex justify-center gap-1.5 flex-wrap">
           {activeHand.map((card) => {

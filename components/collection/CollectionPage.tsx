@@ -38,13 +38,12 @@ export default function CollectionPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
+    <div className="w-full pt-4 pb-32 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-3xl font-bold text-amber-300 mb-2">{t("collection_title")}</h1>
-        <p className="text-gray-500 mb-6">{t("collection_subtitle")}</p>
+        <p className="text-[rgb(var(--c4))] text-sm mb-6">{t("collection_subtitle")}</p>
 
         {/* Overall Progress */}
         <div className="bg-gradient-to-r from-neutral-900 to-black border border-amber-500/20 rounded-2xl p-6 mb-6">
@@ -52,7 +51,7 @@ export default function CollectionPage() {
             <h2 className="text-xl font-bold text-amber-200">{t("collection_overallProgress")}</h2>
             <span className="text-2xl font-bold text-amber-400">{percentage}%</span>
           </div>
-          <div className="w-full bg-neutral-800 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-[rgb(var(--c3))] rounded-full h-3 overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"
               initial={{ width: 0 }}
@@ -60,7 +59,7 @@ export default function CollectionPage() {
               transition={{ duration: 1 }}
             />
           </div>
-          <p className="text-gray-500 text-sm mt-2">{t("collection_collected").replace("{owned}", String(totalOwned)).replace("{total}", String(totalItems))}</p>
+          <p className="text-[rgb(var(--c4))] text-sm mt-2">{t("collection_collected").replace("{owned}", String(totalOwned)).replace("{total}", String(totalItems))}</p>
         </div>
 
         {/* Category Tabs */}
@@ -72,12 +71,12 @@ export default function CollectionPage() {
               className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
                 activeCategory === cat.key
                   ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))]'
-                  : 'bg-neutral-900/60 text-gray-400 border border-neutral-700/30 hover:border-amber-500/20'
+                  : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-amber-500/20'
               }`}
             >
               <span className="mr-1">{cat.icon}</span>
               {cat.label}
-              <span className={`ml-2 ${activeCategory === cat.key ? 'text-amber-200' : 'text-gray-600'}`}>
+              <span className={`ml-2 ${activeCategory === cat.key ? 'text-amber-200' : 'text-[rgb(var(--c3))]'}`}>
                 {cat.owned.length}/{cat.total}
               </span>
             </button>
@@ -85,7 +84,7 @@ export default function CollectionPage() {
         </div>
 
         {/* Items Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {allInCategory.map((item) => {
             const isOwned = ownedInCategory.includes(item.id);
             const isEquipped = equipMap[activeCategory] === item.id;
@@ -97,22 +96,22 @@ export default function CollectionPage() {
                   isOwned
                     ? isEquipped
                       ? 'border-amber-500 bg-amber-900/20 ring-1 ring-amber-500/50'
-                      : 'border-neutral-700/30 bg-neutral-900/40 hover:border-amber-500/30'
-                    : 'border-neutral-800/30 bg-neutral-900/20 opacity-50'
+                      : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/40%)] hover:border-amber-500/30'
+                    : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/20%)] opacity-50'
                 }`}
                 whileHover={isOwned ? { y: -2 } : {}}
               >
-                <div className="aspect-square bg-neutral-800/50 rounded-lg flex items-center justify-center mb-2">
+                <div className="aspect-square bg-[rgb(var(--c3)/50%)] rounded-lg flex items-center justify-center mb-2">
                   {isOwned ? (
                     <span className="text-3xl opacity-60">
                       {activeCategory === 'cardBack' ? '🃏' : activeCategory === 'tableTheme' ? '🎰' : activeCategory === 'profileFrame' ? '🖼️' : activeCategory === 'emote' ? '😊' : '✨'}
                     </span>
                   ) : (
-                    <span className="text-2xl text-gray-700">???</span>
+                    <span className="text-2xl text-[rgb(var(--c3))]">???</span>
                   )}
                 </div>
 
-                <h3 className={`text-sm font-bold truncate ${isOwned ? 'text-gray-200' : 'text-gray-600'}`}>
+                <h3 className={`text-sm font-bold truncate ${isOwned ? 'text-[rgb(var(--text-primary))]' : 'text-[rgb(var(--c3))]'}`}>
                   {isOwned ? item.name : '???'}
                 </h3>
 
@@ -135,7 +134,7 @@ export default function CollectionPage() {
 
                 {isOwned && !isEquipped && (
                   <motion.button
-                    className="w-full mt-2 py-1.5 rounded-lg bg-neutral-800 text-gray-300 text-xs font-bold hover:bg-amber-900/30 hover:text-amber-300 transition-all"
+                    className="w-full mt-2 py-1.5 rounded-lg bg-[rgb(var(--c3))] text-[rgb(var(--c5))] text-xs font-bold hover:bg-amber-900/30 hover:text-amber-300 transition-all"
                     onClick={() => equipCosmetic(activeCategory, item.id)}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -144,7 +143,7 @@ export default function CollectionPage() {
                 )}
 
                 {!isOwned && (
-                  <p className="text-gray-700 text-xs mt-1 text-center">
+                  <p className="text-[rgb(var(--c3))] text-xs mt-1 text-center">
                     {item.rarity === 'Legendary' ? t("collection_legendary") : t("collection_locked")}
                   </p>
                 )}
@@ -156,13 +155,13 @@ export default function CollectionPage() {
           {[...Array(unknownCount)].map((_, i) => (
             <div
               key={`unknown-${i}`}
-              className="rounded-xl border border-neutral-800/30 bg-neutral-900/20 p-3 opacity-40"
+              className="rounded-xl border border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/20%)] p-3 opacity-40"
             >
-              <div className="aspect-square bg-neutral-800/30 rounded-lg flex items-center justify-center mb-2">
-                <span className="text-2xl text-gray-700">???</span>
+              <div className="aspect-square bg-[rgb(var(--c3)/30%)] rounded-lg flex items-center justify-center mb-2">
+                <span className="text-2xl text-[rgb(var(--c3))]">???</span>
               </div>
-              <h3 className="text-sm font-bold text-gray-600 truncate">???</h3>
-              <p className="text-gray-700 text-xs mt-1 text-center">Unlock Requirement Unknown</p>
+              <h3 className="text-sm font-bold text-[rgb(var(--c3))] truncate">???</h3>
+              <p className="text-[rgb(var(--c3))] text-xs mt-1 text-center">Unlock Requirement Unknown</p>
             </div>
           ))}
         </div>

@@ -38,7 +38,7 @@ export default function DailyLoginCalendar() {
       >
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-amber-300">{t('rewards_title')}</h2>
-          <p className="text-gray-400 text-sm mt-1">{t('rewards_subtitle')}</p>
+          <p className="text-[rgb(var(--c5))] text-sm mt-1">{t('rewards_subtitle')}</p>
           <div className="mt-2 inline-flex items-center gap-2 bg-amber-900/30 rounded-full px-3 py-1">
             <span className="text-amber-400 text-sm">🔥</span>
             <span className="text-amber-200 text-sm font-medium">{t('rewards_streak').replace('{n}', String(dailyLogin.streak))}</span>
@@ -62,7 +62,7 @@ export default function DailyLoginCalendar() {
                     ? 'bg-amber-900/20 border-amber-500/10 opacity-60'
                     : isNext
                     ? 'bg-gradient-to-b from-amber-800/40 to-amber-900/40 border-amber-400/60 shadow-lg shadow-amber-500/20 cursor-pointer hover:shadow-amber-500/40'
-                    : 'bg-neutral-800/50 border-neutral-700/30 opacity-50'
+                    : 'bg-[rgb(var(--c3)/50%)] border-[rgb(var(--c3)/30%)] opacity-50'
                   }
                 `}
                 onClick={() => handleClaim(day)}
@@ -72,11 +72,11 @@ export default function DailyLoginCalendar() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <span className={`text-xs font-bold ${isClaimed ? 'text-amber-600' : isNext ? 'text-amber-300' : 'text-gray-500'}`}>
+                <span className={`text-xs font-bold ${isClaimed ? 'text-amber-600' : isNext ? 'text-amber-300' : 'text-[rgb(var(--c4))]'}`}>
                   {t('rewards_day').replace('{n}', String(day))}
                 </span>
                 <span className="text-lg">{isClaimed ? '✅' : day === 7 ? '🎁' : '🪙'}</span>
-                <span className={`text-xs font-semibold ${isClaimed ? 'text-amber-700' : isNext ? 'text-amber-200' : 'text-gray-600'}`}>
+                <span className={`text-xs font-semibold ${isClaimed ? 'text-amber-700' : isNext ? 'text-amber-200' : 'text-[rgb(var(--c3))]'}`}>
                   {reward.coins}
                 </span>
                 {day === 7 && !isClaimed && (
@@ -99,7 +99,7 @@ export default function DailyLoginCalendar() {
         </div>
 
         <div className="mt-4 text-center">
-          <div className="w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-[rgb(var(--c3))] rounded-full h-2 overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"
               initial={{ width: 0 }}
@@ -107,7 +107,7 @@ export default function DailyLoginCalendar() {
               transition={{ duration: 0.8, ease: 'easeOut' }}
             />
           </div>
-          <p className="text-gray-500 text-xs mt-2">
+          <p className="text-[rgb(var(--c4))] text-xs mt-2">
             {t('rewards_claimedThisCycle').replace('{n}', String(dailyLogin.rewards.filter(r => r.claimed).length))}
           </p>
         </div>

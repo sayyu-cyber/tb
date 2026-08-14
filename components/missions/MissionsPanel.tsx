@@ -17,7 +17,7 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
         relative rounded-xl p-4 border transition-all duration-300
         ${isCompleted
           ? 'bg-gradient-to-r from-amber-900/20 to-yellow-900/20 border-amber-500/30'
-          : 'bg-neutral-900/60 border-neutral-700/30 hover:border-amber-500/20'
+          : 'bg-[rgb(var(--c2)/60%)] border-[rgb(var(--c3)/30%)] hover:border-amber-500/20'
         }
       `}
       initial={{ opacity: 0, x: -20 }}
@@ -27,7 +27,7 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className={`font-bold ${isCompleted ? 'text-amber-300' : 'text-gray-200'}`}>
+            <h3 className={`font-bold ${isCompleted ? 'text-amber-300' : 'text-[rgb(var(--text-primary))]'}`}>
               {mission.title}
             </h3>
             {isCompleted && (
@@ -40,7 +40,7 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
               </motion.span>
             )}
           </div>
-          <p className="text-gray-500 text-sm mt-0.5">{mission.description}</p>
+          <p className="text-[rgb(var(--c4))] text-sm mt-0.5">{mission.description}</p>
         </div>
         <div className="flex items-center gap-1.5 bg-amber-900/30 rounded-full px-3 py-1 border border-amber-500/20">
           <span className="text-amber-400 text-sm">🪙</span>
@@ -49,7 +49,7 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
       </div>
 
       <div className="relative">
-        <div className="w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden">
+        <div className="w-full bg-[rgb(var(--c3))] rounded-full h-2.5 overflow-hidden">
           <motion.div
             className={`h-full rounded-full ${isCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-amber-500 to-yellow-400'}`}
             initial={{ width: 0 }}
@@ -58,10 +58,10 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
           />
         </div>
         <div className="flex justify-between mt-1.5">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[rgb(var(--c4))]">
             {mission.progress} / {mission.target}
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[rgb(var(--c4))]">
             {Math.round(progressPercent)}%
           </span>
         </div>
@@ -98,12 +98,12 @@ export default function MissionsPanel() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-amber-300">{t('missions_dailyTitle')}</h2>
-            <p className="text-gray-500 text-sm">{t('missions_dailyReset')}</p>
+            <p className="text-[rgb(var(--c4))] text-sm">{t('missions_dailyReset')}</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
               <span className="text-amber-400 font-bold">{dailyCompleted}/{missions.daily.length}</span>
-              <span className="text-gray-500 text-sm ml-1">{t('missions_completed')}</span>
+              <span className="text-[rgb(var(--c4))] text-sm ml-1">{t('missions_completed')}</span>
             </div>
           </div>
         </div>
@@ -139,11 +139,11 @@ export default function MissionsPanel() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-amber-300">{t('missions_weeklyTitle')}</h2>
-            <p className="text-gray-500 text-sm">{t('missions_weeklyReset')}</p>
+            <p className="text-[rgb(var(--c4))] text-sm">{t('missions_weeklyReset')}</p>
           </div>
           <div className="text-right">
             <span className="text-amber-400 font-bold">{weeklyCompleted}/{missions.weekly.length}</span>
-            <span className="text-gray-500 text-sm ml-1">{t('missions_completed')}</span>
+            <span className="text-[rgb(var(--c4))] text-sm ml-1">{t('missions_completed')}</span>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageShell } from "@/components/layout/PageShell";
 
 // Route metadata lives in a layout rather than the page because the page
 // itself is a client component ("use client"), and Next only reads a
@@ -18,5 +19,5 @@ export const metadata: Metadata = {
 };
 
 export default function MissionsLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <PageShell>{children}</PageShell>;
 }

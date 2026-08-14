@@ -42,7 +42,9 @@ export default function PlayPage() {
         </div>
       </motion.div>
 
-      <div className="space-y-5">
+      {/* Stacked on mobile as before; side by side from md, where the
+          shell is wide enough for two full cards. */}
+      <div className="space-y-5 md:space-y-0 md:grid md:grid-cols-2 md:gap-5 md:items-start">
         {games.map((game, index) => (
           <GameSelectCard key={game.id} {...game} index={index} />
         ))}
@@ -55,7 +57,7 @@ export default function PlayPage() {
         transition={{ delay: 0.6 }}
         className="glass-card rounded-2xl p-4 border border-dashed border-[rgb(var(--c3))]"
       >
-        <p className="text-[rgb(var(--c3))] text-xs text-center tracking-wider uppercase">More games coming soon</p>
+        <p className="text-[rgb(var(--c3))] text-xs text-center tracking-wider uppercase">{t("play_moreGamesSoon")}</p>
       </motion.div>
     </div>
   );

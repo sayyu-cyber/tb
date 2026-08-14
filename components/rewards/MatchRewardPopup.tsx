@@ -72,13 +72,13 @@ export default function MatchRewardPopup({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className={`text-6xl mb-4 ${isVictory ? 'text-amber-400' : 'text-gray-400'}`}
+                className={`text-6xl mb-4 ${isVictory ? 'text-amber-400' : 'text-[rgb(var(--c5))]'}`}
               >
                 {isVictory ? '🏆' : '🎮'}
               </motion.div>
 
               <motion.h2
-                className={`text-3xl font-bold mb-2 ${isVictory ? 'text-amber-300' : 'text-gray-300'}`}
+                className={`text-3xl font-bold mb-2 ${isVictory ? 'text-amber-300' : 'text-[rgb(var(--c5))]'}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -112,11 +112,11 @@ export default function MatchRewardPopup({
                   // Casual matches (see CasualOnlineClient) carry no trophy
                   // stakes at all - say so explicitly rather than showing a
                   // misleading "+0 Trophies".
-                  <p className="text-gray-500 text-xs">Casual match — no trophies at stake</p>
+                  <p className="text-[rgb(var(--c4))] text-xs">Casual match — no trophies at stake</p>
                 )}
 
                 <div className="pt-4 border-t border-amber-500/20">
-                  <p className="text-gray-400 text-sm mb-2">New Balance</p>
+                  <p className="text-[rgb(var(--c5))] text-sm mb-2">New Balance</p>
                   <CoinBalance showAnimation size="lg" />
                 </div>
               </motion.div>

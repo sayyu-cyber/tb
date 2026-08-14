@@ -66,7 +66,7 @@ export default function WeeklyRankReward() {
             <h2 className="text-3xl font-bold mb-2" style={{ color: rankConfig.color }}>
               {profile.rank} Rank Achieved!
             </h2>
-            <p className="text-gray-400 mb-6">Weekly Rank Rewards</p>
+            <p className="text-[rgb(var(--c5))] mb-6">Weekly Rank Rewards</p>
 
             <motion.div
               className="bg-amber-900/30 rounded-xl p-4 border border-amber-500/20 mb-6"

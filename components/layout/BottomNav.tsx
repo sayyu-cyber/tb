@@ -34,11 +34,13 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 bg-[rgb(var(--c1)/95%)] backdrop-blur-xl border-t border-[#D4AF37]/10"
     >
       {/* Coin Balance - Added at top of nav */}
-      <div className="max-w-md mx-auto px-4 pt-2 pb-1 flex justify-center">
+      {/* Widths track MainLayout's shell so the nav stays visually aligned
+          with the content column at every breakpoint. */}
+      <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-2 pb-1 flex justify-center">
         <CoinBalance size="sm" />
       </div>
 
-      <div className="max-w-md mx-auto flex items-center justify-around py-1 px-1 overflow-x-auto">
+      <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto flex items-center justify-around py-1 px-1 overflow-x-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href);
           const Icon = item.icon;

@@ -8,8 +8,10 @@ import { useSearchParams } from "next/navigation";
 import { getRankFromTrophies, TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateMatchResult } from "@/lib/trophyUpdates";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function PostMatchPage() {
+  const t = useTranslation();
   const [showPromotion, setShowPromotion] = useState(false);
   const [updating, setUpdating] = useState(true);
   const [error, setError] = useState("");
@@ -146,7 +148,7 @@ export default function PostMatchPage() {
           </div>
 
           {user?.isGuest && (
-            <p className="text-[rgb(var(--c3))] text-[10px] mt-2">Sign in to earn trophies</p>
+            <p className="text-[rgb(var(--c3))] text-[10px] mt-2">{t("postmatch_signInToEarn")}</p>
           )}
         </div>
 

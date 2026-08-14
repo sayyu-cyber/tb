@@ -15,20 +15,19 @@ export default function AchievementsPage() {
   const totalCount = achievements.length;
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4">
+    <div className="w-full pt-4 pb-32 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-amber-300">{t("achievements_title")}</h1>
-          <span className="text-amber-400 font-bold text-lg">
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-[rgb(var(--c4))] text-sm">{t("achievements_subtitle")}</p>
+          <span className="text-amber-400 font-bold text-lg shrink-0 ml-3">
             {unlockedCount}/{totalCount}
           </span>
         </div>
-        <p className="text-gray-500 mb-6">{t("achievements_subtitle")}</p>
 
-        <div className="w-full bg-neutral-800 rounded-full h-2 mb-6 overflow-hidden">
+        <div className="w-full bg-[rgb(var(--c3))] rounded-full h-2 mb-6 overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"
             initial={{ width: 0 }}
@@ -44,7 +43,7 @@ export default function AchievementsPage() {
               className={`rounded-xl p-4 border flex items-center gap-4 ${
                 ach.unlocked
                   ? 'bg-gradient-to-r from-amber-900/20 to-yellow-900/20 border-amber-500/30'
-                  : 'bg-neutral-900/40 border-neutral-700/20 opacity-60'
+                  : 'bg-[rgb(var(--c2)/40%)] border-[rgb(var(--c3)/20%)] opacity-60'
               }`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -52,14 +51,14 @@ export default function AchievementsPage() {
             >
               <div className="text-3xl">{ach.unlocked ? ach.icon : '🔒'}</div>
               <div className="flex-1">
-                <h3 className={`font-bold ${ach.unlocked ? 'text-amber-200' : 'text-gray-500'}`}>
+                <h3 className={`font-bold ${ach.unlocked ? 'text-amber-200' : 'text-[rgb(var(--c4))]'}`}>
                   {ach.title}
                 </h3>
-                <p className="text-gray-500 text-sm">{ach.description}</p>
+                <p className="text-[rgb(var(--c4))] text-sm">{ach.description}</p>
                 {!ach.unlocked && ach.target > 1 && (
-                  <div className="w-full bg-neutral-800 rounded-full h-1.5 mt-2">
+                  <div className="w-full bg-[rgb(var(--c3))] rounded-full h-1.5 mt-2">
                     <div
-                      className="h-full bg-gray-600 rounded-full"
+                      className="h-full bg-[rgb(var(--c4))] rounded-full"
                       style={{ width: `${(ach.progress / ach.target) * 100}%` }}
                     />
                   </div>

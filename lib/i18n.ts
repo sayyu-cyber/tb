@@ -245,6 +245,31 @@ export const TRANSLATIONS: Record<string, Translations> = {
   leave_confirm: { en: "Leave", dv: "ނުކުމޭ", hi: "छोड़ें", bn: "ত্যাগ করুন" },
   leave_leaving: { en: "Leaving…", dv: "ނުކުންނަނީ…", hi: "छोड़ रहे हैं…", bn: "প্রস্থান করছে…" },
 
+  // Offline game clients (MindiGameClient / GinRummyGameClient - the vs-AI
+  // and Pass & Play screens). The earlier i18n rounds covered the *online*
+  // clients only, so these two were left entirely in English despite being
+  // the first thing a guest player ever sees.
+  offline_passDeviceTo: { en: "Pass the device to", dv: "ޑިވައިސް ދެއްވާ", hi: "डिवाइस दें", bn: "ডিভাইসটি দিন" },
+  offline_hideScreen: { en: "Make sure no one else can see the screen", dv: "އެހެން މީހަކަށް ސްކްރީން ނުފެންނަކަން ޔަޤީންކުރައްވާ", hi: "सुनिश्चित करें कि कोई और स्क्रीन न देख सके", bn: "নিশ্চিত করুন অন্য কেউ স্ক্রিন দেখতে পাচ্ছে না" },
+  offline_casualSuffix: { en: "Casual", dv: "ކެޝުއަލް", hi: "कैज़ुअल", bn: "ক্যাজুয়াল" },
+  offline_player1: { en: "Player 1", dv: "ކުޅުންތެރިޔާ 1", hi: "खिलाड़ी 1", bn: "খেলোয়াড় ১" },
+  offline_player2: { en: "Player 2", dv: "ކުޅުންތެރިޔާ 2", hi: "खिलाड़ी 2", bn: "খেলোয়াড় ২" },
+  offline_west: { en: "West", dv: "ހުޅަނގު", hi: "पश्चिम", bn: "পশ্চিম" },
+  offline_east: { en: "East", dv: "އިރުމަތި", hi: "पूर्व", bn: "পূর্ব" },
+  offline_westBot: { en: "West (bot)", dv: "ހުޅަނގު (ބޮޓް)", hi: "पश्चिम (बॉट)", bn: "পশ্চিম (বট)" },
+  offline_eastBot: { en: "East (bot)", dv: "އިރުމަތި (ބޮޓް)", hi: "पूर्व (बॉट)", bn: "পূর্ব (বট)" },
+  offline_player2Partner: { en: "Player 2 (Partner)", dv: "ކުޅުންތެރިޔާ 2 (ޕާޓްނަރ)", hi: "खिलाड़ी 2 (पार्टनर)", bn: "খেলোয়াড় ২ (পার্টনার)" },
+  offline_yourTeamTricks: { en: "Your team — Tricks", dv: "ތިބާގެ ޓީމް — ޓްރިކްސް", hi: "आपकी टीम — ट्रिक्स", bn: "আপনার দল — ট্রিকস" },
+  offline_opponentsTricks: { en: "Opponents — Tricks", dv: "ދެކޮޅު ފަރާތްތައް — ޓްރިކްސް", hi: "प्रतिद्वंद्वी — ट्रिक्स", bn: "প্রতিপক্ষ — ট্রিকস" },
+
+  // Loading / empty states on route wrappers, previously hardcoded.
+  loading_messages: { en: "Loading messages…", dv: "މެސެޖްތައް ލޯޑްވަނީ…", hi: "संदेश लोड हो रहे हैं…", bn: "বার্তা লোড হচ্ছে…" },
+  loading_profile: { en: "Loading profile…", dv: "ޕްރޮފައިލް ލޯޑްވަނީ…", hi: "प्रोफ़ाइल लोड हो रही है…", bn: "প্রোফাইল লোড হচ্ছে…" },
+  empty_noMatchSpecified: { en: "No match specified.", dv: "މެޗެއް ބަޔާންކޮށްފައެއް ނެތް.", hi: "कोई मैच निर्दिष्ट नहीं है।", bn: "কোনো ম্যাচ উল্লেখ করা হয়নি।" },
+  empty_noMatchFound: { en: "No match found. Go back to Play and search again.", dv: "މެޗެއް ނުފެނުނު. ޕްލޭއަށް އެނބުރި ގޮސް އަލުން ހޯއްދަވާ.", hi: "कोई मैच नहीं मिला। प्ले पर वापस जाएं और फिर से खोजें।", bn: "কোনো ম্যাচ পাওয়া যায়নি। প্লে-তে ফিরে গিয়ে আবার খুঁজুন।" },
+  play_moreGamesSoon: { en: "More games coming soon", dv: "އިތުރު ގޭމްތައް އަންނަނީ", hi: "और गेम जल्द आ रहे हैं", bn: "আরও গেম শীঘ্রই আসছে" },
+  postmatch_signInToEarn: { en: "Sign in to earn trophies", dv: "ތަށި ހޯއްދެވުމަށް ސައިން އިން ކުރައްވާ", hi: "ट्रॉफियां कमाने के लिए साइन इन करें", bn: "ট্রফি অর্জনে সাইন ইন করুন" },
+
   // Casual Online queue (components/game/CasualOnlineClient.tsx) - also
   // missed by the earlier translation rounds.
   casual_finding: { en: "Finding Casual {label} Match{dots}", dv: "ކެޝުއަލް {label} މެޗް ހޯދަނީ{dots}", hi: "कैज़ुअल {label} मैच खोज रहे हैं{dots}", bn: "ক্যাজুয়াল {label} ম্যাচ খোঁজা হচ্ছে{dots}" },
@@ -319,6 +344,16 @@ export const TRANSLATIONS: Record<string, Translations> = {
   settings_adminDesc: { en: "Manage the app", dv: "އެޕް މެނޭޖްކުރައްވާ", hi: "ऐप प्रबंधित करें", bn: "অ্যাপ পরিচালনা করুন" },
 
   // Home page subcomponents
+  // Home page shortcut tiles - hardcoded English until now.
+  home_shortcutFriends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "मित्र", bn: "বন্ধুরা" },
+  home_shortcutRooms: { en: "Private Rooms", dv: "ޕްރައިވެޓް ރޫމް", hi: "प्राइवेट रूम", bn: "প্রাইভেট রুম" },
+  home_shortcutWeekend: { en: "Weekend League (Fri-Sat, Silver+)", dv: "ވީކެންޑް ލީގު (ހުކުރު-ހޮނިހިރު، ސިލްވަރ+)", hi: "वीकेंड लीग (शुक्र-शनि, सिल्वर+)", bn: "সাপ্তাহিক লিগ (শুক্র-শনি, সিলভার+)" },
+  home_shortcutHof: { en: "Hall of Fame", dv: "ފޭމް ހޯލް", hi: "हॉल ऑफ़ फ़ेम", bn: "হল অফ ফেম" },
+  home_shortcutInventory: { en: "Inventory", dv: "އިންވެންޓަރީ", hi: "इन्वेंटरी", bn: "ইনভেন্টরি" },
+  home_shortcutClubs: { en: "Clubs", dv: "ކްލަބްތައް", hi: "क्लब", bn: "ক্লাব" },
+  home_shortcutVip: { en: "VIP Pass", dv: "ވީއައިޕީ ޕާސް", hi: "VIP पास", bn: "VIP পাস" },
+  home_shortcutShop: { en: "Cosmetic Shop", dv: "ކޮސްމެޓިކް ފިހާރަ", hi: "कॉस्मेटिक शॉप", bn: "কসমেটিক দোকান" },
+
   home_quickPlay: { en: "Quick Play", dv: "ކުއިކް ޕްލޭ", hi: "क्विक प्ले", bn: "কুইক প্লে" },
   home_guestBadge: { en: "GUEST", dv: "މެހްމާން", hi: "अतिथि", bn: "অতিথি" },
   home_trophiesLabel: { en: "Trophies", dv: "ތަށިތައް", hi: "ट्रॉफी", bn: "ট্রফি" },

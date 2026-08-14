@@ -44,7 +44,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
     <motion.div
       className={`
         relative rounded-xl overflow-hidden border transition-all duration-300
-        ${isFeatured ? 'border-amber-500/40' : 'border-neutral-700/30'}
+        ${isFeatured ? 'border-amber-500/40' : 'border-[rgb(var(--c3)/30%)]'}
         ${isEquipped ? 'ring-2 ring-amber-500/50' : ''}
       `}
       onHoverStart={() => setIsHovered(true)}
@@ -83,13 +83,13 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
         >
-          <p className="text-gray-300 text-sm text-center px-4">{item.description}</p>
+          <p className="text-[rgb(var(--c5))] text-sm text-center px-4">{item.description}</p>
         </motion.div>
       </div>
 
-      <div className="p-3 bg-neutral-900/80">
+      <div className="p-3 bg-[rgb(var(--c2)/80%)]">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-gray-200 truncate">{item.name}</h3>
+          <h3 className="text-sm font-bold text-[rgb(var(--text-primary))] truncate">{item.name}</h3>
           <RarityBadge rarity={item.rarity} />
         </div>
 
@@ -99,7 +99,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
               className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${
                 isEquipped
                   ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30'
-                  : 'bg-neutral-700 text-gray-300 hover:bg-neutral-600'
+                  : 'bg-[rgb(var(--c3))] text-[rgb(var(--c5))] hover:bg-[rgb(var(--c4))]'
               }`}
               onClick={onEquip}
               whileTap={{ scale: 0.95 }}
@@ -128,7 +128,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
     <motion.div
       className={`
         relative rounded-xl overflow-hidden border p-4
-        ${pack.isBestValue ? 'border-amber-500/50 bg-gradient-to-b from-amber-900/20 to-black' : 'border-neutral-700/30 bg-neutral-900/60'}
+        ${pack.isBestValue ? 'border-amber-500/50 bg-gradient-to-b from-amber-900/20 to-black' : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/60%)]'}
       `}
       whileHover={{ y: -4, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -148,11 +148,11 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
         <div className="text-4xl mb-2">🪙</div>
         <h3 className="text-lg font-bold text-amber-200">{pack.name}</h3>
         <p className="text-3xl font-bold text-amber-400 mt-1">{pack.coins.toLocaleString()}</p>
-        <p className="text-gray-500 text-sm">Coins</p>
+        <p className="text-[rgb(var(--c4))] text-sm">Coins</p>
       </div>
 
       <div className="flex items-center justify-center gap-1 mb-4">
-        <span className="text-gray-400 text-sm">MVR</span>
+        <span className="text-[rgb(var(--c5))] text-sm">MVR</span>
         <span className="text-xl font-bold text-[rgb(var(--text-primary))]">{pack.priceMVR}</span>
       </div>
 
@@ -164,7 +164,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
         {t('shop_purchase')}
       </motion.button>
 
-      <p className="text-center text-gray-600 text-xs mt-2">Requires admin approval before coins are credited</p>
+      <p className="text-center text-[rgb(var(--c3))] text-xs mt-2">Requires admin approval before coins are credited</p>
     </motion.div>
   );
 }
@@ -278,7 +278,7 @@ export default function CosmeticShop() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-amber-300">{t('shop_headerTitle')}</h1>
-          <p className="text-gray-500 text-sm">{t('shop_headerSubtitle')}</p>
+          <p className="text-[rgb(var(--c4))] text-sm">{t('shop_headerSubtitle')}</p>
         </div>
         <CoinBalance size="lg" />
       </div>
@@ -296,7 +296,7 @@ export default function CosmeticShop() {
               px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all
               ${activeTab === tab.id
                 ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] shadow-lg shadow-amber-500/20'
-                : 'bg-neutral-900/60 text-gray-400 border border-neutral-700/30 hover:border-amber-500/20'
+                : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-amber-500/20'
               }
             `}
             onClick={() => setActiveTab(tab.id as any)}
@@ -318,7 +318,7 @@ export default function CosmeticShop() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-amber-200">{t('shop_weeklyFeatured')}</h2>
-              <div className="flex items-center gap-2 bg-neutral-900/60 rounded-full px-4 py-1.5 border border-amber-500/20">
+              <div className="flex items-center gap-2 bg-[rgb(var(--c2)/60%)] rounded-full px-4 py-1.5 border border-amber-500/20">
                 <span className="text-amber-400 text-sm">⏰</span>
                 <span className="text-amber-200 text-sm font-mono">{timeLeft}</span>
               </div>
@@ -330,7 +330,7 @@ export default function CosmeticShop() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {featuredItems.map((item) => (
                 <CosmeticCard
                   key={item.id}
@@ -362,7 +362,7 @@ export default function CosmeticShop() {
                     px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap
                     ${selectedCategory === cat.id
                       ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30'
-                      : 'bg-neutral-800 text-gray-500 border border-neutral-700/30 hover:text-gray-300'
+                      : 'bg-[rgb(var(--c3))] text-[rgb(var(--c4))] border border-[rgb(var(--c3)/30%)] hover:text-[rgb(var(--c5))]'
                     }
                   `}
                   onClick={() => setSelectedCategory(cat.id)}
@@ -450,7 +450,7 @@ export default function CosmeticShop() {
                         className={`relative rounded-xl border p-4 text-left transition-all ${
                           selectedVipPlan === plan.id
                             ? 'border-purple-400 bg-purple-900/30'
-                            : 'border-neutral-700/40 bg-neutral-900/40'
+                            : 'border-[rgb(var(--c3)/40%)] bg-[rgb(var(--c2)/40%)]'
                         }`}
                       >
                         {plan.savingsNote && (
@@ -478,7 +478,7 @@ export default function CosmeticShop() {
                     ].map((benefit, i) => (
                       <motion.li
                         key={i}
-                        className="flex items-center gap-3 text-gray-300"
+                        className="flex items-center gap-3 text-[rgb(var(--c5))]"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
