@@ -5,6 +5,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import CoinBalance from '../economy/CoinBalance';
+import { CoinIcon } from '../ui/icons';
 
 interface MatchRewardPopupProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ export default function MatchRewardPopup({
 
               <motion.h2
                 className={`text-3xl font-bold mb-2 ${isVictory ? 'text-amber-300' : 'text-[rgb(var(--c5))]'}`}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
@@ -94,7 +95,7 @@ export default function MatchRewardPopup({
               >
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2 bg-amber-900/40 rounded-full px-4 py-2 border border-amber-500/30">
-                    <span className="text-amber-400 text-lg">🪙</span>
+                    <CoinIcon size={18} />
                     <span className="text-amber-100 font-bold">+{coinsEarned}</span>
                   </div>
                 </div>
@@ -124,7 +125,7 @@ export default function MatchRewardPopup({
               <motion.button
                 className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold text-lg hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/30"
                 onClick={onClose}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
                 whileHover={{ scale: 1.02 }}

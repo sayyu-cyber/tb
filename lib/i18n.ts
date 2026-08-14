@@ -344,6 +344,9 @@ export const TRANSLATIONS: Record<string, Translations> = {
   settings_adminDesc: { en: "Manage the app", dv: "އެޕް މެނޭޖްކުރައްވާ", hi: "ऐप प्रबंधित करें", bn: "অ্যাপ পরিচালনা করুন" },
 
   // Home page subcomponents
+  nav_more: { en: "More", dv: "އިތުރު", hi: "और", bn: "আরও" },
+  nav_moreTitle: { en: "All sections", dv: "ހުރިހާ ބައިތައް", hi: "सभी अनुभाग", bn: "সব বিভাগ" },
+
   // Home page shortcut tiles - hardcoded English until now.
   home_shortcutFriends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "मित्र", bn: "বন্ধুরা" },
   home_shortcutRooms: { en: "Private Rooms", dv: "ޕްރައިވެޓް ރޫމް", hi: "प्राइवेट रूम", bn: "প্রাইভেট রুম" },

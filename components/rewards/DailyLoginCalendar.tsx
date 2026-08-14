@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { DAILY_LOGIN_REWARDS } from '../../data/cosmetics';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CoinIcon, Check, Gift, Flame } from '../ui/icons';
 
 export default function DailyLoginCalendar() {
   const { state, claimDailyReward } = useEconomy();
@@ -32,15 +33,15 @@ export default function DailyLoginCalendar() {
     <div className="w-full max-w-lg mx-auto">
       <motion.div
         className="bg-gradient-to-b from-neutral-900 to-black border border-amber-500/20 rounded-2xl p-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ type: "spring", stiffness: 420, damping: 34 }}
       >
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-amber-300">{t('rewards_title')}</h2>
           <p className="text-[rgb(var(--c5))] text-sm mt-1">{t('rewards_subtitle')}</p>
           <div className="mt-2 inline-flex items-center gap-2 bg-amber-900/30 rounded-full px-3 py-1">
-            <span className="text-amber-400 text-sm">🔥</span>
+            <Flame size={16} className="text-[rgb(var(--coral))]" />
             <span className="text-amber-200 text-sm font-medium">{t('rewards_streak').replace('{n}', String(dailyLogin.streak))}</span>
           </div>
         </div>
@@ -75,7 +76,7 @@ export default function DailyLoginCalendar() {
                 <span className={`text-xs font-bold ${isClaimed ? 'text-amber-600' : isNext ? 'text-amber-300' : 'text-[rgb(var(--c4))]'}`}>
                   {t('rewards_day').replace('{n}', String(day))}
                 </span>
-                <span className="text-lg">{isClaimed ? '✅' : day === 7 ? '🎁' : '🪙'}</span>
+                {isClaimed ? <Check size={16} strokeWidth={3} /> : day === 7 ? <Gift size={16} /> : <CoinIcon size={16} />}
                 <span className={`text-xs font-semibold ${isClaimed ? 'text-amber-700' : isNext ? 'text-amber-200' : 'text-[rgb(var(--c3))]'}`}>
                   {reward.coins}
                 </span>

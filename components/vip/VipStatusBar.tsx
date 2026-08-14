@@ -4,6 +4,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
+import { Crown } from '../ui/icons';
 
 export default function VipStatusBar() {
   const { state } = useEconomy();
@@ -18,7 +19,7 @@ export default function VipStatusBar() {
       animate={{ opacity: 1, y: 0 }}
     >
       <div className="flex items-center gap-2">
-        <span className="text-lg">👑</span>
+        <Crown size={14} />
         <span className="text-purple-300 font-bold text-sm">VIP Active</span>
       </div>
       <div className="flex items-center gap-3">
@@ -28,7 +29,7 @@ export default function VipStatusBar() {
             className="h-full bg-gradient-to-r from-purple-500 to-violet-400 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${(profile.vip.remainingDays / 7) * 100}%` }}
-            transition={{ duration: 0.5 }}
+            transition={{ type: "spring", stiffness: 420, damping: 34 }}
           />
         </div>
       </div>

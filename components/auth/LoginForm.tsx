@@ -61,9 +61,9 @@ export function LoginForm() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ type: "spring", stiffness: 420, damping: 34, delay: 0.2 }}
       className="w-full max-w-sm mx-auto px-6"
     >
       {/* Logo small */}

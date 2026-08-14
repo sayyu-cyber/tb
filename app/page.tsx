@@ -25,7 +25,7 @@ export default function SplashPage() {
       {showSplash && (
         <motion.div
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ type: "spring", stiffness: 420, damping: 34 }}
         >
           <SplashScreen />
         </motion.div>

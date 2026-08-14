@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Timer } from "lucide-react";
 import { CountdownTimer } from "@/components/ui/CountdownTimer";
 import { useTranslation } from "@/hooks/useTranslation";
+import { riseIn } from "@/lib/motion";
 
 export function WeekendLeague() {
   const t = useTranslation();
@@ -18,16 +19,17 @@ export function WeekendLeague() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.3 }}
-      className="glass-card rounded-2xl p-5 relative overflow-hidden"
+      variants={riseIn}
+      initial="hidden"
+      animate="show"
+      style={{ ["--accent" as string]: "var(--coral)" } as React.CSSProperties}
+      className="surface-accent edge-light rounded-2xl p-5 relative overflow-hidden"
     >
       {/* Decorative corner */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 bg-[rgb(var(--gold)/5%)] rounded-full blur-xl" />
+      <div className="absolute -top-8 -right-8 w-24 h-24 bg-[rgb(var(--accent)/14%)] rounded-full blur-xl" />
 
       <div className="flex items-center gap-2 mb-4">
-        <Timer size={18} className="text-[rgb(var(--gold))]" />
+        <Timer size={18} className="text-[rgb(var(--accent))]" aria-hidden="true" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_weekendLeagueTitle")}</h3>
       </div>
 

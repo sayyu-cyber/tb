@@ -1,65 +1,74 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Play } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
+import { riseIn, staggerParent } from "@/lib/motion";
+import { TOKEN } from "@/constants/theme";
 
+/**
+ * Each game keeps its own hue and suit, matching the Play screen and the
+ * in-match table, so a player builds one consistent association rather
+ * than seeing everything in gold.
+ */
 const games = [
-  {
-    id: "mindi",
-    name: "Mindi",
-    subtitle: "Maldivian Classic",
-    color: "from-[rgb(var(--gold)/20%)] to-[rgb(var(--gold-deep)/10%)]",
-    borderColor: "border-[rgb(var(--gold)/30%)]",
-    icon: "♠",
-  },
-  {
-    id: "gin-rummy",
-    name: "Gin Rummy",
-    subtitle: "Strategic Fun",
-    color: "from-[rgb(var(--gold)/10%)] to-[rgb(var(--gold-deep)/5%)]",
-    borderColor: "border-[rgb(var(--gold)/20%)]",
-    icon: "♥",
-  },
+  { id: "mindi", name: "Mindi", subtitle: "Maldivian Classic", suit: "♠", accent: TOKEN.lagoon },
+  { id: "gin-rummy", name: "Gin Rummy", subtitle: "Strategic Fun", suit: "♦", accent: TOKEN.deep },
 ];
 
 export function QuickPlayButtons() {
   const t = useTranslation();
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-    >
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <Sparkles size={16} className="text-[rgb(var(--gold))]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_quickPlay")}</h3>
+    <motion.div variants={riseIn}>
+      <div className="mb-3 flex items-center gap-2 px-1">
+        <Sparkles size={15} className="text-[rgb(var(--gold))]" aria-hidden="true" />
+        <h3 className="text-sm font-bold tracking-tight text-[rgb(var(--text-primary))]">{t("home_quickPlay")}</h3>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {games.map((game, index) => (
-          <Link key={game.id} href="/play">
-            <motion.div
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              whileTap={{ scale: 0.97 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 + index * 0.1 }}
-              className={`relative overflow-hidden rounded-2xl p-4 border ${game.borderColor} bg-gradient-to-br ${game.color} cursor-pointer group`}
-            >
-              {/* Hover glow */}
-              <div className="absolute inset-0 bg-[rgb(var(--gold)/0%)] group-hover:bg-[rgb(var(--gold)/5%)] transition-colors duration-300" />
+      <motion.div variants={staggerParent(0.06)} initial="hidden" animate="show" className="grid grid-cols-2 gap-3">
+        {games.map((game) => (
+          <motion.div key={game.id} variants={riseIn}>
+            <Link href="/play" className="block h-full">
+              <motion.div
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 420, damping: 30 }}
+                style={{ ["--accent" as string]: game.accent } as React.CSSProperties}
+                className="group surface-accent edge-light relative h-full overflow-hidden rounded-2xl p-4"
+              >
+                {/* Suit sits behind the label as a watermark and brightens on
+                    hover - gives the tile depth without extra chrome. */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-5 -right-2 select-none font-serif text-[5rem]
+                             leading-none text-[rgb(var(--accent))] opacity-[0.12]
+                             transition-opacity duration-300 group-hover:opacity-25"
+                >
+                  {game.suit}
+                </span>
 
-              <div className="relative z-10">
-                <span className="text-3xl mb-2 block">{game.icon}</span>
-                <h4 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{game.name}</h4>
-                <p className="text-[rgb(var(--c4))] text-[10px] mt-0.5">{game.subtitle}</p>
-              </div>
-            </motion.div>
-          </Link>
+                <span
+                  aria-hidden="true"
+                  className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl
+                             bg-[rgb(var(--accent)/15%)] font-serif text-lg text-[rgb(var(--accent))]"
+                >
+                  {game.suit}
+                </span>
+
+                <h4 className="relative text-sm font-bold text-[rgb(var(--text-primary))]">{game.name}</h4>
+                <p className="relative mt-0.5 text-[10px] text-[rgb(var(--c4))]">{game.subtitle}</p>
+
+                <span className="relative mt-3 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--accent))]">
+                  <Play size={10} fill="currentColor" aria-hidden="true" />
+                  {t("nav_play")}
+                </span>
+              </motion.div>
+            </Link>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

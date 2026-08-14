@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { ALL_COSMETICS, RARITY_COLORS } from '../../data/cosmetics';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CategoryIcon } from '../ui/icons';
 
 export default function CollectionPage() {
   const { state, equipCosmetic } = useEconomy();
@@ -14,11 +15,11 @@ export default function CollectionPage() {
   const t = useTranslation();
 
   const categories = [
-    { key: 'cardBack', label: t("collection_cardBacks"), icon: '🃏', owned: profile.collection.cardBacks, total: 25 },
-    { key: 'tableTheme', label: t("collection_tableThemes"), icon: '🎰', owned: profile.collection.tableThemes, total: 12 },
-    { key: 'profileFrame', label: t("collection_profileFrames"), icon: '🖼️', owned: profile.collection.profileFrames, total: 18 },
-    { key: 'emote', label: t("collection_emotes"), icon: '😊', owned: profile.collection.emotes, total: 30 },
-    { key: 'victoryAnimation', label: t("collection_victoryAnimations"), icon: '✨', owned: profile.collection.victoryAnimations, total: 8 },
+    { key: 'cardBack', label: t("collection_cardBacks"), owned: profile.collection.cardBacks, total: 25 },
+    { key: 'tableTheme', label: t("collection_tableThemes"), owned: profile.collection.tableThemes, total: 12 },
+    { key: 'profileFrame', label: t("collection_profileFrames"), owned: profile.collection.profileFrames, total: 18 },
+    { key: 'emote', label: t("collection_emotes"), owned: profile.collection.emotes, total: 30 },
+    { key: 'victoryAnimation', label: t("collection_victoryAnimations"), owned: profile.collection.victoryAnimations, total: 8 },
   ];
 
   const totalOwned = categories.reduce((acc, c) => acc + c.owned.length, 0);
@@ -40,7 +41,7 @@ export default function CollectionPage() {
   return (
     <div className="w-full pt-4 pb-32 px-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <p className="text-[rgb(var(--c4))] text-sm mb-6">{t("collection_subtitle")}</p>
@@ -74,7 +75,7 @@ export default function CollectionPage() {
                   : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-amber-500/20'
               }`}
             >
-              <span className="mr-1">{cat.icon}</span>
+              <CategoryIcon category={cat.key} size={14} />
               {cat.label}
               <span className={`ml-2 ${activeCategory === cat.key ? 'text-amber-200' : 'text-[rgb(var(--c3))]'}`}>
                 {cat.owned.length}/{cat.total}
@@ -103,9 +104,7 @@ export default function CollectionPage() {
               >
                 <div className="aspect-square bg-[rgb(var(--c3)/50%)] rounded-lg flex items-center justify-center mb-2">
                   {isOwned ? (
-                    <span className="text-3xl opacity-60">
-                      {activeCategory === 'cardBack' ? '🃏' : activeCategory === 'tableTheme' ? '🎰' : activeCategory === 'profileFrame' ? '🖼️' : activeCategory === 'emote' ? '😊' : '✨'}
-                    </span>
+                    <CategoryIcon category={activeCategory} size={30} className="text-[rgb(var(--c4))]" />
                   ) : (
                     <span className="text-2xl text-[rgb(var(--c3))]">???</span>
                   )}

@@ -46,7 +46,7 @@ export default function SettingsPage() {
 
       {/* Preferences */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="glass-card rounded-2xl p-4"
@@ -131,7 +131,7 @@ export default function SettingsPage() {
 
       {/* Account */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="glass-card rounded-2xl p-4"
@@ -173,7 +173,7 @@ export default function SettingsPage() {
 
       {/* Logout */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >

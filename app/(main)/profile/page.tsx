@@ -52,7 +52,7 @@ export default function ProfilePage() {
 
       {/* Profile Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className={`glass-card rounded-2xl p-6 text-center relative overflow-hidden bg-gradient-to-b ${bannerPreset.gradient}`}
@@ -98,7 +98,7 @@ export default function ProfilePage() {
 
       {/* Main Stats */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
@@ -112,7 +112,7 @@ export default function ProfilePage() {
 
       {/* Extra Stats */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
       >

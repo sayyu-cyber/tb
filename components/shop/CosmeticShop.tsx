@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import CoinBalance from '../economy/CoinBalance';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../contexts/ToastContext';
+import { CategoryIcon, CoinIcon, Crown } from '../ui/icons';
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
   return (
@@ -73,9 +74,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
       )}
 
       <div className="relative aspect-square bg-gradient-to-b from-neutral-800 to-neutral-900 flex items-center justify-center overflow-hidden">
-        <div className="text-4xl opacity-30">
-          {item.category === 'cardBack' ? '🃏' : item.category === 'tableTheme' ? '🎰' : item.category === 'profileFrame' ? '🖼️' : item.category === 'emote' ? '😊' : '✨'}
-        </div>
+        <CategoryIcon category={item.category} size={44} className="text-[rgb(var(--c4))] opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         
         <motion.div
@@ -112,7 +111,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
               onClick={onPurchase}
               whileTap={{ scale: 0.95 }}
             >
-              <span>🪙</span>
+              <CoinIcon size={15} />
               <span>{(price ?? item.price).toLocaleString()}</span>
             </motion.button>
           )}
@@ -145,7 +144,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
       )}
 
       <div className="text-center mb-4">
-        <div className="text-4xl mb-2">🪙</div>
+        <CoinIcon size={40} className="mx-auto mb-2" />
         <h3 className="text-lg font-bold text-amber-200">{pack.name}</h3>
         <p className="text-3xl font-bold text-amber-400 mt-1">{pack.coins.toLocaleString()}</p>
         <p className="text-[rgb(var(--c4))] text-sm">Coins</p>
@@ -238,14 +237,14 @@ export default function CosmeticShop() {
   }, []);
 
   const categories = [
-    { id: 'all', label: t('shop_catAll'), icon: '🛍️' },
-    { id: 'cardBack', label: t('shop_catCardBacks'), icon: '🃏' },
-    { id: 'tableTheme', label: t('shop_catTables'), icon: '🎰' },
-    { id: 'profileFrame', label: t('shop_catFrames'), icon: '🖼️' },
-    { id: 'emote', label: t('shop_catEmotes'), icon: '😊' },
-    { id: 'victoryAnimation', label: t('shop_catVictory'), icon: '✨' },
-    { id: 'sticker', label: t('shop_catStickers'), icon: '🏷️' },
-    { id: 'banner', label: t('shop_catBanners'), icon: '🚩' },
+    { id: 'all', label: t('shop_catAll') },
+    { id: 'cardBack', label: t('shop_catCardBacks') },
+    { id: 'tableTheme', label: t('shop_catTables') },
+    { id: 'profileFrame', label: t('shop_catFrames') },
+    { id: 'emote', label: t('shop_catEmotes') },
+    { id: 'victoryAnimation', label: t('shop_catVictory') },
+    { id: 'sticker', label: t('shop_catStickers') },
+    { id: 'banner', label: t('shop_catBanners') },
   ];
 
   // Deterministic rotation: same featured set for everyone during a given
@@ -285,10 +284,10 @@ export default function CosmeticShop() {
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {[
-          { id: 'featured', label: t('shop_tabFeatured'), icon: '⭐' },
-          { id: 'permanent', label: t('shop_tabPermanent'), icon: '🛒' },
-          { id: 'coins', label: t('shop_tabCoins'), icon: '🪙' },
-          { id: 'vip', label: t('shop_tabVip'), icon: '👑' },
+          { id: 'featured', label: t('shop_tabFeatured') },
+          { id: 'permanent', label: t('shop_tabPermanent') },
+          { id: 'coins', label: t('shop_tabCoins') },
+          { id: 'vip', label: t('shop_tabVip') },
         ].map((tab) => (
           <motion.button
             key={tab.id}
@@ -302,8 +301,7 @@ export default function CosmeticShop() {
             onClick={() => setActiveTab(tab.id as any)}
             whileTap={{ scale: 0.95 }}
           >
-            <span className="mr-1.5">{tab.icon}</span>
-            {tab.label}
+                        {tab.label}
           </motion.button>
         ))}
       </div>
@@ -312,7 +310,7 @@ export default function CosmeticShop() {
         {activeTab === 'featured' && (
           <motion.div
             key="featured"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
@@ -326,7 +324,9 @@ export default function CosmeticShop() {
 
             {state.profile.vip.active && (
               <div className="mb-4 p-3 bg-gradient-to-r from-purple-900/30 to-violet-900/30 rounded-xl border border-purple-500/20">
-                <p className="text-purple-300 text-sm font-medium">👑 VIP Exclusive: +1 Featured cosmetic available</p>
+                <p className="text-purple-300 text-sm font-medium flex items-center gap-1.5">
+                  <Crown size={14} aria-hidden="true" /> VIP Exclusive: +1 Featured cosmetic available
+                </p>
               </div>
             )}
 
@@ -350,7 +350,7 @@ export default function CosmeticShop() {
         {activeTab === 'permanent' && (
           <motion.div
             key="permanent"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
@@ -367,7 +367,7 @@ export default function CosmeticShop() {
                   `}
                   onClick={() => setSelectedCategory(cat.id)}
                 >
-                  <span className="mr-1">{cat.icon}</span>
+                  <CategoryIcon category={cat.id} size={14} />
                   {cat.label}
                 </button>
               ))}
@@ -392,7 +392,7 @@ export default function CosmeticShop() {
         {activeTab === 'coins' && (
           <motion.div
             key="coins"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
@@ -414,7 +414,7 @@ export default function CosmeticShop() {
         {activeTab === 'vip' && (
           <motion.div
             key="vip"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
@@ -437,7 +437,7 @@ export default function CosmeticShop() {
                     animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 4 }}
                   >
-                    👑
+                    <Crown size={56} className="mx-auto text-[rgb(var(--orchid))]" />
                   </motion.div>
                   <h2 className="text-3xl font-bold text-purple-300 mb-2">{t('vip_pass')}</h2>
                   <p className="text-purple-200/60 mb-6">{VIP_PLANS.find(p => p.id === selectedVipPlan)?.sub}</p>
@@ -515,7 +515,7 @@ export default function CosmeticShop() {
                       animate={{ opacity: 1 }}
                     >
                       <p className="text-green-300 text-sm">
-                        ✅ {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
+                        {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
                       </p>
                     </motion.div>
                   )}

@@ -4,22 +4,27 @@ import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import { GameSelectCard } from "@/components/game/GameSelectCard";
 import { useTranslation } from "@/hooks/useTranslation";
+import { TOKEN } from "@/constants/theme";
+import { riseIn, staggerParent } from "@/lib/motion";
 
+// Both games used to render in identical gold, which made the two headline
+// modes of the whole app visually interchangeable. Each now owns a hue and
+// a suit from the palette (see constants/theme.ts).
 const games = [
   {
     id: "mindi",
     name: "Mindi",
     description: "The classic Maldivian card game. Outsmart your opponents with strategy and skill.",
     icon: "♠",
-    color: "rgb(var(--gold))",
+    color: TOKEN.lagoon,
     players: "2-4 Players",
   },
   {
     id: "gin-rummy",
     name: "Gin Rummy",
     description: "Form sets and runs to declare Gin. A timeless card game of skill and luck.",
-    icon: "♥",
-    color: "rgb(var(--gold))",
+    icon: "♦",
+    color: TOKEN.deep,
     players: "2 Players",
   },
 ];

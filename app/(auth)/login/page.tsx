@@ -27,7 +27,7 @@ export default function LoginPage() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        transition={{ type: "spring", stiffness: 420, damping: 34 }}
         className="w-full max-w-md relative z-10"
       >
         <LoginForm />

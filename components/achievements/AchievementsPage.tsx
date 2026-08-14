@@ -5,6 +5,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CoinIcon } from '../ui/icons';
 
 export default function AchievementsPage() {
   const { state } = useEconomy();
@@ -17,7 +18,7 @@ export default function AchievementsPage() {
   return (
     <div className="w-full pt-4 pb-32 px-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center justify-between mb-6">
@@ -66,7 +67,7 @@ export default function AchievementsPage() {
               </div>
               <div className="text-right">
                 <div className="flex items-center gap-1 text-amber-400">
-                  <span>🪙</span>
+                  <CoinIcon size={14} />
                   <span className="font-bold">{ach.reward}</span>
                 </div>
                 {ach.unlocked && (

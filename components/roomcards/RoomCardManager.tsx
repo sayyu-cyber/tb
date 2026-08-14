@@ -7,6 +7,7 @@ import { useEconomy } from '../../contexts/EconomyContext';
 import { ROOM_CARD_LABELS, RoomCardType } from '../../types/economy';
 import { ROOM_CARD_PRICES } from '../../data/cosmetics';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CoinIcon, Ticket } from '../ui/icons';
 
 // Human-readable countdown for a card's remaining time - short durations
 // show minutes, longer ones (1 week / 1 month cards) show days so the
@@ -85,7 +86,7 @@ export default function RoomCardManager() {
 
       {availableCards.length === 0 && activeCards.length === 0 && (
         <div className="text-center py-8 text-[rgb(var(--c4))]">
-          <p className="text-4xl mb-2">🎫</p>
+          <Ticket size={34} className="mx-auto mb-3 text-[rgb(var(--c4))]" />
           <p>{t("roomcards_noneAvailable")}</p>
           <p className="text-sm">{t("roomcards_getFrom")}</p>
         </div>
@@ -102,7 +103,7 @@ export default function RoomCardManager() {
                 onClick={() => purchaseRoomCard(type)}
                 whileTap={{ scale: 0.95 }}
               >
-                <span>🪙</span>
+                <CoinIcon size={13} />
                 <span>{ROOM_CARD_PRICES[type].toLocaleString()}</span>
               </motion.button>
             </div>

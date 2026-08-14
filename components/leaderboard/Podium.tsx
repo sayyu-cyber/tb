@@ -28,7 +28,7 @@ export function Podium({ topThree }: PodiumProps) {
         return (
           <Link key={player.rank} href={`/player?uid=${player.uid}`} style={{ order }}>
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: order * 0.15, duration: 0.5 }}
             className="flex flex-col items-center"

@@ -20,6 +20,7 @@ import {
   scoreKnock,
 } from "@/lib/ginRummyEngine";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { useToast } from "@/contexts/ToastContext";
 
 export interface GinOnlineState {
@@ -320,7 +321,15 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
+    <div
+      // Felt: a soft radial pool of the game's own colour over the page
+      // background, so the table reads as a surface you are playing on
+      // rather than a flat app screen - and so Mindi and Gin Rummy are
+      // instantly distinguishable mid-match.
+      style={{ ["--accent" as string]: "var(--deep)" } as React.CSSProperties}
+      className="min-h-screen flex flex-col bg-[rgb(var(--c1))]
+                 [background-image:radial-gradient(120%_60%_at_50%_18%,rgb(var(--accent)/14%),transparent_70%)]"
+    >
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
@@ -340,9 +349,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           disabled={state.phase !== "draw" || !isMyTurn || state.stock.length <= 2}
           className="flex flex-col items-center gap-1 disabled:opacity-40"
         >
-          <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--c3))] flex items-center justify-center">
-            <Layers size={20} className="text-[rgb(var(--c4))]" />
-          </div>
+          <PlayingCard rank="" suit="spades" size="lg" faceDown />
           <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_stock").replace("{n}", String(state.stock.length))}</span>
         </button>
 
@@ -352,14 +359,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           className="flex flex-col items-center gap-1 disabled:opacity-40"
         >
           {topDiscard ? (
-            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/40%)] flex flex-col items-center justify-center">
-              <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
-                {rankLabel(topDiscard.rank)}
-              </span>
-              <span className={`text-sm ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
-                {SUIT_SYMBOLS[topDiscard.suit]}
-              </span>
-            </div>
+            <PlayingCard rank={rankLabel(topDiscard.rank)} suit={suitFromLetter(topDiscard.suit)} size="lg" />
           ) : (
             <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
           )}
@@ -375,23 +375,15 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           {sortedHand.map((card) => {
             const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
             return (
-              <motion.button
+              <PlayingCard
                 key={cardId(card)}
-                whileHover={isMyTurn && state.phase === "discard" ? { y: -8 } : {}}
-                whileTap={isMyTurn && state.phase === "discard" ? { scale: 0.95 } : {}}
-                onClick={() => handleSelectDiscard(card)}
+                rank={rankLabel(card.rank)}
+                suit={suitFromLetter(card.suit)}
+                size="md"
+                selected={Boolean(selected)}
                 disabled={!isMyTurn || state.phase !== "discard"}
-                className={`w-11 h-16 rounded-lg border flex flex-col items-center justify-center disabled:opacity-70 ${
-                  selected ? "bg-[rgb(var(--gold)/20%)] border-[rgb(var(--gold))] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
-                }`}
-              >
-                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
-                  {rankLabel(card.rank)}
-                </span>
-                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
-                  {SUIT_SYMBOLS[card.suit]}
-                </span>
-              </motion.button>
+                onClick={() => handleSelectDiscard(card)}
+              />
             );
           })}
         </div>

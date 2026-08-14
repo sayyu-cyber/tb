@@ -5,6 +5,7 @@ import { Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getRankFromTrophies, RANKS } from "@/constants/ranks";
 import { useTranslation } from "@/hooks/useTranslation";
+import { riseIn } from "@/lib/motion";
 
 export function RankProgress() {
   const { playerStats } = useAuth();
@@ -20,17 +21,18 @@ export function RankProgress() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.05 }}
-      className="glass-card rounded-2xl p-5"
+      variants={riseIn}
+      initial="hidden"
+      animate="show"
+      style={{ ["--accent" as string]: "var(--gold)" } as React.CSSProperties}
+      className="surface-accent edge-light rounded-2xl p-5"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Award size={18} className="text-[rgb(var(--gold))]" />
+          <Award size={18} className="text-[rgb(var(--accent))]" aria-hidden="true" />
           <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_currentRank")}</h3>
         </div>
-        <span className="text-[rgb(var(--gold))] font-bold text-sm">{currentRank}</span>
+        <span className="text-[rgb(var(--accent))] font-bold text-sm tabular-nums">{currentRank}</span>
       </div>
 
       <div className="flex items-baseline gap-1 mb-3">
@@ -40,7 +42,7 @@ export function RankProgress() {
 
       <div className="h-2 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
+          className="h-full bg-gradient-to-r from-[rgb(var(--accent)/70%)] to-[rgb(var(--accent))] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}

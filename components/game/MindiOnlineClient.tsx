@@ -29,6 +29,7 @@ import {
   HandOutcome,
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { useToast } from "@/contexts/ToastContext";
 
 export interface MindiOnlineState {
@@ -269,7 +270,15 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
+    <div
+      // Felt: a soft radial pool of the game's own colour over the page
+      // background, so the table reads as a surface you are playing on
+      // rather than a flat app screen - and so Mindi and Gin Rummy are
+      // instantly distinguishable mid-match.
+      style={{ ["--accent" as string]: "var(--lagoon)" } as React.CSSProperties}
+      className="min-h-screen flex flex-col bg-[rgb(var(--c1))]
+                 [background-image:radial-gradient(120%_60%_at_50%_18%,rgb(var(--accent)/14%),transparent_70%)]"
+    >
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
         <div className="text-center">
@@ -318,10 +327,14 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
               <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? t("mindi_yourTurn") : t("mindi_waiting")}</span>
             ) : (
               state.trick.map((play) => (
-                <div key={cardId(play.card)} className="w-10 h-14 rounded-md flex flex-col items-center justify-center border bg-[rgb(var(--c2))] border-[rgb(var(--c3))]">
-                  <span className={`text-xs font-bold ${SUIT_COLOR[play.card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{rankLabel(play.card.rank)}</span>
-                  <span className={`text-[10px] ${SUIT_COLOR[play.card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{SUIT_SYMBOLS[play.card.suit]}</span>
-                </div>
+                <motion.div
+                  key={cardId(play.card)}
+                  initial={{ opacity: 0, scale: 0.7, y: -18 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 450, damping: 26 }}
+                >
+                  <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
+                </motion.div>
               ))
             )}
           </div>
@@ -337,17 +350,14 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
             {myHand.map((card) => {
               const canPlay = isMyTurn && legalForMe.some((c) => cardId(c) === cardId(card));
               return (
-                <motion.button
+                <PlayingCard
                   key={cardId(card)}
-                  whileHover={canPlay ? { y: -8, scale: 1.05 } : {}}
-                  whileTap={canPlay ? { scale: 0.95 } : {}}
-                  onClick={() => canPlay && handlePlayCard(card)}
+                  rank={rankLabel(card.rank)}
+                  suit={suitFromLetter(card.suit)}
+                  size="md"
                   disabled={!canPlay}
-                  className="w-12 h-16 rounded-lg bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/30%)] flex flex-col items-center justify-center disabled:opacity-40 disabled:border-[rgb(var(--c3))]"
-                >
-                  <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>{rankLabel(card.rank)}</span>
-                  <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>{SUIT_SYMBOLS[card.suit]}</span>
-                </motion.button>
+                  onClick={() => canPlay && handlePlayCard(card)}
+                />
               );
             })}
           </div>

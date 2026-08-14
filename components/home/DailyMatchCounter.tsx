@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { riseIn } from "@/lib/motion";
 
 export function DailyMatchCounter() {
   const used = 1;
@@ -12,17 +13,18 @@ export function DailyMatchCounter() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.08 }}
-      className="glass-card rounded-2xl p-5"
+      variants={riseIn}
+      initial="hidden"
+      animate="show"
+      style={{ ["--accent" as string]: "var(--lagoon)" } as React.CSSProperties}
+      className="surface-accent edge-light rounded-2xl p-5"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Calendar size={18} className="text-[rgb(var(--gold))]" />
+          <Calendar size={18} className="text-[rgb(var(--accent))]" aria-hidden="true" />
           <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_dailyMatches")}</h3>
         </div>
-        <span className="text-[rgb(var(--gold))] font-bold text-sm">{remaining} / {total}</span>
+        <span className="text-[rgb(var(--accent))] font-bold text-sm tabular-nums">{remaining} / {total}</span>
       </div>
 
       <div className="flex gap-2">
@@ -34,7 +36,7 @@ export function DailyMatchCounter() {
             transition={{ delay: 0.15 + i * 0.1, type: "spring" }}
             className={`flex-1 h-3 rounded-full ${
               i < remaining
-                ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))]"
+                ? "bg-gradient-to-r from-[rgb(var(--accent)/70%)] to-[rgb(var(--accent))]"
                 : "bg-[rgb(var(--c3))]"
             }`}
           />

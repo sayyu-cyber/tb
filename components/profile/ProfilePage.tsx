@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { ALL_COSMETICS } from '../../data/cosmetics';
 import CoinBalance from '../economy/CoinBalance';
+import { CategoryIcon, Crown } from '../ui/icons';
 
 export default function ProfilePage() {
   const { state, equipCosmetic } = useEconomy();
@@ -13,10 +14,10 @@ export default function ProfilePage() {
   const [activeEquipTab, setActiveEquipTab] = useState('cardBack');
 
   const equipTabs = [
-    { id: 'cardBack', label: 'Card Back', icon: '🃏' },
-    { id: 'tableTheme', label: 'Table', icon: '🎰' },
-    { id: 'profileFrame', label: 'Frame', icon: '🖼️' },
-    { id: 'victoryAnimation', label: 'Victory', icon: '✨' },
+    { id: 'cardBack', label: 'Card Back' },
+    { id: 'tableTheme', label: 'Table' },
+    { id: 'profileFrame', label: 'Frame' },
+    { id: 'victoryAnimation', label: 'Victory' },
   ];
 
   const ownedItems = ALL_COSMETICS.filter(c =>
@@ -36,7 +37,7 @@ export default function ProfilePage() {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Profile Header */}
@@ -95,7 +96,7 @@ export default function ProfilePage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">👑</span>
+                <Crown size={14} className="text-2xl" />
                 <div>
                   <h3 className="text-purple-300 font-bold">VIP Active</h3>
                   <p className="text-purple-200/60 text-sm">{profile.vip.remainingDays} days remaining</p>
@@ -152,7 +153,7 @@ export default function ProfilePage() {
                     : 'bg-[rgb(var(--c3))] text-[rgb(var(--c4))] hover:text-[rgb(var(--c5))]'
                 }`}
               >
-                <span className="mr-1">{tab.icon}</span>
+                <CategoryIcon category={tab.id} size={14} />
                 {tab.label}
               </button>
             ))}
@@ -173,7 +174,7 @@ export default function ProfilePage() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <span className="text-2xl opacity-50">
-                    {activeEquipTab === 'cardBack' ? '🃏' : activeEquipTab === 'tableTheme' ? '🎰' : activeEquipTab === 'profileFrame' ? '🖼️' : '✨'}
+                    <CategoryIcon category={activeEquipTab} size={30} className="text-[rgb(var(--c4))]" />
                   </span>
                   <span className="text-xs text-[rgb(var(--c5))] truncate w-full text-center px-1">{item.name}</span>
                   {isEquipped && (

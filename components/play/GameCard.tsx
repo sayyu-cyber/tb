@@ -21,7 +21,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       onHoverStart={() => setIsHovered(true)}
@@ -43,7 +43,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
           <div>
             <motion.div
               animate={{ rotate: isHovered ? [0, -10, 10, 0] : 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
               className="text-5xl mb-3"
             >
               {icon}
@@ -64,7 +64,7 @@ export function GameCard({ name, description, icon, color, players }: GameCardPr
               scale: isHovered ? 1.1 : 1,
               rotate: isHovered ? 5 : 0,
             }}
-            transition={{ duration: 0.4 }}
+            transition={{ type: "spring", stiffness: 420, damping: 34 }}
             className="text-6xl opacity-30"
           >
             {icon}

@@ -9,16 +9,17 @@ import { ALL_COSMETICS, RARITY_COLORS } from "@/data/cosmetics";
 import { CosmeticCategory } from "@/types/economy";
 import RoomCardManager from "@/components/roomcards/RoomCardManager";
 import { useTranslation } from "@/hooks/useTranslation";
+import { CategoryIcon } from "@/components/ui/icons";
 
-function getCategoryTabs(t: (key: string) => string): { id: CosmeticCategory; label: string; icon: string }[] {
+function getCategoryTabs(t: (key: string) => string): { id: CosmeticCategory; label: string }[] {
   return [
-    { id: "cardBack", label: t("inv_cardBacks"), icon: "🃏" },
-    { id: "tableTheme", label: t("inv_tables"), icon: "🎰" },
-    { id: "profileFrame", label: t("inv_frames"), icon: "🖼️" },
-    { id: "emote", label: t("inv_emotes"), icon: "😊" },
-    { id: "victoryAnimation", label: t("inv_victory"), icon: "✨" },
-    { id: "sticker", label: t("inv_stickers"), icon: "🏷️" },
-    { id: "banner", label: t("inv_banners"), icon: "🚩" },
+    { id: "cardBack", label: t("inv_cardBacks") },
+    { id: "tableTheme", label: t("inv_tables") },
+    { id: "profileFrame", label: t("inv_frames") },
+    { id: "emote", label: t("inv_emotes") },
+    { id: "victoryAnimation", label: t("inv_victory") },
+    { id: "sticker", label: t("inv_stickers") },
+    { id: "banner", label: t("inv_banners") },
   ];
 }
 
@@ -88,7 +89,7 @@ export default function InventoryPage() {
                   category === cat.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
                 }`}
               >
-                <span className="mr-1">{cat.icon}</span>
+                <CategoryIcon category={cat.id} size={14} />
                 {cat.label}
               </button>
             ))}

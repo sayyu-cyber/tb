@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
 import { DailyMission, WeeklyMission } from '../../types/economy';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CoinIcon, Check } from '../ui/icons';
 
 function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | WeeklyMission; isWeekly?: boolean }) {
   const progressPercent = Math.min((mission.progress / mission.target) * 100, 100);
@@ -36,14 +37,14 @@ function MissionCard({ mission, isWeekly = false }: { mission: DailyMission | We
                 animate={{ scale: 1 }}
                 className="text-green-400 text-sm"
               >
-                ✅
+                <Check size={14} strokeWidth={3} />
               </motion.span>
             )}
           </div>
           <p className="text-[rgb(var(--c4))] text-sm mt-0.5">{mission.description}</p>
         </div>
         <div className="flex items-center gap-1.5 bg-amber-900/30 rounded-full px-3 py-1 border border-amber-500/20">
-          <span className="text-amber-400 text-sm">🪙</span>
+          <CoinIcon size={14} />
           <span className="text-amber-200 font-bold text-sm">{mission.reward}</span>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default function MissionsPanel() {
       {/* Daily Missions */}
       <motion.div
         className="bg-gradient-to-b from-neutral-900 to-black border border-amber-500/15 rounded-2xl p-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center justify-between mb-4">
@@ -132,7 +133,7 @@ export default function MissionsPanel() {
       {/* Weekly Missions */}
       <motion.div
         className="bg-gradient-to-b from-neutral-900 to-black border border-amber-500/15 rounded-2xl p-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >

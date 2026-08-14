@@ -9,6 +9,7 @@ import { getRankFromTrophies, TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks"
 import { useAuth } from "@/contexts/AuthContext";
 import { updateMatchResult } from "@/lib/trophyUpdates";
 import { useTranslation } from "@/hooks/useTranslation";
+import { Crown } from "@/components/ui/icons";
 
 export default function PostMatchPage() {
   const t = useTranslation();
@@ -92,7 +93,7 @@ export default function PostMatchPage() {
       {isVictory && <VictoryParticles />}
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-6 relative z-10 w-full max-w-sm"
       >
@@ -233,7 +234,7 @@ function PromotionAnimation({ rank, onClose }: { rank: string; onClose: () => vo
           transition={{ duration: 2, repeat: Infinity }}
           className="text-6xl mb-4"
         >
-          👑
+          <Crown size={48} className="text-[rgb(var(--gold))]" />
         </motion.div>
         <h2 className="text-3xl font-bold gold-text-gradient mb-2">PROMOTED!</h2>
         <p className="text-[rgb(var(--text-primary))] text-xl mb-6">{rank}</p>
