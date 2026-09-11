@@ -750,6 +750,15 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     const saveToFirebase = async () => {
       try {
         await setDoc(doc(db, 'playerEconomy', user.uid), state, { merge: true });
+        // Also mirror the equipped card back onto the public `players/{uid}`
+        // doc (already readable by any signed-in user, see lib/publicProfile.ts)
+        // so opponents at the table can render this player's actual skin
+        // instead of always falling back to the default.
+        await setDoc(
+          doc(db, 'players', user.uid),
+          { equippedCardBack: state.profile.equipped.cardBack || '' },
+          { merge: true }
+        );
       } catch (error) {
         console.error('Failed to save to Firebase:', error);
       }

@@ -23,6 +23,10 @@ export interface PublicProfile {
   favoriteGame: string | null;
   avatarPreset?: string;
   bannerPreset?: string;
+  /** Equipped card-back cosmetic id, synced from EconomyContext (see
+   *  `equippedCardBack` there) so the game table can render an opponent's
+   *  actual skin instead of always falling back to the default. */
+  cardBack?: string;
 }
 
 export async function getPublicProfile(uid: string): Promise<PublicProfile | null> {
@@ -43,5 +47,6 @@ export async function getPublicProfile(uid: string): Promise<PublicProfile | nul
     favoriteGame: data.favoriteGame || null,
     avatarPreset: data.avatarPreset,
     bannerPreset: data.bannerPreset,
+    cardBack: data.equippedCardBack,
   };
 }

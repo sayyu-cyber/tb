@@ -156,6 +156,18 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 
   **Verification.** `npm run verify` clean throughout (typecheck, lint, App Router check) — only the two long-standing `<img>` warnings. `next build` still cannot run in this sandbox. Not yet tested against live Firebase, and the new palette has not been checked on a real device.
 
+- Game table rebuilt as a real "arena" (2026-09-11). Brief: make live matches feel like a physical table game, show opponents' actual hands (back of deck) so card-back skins are worth buying, and define the table itself — not a gambling-app screen. Previously a live match rendered opponents as plain text chips ("Partner — 6 cards") with no avatar, no identity, and no visual table at all; cards floated on the bare page background.
+
+  **New shared shell** (`components/game/GameArena.tsx`), used by both Mindi and Gin Rummy: `ArenaFelt` (accent-tinted page background, lagoon for Mindi / deep blue for Gin Rummy), `ArenaTable` (a rimmed, elevated panel that gives the play area a physical edge instead of bleeding into the page), `OpponentSeat` (avatar + name + a fanned, face-down `CardFan` sized to their actual hand count, glowing gold when it's their turn), `SelfRow` (the viewer's own identity strip above their hand) and `TableWell` (the felt-inset centre where cards are actually played — wide rounded rather than a strict circle, since Mindi's clustered trick and Gin Rummy's side-by-side stock/discard need different proportions).
+
+  **Card-back skins now actually render.** `data/cosmetics.ts`'s 11 `CARD_BACKS` have catalogue entries (name, rarity, price) but no real artwork exists anywhere in the project (no Storage bucket is set up — see the comment on `constants/profileCustomization.ts`), so every `previewImage` path 404s. Rather than ship a broken `<img>`, `PlayingCard.tsx` now has `CARD_BACK_STYLES`: each of the 11 skins gets its own two-colour woven pattern (base colour + weave colour + rim), so an equipped card back is genuinely visible face-down at the table — this is the actual point of selling them.
+
+  **Opponent identity was previously unavailable to these screens at all** — `MatchDoc` only stores uids. Closed that gap end-to-end rather than faking it: `lib/publicProfile.ts`'s `getPublicProfile()` (already used by Spectate/friend-profile views, reading the already-open `players/{uid}` doc) now also returns the equipped card back; a new `hooks/useOpponentProfiles.ts` resolves it for every seat at a table; and `contexts/EconomyContext.tsx`'s existing debounced Firestore-save effect now mirrors `equipped.cardBack` onto `players/{uid}` (merge write, no rules change needed — that doc was already fully owner-writable) so an opponent's *current* skin shows up, not just their name.
+
+  **Both online clients rewired**, game logic untouched: `MindiOnlineClient.tsx` (partner/left/right seats positioned around the well, trick cards played into it) and `GinRummyOnlineClient.tsx` (single opponent seat above, stock + discard piles inside the well). Avatars use the existing preset-gradient system (`AVATAR_PRESETS`) with the player's initial — there is no photo upload in this app, so a coloured initial reads as an identity, not a placeholder.
+
+  **Verification.** `npx tsc --noEmit`, `npx next lint` (clean, same two pre-existing `<img>` warnings) and `npm run check` (61 files) all pass. Not yet visually checked on a device — the table well's proportions in particular are worth a real look once deployed.
+
 ## Suggested next steps
 1. Run `firebase deploy --only firestore:rules` to restore login.
 2. Verify the app builds cleanly (`npm run build`) with the uncommitted Economy/Firebase changes, then commit and push so this progress is safe.

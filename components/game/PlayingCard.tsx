@@ -48,10 +48,34 @@ export function suitFromLetter(letter: string): Suit {
 }
 
 const SIZES = {
+  xs: { box: "w-7 h-10 rounded-[5px]", index: "text-[7px]", pip: "text-xs", corner: "p-px" },
   sm: { box: "w-10 h-14 rounded-md", index: "text-[9px]", pip: "text-base", corner: "p-0.5" },
   md: { box: "w-12 h-[4.2rem] rounded-lg", index: "text-[11px]", pip: "text-xl", corner: "p-1" },
   lg: { box: "w-16 h-[5.6rem] rounded-xl", index: "text-sm", pip: "text-3xl", corner: "p-1.5" },
 } as const;
+
+/**
+ * Card-back skins. Cosmetic card backs (data/cosmetics.ts `CARD_BACKS`) are
+ * catalogue entries with a `previewImage` path, but no art actually exists
+ * for them yet (no Storage bucket - see the comment on
+ * constants/profileCustomization.ts). Rather than 404 an <img>, each skin
+ * gets its own two-colour woven pattern defined here, so an equipped skin
+ * is genuinely visible at the table without needing real artwork.
+ */
+export const CARD_BACK_STYLES: Record<string, { base: string; weave: string; ring: string }> = {
+  cb_default: { base: "rgb(var(--deep-dark))", weave: "rgb(var(--gold)/22%)", ring: "rgb(var(--gold)/35%)" },
+  cb_maldives: { base: "#0E7C86", weave: "rgb(var(--coral)/45%)", ring: "rgb(var(--coral)/45%)" },
+  cb_ocean: { base: "#0B2A4A", weave: "rgb(var(--lagoon)/40%)", ring: "rgb(var(--lagoon)/45%)" },
+  cb_fire: { base: "#3A0E0E", weave: "#FF6B4A55", ring: "#FF6B4A66" },
+  cb_frost: { base: "#173B4D", weave: "#BFEFFF55", ring: "#BFEFFF66" },
+  cb_shadow: { base: "#0A0A12", weave: "rgb(var(--orchid)/35%)", ring: "rgb(var(--orchid)/40%)" },
+  cb_dragon: { base: "#0E3B2E", weave: "rgb(var(--gold)/35%)", ring: "rgb(var(--gold)/45%)" },
+  cb_phoenix: { base: "#4A1206", weave: "#FFB03A55", ring: "#FFB03A66" },
+  cb_vip_gold: { base: "#1A1408", weave: "rgb(var(--gold-bright)/55%)", ring: "rgb(var(--gold-bright)/60%)" },
+  cb_neon: { base: "#150826", weave: "#37E6E655", ring: "#FF3AD655" },
+  cb_wood: { base: "#3E2718", weave: "#C89A6655", ring: "#C89A6666" },
+  cb_marble: { base: "#D9D9DC", weave: "#00000022", ring: "#00000033" },
+};
 
 export interface PlayingCardProps {
   /** Display rank: "A", "2".."10", "J", "Q", "K". */
@@ -60,6 +84,9 @@ export interface PlayingCardProps {
   size?: keyof typeof SIZES;
   /** Renders the patterned back instead of the face. */
   faceDown?: boolean;
+  /** Equipped card-back cosmetic id (data/cosmetics.ts `CARD_BACKS`).
+   *  Falls back to the classic gold lattice when omitted or unknown. */
+  cardBackId?: string;
   /** Dims and disables — for cards that aren't a legal play. */
   disabled?: boolean;
   /** Lifts the card, e.g. the currently selected discard. */
@@ -75,6 +102,7 @@ export function PlayingCard({
   suit,
   size = "md",
   faceDown = false,
+  cardBackId,
   disabled = false,
   selected = false,
   onClick,
@@ -87,27 +115,24 @@ export function PlayingCard({
   const interactive = Boolean(onClick) && !disabled;
 
   if (faceDown) {
+    const skin = CARD_BACK_STYLES[cardBackId ?? ""] ?? CARD_BACK_STYLES.cb_default;
     return (
       <div
         aria-hidden="true"
-        className={cn(
-          s.box,
-          "relative overflow-hidden border border-[rgb(var(--gold)/35%)] shadow-[var(--shadow-sm)]",
-          "bg-[rgb(var(--deep-dark))]",
-          className
-        )}
+        className={cn(s.box, "relative overflow-hidden border shadow-[var(--shadow-sm)]", className)}
+        style={{ backgroundColor: skin.base, borderColor: skin.ring }}
       >
         {/* Woven lattice back, drawn with two crossed repeating gradients so
             it reads as a printed pattern rather than a flat fill. */}
         <div
-          className="absolute inset-0 opacity-60"
+          className="absolute inset-0 opacity-70"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(45deg, rgb(var(--gold)/22%) 0 2px, transparent 2px 6px)," +
-              "repeating-linear-gradient(-45deg, rgb(var(--gold)/22%) 0 2px, transparent 2px 6px)",
+              `repeating-linear-gradient(45deg, ${skin.weave} 0 2px, transparent 2px 6px),` +
+              `repeating-linear-gradient(-45deg, ${skin.weave} 0 2px, transparent 2px 6px)`,
           }}
         />
-        <div className="absolute inset-[3px] rounded-[inherit] border border-[rgb(var(--gold)/30%)]" />
+        <div className="absolute inset-[3px] rounded-[inherit] border" style={{ borderColor: skin.ring }} />
       </div>
     );
   }
@@ -167,13 +192,24 @@ export function PlayingCard({
  * A fanned stack of face-down cards, for showing an opponent's hand size.
  * Overlapping negative margins keep a 13-card hand compact.
  */
-export function CardFan({ count, size = "sm" }: { count: number; size?: keyof typeof SIZES }) {
+export function CardFan({
+  count,
+  size = "sm",
+  cardBackId,
+  className,
+}: {
+  count: number;
+  size?: keyof typeof SIZES;
+  cardBackId?: string;
+  className?: string;
+}) {
   const shown = Math.min(count, 6);
+  const overlap = size === "xs" ? "-ml-4" : size === "sm" ? "-ml-6" : "-ml-8";
   return (
-    <div className="flex items-center" aria-label={`${count} cards`}>
+    <div className={cn("flex items-center", className)} aria-label={`${count} cards`}>
       {Array.from({ length: shown }).map((_, i) => (
-        <div key={i} className={i === 0 ? "" : "-ml-6"} style={{ zIndex: i }}>
-          <PlayingCard rank="" suit="spades" size={size} faceDown />
+        <div key={i} className={i === 0 ? "" : overlap} style={{ zIndex: i }}>
+          <PlayingCard rank="" suit="spades" size={size} faceDown cardBackId={cardBackId} />
         </div>
       ))}
       {count > shown && (

@@ -31,6 +31,8 @@ import {
 import { useTranslation } from "@/hooks/useTranslation";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { useToast } from "@/contexts/ToastContext";
+import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
 
 export interface MindiOnlineState {
   handsByUid: Record<string, Card[]>;
@@ -48,7 +50,7 @@ export interface MindiOnlineState {
 }
 
 export function MindiOnlineClient({ matchId }: { matchId: string }) {
-  const { user } = useAuth();
+  const { user, playerStats } = useAuth();
   const { processMatchEnd } = useEconomy();
   const myUid = user?.uid ?? "";
   const t = useTranslation();
@@ -76,11 +78,27 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const ledSuit = state && state.trick.length > 0 ? state.trick[0].card.suit : null;
   const legalForMe = state ? getLegalPlays(myHand, ledSuit) : [];
 
+  const opponentProfiles = useOpponentProfiles(match?.players.filter((p) => p !== myUid) ?? []);
+
   function seatLabelFor(seat: SeatIndex): string {
     if (numPlayers === 2) return t("mindi_opponent");
     // Relative to the viewer: same seat = You, +2 = Partner, others = opponents.
     const relative = (((seat - mySeat) % 4) + 4) % 4;
     return SEAT_NAMES[relative];
+  }
+
+  /** Builds the arena seat data (name, avatar, card-back skin, live count) for a given seat index. */
+  function seatDataFor(seat: SeatIndex): ArenaSeatData {
+    const uid = match?.players[seat] ?? "";
+    const profile = opponentProfiles[uid];
+    return {
+      uid,
+      name: profile?.displayName ?? seatLabelFor(seat),
+      avatarPreset: profile?.avatarPreset,
+      cardBackId: profile?.cardBack,
+      cardCount: state?.handsByUid[uid]?.length ?? 0,
+      active: state?.turnSeat === seat,
+    };
   }
 
   async function handlePlayCard(card: Card) {
@@ -269,30 +287,26 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     );
   }
 
-  return (
-    <div
-      // Felt: a soft radial pool of the game's own colour over the page
-      // background, so the table reads as a surface you are playing on
-      // rather than a flat app screen - and so Mindi and Gin Rummy are
-      // instantly distinguishable mid-match.
-      style={{ ["--accent" as string]: "var(--lagoon)" } as React.CSSProperties}
-      className="min-h-screen flex flex-col bg-[rgb(var(--c1))]
-                 [background-image:radial-gradient(120%_60%_at_50%_18%,rgb(var(--accent)/14%),transparent_70%)]"
-    >
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />
-        <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
-            Mindi — {match.pool === "casual" ? t("gamesel_online") : match.pool === "weekend" ? t("page_weekendLeague") : t("mindi_poolRanked")}
-          </p>
-          <p className="text-[rgb(var(--c4))] text-[10px] flex items-center justify-center gap-1">
-            {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
-          </p>
-        </div>
-        <div className="w-10" />
-      </div>
+  const partnerSeat = numPlayers !== 2 ? seatDataFor(((mySeat + 2) % 4) as SeatIndex) : null;
+  const leftSeat = numPlayers !== 2 ? seatDataFor(((mySeat + 1) % 4) as SeatIndex) : seatDataFor((mySeat === 0 ? 1 : 0) as SeatIndex);
+  const rightSeat = numPlayers !== 2 ? seatDataFor(((mySeat + 3) % 4) as SeatIndex) : null;
+  const myProfile = { name: t("mindi_you"), avatarPreset: playerStats?.avatarPreset };
 
-      <div className="px-4 py-2">
+  return (
+    <ArenaFelt accent="var(--lagoon)">
+      <ArenaHeader
+        leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />}
+        title={
+          <>Mindi — {match.pool === "casual" ? t("gamesel_online") : match.pool === "weekend" ? t("page_weekendLeague") : t("mindi_poolRanked")}</>
+        }
+        subtitle={
+          <>
+            {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
+          </>
+        }
+      />
+
+      <div className="px-4 pb-2">
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <Users size={14} className="text-[rgb(var(--gold))]" />
@@ -306,73 +320,60 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-between py-4 px-4">
-        {numPlayers === 2 ? (
-          <SeatRow
-            label={seatLabelFor(((mySeat === 0 ? 1 : 0) as SeatIndex))}
-            count={state.handsByUid[match.players[mySeat === 0 ? 1 : 0]]?.length ?? 0}
-            active={state.turnSeat !== mySeat}
-          />
-        ) : (
-          <SeatRow label={seatLabelFor(((mySeat + 2) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 2) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 2) % 4) as SeatIndex)} />
-        )}
-
-        <div className="flex items-center justify-between w-full max-w-sm">
-          {numPlayers !== 2 && (
-            <SeatRow label={seatLabelFor(((mySeat + 1) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 1) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 1) % 4) as SeatIndex)} />
-          )}
-
-          <div className="relative w-32 h-32 flex items-center justify-center flex-wrap gap-1 mx-auto">
-            {state.trick.length === 0 ? (
-              <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? t("mindi_yourTurn") : t("mindi_waiting")}</span>
-            ) : (
-              state.trick.map((play) => (
-                <motion.div
-                  key={cardId(play.card)}
-                  initial={{ opacity: 0, scale: 0.7, y: -18 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 450, damping: 26 }}
-                >
-                  <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
-                </motion.div>
-              ))
-            )}
+      <ArenaTable>
+        <div className="flex-1 flex flex-col items-center justify-between">
+          <div className="h-14 flex items-center justify-center">
+            {partnerSeat && <OpponentSeat seat={partnerSeat} orientation="column" />}
           </div>
 
-          {numPlayers !== 2 && (
-            <SeatRow label={seatLabelFor(((mySeat + 3) % 4) as SeatIndex)} count={state.handsByUid[match.players[((mySeat + 3) % 4)]]?.length ?? 0} active={state.turnSeat === (((mySeat + 3) % 4) as SeatIndex)} />
-          )}
-        </div>
+          <div className="flex items-center justify-between w-full max-w-sm">
+            <div className="w-20">{leftSeat && <OpponentSeat seat={leftSeat} orientation="column" />}</div>
 
-        <div className="w-full">
-          <p className="text-[rgb(var(--c4))] text-xs mb-2 text-center">{isMyTurn ? t("mindi_selectCard") : t("mindi_waitingOthers")}</p>
-          <div className="flex justify-center gap-1.5 flex-wrap">
-            {myHand.map((card) => {
-              const canPlay = isMyTurn && legalForMe.some((c) => cardId(c) === cardId(card));
-              return (
-                <PlayingCard
-                  key={cardId(card)}
-                  rank={rankLabel(card.rank)}
-                  suit={suitFromLetter(card.suit)}
-                  size="md"
-                  disabled={!canPlay}
-                  onClick={() => canPlay && handlePlayCard(card)}
-                />
-              );
-            })}
+            <TableWell>
+              {state.trick.length === 0 ? (
+                <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? t("mindi_yourTurn") : t("mindi_waiting")}</span>
+              ) : (
+                state.trick.map((play) => (
+                  <motion.div
+                    key={cardId(play.card)}
+                    initial={{ opacity: 0, scale: 0.7, y: -18 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 26 }}
+                  >
+                    <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
+                  </motion.div>
+                ))
+              )}
+            </TableWell>
+
+            <div className="w-20">{rightSeat && <OpponentSeat seat={rightSeat} orientation="column" />}</div>
+          </div>
+
+          <div className="w-full">
+            <SelfRow
+              name={myProfile.name}
+              avatarPreset={myProfile.avatarPreset}
+              active={isMyTurn}
+              trailing={<span className="text-[rgb(var(--c4))] text-[11px]">{isMyTurn ? t("mindi_selectCard") : t("mindi_waitingOthers")}</span>}
+            />
+            <div className="flex justify-center gap-1.5 flex-wrap">
+              {myHand.map((card) => {
+                const canPlay = isMyTurn && legalForMe.some((c) => cardId(c) === cardId(card));
+                return (
+                  <PlayingCard
+                    key={cardId(card)}
+                    rank={rankLabel(card.rank)}
+                    suit={suitFromLetter(card.suit)}
+                    size="md"
+                    disabled={!canPlay}
+                    onClick={() => canPlay && handlePlayCard(card)}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function SeatRow({ label, count, active }: { label: string; count: number; active: boolean }) {
-  const t = useTranslation();
-  return (
-    <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-colors ${active ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}>
-      <span className={`text-[10px] font-medium ${active ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>{label}</span>
-      <span className="text-[rgb(var(--c4))] text-[10px]">{count} {t("spectate_cards")}</span>
-    </div>
+      </ArenaTable>
+    </ArenaFelt>
   );
 }
