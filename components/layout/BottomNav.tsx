@@ -2,101 +2,14 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Home,
-  Gamepad2,
-  Trophy,
-  User,
-  Settings,
-  ShoppingBag,
-  Target,
-  Gift,
-  Users,
-  Flame,
-  MessageCircle,
-  MoreHorizontal,
-  Package,
-  Layers,
-  Award,
-  Crown,
-  Shield,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { MoreHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import CoinBalance from "@/components/economy/CoinBalance";
 import { useTranslation } from "@/hooks/useTranslation";
 import { sheetIn, staggerParent, riseIn, SPRING } from "@/lib/motion";
-
-interface NavItem {
-  icon: LucideIcon;
-  key: string;
-  href: string;
-  /** Accent token for the active state. Defaults to gold. */
-  accent?: string;
-}
-
-/**
- * Five primary destinations.
- *
- * This used to be eleven items in a horizontally scrolling bar. At 375px
- * that overflows by ~150px, so roughly half the app's navigation sat
- * off-screen behind a scroll gesture nobody discovers on a bar that looks
- * fixed. Five is the most that fits without scrolling; the rest moved into
- * the More sheet below.
- */
-const PRIMARY: NavItem[] = [
-  { icon: Home, key: "nav_home", href: "/home" },
-  { icon: Gamepad2, key: "nav_play", href: "/play", accent: "var(--lagoon)" },
-  { icon: Trophy, key: "nav_leaderboard", href: "/leaderboard" },
-  { icon: Users, key: "nav_friends", href: "/friends", accent: "var(--deep)" },
-];
-
-/** Everything else, grouped so the sheet reads as sections rather than a wall. */
-const SECONDARY: { titleKey: string; items: NavItem[] }[] = [
-  {
-    titleKey: "nav_play",
-    items: [
-      { icon: Flame, key: "nav_weekend", href: "/tournament", accent: "var(--coral)" },
-      { icon: Shield, key: "home_shortcutClubs", href: "/clubs", accent: "var(--deep)" },
-      { icon: Award, key: "home_shortcutHof", href: "/hall-of-fame" },
-      { icon: MessageCircle, key: "nav_messages", href: "/messages", accent: "var(--deep)" },
-    ],
-  },
-  {
-    titleKey: "nav_shop",
-    items: [
-      { icon: ShoppingBag, key: "nav_shop", href: "/shop" },
-      { icon: Crown, key: "home_shortcutVip", href: "/shop", accent: "var(--orchid)" },
-      { icon: Package, key: "home_shortcutInventory", href: "/inventory" },
-      { icon: Layers, key: "page_collection", href: "/collection", accent: "var(--lagoon)" },
-    ],
-  },
-  {
-    titleKey: "nav_profile",
-    items: [
-      { icon: Target, key: "nav_missions", href: "/missions", accent: "var(--lagoon)" },
-      { icon: Gift, key: "nav_rewards", href: "/rewards", accent: "var(--coral)" },
-      { icon: User, key: "nav_profile", href: "/profile" },
-      { icon: Settings, key: "nav_settings", href: "/settings" },
-    ],
-  },
-];
-
-/**
- * Exact-or-child match.
- *
- * The old check was `pathname.startsWith(item.href)`, which lit up "Play"
- * whenever you opened a player profile — /player starts with /play. This
- * requires a path separator, so /play and /play/mindi match but /player
- * does not.
- */
-function isActiveHref(pathname: string | null, href: string): boolean {
-  if (!pathname) return false;
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+import { PRIMARY, SECONDARY, isActiveHref, type NavItem } from "@/constants/navigation";
 
 function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate?: () => void }) {
   const t = useTranslation();
@@ -150,7 +63,10 @@ export function BottomNav() {
   const secondaryActive = SECONDARY.some((g) => g.items.some((i) => isActiveHref(pathname, i.href)));
 
   return (
-    <>
+    // Hidden at md+: SideNav lists every destination in a persistent left
+    // column there, so the mobile-only bottom bar and its "More" sheet
+    // would just be a redundant second nav on wider screens.
+    <div className="md:hidden">
       <AnimatePresence>
         {moreOpen && (
           <motion.div
@@ -282,6 +198,6 @@ export function BottomNav() {
           </button>
         </div>
       </motion.nav>
-    </>
+    </div>
   );
 }

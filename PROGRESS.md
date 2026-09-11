@@ -168,6 +168,10 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 
   **Verification.** `npx tsc --noEmit`, `npx next lint` (clean, same two pre-existing `<img>` warnings) and `npm run check` (61 files) all pass. Not yet visually checked on a device — the table well's proportions in particular are worth a real look once deployed.
 
+- Persistent desktop sidebar (2026-09-11). The "More" sheet redesign (rows instead of an icon grid) was mobile/tablet-only — on a desktop monitor every non-primary destination was still one tap behind a modal, which wastes the width a wide screen actually has. `constants/navigation.ts` is now the single source of truth for the nav list (`PRIMARY`, `SECONDARY`, `isActiveHref`), extracted out of `BottomNav.tsx` so a second nav surface doesn't duplicate-and-drift from it. `components/layout/SideNav.tsx` lists everything - primary tabs, then Play/Shop/Profile groups - top to bottom in one always-visible left column, each row highlighted with its own shared-`layoutId` pill (`sideNavActive`, kept distinct from the bottom bar's `navActive` so the two don't fight over the same layout animation while both are mounted). `MainLayout.tsx` is now a `md:flex` row: `SideNav` (hidden below `md`) plus the existing centred content column. `BottomNav` gained a `md:hidden` wrapper, since the sidebar replaces it there - phones keep the bottom bar and sheet unchanged.
+
+  **Verification.** `npx tsc --noEmit`, `npx next lint`, `npm run check` all pass.
+
 ## Suggested next steps
 1. Run `firebase deploy --only firestore:rules` to restore login.
 2. Verify the app builds cleanly (`npm run build`) with the uncommitted Economy/Firebase changes, then commit and push so this progress is safe.
