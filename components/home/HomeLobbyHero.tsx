@@ -43,14 +43,23 @@ export function HomeLobbyHero() {
             </h1>
           </div>
 
-          <Link href="/play">
+          <Link href="/play" className="relative shrink-0">
+            {/* Matches PlayLobbyHero's START - the two screens' primary
+                action should look and behave like the same button. */}
+            <motion.span
+              aria-hidden="true"
+              className="absolute -inset-2 rounded-[1.4rem] bg-[rgb(var(--gold)/35%)] blur-lg"
+              animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.97, 1.03, 0.97] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+            />
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
-              className="flex items-center gap-2 pl-5 pr-6 py-3.5 rounded-2xl
+              className="relative flex items-center gap-2 pl-5 pr-6 py-3.5 rounded-2xl
                          bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))]
                          text-[#0C0E12] font-black text-base tracking-wide
-                         shadow-[0_6px_24px_-4px_rgb(var(--gold)/60%)]"
+                         border border-[rgb(var(--gold-bright))]
+                         shadow-[0_6px_24px_-4px_rgb(var(--gold)/60%),inset_0_1px_0_rgb(255_255_255/45%)]"
             >
               <Play size={20} fill="#0C0E12" aria-hidden="true" />
               {t("gamesel_startButton")}
