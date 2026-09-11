@@ -62,7 +62,10 @@ export function SideNav() {
   // Home-only by design: a persistent nav column reads as a dashboard
   // there, but would compete with each other page's own back button/title
   // bar and eat into already-tight content width (e.g. in-match screens).
-  if (pathname !== "/home") return null;
+  // next.config.js sets trailingSlash: true (needed for the static export
+  // Netlify serves), so usePathname() returns "/home/", not "/home" - strip
+  // a trailing slash before comparing.
+  if (pathname?.replace(/\/$/, "") !== "/home") return null;
 
   return (
     <aside
