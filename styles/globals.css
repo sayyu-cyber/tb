@@ -7,47 +7,45 @@
 @layer base {
   :root {
     /* ------------------------------------------------------------------
-       BRAND PALETTE — "Maldivian lagoon"
+       BRAND PALETTE — "Maldivian lagoon, after dark"
 
-       The app used to be a single colour (#D4AF37) repeated ~373 times,
-       which made every screen look interchangeable and left gold meaning
-       nothing in particular. Gold is now reserved for achievement and
-       premium; the rest of the palette is drawn from Maldivian lagoon
-       water, reef coral and deep ocean, so each game and mode can own a
-       hue instead of all being gold.
+       Same domain-colour system as before (each game/mode owns a hue
+       rather than everything being gold) — only the surface scale below
+       changed from sand-and-shallow-water to a premium dark gaming
+       interface. The accent hues themselves are tuned to stay vivid and
+       readable as both fills AND text against a near-black backdrop,
+       which is why -ink no longer needs to be a darker shade of the fill
+       (see INK vs FILL below) — on a dark stage, the fill IS the light
+       source, so text and fill can share the same value.
 
        Stored as RGB triplets so Tailwind's arbitrary-value opacity
        modifiers work: bg-[rgb(var(--lagoon)/20%)].
        ------------------------------------------------------------------ */
-    --gold: 212 175 55;         /* #D4AF37 - brand, rank, trophies, premium */
-    --gold-bright: 232 200 74;  /* #E8C84A - highlight / gradient top */
-    --gold-deep: 184 150 46;    /* #B8962E - gradient bottom, pressed */
+    --gold: 250 204 21;         /* #FACC15 - VIP, trophies, premium, achievement */
+    --gold-bright: 253 224 71;  /* #FDE047 - highlight / gradient top */
+    --gold-deep: 202 138 4;     /* #CA8A04 - gradient bottom, pressed */
 
     --lagoon: 45 212 191;       /* #2DD4BF - Mindi, casual play, success  */
     --lagoon-deep: 13 148 136;  /* #0D9488 - pressed / dark lagoon        */
-    --coral: 255 107 91;        /* #FF6B5B - live, weekend league, streak */
+    --coral: 251 113 87;        /* #FB7157 - live, weekend league, streak */
     --coral-deep: 219 68 55;    /* #DB4437 - destructive                  */
-    --deep: 56 118 191;         /* #3876BF - Gin Rummy, info              */
-    --deep-dark: 30 58 95;      /* #1E3A5F - deep ocean surface           */
-    --orchid: 167 139 250;      /* #A78BFA - VIP                          */
+    --deep: 96 165 250;         /* #60A5FA - Gin Rummy, ranked/info, cyan-blue */
+    --deep-dark: 20 32 58;      /* #14203A - deep ocean surface (gradients) */
+    --orchid: 167 139 250;      /* #A78BFA - electric violet: season, VIP, premium */
 
     /* ------------------------------------------------------------------
        INK vs FILL
-       The accents above are tuned as FILLS - bars, chips, borders, glows -
-       where a vivid colour is the point. As TEXT they are a different
-       problem: measured against the light page background, every one of
-       them failed WCAG AA (gold 2.99, lagoon 1.71, coral 2.57, orchid 2.50
-       against the 4.5 needed), and --deep also failed on the dark
-       background at 4.15.
-
-       So each accent has an `-ink` counterpart used only for text. Same
-       hue, contrast-corrected per theme. Rule of thumb: `text-` uses -ink,
-       everything else (bg/border/from/to/ring/shadow) uses the base token.
+       On the sand theme the fills were too light to use as text (fail
+       WCAG AA), so each accent had a darkened `-ink` twin. On a near-black
+       stage the same vivid fills already clear 4.5:1 as text, so -ink is
+       simply an alias of the fill. Kept as separate tokens (not deleted)
+       so every existing `text-[rgb(var(--gold-ink))]` etc. across the app
+       keeps working unchanged.
        ------------------------------------------------------------------ */
-    --gold-ink: 212 175 55;
+    --gold-ink: 250 204 21;
     --lagoon-ink: 45 212 191;
-    --coral-ink: 255 107 91;
-    --deep-ink: 125 175 235;    /* lightened: --deep itself is 4.15 on dark */
+    --coral-ink: 251 113 87;
+    --deep-ink: 96 165 250;
     --orchid-ink: 167 139 250;
 
     /* Card suits — real playing-card red/black, not theme colours. */
@@ -55,52 +53,33 @@
     --suit-black: 24 24 27;
 
     /* ------------------------------------------------------------------
-       SURFACE / TEXT SCALE (dark theme default)
+       SURFACE / TEXT SCALE
        --c1 page bg · --c2 surface · --c3 border · --c4 muted · --c5 secondary
-       Warmed very slightly toward blue so the neutrals sit under the
-       lagoon accents rather than fighting them.
+       Dark gaming theme - the only theme the app has. Very dark navy
+       (not pure black) with a faint blue/purple undertone, so panels and
+       glows have something to sit on top of. There used to be a sand
+       light theme here; every component reads these same variable names,
+       so recolouring them here re-themes the whole app without touching
+       component code.
        ------------------------------------------------------------------ */
-    --c1: 12 14 18;
-    --c2: 22 26 33;
-    --c3: 38 44 54;
-    --c4: 88 98 114;
-    --c5: 148 160 178;
-    --text-primary: 245 247 250;
+    --c1: 8 9 16;
+    --c2: 17 19 32;
+    --c3: 40 44 66;
+    --c4: 140 145 173;
+    --c5: 198 201 222;
+    --text-primary: 240 242 250;
 
-    /* Elevation. Real shadows give the card stack depth instead of every
-       surface sharing one flat glass treatment. */
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.25);
-    --shadow-md: 0 4px 16px -2px rgb(0 0 0 / 0.35);
-    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.45);
-    --shadow-glow-gold: 0 0 24px -4px rgb(var(--gold) / 0.35);
-    --shadow-glow-lagoon: 0 0 24px -4px rgb(var(--lagoon) / 0.35);
+    /* Elevation. On a dark stage, real shadows read mostly as depth from
+       black; the colourful lift comes from --shadow-glow-* (used on
+       VividCard etc.), not from these. */
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+    --shadow-md: 0 8px 24px -4px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 20px 48px -12px rgb(0 0 0 / 0.65);
+    --shadow-glow-gold: 0 0 24px -4px rgb(var(--gold) / 0.45);
+    --shadow-glow-lagoon: 0 0 24px -4px rgb(var(--lagoon) / 0.45);
 
-    --background: #0C0E12;
-    --foreground: #F5F7FA;
-  }
-
-  html.light {
-    /* Sand-and-shallow-water light theme. The accents above are tuned to
-       stay legible on both, so they are NOT redefined here. */
-    --c1: 247 245 240;
-    --c2: 255 255 255;
-    --c3: 226 221 211;
-    --c4: 122 116 104;
-    --c5: 88 83 74;
-    --text-primary: 24 27 32;
-
-    --gold: 176 137 26;         /* darkened so gold fills read on sand    */
-    --lagoon-deep: 15 118 110;
-
-    /* Text inks, each darkened until it clears 4.5:1 on --c1 above. */
-    --gold-ink: 131 107 26;     /* #836B1A - 4.72 */
-    --lagoon-ink: 18 123 110;   /* #127B6E - 4.72 */
-    --coral-ink: 189 70 58;     /* #BD463A - 4.70 */
-    --deep-ink: 45 112 191;     /* #2D70BF - 4.61 */
-    --orchid-ink: 119 96 185;   /* #7760B9 - 4.64 */
-    --shadow-sm: 0 1px 2px rgb(24 27 32 / 0.06);
-    --shadow-md: 0 4px 16px -2px rgb(24 27 32 / 0.10);
-    --shadow-lg: 0 12px 32px -8px rgb(24 27 32 / 0.16);
+    --background: #08090F;
+    --foreground: #F0F2FA;
   }
 
   * {
@@ -197,28 +176,18 @@
      TEXT + BORDER HELPERS
      --------------------------------------------------------------------- */
   /* Gradient-filled gold text. Built on the ink tokens, not the fill ones:
-     this IS text, and --gold-bright on the light theme's sand background is
-     effectively invisible (1.51:1), which used to wash out the middle of
-     every gold heading in light mode. */
+     this IS text, and --gold-bright on this sand background is effectively
+     invisible (1.51:1), which would wash out the middle of every gold
+     heading. */
   .gold-text-gradient {
-    background: linear-gradient(135deg,
-      rgb(var(--gold-ink)) 0%,
-      rgb(var(--gold-bright)) 45%,
-      rgb(var(--gold-ink)) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-  }
-
-  html.light .gold-text-gradient {
-    /* Keep the sheen, but between two tones that both hold up on sand. */
     background: linear-gradient(135deg,
       rgb(var(--gold-ink)) 0%,
       rgb(var(--gold)) 50%,
       rgb(var(--gold-ink)) 100%);
     -webkit-background-clip: text;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
   }
 
   .gold-bg-gradient {
@@ -278,13 +247,26 @@
   }
   .halo { animation: halo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
-  /* Slow vertical drift for the suit glyphs in the lobby scene
-     (components/home/LobbyScene.tsx). Staggered per-element with a negative
-     animation-delay so they don't bob in lockstep. The global
-     prefers-reduced-motion rule above stills this like any other animation. */
-  @keyframes lobby-drift {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
+  /* Ambient stage glow — two soft colour blooms behind hero/feature
+     sections, so the dark backdrop reads as a lit stage rather than a
+     flat void. Used as a background on a positioned wrapper; the section's
+     own content sits above it (z-10+). */
+  .stage-glow {
+    background:
+      radial-gradient(60% 55% at 12% 0%, rgb(var(--orchid) / 0.20), transparent 60%),
+      radial-gradient(50% 50% at 100% 20%, rgb(var(--deep) / 0.16), transparent 60%);
   }
-  .lobby-drift { animation: lobby-drift 10s ease-in-out infinite; }
+
+  /* Thin gradient hairline border for premium/VIP surfaces — gold-to-
+     violet, distinct from the single-hue `-accent` treatment other cards
+     use, so VIP reads as its own tier rather than "another accent colour". */
+  .premium-border {
+    position: relative;
+    border: 1px solid transparent;
+    background-clip: padding-box, border-box;
+    background-origin: padding-box, border-box;
+    background-image:
+      linear-gradient(rgb(var(--c2)), rgb(var(--c2))),
+      linear-gradient(135deg, rgb(var(--gold)), rgb(var(--orchid)));
+  }
 }

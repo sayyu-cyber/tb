@@ -57,6 +57,5 @@ export interface AppSettings {
   notifications: boolean;
   sound: boolean;
   music: boolean;
-  darkTheme: boolean;
   language: LanguageCode;
 }

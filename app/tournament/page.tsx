@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Trophy, Flame, Clock, Swords } from "lucide-react";
+import { Trophy, Flame, Clock, Swords, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRankLock } from "@/hooks/useRankLock";
@@ -18,6 +18,7 @@ export default function TournamentPage() {
   const [standings, setStandings] = useState<WeeklyStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const trophies = playerStats?.trophies || 0;
   const rank = getRankFromTrophies(trophies);
@@ -25,6 +26,8 @@ export default function TournamentPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     getWeeklyStandings()
       .then((s) => !cancelled && setStandings(s))
       .catch((err) => !cancelled && setError(String(err)))
@@ -32,7 +35,7 @@ export default function TournamentPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
 
   return (
     <div className="pt-4 pb-32 px-4">
@@ -100,7 +103,17 @@ export default function TournamentPage() {
           ))}
         </div>
       ) : error ? (
-        <p className="text-[rgb(var(--c4))] text-sm text-center py-8">{error}</p>
+        <div className="glass-card rounded-2xl p-6 text-center">
+          <Trophy size={24} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+          <p className="text-[rgb(var(--c4))] text-sm">{error}</p>
+          <button
+            onClick={() => setRetryKey((k) => k + 1)}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+          >
+            <RefreshCw size={13} aria-hidden="true" />
+            {t("error_tryAgain")}
+          </button>
+        </div>
       ) : standings.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center">
           <Clock size={24} className="text-[rgb(var(--c3))] mx-auto mb-2" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Users, Crown, Send, LogOut, Trophy } from "lucide-react";
+import { Users, Crown, Send, LogOut, Trophy, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -27,14 +27,20 @@ export function ClubsClient() {
   const t = useTranslation();
 
   const [myClub, setMyClub] = useState<ClubDoc | null | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!myUid || isGuest) {
       setMyClub(null);
       return;
     }
-    return watchMyClub(myUid, setMyClub);
-  }, [myUid, isGuest]);
+    setLoadError(null);
+    // Without an error handler here, a denied/failed query never calls
+    // setMyClub at all, and the "loading" branch below would spin forever
+    // with no way out - see the note on watchMyClub.
+    return watchMyClub(myUid, setMyClub, (err) => setLoadError(err.message));
+  }, [myUid, isGuest, retryKey]);
 
   if (isGuest) {
     return (
@@ -47,11 +53,34 @@ export function ClubsClient() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="pt-4 pb-32 px-4">
+        <PageHeader title={t("page_clubs")} />
+        <div className="glass-card rounded-2xl p-6 text-center">
+          <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_loadError")}</p>
+          <button
+            onClick={() => setRetryKey((k) => k + 1)}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+          >
+            <RefreshCw size={13} aria-hidden="true" />
+            {t("error_tryAgain")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (myClub === undefined) {
     return (
       <div className="pt-4 pb-32 px-4">
         <PageHeader title={t("page_clubs")} />
-        <p className="text-[rgb(var(--c4))] text-sm text-center mt-6">{t("clubs_loading")}</p>
+        <div className="space-y-2 mt-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-16 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -71,9 +100,24 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [listLoaded, setListLoaded] = useState(false);
+  const [listError, setListError] = useState(false);
   const t = useTranslation();
 
-  useEffect(() => watchClubList(setClubs), []);
+  useEffect(
+    () =>
+      watchClubList(
+        (list) => {
+          setClubs(list);
+          setListLoaded(true);
+        },
+        () => {
+          setListError(true);
+          setListLoaded(true);
+        }
+      ),
+    []
+  );
 
   async function handleCreate() {
     if (!name.trim() || !tag.trim()) return;
@@ -154,6 +198,17 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
           >
             {busy ? t("clubs_creating") : t("clubs_createClub")}
           </motion.button>
+        </div>
+      ) : !listLoaded ? (
+        <div className="space-y-2">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-14 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : listError ? (
+        <div className="glass-card rounded-2xl p-6 text-center">
+          <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_loadError")}</p>
         </div>
       ) : clubs.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center">

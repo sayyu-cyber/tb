@@ -273,8 +273,16 @@ export async function startRoomMatch<TState>(
   });
 }
 
-export function watchRoom(code: string, onUpdate: (room: RoomDoc | null) => void): Unsubscribe {
-  return onSnapshot(doc(db, ROOMS_COLLECTION, code), (snap) => {
-    onUpdate(snap.exists() ? (snap.data() as RoomDoc) : null);
-  });
+/** `onError` matters more than usual here: a room's own creator/joiner
+ *  landing on this listener is the private-room flow's only way in, and
+ *  without it a denied/failed read leaves them stuck on "loading room…"
+ *  forever - see RoomLobbyClient. */
+export function watchRoom(code: string, onUpdate: (room: RoomDoc | null) => void, onError?: (err: Error) => void): Unsubscribe {
+  return onSnapshot(
+    doc(db, ROOMS_COLLECTION, code),
+    (snap) => {
+      onUpdate(snap.exists() ? (snap.data() as RoomDoc) : null);
+    },
+    onError
+  );
 }

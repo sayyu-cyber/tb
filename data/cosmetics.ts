@@ -32,7 +32,7 @@ export const CARD_BACKS: CosmeticItem[] = [
 ];
 
 export const TABLE_THEMES: CosmeticItem[] = [
-  { id: 'tt_default', name: 'Royal Green', category: 'tableTheme', rarity: 'Common', price: 0, previewImage: '/cosmetics/tables/royal-green.png', description: 'The classic felt experience.' },
+  { id: 'tt_default', name: 'Neon Arena', category: 'tableTheme', rarity: 'Common', price: 0, previewImage: '/cosmetics/tables/neon-arena.png', description: 'A dark competitive table with cyan and violet rim light.' },
   { id: 'tt_midnight', name: 'Midnight Black', category: 'tableTheme', rarity: 'Common', price: 300, previewImage: '/cosmetics/tables/midnight.png', description: 'Play in the dark.' },
   { id: 'tt_red', name: 'Crimson Velvet', category: 'tableTheme', rarity: 'Rare', price: 800, previewImage: '/cosmetics/tables/crimson.png', description: 'Luxury red felt.' },
   { id: 'tt_blue', name: 'Sapphire Blue', category: 'tableTheme', rarity: 'Rare', price: 800, previewImage: '/cosmetics/tables/sapphire.png', description: 'Cool blue elegance.' },
@@ -138,7 +138,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ach_first_platinum', title: 'First Platinum Rank', description: 'Reach Platinum rank for the first time', icon: '💎', reward: 2000, unlocked: false, progress: 0, target: 1, category: 'rank' },
   { id: 'ach_weekend_champ', title: 'Weekend Champion', description: 'Become Weekend Champion', icon: '👑', reward: 3000, unlocked: false, progress: 0, target: 1, category: 'special' },
   { id: 'ach_10_cardbacks', title: 'Card Collector', description: 'Collect 10 Card Backs', icon: '🃏', reward: 100, unlocked: false, progress: 0, target: 10, category: 'collection' },
-  { id: 'ach_all_tables', title: 'Table Master', description: 'Collect every Table Theme', icon: '🎰', reward: 0, unlocked: false, progress: 0, target: 10, category: 'collection' },
+  { id: 'ach_all_tables', title: 'Table Master', description: 'Collect every Table Theme', icon: '◇', reward: 0, unlocked: false, progress: 0, target: 10, category: 'collection' },
   { id: 'ach_100_collection', title: 'Master Collector', description: 'Collect 100% of all cosmetics', icon: '💯', reward: 0, unlocked: false, progress: 0, target: 85, category: 'collection' },
 ];
 

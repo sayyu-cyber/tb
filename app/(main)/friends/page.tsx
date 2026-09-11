@@ -46,16 +46,22 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (!uid || isGuest) return;
-    const unsubIncoming = watchIncomingRequests(uid, setIncoming);
-    const unsubOutgoing = watchOutgoingRequests(uid, setOutgoing);
-    const unsubFriends = watchFriends(uid, setFriends);
-    const unsubInvites = watchRoomInvites(uid, setInvites);
+    // A denied/failed listener here would otherwise leave every tab
+    // silently showing its empty state ("no friends yet" etc) instead of
+    // the real reason - surface it through the same error banner action
+    // failures already use below.
+    const onListenerError = () => setError(t("friends_loadError"));
+    const unsubIncoming = watchIncomingRequests(uid, setIncoming, onListenerError);
+    const unsubOutgoing = watchOutgoingRequests(uid, setOutgoing, onListenerError);
+    const unsubFriends = watchFriends(uid, setFriends, onListenerError);
+    const unsubInvites = watchRoomInvites(uid, setInvites, onListenerError);
     return () => {
       unsubIncoming();
       unsubOutgoing();
       unsubFriends();
       unsubInvites();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, isGuest]);
 
   async function handleSearch() {

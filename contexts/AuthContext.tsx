@@ -7,6 +7,7 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInAnonymously,
   signOut,
   updateProfile as updateFirebaseAuthProfile,
   User as FirebaseUser,
@@ -50,32 +51,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const userData: User = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          isGuest: false,
-          createdAt: new Date(),
-        };
-        setUser(userData);
-        setIsGuest(false);
+        let displayName = firebaseUser.displayName;
 
         // Fetch player stats from Firestore
         const statsDoc = await getDoc(doc(db, "players", firebaseUser.uid));
         if (statsDoc.exists()) {
           setPlayerStats(statsDoc.data() as PlayerStats);
         } else {
-          // Initialize stats for new user
+          // Initialize stats for new user. Anonymous (guest) sign-ins have
+          // no provider-supplied name, so mint one and persist it to the
+          // Firebase Auth profile itself - that way it's still there next
+          // time this same anonymous session resumes, not just this tab.
+          if (firebaseUser.isAnonymous && !displayName) {
+            displayName = `Guest_${Math.floor(Math.random() * 10000)}`;
+            await updateFirebaseAuthProfile(firebaseUser, { displayName });
+          }
           await setDoc(doc(db, "players", firebaseUser.uid), {
             ...defaultStats,
+            displayName,
             createdAt: serverTimestamp(),
           });
           setPlayerStats(defaultStats);
         }
+
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName,
+          photoURL: firebaseUser.photoURL,
+          isGuest: firebaseUser.isAnonymous,
+          createdAt: new Date(),
+        });
+        setIsGuest(firebaseUser.isAnonymous);
       } else {
         setUser(null);
         setPlayerStats(null);
+        setIsGuest(false);
       }
       setLoading(false);
     });
@@ -115,35 +126,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // A real (anonymous) Firebase session rather than a locally-fabricated
+  // user - so it survives a refresh via Firebase's own persistence, and
+  // satisfies the `request.auth != null` Firestore rules that every other
+  // read/write in the app is already gated on. onAuthStateChanged above
+  // handles naming the guest and initialising their stats doc.
   const signInAsGuest = async () => {
-    const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const guestUser: User = {
-      uid: guestId,
-      email: null,
-      displayName: `Guest_${Math.floor(Math.random() * 10000)}`,
-      photoURL: null,
-      isGuest: true,
-      createdAt: new Date(),
-    };
-    setUser(guestUser);
-    setIsGuest(true);
-    setPlayerStats({
-      ...defaultStats,
-      currentRank: "Guest",
-    });
+    await signInAnonymously(auth);
   };
 
   const updatePlayerProfile = async (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => {
     const { displayName, ...cosmeticUpdates } = updates;
-
-    if (isGuest) {
-      // Guests aren't authenticated with Firebase at all (see signInAsGuest)
-      // so there's nothing to persist - reflect the change locally only,
-      // for the length of this session.
-      setUser((prev) => (prev ? { ...prev, displayName: displayName ?? prev.displayName } : prev));
-      setPlayerStats((prev) => (prev ? { ...prev, ...cosmeticUpdates } : prev));
-      return;
-    }
     if (!auth.currentUser) return;
 
     if (displayName && displayName !== auth.currentUser.displayName) {
@@ -161,12 +154,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    if (isGuest) {
-      setUser(null);
-      setIsGuest(false);
-      setPlayerStats(null);
-      return;
-    }
     await signOut(auth);
   };
 

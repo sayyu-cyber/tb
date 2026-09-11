@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Sparkles, Users } from "lucide-react";
+import { Home, Sparkles, Users, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
@@ -33,7 +33,8 @@ import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData, TurnIndicator } from "@/components/game/GameArena";
+import { staggerParent, popIn } from "@/lib/motion";
 
 export interface MindiOnlineState {
   handsByUid: Record<string, Card[]>;
@@ -52,20 +53,23 @@ export interface MindiOnlineState {
 
 export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const { user, playerStats } = useAuth();
-  const { processMatchEnd } = useEconomy();
+  const { processMatchEnd, state: economyState } = useEconomy();
   const myUid = user?.uid ?? "";
   const t = useTranslation();
   const { showToast } = useToast();
   const SEAT_NAMES = [t("mindi_you"), t("mindi_leftOpponent"), t("mindi_partner"), t("mindi_rightOpponent")];
 
   const [match, setMatch] = useState<MatchDoc<MindiOnlineState> | null>(null);
+  const [matchLoadError, setMatchLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
 
   useEffect(() => {
-    const unsub = watchMatch<MindiOnlineState>(matchId, setMatch);
+    setMatchLoadError(false);
+    const unsub = watchMatch<MindiOnlineState>(matchId, setMatch, () => setMatchLoadError(true));
     return unsub;
-  }, [matchId]);
+  }, [matchId, retryKey]);
 
   const mySeat = useMemo(
     () => (match ? (match.players.indexOf(myUid) as SeatIndex) : (0 as SeatIndex)),
@@ -100,6 +104,11 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       cardCount: state?.handsByUid[uid]?.length ?? 0,
       active: state?.turnSeat === seat,
     };
+  }
+
+  function tableThemeForUid(uid?: string): string {
+    if (!uid || uid === myUid) return economyState.profile.equipped.tableTheme;
+    return opponentProfiles[uid]?.tableTheme || "tt_default";
   }
 
   async function handlePlayCard(card: Card) {
@@ -210,8 +219,28 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
 
   if (!match || !state) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-        <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+        {matchLoadError ? (
+          <div className="glass-card rounded-2xl p-6 max-w-xs">
+            <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadMatchError")}</p>
+            <button
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+            >
+              <RefreshCw size={13} aria-hidden="true" />
+              {t("error_tryAgain")}
+            </button>
+          </div>
+        ) : (
+          <motion.p
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: [0.4, 0.9, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="text-[rgb(var(--c4))] text-sm"
+          >
+            {t("common_loadingMatch")}
+          </motion.p>
+        )}
       </div>
     );
   }
@@ -299,9 +328,10 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const leftSeat = isDuel ? null : seatDataFor(((mySeat + 1) % 4) as SeatIndex);
   const rightSeat = isDuel ? null : seatDataFor(((mySeat + 3) % 4) as SeatIndex);
   const myProfile = { name: t("mindi_you"), avatarPreset: playerStats?.avatarPreset };
+  const activeTableTheme = tableThemeForUid(match.players[0]);
 
   return (
-    <ArenaFelt accent="var(--lagoon)">
+    <ArenaFelt accent="var(--lagoon)" tableThemeId={activeTableTheme}>
       <ArenaHeader
         leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />}
         title={
@@ -328,33 +358,41 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         </div>
       </div>
 
-      <ArenaTable>
+      <ArenaTable tableThemeId={activeTableTheme}>
         <div className="flex-1 flex flex-col items-center justify-between">
-          <div className="h-14 flex items-center justify-center">
+          <div className="min-h-16 sm:min-h-20 flex items-center justify-center">
             <OpponentSeat seat={topSeat} orientation="column" />
           </div>
 
-          <div className="flex items-center justify-between w-full max-w-sm">
-            <div className="w-20">{leftSeat && <OpponentSeat seat={leftSeat} orientation="column" />}</div>
+          <div className="flex items-center justify-between gap-2 sm:gap-6 w-full max-w-5xl">
+            <div className="w-20 sm:w-32 lg:w-44 flex justify-start">{leftSeat && <OpponentSeat seat={leftSeat} orientation="column" />}</div>
 
             <TableWell>
               {state.trick.length === 0 ? (
                 <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? t("mindi_yourTurn") : t("mindi_waiting")}</span>
               ) : (
-                state.trick.map((play) => (
-                  <motion.div
-                    key={cardId(play.card)}
-                    initial={{ opacity: 0, scale: 0.7, y: -18 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 450, damping: 26 }}
-                  >
-                    <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
-                  </motion.div>
-                ))
+                <AnimatePresence>
+                  {state.trick.map((play) => (
+                    <motion.div
+                      key={cardId(play.card)}
+                      initial={{ opacity: 0, scale: 0.7, y: -18 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ type: "spring", stiffness: 450, damping: 26 }}
+                    >
+                      <PlayingCard
+                        layoutId={cardId(play.card)}
+                        rank={rankLabel(play.card.rank)}
+                        suit={suitFromLetter(play.card.suit)}
+                        size="sm"
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </TableWell>
 
-            <div className="w-20">{rightSeat && <OpponentSeat seat={rightSeat} orientation="column" />}</div>
+            <div className="w-20 sm:w-32 lg:w-44 flex justify-end">{rightSeat && <OpponentSeat seat={rightSeat} orientation="column" />}</div>
           </div>
 
           <div className="w-full">
@@ -362,23 +400,30 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
               name={myProfile.name}
               avatarPreset={myProfile.avatarPreset}
               active={isMyTurn}
-              trailing={<span className="text-[rgb(var(--c4))] text-[11px]">{isMyTurn ? t("mindi_selectCard") : t("mindi_waitingOthers")}</span>}
+              trailing={<TurnIndicator active={isMyTurn} activeLabel={t("mindi_selectCard")} waitingLabel={t("mindi_waitingOthers")} />}
             />
-            <div className="flex justify-center gap-1.5 flex-wrap">
+            <motion.div
+              variants={staggerParent(0.04)}
+              initial="hidden"
+              animate="show"
+              className="flex justify-center gap-1.5 flex-wrap"
+            >
               {myHand.map((card) => {
                 const canPlay = isMyTurn && legalForMe.some((c) => cardId(c) === cardId(card));
                 return (
-                  <PlayingCard
-                    key={cardId(card)}
-                    rank={rankLabel(card.rank)}
-                    suit={suitFromLetter(card.suit)}
-                    size="md"
-                    disabled={!canPlay}
-                    onClick={() => canPlay && handlePlayCard(card)}
-                  />
+                  <motion.div key={cardId(card)} variants={popIn} layout>
+                    <PlayingCard
+                      layoutId={cardId(card)}
+                      rank={rankLabel(card.rank)}
+                      suit={suitFromLetter(card.suit)}
+                      size="md"
+                      disabled={!canPlay}
+                      onClick={() => canPlay && handlePlayCard(card)}
+                    />
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
         </div>
       </ArenaTable>

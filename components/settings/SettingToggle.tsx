@@ -9,16 +9,24 @@ interface SettingToggleProps {
   description?: string;
   enabled: boolean;
   onChange: () => void;
+  /** CSS colour token, e.g. "var(--lagoon)" - gives this row its own
+   *  domain hue (the same "each feature owns a colour" system Home uses)
+   *  instead of every row defaulting to gold. Falls back to gold when
+   *  omitted. */
+  accent?: string;
 }
 
-export function SettingToggle({ icon: Icon, label, description, enabled, onChange }: SettingToggleProps) {
+export function SettingToggle({ icon: Icon, label, description, enabled, onChange, accent }: SettingToggleProps) {
   return (
-    <div className="flex items-center justify-between py-4 px-1">
+    <div
+      className="flex items-center justify-between py-4 px-1"
+      style={accent ? ({ ["--accent" as string]: accent } as React.CSSProperties) : undefined}
+    >
       <div className="flex items-center gap-3">
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-          enabled ? "bg-[rgb(var(--gold)/10%)]" : "bg-[rgb(var(--c2))]"
+          enabled ? "bg-[rgb(var(--accent,var(--gold))/12%)]" : "bg-[rgb(var(--c2))]"
         }`}>
-          <Icon size={18} className={enabled ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
+          <Icon size={18} className={enabled ? "text-[rgb(var(--accent,var(--gold-ink)))]" : "text-[rgb(var(--c4))]"} />
         </div>
         <div>
           <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{label}</p>
@@ -32,7 +40,7 @@ export function SettingToggle({ icon: Icon, label, description, enabled, onChang
         whileTap={{ scale: 0.95 }}
         onClick={onChange}
         className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${
-          enabled ? "bg-[rgb(var(--gold))]" : "bg-[rgb(var(--c3))]"
+          enabled ? "bg-[rgb(var(--accent,var(--gold)))]" : "bg-[rgb(var(--c3))]"
         }`}
       >
         <motion.div

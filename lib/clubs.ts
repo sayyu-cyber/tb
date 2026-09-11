@@ -69,21 +69,36 @@ export async function createClub(
 }
 
 /** Browsable club list, newest first - open to any signed-in user, like the leaderboard. */
-export function watchClubList(onUpdate: (clubs: ClubDoc[]) => void): Unsubscribe {
+export function watchClubList(onUpdate: (clubs: ClubDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
   const q = query(collection(db, CLUBS_COLLECTION), orderBy("createdAt", "desc"), limit(50));
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClubDoc, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClubDoc, "id">) })));
+    },
+    onError
+  );
 }
 
-/** The club a player currently belongs to, if any (a player is in at most one). */
-export function watchMyClub(uid: string, onUpdate: (club: ClubDoc | null) => void): Unsubscribe {
+/** The club a player currently belongs to, if any (a player is in at most one).
+ *  `onError` matters here more than most listeners: without it, a denied or
+ *  failed query leaves the caller's "loading" state stuck forever, since
+ *  `onUpdate` is otherwise never called at all - see ClubsClient. */
+export function watchMyClub(
+  uid: string,
+  onUpdate: (club: ClubDoc | null) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   // A player belongs to at most one club, so only the first doc is read
   // below - fetching more would be pure waste.
   const q = query(collection(db, CLUBS_COLLECTION), where("members", "array-contains", uid), limit(1));
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.length > 0 ? { id: snap.docs[0].id, ...(snap.docs[0].data() as Omit<ClubDoc, "id">) } : null);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      onUpdate(snap.docs.length > 0 ? { id: snap.docs[0].id, ...(snap.docs[0].data() as Omit<ClubDoc, "id">) } : null);
+    },
+    onError
+  );
 }
 
 export function watchClub(clubId: string, onUpdate: (club: ClubDoc | null) => void): Unsubscribe {

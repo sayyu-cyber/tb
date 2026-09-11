@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { SPRING_SOFT } from "@/lib/motion";
 
 /**
  * A playing card.
@@ -95,6 +96,12 @@ export interface PlayingCardProps {
   className?: string;
   /** Accessible name override; defaults to "<rank> of <suit>". */
   label?: string;
+  /** Shared identity (typically the card's id) for a framer-motion layout
+   *  transition - give a card the same `layoutId` in your hand and in the
+   *  table well it's played to, and framer-motion tweens it across the
+   *  board instead of the hand instance vanishing while an unrelated
+   *  element fades in at the well. */
+  layoutId?: string;
 }
 
 export function PlayingCard({
@@ -108,6 +115,7 @@ export function PlayingCard({
   onClick,
   className,
   label,
+  layoutId,
 }: PlayingCardProps) {
   const s = SIZES[size];
   const red = isRedSuit(suit);
@@ -119,7 +127,7 @@ export function PlayingCard({
     return (
       <div
         aria-hidden="true"
-        className={cn(s.box, "relative overflow-hidden border shadow-[var(--shadow-sm)]", className)}
+        className={cn(s.box, "relative overflow-hidden border shadow-[0_4px_10px_-2px_rgba(0,0,0,0.45)]", className)}
         style={{ backgroundColor: skin.base, borderColor: skin.ring }}
       >
         {/* Woven lattice back, drawn with two crossed repeating gradients so
@@ -132,6 +140,9 @@ export function PlayingCard({
               `repeating-linear-gradient(-45deg, ${skin.weave} 0 2px, transparent 2px 6px)`,
           }}
         />
+        {/* Glossy top-left sheen - the small thing that makes a card back
+            read as a collectible object rather than a printed swatch. */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/25" />
         <div className="absolute inset-[3px] rounded-[inherit] border" style={{ borderColor: skin.ring }} />
       </div>
     );
@@ -145,20 +156,30 @@ export function PlayingCard({
         ? {
             onClick,
             type: "button" as const,
-            whileHover: { y: -6 },
+            whileHover: { y: -8 },
             whileTap: { scale: 0.97 },
             "aria-label": label ?? `${rank} of ${suit}`,
           }
         : { "aria-label": label ?? `${rank} of ${suit}`, role: "img" })}
-      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      layout={Boolean(layoutId)}
+      layoutId={layoutId}
+      // "layout" governs the hand-to-well flight (and hand cards sliding
+      // to close a gap) — softer and slower than the snappy hover/tap
+      // feedback in "default", since a card crossing the table should
+      // read as travelling, not just twitching.
+      transition={{ layout: SPRING_SOFT, default: { type: "spring", stiffness: 500, damping: 30 } }}
       disabled={interactive ? disabled : undefined}
       className={cn(
         s.box,
-        "relative select-none border bg-white shadow-[var(--shadow-md)]",
+        "relative select-none border bg-white transition-shadow duration-200",
         // Card faces stay white in both themes — a playing card is white.
+        // Selection reads as a genuine lift off the table (a soft violet
+        // glow underneath, not just a coloured ring) - the tactile, premium
+        // feel the hand is meant to have.
         selected
-          ? "border-[rgb(var(--gold))] ring-2 ring-[rgb(var(--gold)/55%)] -translate-y-2"
-          : "border-black/15",
+          ? "border-[rgb(var(--gold))] ring-2 ring-[rgb(var(--gold)/55%)] -translate-y-2 shadow-[0_14px_28px_-8px_rgba(139,92,246,0.55),0_0_0_1px_rgb(var(--gold)/35%)]"
+          : "border-black/15 shadow-[var(--shadow-md)]",
+        interactive && !disabled && !selected && "hover:shadow-[0_10px_22px_-6px_rgba(139,92,246,0.35)]",
         disabled && "opacity-40 saturate-50",
         interactive && "cursor-pointer",
         className

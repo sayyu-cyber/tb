@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { Users, KeyRound, Flame, Award, Package, Shield, Crown, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
-import { ProfileCard } from "@/components/home/ProfileCard";
 import { HomeLobbyHero } from "@/components/home/HomeLobbyHero";
-import { SeasonCard } from "@/components/home/SeasonCard";
+import { PlayerHUD } from "@/components/home/PlayerHUD";
 import { MatchesRemaining } from "@/components/home/MatchesRemaining";
 import { QuickPlayButtons } from "@/components/home/QuickPlayButtons";
 import { NewsSection } from "@/components/home/NewsSection";
 import { WeekendLeague } from "@/components/home/WeekendLeague";
+import { PopularModes } from "@/components/home/PopularModes";
 import { RankProgress } from "@/components/home/RankProgress";
-import { DailyMatchCounter } from "@/components/home/DailyMatchCounter";
 import { RankLockBanner } from "@/components/game/RankLockBanner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { riseIn, staggerParent } from "@/lib/motion";
@@ -42,14 +41,19 @@ export default function HomePage() {
 
       <RankLockBanner />
 
+      {/* Compact gaming profile HUD - identity, trophies, daily matches,
+          ranked matches and season, all in one dense strip. Replaces the
+          old ProfileCard/DailyMatchCounter/SeasonCard tiles, which showed
+          the same numbers again at full-card size further down. */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <PlayerHUD />
+      </motion.div>
+
       {/*
         Below md this collapses to a single column and renders exactly as
         before. From md up the cards tile into 2 (then 3) columns so a
         desktop viewport shows the whole dashboard at once instead of
         demanding a long scroll through a phone-width ribbon.
-
-        auto-rows-min stops a short card (Daily Matches) from being
-        stretched to match a tall neighbour (News) in the same row.
       */}
       <motion.div
         variants={staggerParent(0.05)}
@@ -57,48 +61,45 @@ export default function HomePage() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 auto-rows-min items-start"
       >
-        {/* Identity block reads as the page's anchor, so it spans the row. */}
-        <div className="md:col-span-2 lg:col-span-3">
-          <ProfileCard />
-        </div>
-
         <RankProgress />
-        <DailyMatchCounter />
-        <SeasonCard />
         <MatchesRemaining remaining={2} total={3} />
         <WeekendLeague />
 
-        {/* Quick Play is the primary action - give it a full row on md so
-            the two game tiles stay large and thumb-friendly. */}
-        <div className="md:col-span-2 lg:col-span-1">
-          <QuickPlayButtons />
-        </div>
-
         <div className="md:col-span-2 lg:col-span-2">
-          <NewsSection />
+          <QuickPlayButtons />
         </div>
 
         <motion.div
           variants={riseIn}
-          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2 md:col-span-2 lg:col-span-1"
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2 lg:col-span-1"
         >
           {SHORTCUTS.map(({ href, key, icon: Icon, accent }) => (
             <Link key={key} href={href}>
-              <div
+              <motion.div
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.96 }}
                 style={{ ["--accent" as string]: accent } as React.CSSProperties}
-                className="h-full min-h-[72px] rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))]
+                className="h-full min-h-[76px] rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))]
                            flex flex-col items-center justify-center gap-1.5 p-2 transition-colors
-                           hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
+                           hover:border-[rgb(var(--accent)/50%)] hover:shadow-[0_6px_18px_-6px_rgb(var(--accent)/50%)]"
               >
-                <Icon size={17} className="text-[rgb(var(--accent))]" aria-hidden="true" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgb(var(--accent)/14%)]">
+                  <Icon size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
+                </span>
                 <p className="text-[rgb(var(--c5))] text-[10px] text-center font-semibold tracking-wide leading-tight">
                   {t(key)}
                 </p>
-              </div>
+              </motion.div>
             </Link>
           ))}
         </motion.div>
+
+        <div className="md:col-span-2 lg:col-span-3">
+          <NewsSection />
+        </div>
       </motion.div>
+
+      <PopularModes />
     </div>
   );
 }

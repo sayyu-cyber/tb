@@ -1,14 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Award } from "lucide-react";
+import { Award, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useHallOfFame } from "@/hooks/useHallOfFame";
 import { HallOfFameRow } from "@/components/halloffame/HallOfFameRow";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function HallOfFamePage() {
-  const { entries, loading, error } = useHallOfFame();
+  const { entries, loading, error, refresh } = useHallOfFame();
   const t = useTranslation();
 
   return (
@@ -32,7 +32,17 @@ export default function HallOfFamePage() {
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">{error}</div>
+        <div className="glass-card rounded-2xl p-6 mx-auto max-w-xs text-center">
+          <Award size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+          <p className="text-[rgb(var(--c4))] text-sm text-balance">{error}</p>
+          <button
+            onClick={refresh}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+          >
+            <RefreshCw size={13} aria-hidden="true" />
+            {t("error_tryAgain")}
+          </button>
+        </div>
       ) : entries.length === 0 ? (
         <div className="text-center py-12 text-[rgb(var(--c4))] text-sm">
           {t("hof_noLegendsYet")}

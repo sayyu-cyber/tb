@@ -68,20 +68,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        {/* Applies the saved theme before first paint, so a returning
-            light-theme user doesn't see a flash of dark theme while
-            SettingsContext hydrates. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try {
-              var s = JSON.parse(localStorage.getItem("thaasbai_settings") || "{}");
-              if (s.darkTheme === false) document.documentElement.classList.add("light");
-            } catch (e) {}`,
-          }}
-        />
-      </head>
+    <html lang="en">
+      <head />
       <body className={inter.className}>
         <AuthProvider>
           <SettingsProvider>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Bell, Volume2, Music, Moon, LogOut, Shield, HelpCircle, Info, LayoutDashboard, Languages } from "lucide-react";
+import { Settings, Bell, Volume2, Music, LogOut, Shield, HelpCircle, Info, LayoutDashboard, Languages } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const t = useTranslation();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -69,6 +70,7 @@ export default function SettingsPage() {
           description="Game sounds and UI feedback"
           enabled={settings.sound}
           onChange={() => updateSettings({ sound: !settings.sound })}
+          accent="var(--lagoon)"
         />
 
         <div className="h-px bg-[rgb(var(--c2))] mx-1" />
@@ -79,16 +81,7 @@ export default function SettingsPage() {
           description="Ambient game music"
           enabled={settings.music}
           onChange={() => updateSettings({ music: !settings.music })}
-        />
-
-        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-
-        <SettingToggle
-          icon={Moon}
-          label={t("settings_darktheme")}
-          description={settings.darkTheme ? "On — switch to Light Theme" : "Off — switch to Dark Theme"}
-          enabled={settings.darkTheme}
-          onChange={() => updateSettings({ darkTheme: !settings.darkTheme })}
+          accent="var(--orchid)"
         />
 
         <div className="h-px bg-[rgb(var(--c2))] mx-1" />
@@ -98,6 +91,7 @@ export default function SettingsPage() {
           label={t("settings_language")}
           description={LANGUAGE_NAMES[settings.language]}
           onClick={() => setShowLanguagePicker((v) => !v)}
+          accent="var(--deep)"
         />
 
         <AnimatePresence>
@@ -140,7 +134,7 @@ export default function SettingsPage() {
 
         {isAdminEmail(user?.email) && (
           <>
-            <SettingButton icon={LayoutDashboard} label="Admin Panel" description="Manage the app" onClick={() => router.push("/admin")} />
+            <SettingButton icon={LayoutDashboard} label="Admin Panel" description="Manage the app" onClick={() => router.push("/admin")} accent="var(--deep)" />
             <div className="h-px bg-[rgb(var(--c2))] mx-1" />
           </>
         )}
@@ -150,6 +144,7 @@ export default function SettingsPage() {
           label="Privacy & Security"
           description="Manage your data"
           onClick={() => {}}
+          accent="var(--lagoon)"
         />
 
         <div className="h-px bg-[rgb(var(--c2))] mx-1" />
@@ -159,6 +154,7 @@ export default function SettingsPage() {
           label="Help & Support"
           description="FAQs and contact"
           onClick={() => {}}
+          accent="var(--deep)"
         />
 
         <div className="h-px bg-[rgb(var(--c2))] mx-1" />
@@ -167,8 +163,25 @@ export default function SettingsPage() {
           icon={Info}
           label="About"
           description="Version 1.0.0"
-          onClick={() => {}}
+          onClick={() => setShowAbout((v) => !v)}
         />
+
+        <AnimatePresence>
+          {showAbout && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mx-1 mb-1 rounded-xl bg-[rgb(var(--c2))] px-3 py-3 text-center">
+                <p className="text-[rgb(var(--gold-ink))] text-sm font-bold tracking-wide">THAASBAI</p>
+                <p className="text-[rgb(var(--c4))] text-xs mt-0.5">The Home of Maldivian Card Games</p>
+                <p className="text-[rgb(var(--c4))] text-[11px] mt-2">Version 1.0.0</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Logout */}

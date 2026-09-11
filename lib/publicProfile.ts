@@ -27,6 +27,10 @@ export interface PublicProfile {
    *  `equippedCardBack` there) so the game table can render an opponent's
    *  actual skin instead of always falling back to the default. */
   cardBack?: string;
+  /** Equipped table theme cosmetic id. Seat 0's theme is used as the active
+   *  table skin for shared online/private matches, so the room has one
+   *  stable table look instead of changing per viewer. */
+  tableTheme?: string;
 }
 
 export async function getPublicProfile(uid: string): Promise<PublicProfile | null> {
@@ -48,5 +52,6 @@ export async function getPublicProfile(uid: string): Promise<PublicProfile | nul
     avatarPreset: data.avatarPreset,
     bannerPreset: data.bannerPreset,
     cardBack: data.equippedCardBack,
+    tableTheme: data.equippedTableTheme,
   };
 }

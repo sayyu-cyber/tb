@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Sparkles } from "lucide-react";
+import { Home, Sparkles, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
@@ -24,7 +24,8 @@ import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow } from "@/components/game/GameArena";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, TurnIndicator } from "@/components/game/GameArena";
+import { staggerParent, popIn } from "@/lib/motion";
 
 export interface GinOnlineState {
   hands: Record<string, Card[]>;
@@ -45,10 +46,12 @@ export interface GinOnlineState {
 
 export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const { user, playerStats } = useAuth();
-  const { processMatchEnd } = useEconomy();
+  const { processMatchEnd, state: economyState } = useEconomy();
   const myUid = user?.uid ?? "";
 
   const [match, setMatch] = useState<MatchDoc<GinOnlineState> | null>(null);
+  const [matchLoadError, setMatchLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [selectedDiscard, setSelectedDiscard] = useState<Card | null>(null);
   const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
@@ -56,9 +59,10 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const unsub = watchMatch<GinOnlineState>(matchId, setMatch);
+    setMatchLoadError(false);
+    const unsub = watchMatch<GinOnlineState>(matchId, setMatch, () => setMatchLoadError(true));
     return unsub;
-  }, [matchId]);
+  }, [matchId, retryKey]);
 
   const opponentUid = useMemo(() => match?.players.find((p) => p !== myUid) ?? "", [match, myUid]);
   const opponentProfiles = useOpponentProfiles(opponentUid ? [opponentUid] : []);
@@ -227,8 +231,28 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
   if (!match || !state) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-        <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+        {matchLoadError ? (
+          <div className="glass-card rounded-2xl p-6 max-w-xs">
+            <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadMatchError")}</p>
+            <button
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+            >
+              <RefreshCw size={13} aria-hidden="true" />
+              {t("error_tryAgain")}
+            </button>
+          </div>
+        ) : (
+          <motion.p
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: [0.4, 0.9, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="text-[rgb(var(--c4))] text-sm"
+          >
+            {t("common_loadingMatch")}
+          </motion.p>
+        )}
       </div>
     );
   }
@@ -330,9 +354,11 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     cardCount: state.hands[opponentUid]?.length ?? 0,
     active: !isMyTurn,
   };
+  const activeTableTheme =
+    match.players[0] === myUid ? economyState.profile.equipped.tableTheme : opponentProfile?.tableTheme || "tt_default";
 
   return (
-    <ArenaFelt accent="var(--deep)">
+    <ArenaFelt accent="var(--deep)" tableThemeId={activeTableTheme}>
       <ArenaHeader
         leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />}
         title={
@@ -345,7 +371,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
         }
       />
 
-      <ArenaTable>
+      <ArenaTable tableThemeId={activeTableTheme}>
         <div className="flex-1 flex flex-col items-center justify-between">
           <div className="h-14 flex items-center justify-center">
             <OpponentSeat seat={opponentSeat} orientation="column" />
@@ -358,7 +384,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                 disabled={state.phase !== "draw" || !isMyTurn || state.stock.length <= 2}
                 className="flex flex-col items-center gap-1 disabled:opacity-40"
               >
-                <PlayingCard rank="" suit="spades" size="lg" faceDown />
+                <PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={economyState.profile.equipped.cardBack} />
                 <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_stock").replace("{n}", String(state.stock.length))}</span>
               </button>
 
@@ -368,7 +394,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                 className="flex flex-col items-center gap-1 disabled:opacity-40"
               >
                 {topDiscard ? (
-                  <PlayingCard rank={rankLabel(topDiscard.rank)} suit={suitFromLetter(topDiscard.suit)} size="lg" />
+                  <PlayingCard
+                    key={cardId(topDiscard)}
+                    layoutId={cardId(topDiscard)}
+                    rank={rankLabel(topDiscard.rank)}
+                    suit={suitFromLetter(topDiscard.suit)}
+                    size="lg"
+                  />
                 ) : (
                   <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
                 )}
@@ -383,27 +415,36 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
               avatarPreset={playerStats?.avatarPreset}
               active={isMyTurn}
               trailing={
-                <span className="text-[rgb(var(--c4))] text-[11px]">
-                  {!isMyTurn ? t("gin_waitingOpponent") : state.phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
-                </span>
+                <TurnIndicator
+                  active={isMyTurn}
+                  activeLabel={state.phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
+                  waitingLabel={t("gin_waitingOpponent")}
+                />
               }
             />
-            <div className="flex justify-center gap-1.5 flex-wrap">
+            <motion.div
+              variants={staggerParent(0.04)}
+              initial="hidden"
+              animate="show"
+              className="flex justify-center gap-1.5 flex-wrap"
+            >
               {sortedHand.map((card) => {
                 const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
                 return (
-                  <PlayingCard
-                    key={cardId(card)}
-                    rank={rankLabel(card.rank)}
-                    suit={suitFromLetter(card.suit)}
-                    size="md"
-                    selected={Boolean(selected)}
-                    disabled={!isMyTurn || state.phase !== "discard"}
-                    onClick={() => handleSelectDiscard(card)}
-                  />
+                  <motion.div key={cardId(card)} variants={popIn} layout>
+                    <PlayingCard
+                      layoutId={cardId(card)}
+                      rank={rankLabel(card.rank)}
+                      suit={suitFromLetter(card.suit)}
+                      size="md"
+                      selected={Boolean(selected)}
+                      disabled={!isMyTurn || state.phase !== "discard"}
+                      onClick={() => handleSelectDiscard(card)}
+                    />
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
 
             <AnimatePresence>
               {selectedDiscard && state.phase === "discard" && isMyTurn && (

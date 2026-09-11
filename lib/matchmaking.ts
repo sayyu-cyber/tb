@@ -314,10 +314,23 @@ export async function getActiveMatchId(uid: string): Promise<{ matchId: string; 
   return active.length > 0 ? { matchId: active[0].id, gameType: active[0].data.gameType } : null;
 }
 
-export function watchMatch<TState>(matchId: string, onUpdate: (match: MatchDoc<TState> | null) => void): Unsubscribe {
-  return onSnapshot(doc(db, MATCHES_COLLECTION, matchId), (snap) => {
-    onUpdate(snap.exists() ? (snap.data() as MatchDoc<TState>) : null);
-  });
+/** Live match state for an already-placed match (MindiOnlineClient,
+ *  GinRummyOnlineClient, SpectateClient). `onError` matters here more than
+ *  most listeners: without it, a denied/failed read leaves those screens
+ *  on "Loading match…" forever, with no way to tell a real error apart
+ *  from the brief moment before the first snapshot arrives. */
+export function watchMatch<TState>(
+  matchId: string,
+  onUpdate: (match: MatchDoc<TState> | null) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, MATCHES_COLLECTION, matchId),
+    (snap) => {
+      onUpdate(snap.exists() ? (snap.data() as MatchDoc<TState>) : null);
+    },
+    onError
+  );
 }
 
 /** Writes new match state, only if it's still the expected player's turn (checked by the caller-supplied guard). */

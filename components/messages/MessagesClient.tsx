@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import {
   watchMessages,
   watchConversations,
   sendMessage,
+  markConversationRead,
   DmMessage,
   DmConversation,
 } from "@/lib/messages";
@@ -42,17 +43,50 @@ export function MessagesClient() {
 
 function ConversationList({ myUid }: { myUid: string }) {
   const [conversations, setConversations] = useState<DmConversation[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const t = useTranslation();
 
   useEffect(() => {
     if (!myUid) return;
-    return watchConversations(myUid, setConversations);
-  }, [myUid]);
+    setLoaded(false);
+    setLoadError(false);
+    return watchConversations(
+      myUid,
+      (list) => {
+        setConversations(list);
+        setLoaded(true);
+      },
+      () => {
+        setLoadError(true);
+        setLoaded(true);
+      }
+    );
+  }, [myUid, retryKey]);
 
   return (
     <div className="pt-4 pb-32 px-4">
       <PageHeader title={t("page_messages")} />
-      {conversations.length === 0 ? (
+      {!loaded ? (
+        <div className="space-y-2 mt-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-14 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : loadError ? (
+        <div className="glass-card rounded-2xl p-6 text-center mt-4">
+          <MessageCircle size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+          <p className="text-[rgb(var(--c4))] text-sm">{t("messages_loadError")}</p>
+          <button
+            onClick={() => setRetryKey((k) => k + 1)}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+          >
+            <RefreshCw size={13} aria-hidden="true" />
+            {t("error_tryAgain")}
+          </button>
+        </div>
+      ) : conversations.length === 0 ? (
         <div className="glass-card rounded-2xl p-6 text-center mt-4">
           <MessageCircle size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
           <p className="text-[rgb(var(--c4))] text-sm">{t("messages_noConversationsYet")}</p>
@@ -102,6 +136,9 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
       .then((id) => {
         setConversationId(id);
         unsub = watchMessages(id, setMessages);
+        // Opening the thread is "reading" it - marks it seen for the
+        // friends rail's unread indicator (components/home/FriendsRail.tsx).
+        markConversationRead(id, myUid).catch(() => {});
       })
       .catch((err) => setError(String(err)));
     return () => unsub?.();
@@ -110,6 +147,11 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Keep "read" current while the thread stays open and new messages
+    // arrive - otherwise a message that lands mid-conversation would still
+    // show as unread on the rail until the thread is reopened.
+    if (conversationId) markConversationRead(conversationId, myUid).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
   async function handleSend() {

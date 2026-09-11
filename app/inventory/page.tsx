@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, Ticket } from "lucide-react";
+import Link from "next/link";
+import { Package, Ticket, Lock, Crown } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { ALL_COSMETICS, RARITY_COLORS } from "@/data/cosmetics";
@@ -10,6 +11,8 @@ import { CosmeticCategory } from "@/types/economy";
 import RoomCardManager from "@/components/roomcards/RoomCardManager";
 import { useTranslation } from "@/hooks/useTranslation";
 import { CategoryIcon } from "@/components/ui/icons";
+import { CosmeticPreview } from "@/components/ui/CosmeticPreview";
+import { staggerParent, riseIn } from "@/lib/motion";
 
 function getCategoryTabs(t: (key: string) => string): { id: CosmeticCategory; label: string }[] {
   return [
@@ -41,7 +44,11 @@ export default function InventoryPage() {
 
   const collection = state.profile.collection as unknown as Record<string, string[]>;
   const ownedIds = new Set(collection[COLLECTION_KEY[category]] ?? []);
-  const ownedItems = ALL_COSMETICS.filter((c) => ownedIds.has(c.id) && c.category === category);
+  // The full catalogue for this category, not just what's owned - an
+  // unowned item renders locked/dimmed rather than simply not existing, so
+  // a new account sees what there is to collect instead of one card lost
+  // in an otherwise empty page.
+  const categoryItems = ALL_COSMETICS.filter((c) => c.category === category);
 
   const equippedMap: Record<string, string> = {
     cardBack: state.profile.equipped.cardBack,
@@ -95,31 +102,62 @@ export default function InventoryPage() {
             ))}
           </div>
 
-          {ownedItems.length === 0 ? (
-            <div className="glass-card rounded-2xl p-6 text-center">
-              <Package size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-              <p className="text-[rgb(var(--c4))] text-sm">{t("inventory_nothingHere")}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {ownedItems.map((item, i) => {
-                const isEquipped = canEquip && equippedMap[item.category] === item.id;
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className={`rounded-xl border p-3 ${isEquipped ? "border-[rgb(var(--gold)/50%)] bg-[rgb(var(--gold)/5%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2)/50%)]"}`}
+          <motion.div
+            key={category}
+            variants={staggerParent(0.03)}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+          >
+            {categoryItems.map((item) => {
+              const isOwned = ownedIds.has(item.id);
+              const isEquipped = isOwned && canEquip && equippedMap[item.category] === item.id;
+              return (
+                <motion.div
+                  key={item.id}
+                  variants={riseIn}
+                  className={`rounded-xl border p-3 transition-colors ${
+                    isEquipped
+                      ? "border-[rgb(var(--gold)/50%)] bg-[rgb(var(--gold)/5%)]"
+                      : isOwned
+                        ? "border-[rgb(var(--c3))] bg-[rgb(var(--c2)/50%)]"
+                        : "border-[rgb(var(--c3)/60%)] bg-[rgb(var(--c2)/25%)]"
+                  }`}
+                >
+                  <div
+                    className={`relative mb-2 h-20 rounded-lg bg-gradient-to-b from-[rgb(var(--c1))] to-[rgb(var(--c2))] flex items-center justify-center overflow-hidden ${
+                      isOwned ? "" : "opacity-45 saturate-50"
+                    }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-[rgb(var(--text-primary))] truncate">{item.name}</span>
-                      <span className="text-[9px] font-bold" style={{ color: RARITY_COLORS[item.rarity] }}>
-                        {item.rarity}
+                    <CosmeticPreview item={item} />
+                    {isEquipped && (
+                      <span className="absolute top-1 right-1 rounded-full bg-[rgb(var(--gold))] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#0C0E12]">
+                        {t("collection_equipped")}
                       </span>
-                    </div>
-                    <p className="text-[rgb(var(--c4))] text-xs mb-3 line-clamp-2">{item.description}</p>
-                    {canEquip ? (
+                    )}
+                    {!isOwned && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-[rgb(var(--c1)/35%)]">
+                        <Lock size={20} className="text-[rgb(var(--c5))]" aria-hidden="true" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`text-sm font-medium truncate ${isOwned ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c4))]"}`}
+                    >
+                      {item.name}
+                    </span>
+                    <span
+                      className="text-[9px] font-bold shrink-0 ml-1"
+                      style={{ color: isOwned ? RARITY_COLORS[item.rarity] : "rgb(var(--c4))" }}
+                    >
+                      {item.rarity}
+                    </span>
+                  </div>
+                  <p className="text-[rgb(var(--c4))] text-xs mb-3 line-clamp-2">{item.description}</p>
+
+                  {isOwned ? (
+                    canEquip ? (
                       <button
                         onClick={() => equipCosmetic(item.category, item.id)}
                         className={`w-full py-1.5 rounded-lg text-xs font-semibold ${
@@ -132,10 +170,38 @@ export default function InventoryPage() {
                       <span className="block w-full text-center py-1.5 rounded-lg text-xs font-medium bg-[rgb(var(--c3))] text-[rgb(var(--c5))]">
                         {t("inventory_owned")}
                       </span>
-                    )}
-                  </motion.div>
-                );
-              })}
+                    )
+                  ) : (
+                    <Link
+                      href="/shop"
+                      className="flex w-full items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold bg-[rgb(var(--c3)/60%)] text-[rgb(var(--c5))] hover:bg-[rgb(var(--c3))] hover:text-[rgb(var(--text-primary))] transition-colors"
+                    >
+                      {item.isVipExclusive ? (
+                        <>
+                          <Crown size={12} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
+                          VIP only
+                        </>
+                      ) : item.price > 0 ? (
+                        <>
+                          <Lock size={11} aria-hidden="true" />
+                          {item.price.toLocaleString()} coins
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={11} aria-hidden="true" />
+                          Locked
+                        </>
+                      )}
+                    </Link>
+                  )}
+                </motion.div>
+              );
+            })}
+          </motion.div>
+          {categoryItems.length === 0 && (
+            <div className="glass-card rounded-2xl p-6 text-center">
+              <Package size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+              <p className="text-[rgb(var(--c4))] text-sm">{t("inventory_nothingHere")}</p>
             </div>
           )}
         </>

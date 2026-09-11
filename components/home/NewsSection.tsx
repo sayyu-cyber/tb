@@ -2,15 +2,27 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, ChevronRight, X } from "lucide-react";
+import { Newspaper, ChevronRight, X, Megaphone, Sparkles, PartyPopper } from "lucide-react";
 import { useNews } from "@/hooks/useNews";
 import { NewsItem } from "@/types";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const typeColors = {
   announcement: "text-[rgb(var(--gold-ink))]",
-  update: "text-[#3EB489]",
-  event: "text-[rgb(var(--gold-ink))]",
+  update: "text-[rgb(var(--lagoon-ink))]",
+  event: "text-[rgb(var(--coral-ink))]",
+};
+
+const typeAccent = {
+  announcement: "var(--gold)",
+  update: "var(--lagoon)",
+  event: "var(--coral)",
+};
+
+const typeIcon = {
+  announcement: Megaphone,
+  update: Sparkles,
+  event: PartyPopper,
 };
 
 const typeLabels = {
@@ -20,6 +32,7 @@ const typeLabels = {
 };
 
 function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onClick: () => void }) {
+  const Icon = typeIcon[item.type];
   return (
     <motion.button
       type="button"
@@ -29,23 +42,29 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
       transition={{ delay: 0.3 + index * 0.1 }}
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full flex items-start gap-3 p-3 rounded-xl bg-[rgb(var(--c2)/50%)] border border-[rgb(var(--c3))] hover:border-[rgb(var(--gold)/20%)] transition-colors cursor-pointer group text-left"
+      style={{ ["--accent" as string]: typeAccent[item.type] } as React.CSSProperties}
+      className="w-full flex items-start gap-3 p-3 rounded-xl bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))]
+                 border-l-2 border-l-[rgb(var(--accent)/60%)]
+                 hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/6%)] transition-colors cursor-pointer group text-left"
     >
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgb(var(--accent)/14%)]">
+        <Icon size={14} className="text-[rgb(var(--accent))]" aria-hidden="true" />
+      </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span className={`text-[9px] font-bold tracking-wider ${typeColors[item.type]}`}>
             {typeLabels[item.type]}
           </span>
-          <span className="text-[rgb(var(--c3))] text-[9px]">
+          <span className="text-[rgb(var(--c4))] text-[9px]">
             {item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </span>
         </div>
-        <h4 className="text-[rgb(var(--text-primary))] text-sm font-medium truncate group-hover:text-[rgb(var(--gold-ink))] transition-colors">
+        <h4 className="text-[rgb(var(--text-primary))] text-sm font-semibold truncate group-hover:text-[rgb(var(--accent))] transition-colors">
           {item.title}
         </h4>
         <p className="text-[rgb(var(--c4))] text-xs mt-0.5 line-clamp-1">{item.content}</p>
       </div>
-      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[rgb(var(--gold-ink))] transition-colors mt-1 shrink-0" />
+      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[rgb(var(--accent))] transition-colors mt-1 shrink-0" />
     </motion.button>
   );
 }

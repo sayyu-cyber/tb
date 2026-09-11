@@ -13,7 +13,6 @@ const defaultSettings: AppSettings = {
   notifications: true,
   sound: true,
   music: false,
-  darkTheme: true,
   language: "en",
 };
 
@@ -34,13 +33,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, []);
-
-  // Applies the actual theme: toggles a `.light` class on <html> whenever
-  // darkTheme changes. CSS variables in styles/globals.css do the rest -
-  // this used to be a toggle that did nothing.
-  useEffect(() => {
-    document.documentElement.classList.toggle("light", !settings.darkTheme);
-  }, [settings.darkTheme]);
 
   // Applies the selected language's text direction to <html> - Dhivehi
   // (Thaana script) reads right-to-left, everything else left-to-right.

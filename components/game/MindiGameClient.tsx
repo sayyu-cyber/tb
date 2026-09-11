@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Home, Sparkles, Users, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,8 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData, TurnIndicator } from "@/components/game/GameArena";
+import { staggerParent, popIn } from "@/lib/motion";
 
 interface MindiGameClientProps {
   /** "ai": you (seat 0) + 3 bots. "passplay": you + a local partner (seats 0 & 2) vs 2 bots. */
@@ -52,9 +53,16 @@ function pickBotNames(): string[] {
   return shuffled.slice(0, 4);
 }
 
+const LOCAL_SEAT_DECK_SKINS: Record<SeatIndex, string> = {
+  0: "cb_default",
+  1: "cb_fire",
+  2: "cb_neon",
+  3: "cb_ocean",
+};
+
 export function MindiGameClient({ mode }: MindiGameClientProps) {
   const router = useRouter();
-  const { processMatchEnd } = useEconomy();
+  const { processMatchEnd, state: economyState } = useEconomy();
   const { playerStats } = useAuth();
   const t = useTranslation();
 
@@ -65,6 +73,10 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
 
   const [deal, setDeal] = useState(() => dealMindiHand(3));
   const [hands, setHands] = useState(() => deal.hands);
+  // Bumped only on a fresh deal (startNewHand) - keys the hand's
+  // stagger-in wrapper so it replays the deal-in animation once per hand
+  // rather than on every single card played.
+  const [dealSeq, setDealSeq] = useState(0);
   const [turnSeat, setTurnSeat] = useState<SeatIndex>(deal.leader);
   const [trick, setTrick] = useState<TrickPlay[]>([]);
   const [tensCaptured, setTensCaptured] = useState<Record<Team, number>>({ A: 0, B: 0 });
@@ -158,6 +170,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
     botNamesRef.current = pickBotNames();
     setDeal(newDeal);
     setHands(newDeal.hands);
+    setDealSeq((n) => n + 1);
     setTurnSeat(newDeal.leader);
     setTrick([]);
     setTensCaptured({ A: 0, B: 0 });
@@ -284,6 +297,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
   const botSeatData = (seat: SeatIndex): ArenaSeatData => ({
     uid: `bot-${seat}`,
     name: mode === "ai" ? botNamesRef.current[seat] : seatNames[seat],
+    cardBackId: LOCAL_SEAT_DECK_SKINS[seat],
     cardCount: hands[seat]?.length ?? 0,
     active: turnSeat === seat && !resolvingTrick,
   });
@@ -293,7 +307,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
   const selfCanAct = isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat) && !resolvingTrick;
 
   return (
-    <ArenaFelt accent="var(--lagoon)">
+    <ArenaFelt accent="var(--lagoon)" tableThemeId={economyState.profile.equipped.tableTheme}>
       <ArenaHeader
         leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch={false} />}
         title={<>Mindi — {t("offline_casualSuffix")}</>}
@@ -321,14 +335,14 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
         </div>
       </div>
 
-      <ArenaTable>
+      <ArenaTable tableThemeId={economyState.profile.equipped.tableTheme}>
         <div className="flex-1 flex flex-col items-center justify-between">
-          <div className="h-14 flex items-center justify-center">
+          <div className="min-h-16 sm:min-h-20 flex items-center justify-center">
             <OpponentSeat seat={botSeatData(2 as SeatIndex)} orientation="column" />
           </div>
 
-          <div className="flex items-center justify-between w-full max-w-sm">
-            <div className="w-20">
+          <div className="flex items-center justify-between gap-2 sm:gap-6 w-full max-w-5xl">
+            <div className="w-20 sm:w-32 lg:w-44 flex justify-start">
               <OpponentSeat seat={botSeatData(1 as SeatIndex)} orientation="column" />
             </div>
 
@@ -338,21 +352,28 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
                   {resolvingTrick ? "" : `${seatNames[turnSeat]}'s turn`}
                 </span>
               ) : (
-                trick.map((play) => (
-                  <motion.div
-                    key={cardId(play.card)}
-                    initial={{ opacity: 0, scale: 0.7, y: -18 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.7 }}
-                    transition={{ type: "spring", stiffness: 450, damping: 26 }}
-                  >
-                    <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
-                  </motion.div>
-                ))
+                <AnimatePresence>
+                  {trick.map((play) => (
+                    <motion.div
+                      key={cardId(play.card)}
+                      initial={{ opacity: 0, scale: 0.7, y: -18 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ type: "spring", stiffness: 450, damping: 26 }}
+                    >
+                      <PlayingCard
+                        layoutId={cardId(play.card)}
+                        rank={rankLabel(play.card.rank)}
+                        suit={suitFromLetter(play.card.suit)}
+                        size="sm"
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </TableWell>
 
-            <div className="w-20">
+            <div className="w-20 sm:w-32 lg:w-44 flex justify-end">
               <OpponentSeat seat={botSeatData(3 as SeatIndex)} orientation="column" />
             </div>
           </div>
@@ -364,26 +385,40 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
               avatarPreset={playerStats?.avatarPreset}
               active={isHuman(turnSeat)}
               trailing={
-                <span className="text-[rgb(var(--c4))] text-[11px]">
-                  {selfCanAct ? t("mindi_selectCard") : isHuman(turnSeat) ? "" : `Waiting for ${seatNames[turnSeat]}…`}
-                </span>
+                <TurnIndicator
+                  active={selfCanAct}
+                  activeLabel={t("mindi_selectCard")}
+                  waitingLabel={isHuman(turnSeat) ? undefined : `Waiting for ${seatNames[turnSeat]}…`}
+                />
               }
             />
-            <div className="flex justify-center gap-1.5 flex-wrap">
+            <motion.div
+              key={dealSeq}
+              variants={staggerParent(0.04)}
+              initial="hidden"
+              animate="show"
+              className="flex justify-center gap-1.5 flex-wrap"
+            >
               {selfHand.map((card) => {
                 const canPlay = selfCanAct && legalForYou.some((c) => cardId(c) === cardId(card));
                 return (
-                  <PlayingCard
-                    key={cardId(card)}
-                    rank={rankLabel(card.rank)}
-                    suit={suitFromLetter(card.suit)}
-                    size="md"
-                    disabled={!canPlay}
-                    onClick={() => canPlay && handleCardSelect(card)}
-                  />
+                  // `layout` here (not just on the inner PlayingCard) lets
+                  // the remaining hand close the gap smoothly when a card
+                  // is played, instead of snapping to the new position
+                  // while only the inner card tries to catch up.
+                  <motion.div key={cardId(card)} variants={popIn} layout>
+                    <PlayingCard
+                      layoutId={cardId(card)}
+                      rank={rankLabel(card.rank)}
+                      suit={suitFromLetter(card.suit)}
+                      size="md"
+                      disabled={!canPlay}
+                      onClick={() => canPlay && handleCardSelect(card)}
+                    />
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
         </div>
       </ArenaTable>

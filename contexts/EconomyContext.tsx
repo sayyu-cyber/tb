@@ -750,13 +750,16 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     const saveToFirebase = async () => {
       try {
         await setDoc(doc(db, 'playerEconomy', user.uid), state, { merge: true });
-        // Also mirror the equipped card back onto the public `players/{uid}`
+        // Also mirror equipped cosmetics onto the public `players/{uid}`
         // doc (already readable by any signed-in user, see lib/publicProfile.ts)
-        // so opponents at the table can render this player's actual skin
-        // instead of always falling back to the default.
+        // so opponents at the table can render this player's actual skins
+        // instead of always falling back to the defaults.
         await setDoc(
           doc(db, 'players', user.uid),
-          { equippedCardBack: state.profile.equipped.cardBack || '' },
+          {
+            equippedCardBack: state.profile.equipped.cardBack || 'cb_default',
+            equippedTableTheme: state.profile.equipped.tableTheme || 'tt_default',
+          },
           { merge: true }
         );
       } catch (error) {
@@ -832,8 +835,10 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   }, [dispatch, state.economy.coins, state.shopOverrides]);
 
   const equipCosmetic = useCallback((category: string, itemId: string) => {
+    const collectionKey = CATEGORY_TO_COLLECTION_KEY[category];
+    if (!collectionKey || !state.profile.collection[collectionKey].includes(itemId)) return;
     dispatch({ type: 'EQUIP_COSMETIC', payload: { category, itemId } });
-  }, [dispatch]);
+  }, [dispatch, state.profile.collection]);
 
   const unlockAchievement = useCallback((achievementId: string) => {
     dispatch({ type: 'UNLOCK_ACHIEVEMENT', payload: { achievementId } });

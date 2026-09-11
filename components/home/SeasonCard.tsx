@@ -5,7 +5,7 @@ import { Crown, Calendar } from "lucide-react";
 import { useSeasonInfo } from "@/hooks/useSeasonInfo";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useTranslation";
-import { riseIn } from "@/lib/motion";
+import { VividCard } from "@/components/ui/VividCard";
 
 export function SeasonCard() {
   const season = useSeasonInfo();
@@ -25,43 +25,34 @@ export function SeasonCard() {
   );
 
   return (
-    <motion.div
-      variants={riseIn}
-      initial="hidden"
-      animate="show"
-      style={{ ["--accent" as string]: "var(--orchid)" } as React.CSSProperties}
-      className="surface-accent edge-light rounded-2xl p-5 relative overflow-hidden"
-    >
-      {/* Background decoration */}
-      <div className="absolute -right-4 -top-4 w-24 h-24 bg-[rgb(var(--accent)/14%)] rounded-full blur-2xl" />
-
+    <VividCard accent="var(--orchid)">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Crown size={18} className="text-[rgb(var(--accent))]" aria-hidden="true" />
-          <h3 className="text-[rgb(var(--text-primary))] font-semibold">{season.name}</h3>
+          <Crown size={18} className="text-white" aria-hidden="true" />
+          <h3 className="text-white font-semibold">{season.name}</h3>
         </div>
-        <div className="flex items-center gap-1 text-[rgb(var(--c4))]">
+        <div className="flex items-center gap-1 text-white/70">
           <Calendar size={14} />
           <span className="text-xs">{t("home_seasonEndsIn")}</span>
         </div>
       </div>
 
       <div className="flex items-end gap-2">
-        <span className="text-4xl font-black text-[rgb(var(--accent))] tabular-nums">{days}</span>
-        <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_days")}</span>
-        <span className="text-4xl font-bold text-[rgb(var(--gold-ink))] ml-2">{hours}</span>
-        <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_hours")}</span>
+        <span className="text-4xl font-black text-white tabular-nums">{days}</span>
+        <span className="text-white/70 text-sm mb-1">{t("home_days")}</span>
+        <span className="text-4xl font-bold text-white/90 ml-2 tabular-nums">{hours}</span>
+        <span className="text-white/70 text-sm mb-1">{t("home_hours")}</span>
       </div>
 
-      <div className="mt-4 h-1.5 bg-[rgb(var(--c2))] rounded-full overflow-hidden">
+      <div className="mt-4 h-1.5 bg-white/25 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-[rgb(var(--accent)/70%)] to-[rgb(var(--accent))] rounded-full"
+          className="h-full bg-white rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progressPct}%` }}
           transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
         />
       </div>
-      <p className="text-[rgb(var(--c4))] text-[10px] mt-1.5">{t("home_seasonProgress")}</p>
-    </motion.div>
+      <p className="text-white/70 text-[10px] mt-1.5">{t("home_seasonProgress")}</p>
+    </VividCard>
   );
 }

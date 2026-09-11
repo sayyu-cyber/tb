@@ -13,6 +13,7 @@ import CoinBalance from '../economy/CoinBalance';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../contexts/ToastContext';
 import { CategoryIcon, CoinIcon, Crown } from '../ui/icons';
+import { CosmeticPreview } from '../ui/CosmeticPreview';
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
   return (
@@ -74,7 +75,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
       )}
 
       <div className="relative aspect-square bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] flex items-center justify-center overflow-hidden">
-        <CategoryIcon category={item.category} size={44} className="text-[rgb(var(--c4))] opacity-60" />
+        <CosmeticPreview item={item} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         
         <motion.div

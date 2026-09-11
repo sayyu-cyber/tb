@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { GameSelectCard } from "@/components/game/GameSelectCard";
 import { PlayLobbyHero } from "@/components/home/PlayLobbyHero";
+import { WeekendLeague } from "@/components/home/WeekendLeague";
 import { useTranslation } from "@/hooks/useTranslation";
 import { TOKEN } from "@/constants/theme";
 
@@ -35,6 +36,8 @@ export default function PlayPage() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <PlayLobbyHero />
       </motion.div>
+
+      <WeekendLeague />
 
       <div>
         <h2 className="text-[rgb(var(--c4))] text-[11px] font-bold uppercase tracking-widest mb-3 px-1">

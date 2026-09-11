@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft, Eye, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { watchMatch, MatchDoc } from "@/lib/matchmaking";
@@ -29,12 +29,27 @@ import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, ArenaSeatD
 export function SpectateClient({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchDoc<unknown> | null>(null);
   const [profiles, setProfiles] = useState<Record<string, PublicProfile>>({});
+  const [matchLoadError, setMatchLoadError] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const t = useTranslation();
 
   useEffect(() => {
-    const unsub = watchMatch<unknown>(matchId, setMatch);
+    setMatchLoadError(false);
+    setHasLoadedOnce(false);
+    const unsub = watchMatch<unknown>(
+      matchId,
+      (m) => {
+        setMatch(m);
+        setHasLoadedOnce(true);
+      },
+      () => {
+        setMatchLoadError(true);
+        setHasLoadedOnce(true);
+      }
+    );
     return unsub;
-  }, [matchId]);
+  }, [matchId, retryKey]);
 
   useEffect(() => {
     if (!match) return;
@@ -52,8 +67,36 @@ export function SpectateClient({ matchId }: { matchId: string }) {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-        <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadingMatch")}</p>
+      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+        {matchLoadError ? (
+          <div className="glass-card rounded-2xl p-6 max-w-xs">
+            <p className="text-[rgb(var(--c4))] text-sm">{t("spectate_loadError")}</p>
+            <button
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+            >
+              <RefreshCw size={13} aria-hidden="true" />
+              {t("error_tryAgain")}
+            </button>
+          </div>
+        ) : hasLoadedOnce ? (
+          <div className="glass-card rounded-2xl p-6 max-w-xs space-y-3">
+            <Eye size={28} className="text-[rgb(var(--c3))] mx-auto" />
+            <p className="text-[rgb(var(--text-primary))] text-sm">{t("spectate_notFound")}</p>
+            <Link href="/play" className="inline-block text-[rgb(var(--gold-ink))] text-sm underline">
+              {t("roomlobby_backToPlay")}
+            </Link>
+          </div>
+        ) : (
+          <motion.p
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: [0.4, 0.9, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="text-[rgb(var(--c4))] text-sm"
+          >
+            {t("common_loadingMatch")}
+          </motion.p>
+        )}
       </div>
     );
   }

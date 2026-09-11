@@ -119,28 +119,44 @@ export async function cancelOrRemove(requestId: string): Promise<void> {
   await deleteDoc(doc(db, REQUESTS_COLLECTION, requestId));
 }
 
-export function watchIncomingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void): Unsubscribe {
+export function watchIncomingRequests(
+  uid: string,
+  onUpdate: (requests: FriendRequestDoc[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const q = query(
     collection(db, REQUESTS_COLLECTION),
     where("to", "==", uid),
     where("status", "==", "pending"),
     limit(100)
   );
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
+    },
+    onError
+  );
 }
 
-export function watchOutgoingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void): Unsubscribe {
+export function watchOutgoingRequests(
+  uid: string,
+  onUpdate: (requests: FriendRequestDoc[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const q = query(
     collection(db, REQUESTS_COLLECTION),
     where("from", "==", uid),
     where("status", "==", "pending"),
     limit(100)
   );
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
+    },
+    onError
+  );
 }
 
 export interface Friend {
@@ -150,7 +166,11 @@ export interface Friend {
 }
 
 /** Friends = accepted requests in either direction, merged into one list. */
-export function watchFriends(uid: string, onUpdate: (friends: Friend[]) => void): Unsubscribe {
+export function watchFriends(
+  uid: string,
+  onUpdate: (friends: Friend[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   let fromResults: FriendRequestDoc[] = [];
   let toResults: FriendRequestDoc[] = [];
 
@@ -167,14 +187,16 @@ export function watchFriends(uid: string, onUpdate: (friends: Friend[]) => void)
     (snap) => {
       fromResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
       emit();
-    }
+    },
+    onError
   );
   const unsubTo = onSnapshot(
     query(collection(db, REQUESTS_COLLECTION), where("to", "==", uid), where("status", "==", "accepted"), limit(250)),
     (snap) => {
       toResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
       emit();
-    }
+    },
+    onError
   );
 
   return () => {
@@ -200,11 +222,19 @@ export async function sendRoomInvite(
   });
 }
 
-export function watchRoomInvites(uid: string, onUpdate: (invites: RoomInviteDoc[]) => void): Unsubscribe {
+export function watchRoomInvites(
+  uid: string,
+  onUpdate: (invites: RoomInviteDoc[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const q = query(collection(db, INVITES_COLLECTION), where("to", "==", uid), limit(50));
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RoomInviteDoc, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RoomInviteDoc, "id">) })));
+    },
+    onError
+  );
 }
 
 export async function dismissRoomInvite(id: string): Promise<void> {

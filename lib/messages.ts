@@ -35,6 +35,11 @@ export interface DmConversation {
   lastMessage: string;
   lastMessageAt: number;
   lastSenderUid: string;
+  /** Per-participant "I've seen up to this point" timestamp, keyed by uid.
+   *  Powers the unread indicator on the friends rail's chats section - see
+   *  markConversationRead below. Optional: older conversation docs (and
+   *  ones neither side has opened since this was added) simply have none. */
+  lastReadAt?: Record<string, number>;
 }
 
 export interface DmMessage {
@@ -89,16 +94,35 @@ export async function sendMessage(conversationId: string, senderUid: string, tex
   );
 }
 
+/** Marks a conversation as read up to now for one participant. Safe to call
+ *  every time a chat screen opens/receives a message - it's just a merge
+ *  write of one timestamp, not a transaction. */
+export async function markConversationRead(conversationId: string, uid: string): Promise<void> {
+  await setDoc(
+    doc(db, CONVERSATIONS_COLLECTION, conversationId),
+    { lastReadAt: { [uid]: Date.now() } },
+    { merge: true }
+  );
+}
+
 /** Ordered oldest-to-newest, live - a plain orderBy with no other filter needs no composite index. */
-export function watchMessages(conversationId: string, onUpdate: (messages: DmMessage[]) => void): Unsubscribe {
+export function watchMessages(
+  conversationId: string,
+  onUpdate: (messages: DmMessage[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const ref = doc(db, CONVERSATIONS_COLLECTION, conversationId);
   // Cap the history a conversation loads. Matches the 200 already used
   // for club chat (lib/clubs.ts) - without it, a long-running DM thread
   // re-downloads its entire history on every new message.
   const q = query(collection(ref, "messages"), orderBy("createdAt", "asc"), limit(200));
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DmMessage, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DmMessage, "id">) })));
+    },
+    onError
+  );
 }
 
 /**
@@ -110,12 +134,20 @@ export function watchMessages(conversationId: string, onUpdate: (messages: DmMes
  * instead) so this never needs a manually-created composite index - same
  * pattern used throughout this codebase for matchmaking/leaderboards.
  */
-export function watchConversations(uid: string, onUpdate: (conversations: DmConversation[]) => void): Unsubscribe {
+export function watchConversations(
+  uid: string,
+  onUpdate: (conversations: DmConversation[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const q = query(collection(db, CONVERSATIONS_COLLECTION), where("participants", "array-contains", uid), limit(100));
-  return onSnapshot(q, (snap) => {
-    const all = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Omit<DmConversation, "id">) }))
-      .sort((a, b) => b.lastMessageAt - a.lastMessageAt);
-    onUpdate(all);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const all = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<DmConversation, "id">) }))
+        .sort((a, b) => b.lastMessageAt - a.lastMessageAt);
+      onUpdate(all);
+    },
+    onError
+  );
 }

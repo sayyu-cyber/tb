@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, Lock, Copy, Check, LogOut, Play, Crown } from "lucide-react";
+import { ArrowLeft, Users, Lock, Copy, Check, LogOut, Play, Crown, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -299,10 +299,37 @@ function RoomLobby({
   // very first snapshot before our own join has propagated.
   const [wasSeated, setWasSeated] = useState(false);
   const [removedAs, setRemovedAs] = useState<"kicked" | "banned" | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  // `room === null` is ambiguous on its own - it's both the initial
+  // "haven't heard back yet" value AND what a genuinely nonexistent code
+  // resolves to (watchRoom's snapshot callback fires with `null` when the
+  // doc doesn't exist, no error involved). Tracking the first snapshot
+  // separately lets the render below tell "still loading" apart from
+  // "this code doesn't exist" instead of showing "loading room…" forever
+  // for a mistyped or expired code.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const t = useTranslation();
   const { showToast } = useToast();
 
-  useEffect(() => watchRoom(code, setRoom), [code]);
+  useEffect(() => {
+    setLoadError(false);
+    setHasLoadedOnce(false);
+    // Without onError, a denied/failed read leaves `room` at its initial
+    // null forever and this screen never leaves "loading room…" - see the
+    // note on watchRoom.
+    return watchRoom(
+      code,
+      (r) => {
+        setRoom(r);
+        setHasLoadedOnce(true);
+      },
+      () => {
+        setLoadError(true);
+        setHasLoadedOnce(true);
+      }
+    );
+  }, [code, retryKey]);
 
   useEffect(() => {
     if (room?.status === "started" && room.matchId) {
@@ -373,7 +400,36 @@ function RoomLobby({
   if (room === null) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
-        <p className="text-[rgb(var(--c4))] text-sm">{t("roomlobby_loadingRoom")}</p>
+        {loadError ? (
+          <div className="glass-card rounded-2xl p-6 max-w-xs">
+            <Lock size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
+            <p className="text-[rgb(var(--c4))] text-sm">{t("roomlobby_loadError")}</p>
+            <button
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+            >
+              <RefreshCw size={13} aria-hidden="true" />
+              {t("error_tryAgain")}
+            </button>
+          </div>
+        ) : hasLoadedOnce ? (
+          <div className="glass-card rounded-2xl p-6 max-w-xs space-y-3">
+            <Users size={28} className="text-[rgb(var(--c3))] mx-auto" />
+            <p className="text-[rgb(var(--text-primary))] text-sm">{t("roomlobby_notFound")}</p>
+            <Link href="/play" className="inline-block text-[rgb(var(--gold-ink))] text-sm underline">
+              {t("roomlobby_backToPlay")}
+            </Link>
+          </div>
+        ) : (
+          <motion.p
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: [0.4, 0.9, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="text-[rgb(var(--c4))] text-sm"
+          >
+            {t("roomlobby_loadingRoom")}
+          </motion.p>
+        )}
       </div>
     );
   }
