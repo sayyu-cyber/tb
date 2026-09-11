@@ -348,7 +348,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
 
             <TableWell>
               {trick.length === 0 ? (
-                <span className="text-[rgb(var(--c3))] text-xs">
+                <span className="text-[rgb(var(--c5))] text-xs">
                   {resolvingTrick ? "" : `${seatNames[turnSeat]}'s turn`}
                 </span>
               ) : (
@@ -397,7 +397,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
               variants={staggerParent(0.04)}
               initial="hidden"
               animate="show"
-              className="flex justify-center gap-1.5 flex-wrap"
+              className="mindi-hand"
             >
               {selfHand.map((card) => {
                 const canPlay = selfCanAct && legalForYou.some((c) => cardId(c) === cardId(card));

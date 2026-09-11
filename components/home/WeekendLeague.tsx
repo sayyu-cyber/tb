@@ -53,9 +53,9 @@ export function WeekendLeague() {
         )}
       </div>
 
-      <div className="relative">
+      {!isWeekendLeague && <div className="relative">
         <CountdownTimer targetDate={nextFriday} label={t("home_startsIn")} />
-      </div>
+      </div>}
 
       <div className="relative mt-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white/70 text-[10px]">

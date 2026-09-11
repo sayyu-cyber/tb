@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { EconomyProvider } from "@/contexts/EconomyContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { MotionProvider } from "@/components/system/MotionProvider";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -71,7 +72,7 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body className={inter.className}>
-        <AuthProvider>
+        <MotionProvider><AuthProvider>
           <SettingsProvider>
             <EconomyProvider>
               {/* Innermost so any screen can raise a toast, and so the
@@ -79,7 +80,7 @@ export default function RootLayout({
               <ToastProvider>{children}</ToastProvider>
             </EconomyProvider>
           </SettingsProvider>
-        </AuthProvider>
+        </AuthProvider></MotionProvider>
       </body>
     </html>
   );

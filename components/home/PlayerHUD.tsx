@@ -33,10 +33,6 @@ export function PlayerHUD() {
   const rankData = RANKS[currentRank.toUpperCase() as keyof typeof RANKS];
   const nextRank = Object.values(RANKS).find((r) => r.min > trophies);
 
-  const dailyUsed = 1;
-  const dailyTotal = 3;
-  const rankedRemaining = 2;
-  const rankedTotal = 3;
 
   const stats = [
     {
@@ -49,15 +45,15 @@ export function PlayerHUD() {
     {
       icon: Calendar,
       accent: "var(--lagoon)",
-      label: t("home_dailyMatches"),
-      value: `${dailyTotal - dailyUsed} / ${dailyTotal}`,
+      label: t("profile_matches"),
+      value: String(playerStats?.totalMatches ?? 0),
       sub: null,
     },
     {
       icon: Swords,
       accent: "var(--deep)",
-      label: t("home_rankedMatches"),
-      value: `${rankedRemaining} / ${rankedTotal}`,
+      label: t("profile_wins"),
+      value: String(playerStats?.wins ?? 0),
       sub: null,
     },
     {
@@ -74,16 +70,12 @@ export function PlayerHUD() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 420, damping: 34 }}
-      className="surface-raised edge-light relative overflow-hidden rounded-2xl px-4 py-3.5"
+      className="player-hud relative border-y border-[rgb(var(--c3))] px-1 py-3.5"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[rgb(var(--gold)/10%)] blur-2xl"
-      />
 
-      <div className="relative flex items-center gap-4 overflow-x-auto">
+      <div className="relative flex flex-wrap items-center gap-x-4 gap-y-3">
         {/* Identity */}
-        <div className="flex shrink-0 items-center gap-3 pr-4 border-r border-[rgb(var(--c3))]">
+        <div className="flex w-full sm:w-auto min-w-0 items-center gap-3 pr-4 sm:border-r border-[rgb(var(--c3))]">
           <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] p-[2px]">
             <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[rgb(var(--c2))]">
               {user.photoURL ? (

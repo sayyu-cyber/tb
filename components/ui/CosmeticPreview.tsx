@@ -22,7 +22,7 @@ export function CosmeticPreview({ item, className }: { item: CosmeticItem; class
   if (item.category === "cardBack") {
     return (
       <div className={className ?? "relative w-full h-full flex items-center justify-center"}>
-        <PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={item.id} />
+        <div className="cosmetic-card-stack"><div className="cosmetic-card-shadow"><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={item.id} /></div><div className="relative rotate-[12deg]"><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={item.id} /></div></div>
       </div>
     );
   }
@@ -31,8 +31,8 @@ export function CosmeticPreview({ item, className }: { item: CosmeticItem; class
     const theme = TABLE_THEME_STYLES[item.id] ?? TABLE_THEME_STYLES.tt_default;
     return (
       <div
-        className={className ?? "relative w-full h-full overflow-hidden rounded-lg"}
-        style={{ backgroundColor: theme.base }}
+        className={className ?? "cosmetic-mini-table relative overflow-hidden"}
+        style={{ backgroundColor: theme.base, borderColor: theme.glow }}
       >
         {theme.pattern && (
           <div className="absolute inset-0 opacity-70" style={{ backgroundImage: theme.pattern }} aria-hidden="true" />

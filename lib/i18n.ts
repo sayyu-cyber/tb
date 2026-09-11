@@ -147,6 +147,15 @@ export const TRANSLATIONS: Record<string, Translations> = {
   shop_equip: { en: "Equip", dv: "އިކުއިޕް", hi: "इक्विप", bn: "ইকুইপ" },
   shop_equipped: { en: "Equipped", dv: "އިކުއިޕްކުރެވިއްޖެ", hi: "इक्विप्ड", bn: "ইকুইপড" },
   shop_purchase: { en: "Purchase", dv: "ގަންނާ", hi: "खरीदें", bn: "ক্রয় করুন" },
+  shop_insufficientTitle: { en: "Insufficient Balance", dv: "ބެލެންސް ނުފުދޭ", hi: "अपर्याप्त शेष राशि", bn: "অপর্যাপ্ত ব্যালেন্স" },
+  shop_insufficientBody: { en: "You don't have enough coins for {item} yet.", dv: "{item} ގަތުމަށް ބޭނުންވާ ވަރަށް ކޮއިންސް އަދި ނެތް.", hi: "{item} के लिए आपके पास अभी पर्याप्त सिक्के नहीं हैं।", bn: "{item} কেনার জন্য আপনার এখনো পর্যাপ্ত কয়েন নেই।" },
+  shop_yourBalance: { en: "Your balance", dv: "ތިޔަހުރި ބެލެންސް", hi: "आपका शेष", bn: "আপনার ব্যালেন্স" },
+  shop_itemPrice: { en: "Item price", dv: "އައިޓަމްގެ އަގު", hi: "आइटम की कीमत", bn: "আইটেমের মূল্য" },
+  shop_youNeed: { en: "You need", dv: "ބޭނުންވޭ", hi: "आपको चाहिए", bn: "আপনার প্রয়োজন" },
+  shop_more: { en: "more", dv: "އިތުރަށް", hi: "और", bn: "আরো" },
+  shop_insufficientAdvice: { en: "Top up your coin balance now, or keep playing matches and completing missions until you've earned enough.", dv: "މިހާރު ކޮއިންސް ޓޮޕްއަޕް ކުރައްވާ، ނުވަތަ ފުދޭ ވަރަށް ލިބެންދެން މެޗް ކުޅުއްވައި މިޝަންތައް ފުރިހަމަ ކުރައްވަމުން ގެންދަވާ.", hi: "अभी अपना सिक्का बैलेंस टॉप अप करें, या पर्याप्त कमाने तक मैच खेलना और मिशन पूरे करना जारी रखें।", bn: "এখনই আপনার কয়েন ব্যালেন্স টপ আপ করুন, অথবা পর্যাপ্ত অর্জন না হওয়া পর্যন্ত ম্যাচ খেলা ও মিশন সম্পন্ন করতে থাকুন।" },
+  shop_keepPlaying: { en: "Keep Playing", dv: "ކުޅުން ކުރިޔަށް ގެންދޭ", hi: "खेलना जारी रखें", bn: "খেলা চালিয়ে যান" },
+  shop_topUpNow: { en: "Top Up Now", dv: "މިހާރު ޓޮޕްއަޕް ކުރޭ", hi: "अभी टॉप अप करें", bn: "এখনই টপ আপ করুন" },
   shop_weeklyFeatured: { en: "Weekly Featured", dv: "ހަފުތާގެ ފީޗާޑް", hi: "साप्ताहिक फ़ीचर्ड", bn: "সাপ্তাহিক ফিচারড" },
 
   // Missions panel (components/missions/MissionsPanel.tsx) - mission
@@ -252,6 +261,7 @@ export const TRANSLATIONS: Record<string, Translations> = {
 
   // Leave-match confirmation (components/game/LeaveMatchButton.tsx) -
   // missed by the earlier translation rounds.
+  leave_pausedLabel: { en: "Paused", dv: "މެދުކަނޑާލައިފި", hi: "रुका हुआ", bn: "বিরতি" },
   leave_title: { en: "Leave match?", dv: "މެޗުން ނުކުންނަވަންތޯ؟", hi: "मैच छोड़ें?", bn: "ম্যাচ ত্যাগ করবেন?" },
   leave_onlineDesc: { en: "Leaving now ends the match as a forfeit — your opponent will be awarded the win.", dv: "މިހާރު ނުކުތުމުން މެޗް ފޯފީޓަކުން ނިމޭނެ — ކާމިޔާބު ލިބޭނީ ދެކޮޅު ފަރާތަށް.", hi: "अभी छोड़ने पर मैच फ़ॉरफ़ीट के रूप में समाप्त होगा — जीत आपके प्रतिद्वंद्वी को मिलेगी।", bn: "এখন চলে গেলে ম্যাচটি ফরফিট হিসেবে শেষ হবে — জয় আপনার প্রতিপক্ষ পাবে।" },
   leave_casualDesc: { en: "Leaving now ends the match and your progress will be lost.", dv: "މިހާރު ނުކުތުމުން މެޗް ނިމި، ތިބާގެ ކުރިއެރުން ގެއްލޭނެ.", hi: "अभी छोड़ने पर मैच समाप्त हो जाएगा और आपकी प्रगति खो जाएगी।", bn: "এখন চলে গেলে ম্যাচ শেষ হবে এবং আপনার অগ্রগতি হারিয়ে যাবে।" },
@@ -444,6 +454,8 @@ export const TRANSLATIONS: Record<string, Translations> = {
   profile_trophies: { en: "Trophies", dv: "ތަށިތައް", hi: "ट्रॉफी", bn: "ট্রফি" },
   profile_moreComingSoon: { en: "More features coming soon", dv: "އިތުރު ފީޗާތައް އަންނަނީ", hi: "और सुविधाएं जल्द आ रही हैं", bn: "আরও ফিচার শীঘ্রই আসছে" },
   profile_guestPlayer: { en: "Guest Player", dv: "މެހްމާން ކުޅުންތެރިޔާ", hi: "अतिथि खिलाड़ी", bn: "অতিথি খেলোয়াড়" },
+  profile_playerCode: { en: "ID", dv: "ID", hi: "आईडी", bn: "আইডি" },
+  profile_copyPlayerCode: { en: "Copy player ID", dv: "ކުޅުންތެރިޔާގެ ID ކޮޕީ ކުރައްވާ", hi: "प्लेयर आईडी कॉपी करें", bn: "প্লেয়ার আইডি কপি করুন" },
   profile_player: { en: "Player", dv: "ކުޅުންތެރިޔާ", hi: "खिलाड़ी", bn: "খেলোয়াড়" },
   profile_none: { en: "None", dv: "ނެތް", hi: "कोई नहीं", bn: "কোনোটিই নয়" },
   profile_unranked: { en: "Unranked", dv: "ރޭންކްނުކުރެވޭ", hi: "अरैंक्ड", bn: "অর‍্যাংকড" },

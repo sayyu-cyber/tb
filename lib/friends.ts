@@ -25,6 +25,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { GameType } from "@/lib/matchmaking";
+import { looksLikePlayerCode, normalizePlayerCode } from "@/lib/playerCode";
 
 const REQUESTS_COLLECTION = "friendRequests";
 const INVITES_COLLECTION = "roomInvites";
@@ -55,9 +56,21 @@ export interface RoomInviteDoc {
   createdAt: number;
 }
 
+async function searchByPlayerCode(uid: string, code: string): Promise<PlayerSearchResult[]> {
+  const codeQ = query(collection(db, "players"), where("playerCode", "==", normalizePlayerCode(code)), limit(1));
+  const codeSnap = await getDocs(codeQ);
+  return codeSnap.docs
+    .filter((d) => d.id !== uid)
+    .map((d) => {
+      const data = d.data();
+      return { uid: d.id, displayName: data.displayName || "Player", trophies: data.trophies || 0 };
+    });
+}
+
 export async function searchPlayers(uid: string, prefix: string): Promise<PlayerSearchResult[]> {
   const trimmed = prefix.trim();
   if (!trimmed) return [];
+  const codeMatches = looksLikePlayerCode(trimmed) ? await searchByPlayerCode(uid, trimmed) : [];
   const q = query(
     collection(db, "players"),
     where("displayName", ">=", trimmed),
@@ -69,13 +82,16 @@ export async function searchPlayers(uid: string, prefix: string): Promise<Player
     limit(16)
   );
   const snap = await getDocs(q);
-  return snap.docs
+  const nameMatches = snap.docs
     .filter((d) => d.id !== uid)
     .slice(0, 15)
     .map((d) => {
       const data = d.data();
       return { uid: d.id, displayName: data.displayName || "Player", trophies: data.trophies || 0 };
     });
+
+  const seen = new Set<string>();
+  return [...codeMatches, ...nameMatches].filter((r) => (seen.has(r.uid) ? false : (seen.add(r.uid), true)));
 }
 
 /** Checks both possible directions for an existing pending/accepted request between two players. */

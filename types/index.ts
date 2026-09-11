@@ -20,6 +20,10 @@ export interface PlayerStats {
   peakTrophies?: number;
   avatarPreset?: string;
   bannerPreset?: string;
+  /** Short human-shareable code (lib/playerCode.ts) - shown on the profile
+   *  page, used to find a specific player for friend requests and for the
+   *  admin panel's direct coin top-up. */
+  playerCode?: string;
 }
 
 export interface LeaderboardEntry {

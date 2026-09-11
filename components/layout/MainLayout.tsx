@@ -40,7 +40,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen bg-[rgb(var(--c1))]">
         <SideNav />
         <div className="flex-1 min-w-0">
-          <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto relative pb-24">
+          <div className="w-full max-w-[1440px] mx-auto relative pb-28">
             <BackgroundMusicPlayer />
             <CoinTopupWatcher />
             <PresenceHeartbeat />

@@ -1,4 +1,4 @@
-﻿rules_version = '2';
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Admin panel access - a hardcoded allowlist of emails rather than a
@@ -26,11 +26,21 @@ service cloud.firestore {
     // request to "credited" (so they can apply the coins to their own
     // economy doc), but never allowed to approve their own request - that
     // would defeat the entire point of the gate.
+    //
+    // Second create path (lib/coinTopups.ts's adminTopUp): an admin can
+    // create a request FOR ANY uid, but only already 'approved' - this is
+    // the admin panel's direct deposit (search a player by their unique
+    // code, enter an amount, confirm). It still never lets the admin write
+    // coins into another user's playerEconomy doc directly; the target's
+    // own CoinTopupWatcher picks up the approved request and credits itself,
+    // same as a normal purchase approval.
     match /coinTopupRequests/{requestId} {
       allow read: if request.auth != null &&
         (request.auth.uid == resource.data.uid || isAdmin());
-      allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.uid && request.resource.data.status == 'pending';
+      allow create: if request.auth != null && (
+        (request.auth.uid == request.resource.data.uid && request.resource.data.status == 'pending') ||
+        (isAdmin() && request.resource.data.status == 'approved')
+      );
       allow update: if request.auth != null && (
         isAdmin() ||
         (request.auth.uid == resource.data.uid &&
@@ -55,9 +65,14 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
     }
-    // Used by EconomyContext for coins/missions/shop state
+    // Used by EconomyContext for coins/missions/shop state. Read is also
+    // open to the admin (read-only) so the admin panel's direct top-up
+    // (lib/coinTopups.ts's findPlayerByCode) can show a player's real coin
+    // balance before depositing - writes stay owner-only, an admin still
+    // never edits this doc directly (see coinTopupRequests above).
     match /playerEconomy/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
 
     // Real-player matchmaking (lib/matchmaking.ts).

@@ -7,22 +7,29 @@ import { Podium } from "@/components/leaderboard/Podium";
 import { LeaderboardRow } from "@/components/leaderboard/LeaderboardRow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useState } from "react";
+import { Search } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function LeaderboardPage() {
-  const { entries, loading, error, refresh } = useLeaderboard();
+  const entries = ['Aishath','Mohamed Ahmed Very Long Name','Hussain','Sayyu','Fathimath'].map((username,index)=>({uid:index===3?'sample-user':`sample${index}`,username,trophies:500-index*70,rank:index+1,avatar:''}));
+  const loading=false, error=null, refresh=()=>{};
   const { user } = useAuth();
   const t = useTranslation();
+  const [query, setQuery] = useState('');
 
   const topThree = entries.slice(0, 3);
-  const rest = entries.slice(3);
+  const rest = (query.trim() ? entries : entries.slice(3)).filter(entry=>entry.username.toLowerCase().includes(query.trim().toLowerCase()));
+  const currentEntry = entries.find(entry=>entry.uid === user?.uid);
 
   return (
-    <div className="px-4 pt-6 pb-6">
+    <div className="hub-page leaderboard-page">
+      <PageHeader title={t('leaderboard_title')} subtitle={t('leaderboard_subtitle')} icon={Trophy} actions={<button aria-label="Refresh leaderboard" title="Refresh leaderboard" disabled={loading} onClick={refresh} className="hub-icon-button"><RefreshCw size={18} className={loading ? 'animate-spin' : ''} /></button>} />
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 mb-6"
+        className="hidden"
       >
         <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
           <Trophy size={20} className="text-[rgb(var(--gold-ink))]" />
@@ -73,18 +80,20 @@ export default function LeaderboardPage() {
       ) : (
         <>
           {/* Podium for top 3 */}
-          <Podium topThree={topThree} />
+          {!query.trim() && <Podium topThree={topThree} />}
+          <div className="catalog-toolbar"><label className="hub-search"><Search size={16} /><input aria-label="Search rankings" placeholder="Search players" value={query} onChange={event=>setQuery(event.target.value)} /></label>{currentEntry && <span className="hub-count">You / #{currentEntry.rank}</span>}</div>
 
           {/* Rest of leaderboard */}
-          <div className="space-y-1">
+          <div className="leaderboard-list">
             {rest.map((entry, index) => (
               <LeaderboardRow
                 key={entry.rank}
                 entry={entry}
                 index={index}
-                isCurrentUser={user?.displayName === entry.username}
+                isCurrentUser={user?.uid === entry.uid}
               />
             ))}
+            {query.trim() && rest.length === 0 && <p className="py-12 text-sm text-center text-[rgb(var(--c4))]">No matching players.</p>}
           </div>
         </>
       )}

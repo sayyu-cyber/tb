@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Package, Ticket, Lock, Crown } from "lucide-react";
+import { Package, Ticket, Lock, Crown, Search, Check } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { ALL_COSMETICS, RARITY_COLORS } from "@/data/cosmetics";
@@ -41,6 +41,8 @@ export default function InventoryPage() {
   const t = useTranslation();
   const [tab, setTab] = useState<"cosmetics" | "roomCards">("cosmetics");
   const [category, setCategory] = useState<CosmeticCategory>("cardBack");
+  const [query, setQuery] = useState('');
+  const [ownedOnly, setOwnedOnly] = useState(false);
 
   const collection = state.profile.collection as unknown as Record<string, string[]>;
   const ownedIds = new Set(collection[COLLECTION_KEY[category]] ?? []);
@@ -48,7 +50,8 @@ export default function InventoryPage() {
   // unowned item renders locked/dimmed rather than simply not existing, so
   // a new account sees what there is to collect instead of one card lost
   // in an otherwise empty page.
-  const categoryItems = ALL_COSMETICS.filter((c) => c.category === category);
+  const categoryItems = ALL_COSMETICS.filter((c) => c.category === category && (!ownedOnly || ownedIds.has(c.id)) && c.name.toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((a, b) => Number(ownedIds.has(b.id)) - Number(ownedIds.has(a.id)));
 
   const equippedMap: Record<string, string> = {
     cardBack: state.profile.equipped.cardBack,
@@ -61,14 +64,16 @@ export default function InventoryPage() {
   // equipped - only these categories have a single "equipped" slot.
   const canEquip = category !== "emote" && category !== "sticker";
   const categoryTabs = getCategoryTabs(t);
+  const equippedItem = ALL_COSMETICS.find(item => item.id === equippedMap[category]);
 
   return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_inventory")} />
+    <div className="hub-page inventory-page">
+      <PageHeader title={t("page_inventory")} icon={Package} actions={<span className="hub-count">{Object.values(collection).flat().length} / {ALL_COSMETICS.length}</span>} />
 
-      <div className="flex gap-2 mb-4">
+      <div className="hub-tabs">
         <button
           onClick={() => setTab("cosmetics")}
+          aria-pressed={tab === 'cosmetics'}
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
             tab === "cosmetics" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
@@ -77,6 +82,7 @@ export default function InventoryPage() {
         </button>
         <button
           onClick={() => setTab("roomCards")}
+          aria-pressed={tab === 'roomCards'}
           className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
             tab === "roomCards" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
           }`}
@@ -87,11 +93,13 @@ export default function InventoryPage() {
 
       {tab === "cosmetics" ? (
         <>
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+          {equippedItem && <div className="inventory-loadout"><div className="inventory-equipped-art"><CosmeticPreview item={equippedItem} /></div><div><span className="flex items-center gap-2 text-xs text-[rgb(var(--lagoon))]"><Check size={14} />{t('collection_equipped')}</span><h2 className="text-xl font-bold mt-2">{equippedItem.name}</h2><p className="text-xs text-[rgb(var(--c4))] mt-2 max-w-md">{equippedItem.description}</p></div></div>}
+          <div className="hub-tabs hub-category-tabs">
             {categoryTabs.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
+                aria-pressed={category === cat.id}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap ${
                   category === cat.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
                 }`}
@@ -102,6 +110,7 @@ export default function InventoryPage() {
             ))}
           </div>
 
+          <div className="catalog-toolbar"><label className="hub-search"><Search size={16} /><input aria-label="Search inventory" placeholder="Search inventory" value={query} onChange={event=>setQuery(event.target.value)} /></label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={ownedOnly} onChange={event=>setOwnedOnly(event.target.checked)} />{t('inventory_owned')}</label><span className="hub-count">{categoryItems.length}</span></div>
           <motion.div
             key={category}
             variants={staggerParent(0.03)}
@@ -116,7 +125,7 @@ export default function InventoryPage() {
                 <motion.div
                   key={item.id}
                   variants={riseIn}
-                  className={`rounded-xl border p-3 transition-colors ${
+                  className={`inventory-item rounded-lg border p-3 transition-colors ${
                     isEquipped
                       ? "border-[rgb(var(--gold)/50%)] bg-[rgb(var(--gold)/5%)]"
                       : isOwned
@@ -125,8 +134,8 @@ export default function InventoryPage() {
                   }`}
                 >
                   <div
-                    className={`relative mb-2 h-20 rounded-lg bg-gradient-to-b from-[rgb(var(--c1))] to-[rgb(var(--c2))] flex items-center justify-center overflow-hidden ${
-                      isOwned ? "" : "opacity-45 saturate-50"
+                    className={`cosmetic-display relative mb-2 flex items-center justify-center overflow-hidden ${
+                      isOwned ? "" : "opacity-80"
                     }`}
                   >
                     <CosmeticPreview item={item} />
@@ -136,14 +145,14 @@ export default function InventoryPage() {
                       </span>
                     )}
                     {!isOwned && (
-                      <span className="absolute inset-0 flex items-center justify-center bg-[rgb(var(--c1)/35%)]">
-                        <Lock size={20} className="text-[rgb(var(--c5))]" aria-hidden="true" />
+                      <span className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5">
+                        <Lock size={14} className="text-[rgb(var(--c5))]" aria-hidden="true" />
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col items-start gap-1 mb-2">
                     <span
-                      className={`text-sm font-medium truncate ${isOwned ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c4))]"}`}
+                      className={`text-sm font-medium min-h-10 ${isOwned ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c4))]"}`}
                     >
                       {item.name}
                     </span>
@@ -160,6 +169,7 @@ export default function InventoryPage() {
                     canEquip ? (
                       <button
                         onClick={() => equipCosmetic(item.category, item.id)}
+                        disabled={isEquipped}
                         className={`w-full py-1.5 rounded-lg text-xs font-semibold ${
                           isEquipped ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
                         }`}

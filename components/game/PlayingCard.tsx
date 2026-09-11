@@ -78,6 +78,21 @@ export const CARD_BACK_STYLES: Record<string, { base: string; weave: string; rin
   cb_marble: { base: "#D9D9DC", weave: "#00000022", ring: "#00000033" },
 };
 
+const CARD_BACK_MARKS: Record<string, string> = {
+  cb_default: "T",
+  cb_maldives: "◇",
+  cb_ocean: "≈",
+  cb_fire: "◆",
+  cb_frost: "✦",
+  cb_shadow: "♠",
+  cb_dragon: "◆",
+  cb_phoenix: "✦",
+  cb_vip_gold: "♛",
+  cb_neon: "✦",
+  cb_wood: "T",
+  cb_marble: "◇",
+};
+
 export interface PlayingCardProps {
   /** Display rank: "A", "2".."10", "J", "Q", "K". */
   rank: string;
@@ -124,10 +139,11 @@ export function PlayingCard({
 
   if (faceDown) {
     const skin = CARD_BACK_STYLES[cardBackId ?? ""] ?? CARD_BACK_STYLES.cb_default;
+    const mark = CARD_BACK_MARKS[cardBackId ?? ""] ?? CARD_BACK_MARKS.cb_default;
     return (
       <div
         aria-hidden="true"
-        className={cn(s.box, "relative overflow-hidden border shadow-[0_4px_10px_-2px_rgba(0,0,0,0.45)]", className)}
+        className={cn(s.box, "relative overflow-hidden border shadow-[0_5px_12px_-3px_rgba(0,0,0,0.55)]", className)}
         style={{ backgroundColor: skin.base, borderColor: skin.ring }}
       >
         {/* Woven lattice back, drawn with two crossed repeating gradients so
@@ -144,20 +160,27 @@ export function PlayingCard({
             read as a collectible object rather than a printed swatch. */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/25" />
         <div className="absolute inset-[3px] rounded-[inherit] border" style={{ borderColor: skin.ring }} />
+        <div className="absolute inset-[7px] rounded-[inherit] border border-white/10" />
+        <div
+          className="absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[0.62rem] font-black leading-none shadow-[inset_0_1px_0_rgb(255_255_255/22%)]"
+          style={{ color: skin.ring, backgroundColor: "rgb(0 0 0 / 18%)", border: `1px solid ${skin.ring}` }}
+        >
+          {mark}
+        </div>
       </div>
     );
   }
 
-  const Wrapper = interactive ? motion.button : motion.div;
+  const Wrapper = onClick ? motion.button : motion.div;
 
   return (
     <Wrapper
-      {...(interactive
+      {...(onClick
         ? {
             onClick,
             type: "button" as const,
-            whileHover: { y: -8 },
-            whileTap: { scale: 0.97 },
+            whileHover: interactive ? { y: -8 } : undefined,
+            whileTap: interactive ? { scale: 0.97 } : undefined,
             "aria-label": label ?? `${rank} of ${suit}`,
           }
         : { "aria-label": label ?? `${rank} of ${suit}`, role: "img" })}
@@ -168,7 +191,8 @@ export function PlayingCard({
       // feedback in "default", since a card crossing the table should
       // read as travelling, not just twitching.
       transition={{ layout: SPRING_SOFT, default: { type: "spring", stiffness: 500, damping: 30 } }}
-      disabled={interactive ? disabled : undefined}
+      disabled={onClick ? disabled : undefined}
+      aria-pressed={onClick ? selected : undefined}
       className={cn(
         s.box,
         "relative select-none border bg-white transition-shadow duration-200",

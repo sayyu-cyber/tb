@@ -49,16 +49,16 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+      transition={{ delay: Math.min(index, 6) * 0.025, duration: 0.2 }}
       className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${getRankStyle()} ${
         isCurrentUser ? "bg-[rgb(var(--gold)/5%)] border-[rgb(var(--gold)/30%)]" : ""
       }`}
     >
       {/* Rank */}
-      <div className="w-8 flex justify-center">{getRankIcon()}</div>
+      <div className="w-8 shrink-0 flex justify-center">{getRankIcon()}</div>
 
       {/* Avatar */}
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] p-[1.5px]">
+      <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-[rgb(var(--lagoon))] to-[rgb(var(--lagoon-deep))] p-[1.5px]">
         <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
           <span className="text-[rgb(var(--gold-ink))] text-sm font-bold">
             {entry.username.charAt(0).toUpperCase()}

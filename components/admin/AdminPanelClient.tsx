@@ -17,10 +17,11 @@ import {
   watchRankRewardOverrides,
   setRankRewardOverrides,
 } from "@/lib/admin";
-import { CoinTopupRequest, watchAllTopups, decideTopup } from "@/lib/coinTopups";
+import { CoinTopupRequest, watchAllTopups, decideTopup, findPlayerByCode, adminTopUp, AdminPlayerLookup } from "@/lib/coinTopups";
 import { ManualHallOfFameEntry, watchManualHallOfFameEntries, addManualHallOfFameEntry, removeManualHallOfFameEntry, resetManualHallOfFame } from "@/lib/hallOfFame";
 import { ALL_COSMETICS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, RANK_CONFIGS } from "@/data/cosmetics";
 import { useTranslation } from "@/hooks/useTranslation";
+import { ShieldCheck, Wallet, CalendarDays, Trophy, ShoppingBag, Target, Swords } from "lucide-react";
 
 type Tab = "topups" | "season" | "hof" | "shop" | "missions" | "ranked";
 
@@ -50,28 +51,182 @@ export function AdminPanelClient() {
   ];
 
   return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_adminPanel")} />
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+    <div className="hub-page admin-page">
+      <PageHeader title={t("page_adminPanel")} icon={ShieldCheck} />
+      <div className="admin-workspace">
+      <nav className="admin-navigation" aria-label="Administration">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
+            aria-current={tab === t.id ? 'page' : undefined}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
               tab === t.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
             }`}
           >
+            {t.id === 'topups' ? <Wallet size={17} /> : t.id === 'season' ? <CalendarDays size={17} /> : t.id === 'hof' ? <Trophy size={17} /> : t.id === 'shop' ? <ShoppingBag size={17} /> : t.id === 'missions' ? <Target size={17} /> : <Swords size={17} />}
             {t.label}
           </button>
         ))}
-      </div>
-
+      </nav>
+      <section className="admin-content" aria-label={tabs.find(item=>item.id === tab)?.label}>
+      <h2 className="text-lg font-bold mb-5">{tabs.find(item=>item.id === tab)?.label}</h2>
       {tab === "topups" && <TopupsTab />}
       {tab === "season" && <SeasonTab />}
       {tab === "hof" && <HallOfFameTab />}
       {tab === "shop" && <ShopTab />}
       {tab === "missions" && <MissionsTab />}
       {tab === "ranked" && <RankedTab />}
+      </section></div>
+    </div>
+  );
+}
+
+function DirectTopupPanel() {
+  const [code, setCode] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [found, setFound] = useState<AdminPlayerLookup | null>(null);
+  const [amount, setAmount] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [depositing, setDepositing] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+
+  async function handleSearch() {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    setSearching(true);
+    setSearchError(null);
+    setFound(null);
+    setDone(null);
+    try {
+      const result = await findPlayerByCode(trimmed);
+      if (!result) {
+        setSearchError("No player found with that ID.");
+      } else {
+        setFound(result);
+      }
+    } catch (err) {
+      setSearchError(`Search failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  const parsedAmount = parseInt(amount, 10);
+  const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
+
+  async function handleConfirmDeposit() {
+    if (!found || !validAmount) return;
+    setDepositing(true);
+    try {
+      await adminTopUp(found.uid, found.displayName, parsedAmount);
+      setDone(`Deposited ${parsedAmount.toLocaleString()} coins to ${found.displayName}.`);
+      setConfirming(false);
+      setAmount("");
+      setFound(null);
+      setCode("");
+    } catch (err) {
+      setSearchError(`Deposit failed: ${err instanceof Error ? err.message : "unknown error"}`);
+      setConfirming(false);
+    } finally {
+      setDepositing(false);
+    }
+  }
+
+  return (
+    <div className="glass-card rounded-2xl p-4 space-y-3">
+      <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Direct Top-Up</p>
+      <p className="text-[rgb(var(--c4))] text-xs">
+        Look a player up by the unique ID shown on their profile, then deposit coins directly - no purchase request needed.
+      </p>
+
+      <div className="flex gap-2">
+        <input
+          aria-label="Player ID"
+          value={code}
+          onChange={(e) => {
+            setCode(e.target.value);
+            setFound(null);
+            setSearchError(null);
+            setDone(null);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          placeholder="Player ID (e.g. X7K9PQ2)"
+          maxLength={10}
+          className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none font-mono uppercase tracking-widest"
+        />
+        <button
+          onClick={handleSearch}
+          disabled={searching || !code.trim()}
+          className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-semibold disabled:opacity-50"
+        >
+          {searching ? "Searching…" : "Search"}
+        </button>
+      </div>
+
+      {searchError && <p className="text-[rgb(var(--coral-ink))] text-xs">{searchError}</p>}
+      {done && <p className="text-[rgb(var(--lagoon-ink))] text-xs">{done}</p>}
+
+      {found && (
+        <div className="rounded-xl bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{found.displayName}</p>
+              <p className="text-[rgb(var(--c4))] text-xs">Current balance: {found.coins.toLocaleString()} coins</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              aria-label="Amount to deposit"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              type="number"
+              min={1}
+              placeholder="Amount"
+              className="flex-1 bg-[rgb(var(--c1))] border border-[rgb(var(--c3))] rounded-xl px-4 py-2.5 text-[rgb(var(--text-primary))] text-sm outline-none"
+            />
+            <button
+              onClick={() => setConfirming(true)}
+              disabled={!validAmount}
+              className="px-4 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold disabled:opacity-50"
+            >
+              Deposit
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirming && found && validAmount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4">
+            <div>
+              <p className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-1">Confirm deposit</p>
+              <p className="text-[rgb(var(--c4))] text-xs">
+                Deposit <span className="text-[rgb(var(--gold-ink))] font-bold">{parsedAmount.toLocaleString()} coins</span> to{" "}
+                <span className="text-[rgb(var(--text-primary))] font-semibold">{found.displayName}</span>? This cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={depositing}
+                className="flex-1 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeposit}
+                disabled={depositing}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold disabled:opacity-50"
+              >
+                {depositing ? "Depositing…" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -86,6 +241,8 @@ function TopupsTab() {
 
   return (
     <div className="space-y-4">
+      <DirectTopupPanel />
+
       <div>
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">Pending ({pending.length})</p>
         {pending.length === 0 ? (

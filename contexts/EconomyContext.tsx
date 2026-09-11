@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
+import { GameLoading } from '@/components/system/GameLoading';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import {
@@ -170,6 +171,7 @@ const initialState: EconomyState = {
 };
 
 const STORAGE_KEY = 'thaasbai-economy-state';
+const ECONOMY_LOAD_TIMEOUT_MS = 4000;
 
 function isNewDay(lastTimestamp: number): boolean {
   const last = new Date(lastTimestamp);
@@ -216,6 +218,55 @@ function grantCosmeticToCollection(
   const key = CATEGORY_TO_COLLECTION_KEY[item.category];
   if (!key || collection[key].includes(itemId)) return collection;
   return { ...collection, [key]: [...collection[key], itemId] };
+}
+
+function stateForUser(user: NonNullable<ReturnType<typeof useAuth>['user']>): EconomyState {
+  return {
+    ...initialState,
+    profile: {
+      ...initialState.profile,
+      uid: user.uid,
+      displayName: user.displayName || 'Player',
+    },
+  };
+}
+
+function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<ReturnType<typeof useAuth>['user']>): EconomyState {
+  const base = stateForUser(user);
+  return {
+    ...base,
+    ...data,
+    profile: {
+      ...base.profile,
+      ...(data.profile ?? {}),
+      uid: user.uid,
+      displayName: data.profile?.displayName || user.displayName || base.profile.displayName,
+      equipped: { ...base.profile.equipped, ...(data.profile?.equipped ?? {}) },
+      stats: { ...base.profile.stats, ...(data.profile?.stats ?? {}) },
+      collection: { ...base.profile.collection, ...(data.profile?.collection ?? {}) },
+      vip: { ...base.profile.vip, ...(data.profile?.vip ?? {}) },
+      roomCards: data.profile?.roomCards ?? base.profile.roomCards,
+      achievements: data.profile?.achievements ?? base.profile.achievements,
+    },
+    economy: { ...base.economy, ...(data.economy ?? {}) },
+    missions: {
+      ...base.missions,
+      ...(data.missions ?? {}),
+      daily: data.missions?.daily ?? base.missions.daily,
+      weekly: data.missions?.weekly ?? base.missions.weekly,
+    },
+    achievements: data.achievements ?? base.achievements,
+    dailyLogin: {
+      ...base.dailyLogin,
+      ...(data.dailyLogin ?? {}),
+      rewards: data.dailyLogin?.rewards ?? base.dailyLogin.rewards,
+    },
+    rewardPopups: data.rewardPopups ?? base.rewardPopups,
+    weeklyRankReward: { ...base.weeklyRankReward, ...(data.weeklyRankReward ?? {}) },
+    missionRewardOverrides: data.missionRewardOverrides ?? base.missionRewardOverrides,
+    rankRewardOverrides: data.rankRewardOverrides ?? base.rankRewardOverrides,
+    shopOverrides: data.shopOverrides ?? base.shopOverrides,
+  };
 }
 
 // ─── REDUCER ─────────────────────────────────────────
@@ -663,6 +714,8 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
 
   // Load from Firebase on auth change
   useEffect(() => {
+    setIsLoading(true);
+
     if (!user) {
       // Load from localStorage for guests
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -678,14 +731,37 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    let cancelled = false;
+    let settled = false;
+    const finishLoading = () => {
+      settled = true;
+      if (!cancelled) setIsLoading(false);
+    };
+
+    const fallbackTimer = window.setTimeout(() => {
+      if (settled || cancelled) return;
+      const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`) || localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          dispatch({ type: 'SET_STATE', payload: mergeEconomyState(JSON.parse(saved), user) });
+        } catch {
+          dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+        }
+      } else {
+        dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+      }
+      finishLoading();
+    }, ECONOMY_LOAD_TIMEOUT_MS);
+
     // Load from Firebase
     const loadFromFirebase = async () => {
       try {
         const ref = doc(db, 'playerEconomy', user.uid);
         const snap = await getDoc(ref);
+        if (cancelled) return;
         
         if (snap.exists()) {
-          const data = snap.data() as EconomyState;
+          const data = mergeEconomyState(snap.data() as Partial<EconomyState>, user);
           
           // Check for daily/weekly resets
           const now = Date.now();
@@ -707,17 +783,27 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: 'SET_STATE', payload: updatedState });
         } else {
           // New user — save initial state with their UID
-          const newState = {
-            ...initialState,
-            profile: { ...initialState.profile, uid: user.uid, displayName: user.displayName || 'Player' }
-          };
+          const newState = stateForUser(user);
           await setDoc(ref, newState);
+          if (cancelled) return;
           dispatch({ type: 'SET_STATE', payload: newState });
         }
       } catch (error) {
         console.error('Failed to load from Firebase:', error);
+        if (!cancelled) {
+          const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`) || localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            try {
+              dispatch({ type: 'SET_STATE', payload: mergeEconomyState(JSON.parse(saved), user) });
+            } catch {
+              dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+            }
+          } else {
+            dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+          }
+        }
       } finally {
-        setIsLoading(false);
+        finishLoading();
       }
     };
 
@@ -726,7 +812,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     // Real-time sync from other devices
     const unsub = onSnapshot(doc(db, 'playerEconomy', user.uid), (snap) => {
       if (snap.exists()) {
-        const data = snap.data() as EconomyState;
+        const data = mergeEconomyState(snap.data() as Partial<EconomyState>, user);
         // Only update if the data is newer than our current state
         // This prevents loops while still allowing multi-device sync
         const lastTx = data.economy?.transactions?.[0]?.timestamp || 0;
@@ -735,9 +821,16 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: 'SET_STATE', payload: data });
         }
       }
+    }, (error) => {
+      console.error('Failed to watch economy:', error);
+      finishLoading();
     });
 
-    return () => unsub();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallbackTimer);
+      unsub();
+    };
   }, [user]);
 
   // Save to Firebase on state change
@@ -746,6 +839,10 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       return;
     }
+
+    if (isLoading) return;
+
+    localStorage.setItem(`${STORAGE_KEY}:${user.uid}`, JSON.stringify(state));
 
     const saveToFirebase = async () => {
       try {
@@ -770,7 +867,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     // Debounce save to prevent excessive writes
     const timer = setTimeout(saveToFirebase, 1000);
     return () => clearTimeout(timer);
-  }, [state, user]);
+  }, [state, user, isLoading]);
 
   // VIP and room card expiry check
   useEffect(() => {
@@ -1014,11 +1111,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   }, [state.profile.roomCards]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
-        <div className="text-[#D4AF37] animate-pulse">Loading economy...</div>
-      </div>
-    );
+    return <GameLoading />;
   }
 
   return (

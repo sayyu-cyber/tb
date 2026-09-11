@@ -125,13 +125,20 @@ export function OpponentSeat({ seat, orientation = "row" }: { seat: ArenaSeatDat
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-2xl transition-colors duration-300",
+        "relative flex items-center gap-2 rounded-2xl transition-colors duration-300",
         orientation === "column" && "flex-col gap-1",
         seat.active
-          ? "px-2 py-1.5 bg-[rgb(var(--accent,var(--gold))/12%)] backdrop-blur-md ring-1 ring-inset ring-[rgb(var(--accent,var(--gold))/35%)] shadow-[0_0_18px_-4px_rgb(var(--accent,var(--gold))/50%)]"
-          : "px-2 py-1.5"
+          ? "px-2.5 py-2 bg-[rgb(var(--accent,var(--gold))/15%)] backdrop-blur-md ring-1 ring-inset ring-[rgb(var(--accent,var(--gold))/42%)] shadow-[0_0_24px_-5px_rgb(var(--accent,var(--gold))/65%)]"
+          : "px-2.5 py-2 bg-black/10 backdrop-blur-[2px]"
       )}
     >
+      <div
+        className="absolute -inset-x-3 bottom-0 h-8 rounded-full opacity-60 blur-xl pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(70% 80% at 50% 50%, rgb(var(--accent)/28%), transparent 70%)",
+        }}
+        aria-hidden="true"
+      />
       <Avatar name={seat.name} presetId={seat.avatarPreset} size="sm" active={seat.active} count={seat.cardCount} />
       <div className={cn("flex flex-col min-w-0", orientation === "column" && "items-center")}>
         <span
@@ -159,13 +166,14 @@ export function OpponentSeat({ seat, orientation = "row" }: { seat: ArenaSeatDat
 export function TableWell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="relative w-full max-w-[min(34rem,100%)] min-h-[8.5rem] sm:min-h-[10rem] lg:min-h-[12rem] rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center flex-wrap gap-1 px-4 py-3
-                 bg-[rgb(var(--c1)/55%)]
-                 shadow-[inset_0_2px_18px_rgba(0,0,0,0.38),inset_0_-1px_0_rgb(255_255_255/6%)]"
+      className="relative w-full max-w-[min(36rem,100%)] min-h-[8.5rem] sm:min-h-[10rem] lg:min-h-[12rem] rounded-[2rem] sm:rounded-[3rem] flex items-center justify-center flex-wrap gap-1 px-4 py-3
+                 bg-black/30 backdrop-blur-[1px]
+                 shadow-[inset_0_8px_30px_rgba(0,0,0,0.48),inset_0_-1px_0_rgb(255_255_255/8%),0_18px_34px_-26px_rgb(var(--accent)/70%)]"
       style={{
         backgroundImage:
-          "radial-gradient(70% 70% at 50% 38%, rgb(var(--accent)/22%), transparent 75%)," +
-          "repeating-linear-gradient(45deg, rgb(var(--accent)/6%) 0 2px, transparent 2px 10px)",
+          "radial-gradient(70% 70% at 50% 38%, rgb(var(--accent)/26%), transparent 75%)," +
+          "radial-gradient(90% 120% at 50% 115%, rgb(0 0 0/45%), transparent 62%)," +
+          "repeating-linear-gradient(45deg, rgb(var(--accent)/7%) 0 2px, transparent 2px 10px)",
       }}
     >
       {/* Two hairlines: an accent rim, and a lighter one just inside it, so
@@ -227,11 +235,10 @@ export function SelfRow({
  */
 export const TABLE_THEME_STYLES: Record<string, { base: string; glow: string; pattern?: string }> = {
   tt_default: {
-    base: "#080A1A",
-    glow: "#22D3EE",
+    base: "#123D35",
+    glow: "#62BBA3",
     pattern:
-      "linear-gradient(90deg, transparent 49%, #22D3EE18 50%, transparent 51%)," +
-      "linear-gradient(0deg, transparent 49%, #8B5CF618 50%, transparent 51%)",
+      "repeating-linear-gradient(45deg, #ffffff03 0 1px, transparent 1px 4px)",
   },
   tt_midnight: { base: "#0A0A12", glow: "#6B7280" },
   tt_red: { base: "#3A0E14", glow: "#D23B54" },
@@ -287,82 +294,24 @@ function tableTheme(tableThemeId?: string) {
  * a match loads. Falls back to the default felt when no skin is equipped.
  */
 export function ArenaFelt({
-  accent,
-  tableThemeId,
-  children,
-}: {
-  accent: string;
-  tableThemeId?: string;
-  children: React.ReactNode;
-}) {
+  accent, tableThemeId, children,
+}: { accent: string; tableThemeId?: string; children: React.ReactNode }) {
   const theme = tableTheme(tableThemeId);
   return (
-    <div
-      style={{ ["--accent" as string]: accent, backgroundColor: theme.base } as React.CSSProperties}
-      // Three blooms, not one: the game's own accent stays centred at the
-      // top (so "which game" is still legible), plus a fixed violet bloom
-      // upper-left and cyan bloom upper-right - the cinematic dark-navy /
-      // purple / cyan atmosphere is now the room itself, present on every
-      // match regardless of which table skin is equipped, not just an
-      // option you have to buy.
-      //
-      // pb-24 mirrors MainLayout's own bottom-nav clearance: this panel is
-      // min-h-screen with its hand row pushed to the very bottom via
-      // justify-between, which otherwise lands exactly where the app's
-      // fixed BottomNav sits - the hand was rendering underneath it.
-      className="min-h-screen flex flex-col pb-24
-                 [background-image:radial-gradient(120%_60%_at_50%_12%,rgb(var(--accent)/18%),transparent_70%),radial-gradient(55%_40%_at_6%_0%,#8B5CF63D,transparent_65%),radial-gradient(55%_45%_at_100%_8%,#22D3EE33,transparent_65%)]"
-    >
+    <div className="game-arena" style={{ "--accent": accent, "--table-glow": theme.glow } as React.CSSProperties}>
       {children}
     </div>
   );
 }
 
-/** The rimmed table panel itself — seats, well and hand all live inside this.
- *  A blurred violet/cyan/magenta halo sits behind the panel (the "glowing
- *  outer edge" of a premium table), independent of the equipped skin; the
- *  panel's own base colour and pattern come from that skin, and the game's
- *  accent still lights the top rim and (via TableWell) the play area - so
- *  "which game", "which skin" and the cinematic room itself are all legible
- *  at once, layered rather than competing. */
+/** Physical rim and felt are separate layers; the equipped skin owns the surface. */
 export function ArenaTable({ tableThemeId, children }: { tableThemeId?: string; children: React.ReactNode }) {
   const theme = tableTheme(tableThemeId);
   return (
-    <div className="flex-1 flex flex-col relative mx-2 sm:mx-4 lg:mx-8 mb-3">
-      <div
-        aria-hidden="true"
-        className="absolute -inset-3 rounded-[2.5rem] opacity-70 blur-2xl pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(40% 60% at 12% 10%, #8B5CF6AA, transparent 70%)," +
-            "radial-gradient(40% 60% at 88% 15%, #22D3EEAA, transparent 70%)," +
-            "radial-gradient(55% 50% at 50% 105%, #D946EF4D, transparent 70%)",
-        }}
-      />
-      <div
-        className="flex-1 flex flex-col rounded-[2rem] relative overflow-hidden
-                   border border-[rgb(var(--accent)/30%)] shadow-[var(--shadow-lg)]"
-        style={{ backgroundColor: `${theme.base}CC` }}
-      >
-        {/* Equipped skin's own texture, if it has one (starfield, wood grain,
-            lava streaks...). */}
-        {theme.pattern && (
-          <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ backgroundImage: theme.pattern }} />
-        )}
-        {/* Light pooling down from the top of the table, tinted by the skin's
-            own glow colour rather than always the game accent. */}
-        <div
-          className="absolute inset-0 opacity-60 pointer-events-none"
-          style={{ backgroundImage: `radial-gradient(90% 55% at 50% 0%, ${theme.glow}33, transparent 70%)` }}
-        />
-        {/* ...and falling off at the edges, which is what stops a flat fill
-            from looking like a div and starts it looking like a surface. */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: "radial-gradient(120% 80% at 50% 45%, transparent 55%, rgb(0 0 0/38%) 100%)" }}
-        />
-        <div className="absolute inset-[3px] rounded-[inherit] border-t border-white/10 pointer-events-none" />
-        <div className="relative z-10 flex-1 flex flex-col px-3 py-4 sm:px-5 lg:px-8 lg:py-6">{children}</div>
+    <div className="arena-table-frame">
+      <div className="arena-table-felt" style={{ backgroundColor: theme.base, backgroundImage: theme.pattern, borderColor: theme.glow }}>
+        <div className="arena-table-stitch" aria-hidden="true" />
+        <div className="arena-table-content">{children}</div>
       </div>
     </div>
   );

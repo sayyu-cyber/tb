@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
 import { riseIn, SPRING } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { GameDeckArt } from "./GameDeckArt";
+import { useEconomy } from "@/contexts/EconomyContext";
 
 interface GameSelectCardProps {
   id: string;
@@ -20,7 +22,8 @@ interface GameSelectCardProps {
 }
 
 export function GameSelectCard({ id, name, description, icon, color, players, index }: GameSelectCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const { state } = useEconomy();
   const { isGuest } = useAuth();
   const t = useTranslation();
 
@@ -33,20 +36,12 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
       // `color` is the game's accent token; every tint below derives from
       // it, so Mindi and Gin Rummy no longer render identically in gold.
       style={{ ["--accent" as string]: color } as React.CSSProperties}
-      className="surface-accent edge-light relative overflow-hidden rounded-3xl"
+      className="game-mode-card surface-accent edge-light relative overflow-hidden rounded-lg"
     >
-      {/* Oversized suit glyph bled off the corner - gives each game a
-          distinct silhouette at a glance rather than relying on the title. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-4 -top-6 select-none text-[7rem] leading-none
-                   font-serif text-[rgb(var(--accent))] opacity-[0.10]"
-      >
-        {icon}
-      </span>
+      <div className="game-cover-art"><GameDeckArt game={id} cardBackId={state.profile.equipped.cardBack} /></div>
 
       <div className="relative p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div className="min-w-0">
             <span
               aria-hidden="true"
@@ -79,24 +74,24 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
                 <p className="flex items-center gap-2 text-[rgb(var(--c4))] text-[10px] font-bold uppercase tracking-widest"><span className="h-3 w-0.5 rounded bg-[rgb(var(--accent))]" />{t("gamesel_casualMode")}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Link href={`/play/${id}/casual/ai`}>
-                    <motion.button
+                    <motion.span
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
                     >
                       <Bot size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
                       <span className="text-sm">{t("gamesel_vsAI")}</span>
-                    </motion.button>
+                    </motion.span>
                   </Link>
                   <Link href={`/play/${id}/casual/passplay`}>
-                    <motion.button
+                    <motion.span
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
                     >
                       <Smartphone size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
                       <span className="text-sm">{t("gamesel_passPlay")}</span>
-                    </motion.button>
+                    </motion.span>
                   </Link>
                 </div>
                 {isGuest ? (
@@ -106,14 +101,14 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
                   </div>
                 ) : (
                   <Link href={`/play/${id}/casual/online`}>
-                    <motion.button
+                    <motion.span
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
                     >
                       <Globe size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
                       <span className="text-sm">{id === "mindi" ? t("gamesel_onlineMindi") : t("gamesel_online")}</span>
-                    </motion.button>
+                    </motion.span>
                   </Link>
                 )}
               </div>
@@ -128,36 +123,36 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
                   </div>
                 ) : id === "mindi" ? (
                   <Link href={`/play/${id}/ranked-duo`}>
-                    <motion.button
+                    <motion.span
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] text-[#0C0E12] font-bold text-sm shadow-[0_4px_18px_-4px_rgb(var(--gold)/50%)] hover:brightness-110 transition-[filter]"
                     >
                       <Swords size={16} />
                       <span>{t("gamesel_playRankedDuo")}</span>
-                    </motion.button>
+                    </motion.span>
                   </Link>
                 ) : (
                   <>
                     <Link href={`/play/${id}/ranked`}>
-                      <motion.button
+                      <motion.span
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] text-[#0C0E12] font-bold text-sm shadow-[0_4px_18px_-4px_rgb(var(--gold)/50%)] hover:brightness-110 transition-[filter]"
                       >
                         <Swords size={16} />
                         <span>{t("gamesel_ranked1v1")}</span>
-                      </motion.button>
+                      </motion.span>
                     </Link>
                     <Link href={`/play/${id}/ranked-duo`}>
-                      <motion.button
+                      <motion.span
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/30%)] text-[rgb(var(--text-primary))] font-medium rounded-xl py-3 mt-2"
                       >
                         <UsersRound size={16} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
                         <span className="text-sm">{t("gamesel_ranked2v2")}</span>
-                      </motion.button>
+                      </motion.span>
                     </Link>
                   </>
                 )}
@@ -173,14 +168,14 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
                   </div>
                 ) : (
                   <Link href={`/play/${id}/room`}>
-                    <motion.button
+                    <motion.span
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
                     >
                       <KeyRound size={16} className="text-[rgb(var(--orchid-ink))]" aria-hidden="true" />
                       <span className="text-sm">{t("gamesel_privateRoom")}</span>
-                    </motion.button>
+                    </motion.span>
                   </Link>
                 )}
               </div>
@@ -192,6 +187,7 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
           className="w-full mt-4 min-h-[44px] rounded-xl border border-[rgb(var(--accent)/28%)]
                      text-[rgb(var(--accent))] text-sm font-semibold
                      hover:bg-[rgb(var(--accent)/10%)] transition-colors"

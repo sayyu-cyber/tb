@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Trophy, Swords, Target, Star, TrendingUp, Award, Heart, Pencil } from "lucide-react";
+import { User, Trophy, Swords, Target, Star, TrendingUp, Award, Heart, Pencil, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { RankBadge } from "@/components/ui/RankBadge";
 import { StatCard } from "@/components/profile/StatCard";
@@ -13,6 +13,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 export default function ProfilePage() {
   const { user, playerStats } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const t = useTranslation();
 
   if (!user) return null;
@@ -85,6 +86,31 @@ export default function ProfilePage() {
 
         <h2 className="text-xl font-bold text-[rgb(var(--text-primary))] mt-2">{user.displayName || t("profile_player")}</h2>
         <p className="text-[rgb(var(--c4))] text-sm">{user.email || t("profile_guestPlayer")}</p>
+
+        {/* Player code - unique ID others use to find you for friend
+            requests, and that support/admin uses to look you up for a
+            coin top-up. Tap to copy. */}
+        {playerStats?.playerCode && (
+          <button
+            onClick={() => {
+              navigator.clipboard?.writeText(playerStats.playerCode!);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            }}
+            className="mt-3 mx-auto flex items-center gap-2 rounded-full bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] px-3 py-1.5"
+            aria-label={t("profile_copyPlayerCode")}
+          >
+            <span className="text-[10px] uppercase tracking-wider text-[rgb(var(--c4))]">{t("profile_playerCode")}</span>
+            <span className="font-mono text-sm font-bold tracking-widest text-[rgb(var(--gold-ink))]">
+              {playerStats.playerCode}
+            </span>
+            {copied ? (
+              <Check size={13} className="text-[rgb(var(--lagoon-ink))]" aria-hidden="true" />
+            ) : (
+              <Copy size={13} className="text-[rgb(var(--c4))]" aria-hidden="true" />
+            )}
+          </button>
+        )}
 
         {/* Trophy display */}
         <div className="flex items-center justify-center gap-2 mt-3">

@@ -24,7 +24,7 @@ const games = [
     name: "Gin Rummy",
     description: "Form sets and runs to declare Gin. A timeless card game of skill and luck.",
     icon: "♦",
-    color: TOKEN.deep,
+    color: TOKEN.coral,
     players: "2 Players",
   },
 ];
@@ -36,8 +36,6 @@ export default function PlayPage() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <PlayLobbyHero />
       </motion.div>
-
-      <WeekendLeague />
 
       <div>
         <h2 className="text-[rgb(var(--c4))] text-[11px] font-bold uppercase tracking-widest mb-3 px-1">
@@ -52,15 +50,7 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {/* Future placeholders */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="glass-card rounded-2xl p-4 border border-dashed border-[rgb(var(--c3))]"
-      >
-        <p className="text-[rgb(var(--c3))] text-xs text-center tracking-wider uppercase">{t("play_moreGamesSoon")}</p>
-      </motion.div>
+      <WeekendLeague />
     </div>
   );
 }

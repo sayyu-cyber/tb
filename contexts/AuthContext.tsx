@@ -15,6 +15,7 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { User, PlayerStats } from "@/types";
+import { generatePlayerCode } from "@/lib/playerCode";
 
 interface AuthContextType {
   user: User | null;
@@ -29,7 +30,7 @@ interface AuthContextType {
   updatePlayerProfile: (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const defaultStats: PlayerStats = {
   totalMatches: 0,
@@ -56,7 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch player stats from Firestore
         const statsDoc = await getDoc(doc(db, "players", firebaseUser.uid));
         if (statsDoc.exists()) {
-          setPlayerStats(statsDoc.data() as PlayerStats);
+          const existing = statsDoc.data() as PlayerStats;
+          // Backfill: accounts created before playerCode existed (or ones
+          // whose players doc was created via a path that doesn't set it,
+          // e.g. signInWithGoogle's own merge write) get one minted here,
+          // the single place every signed-in session passes through.
+          if (!existing.playerCode) {
+            const playerCode = generatePlayerCode();
+            await setDoc(doc(db, "players", firebaseUser.uid), { playerCode }, { merge: true });
+            existing.playerCode = playerCode;
+          }
+          setPlayerStats(existing);
         } else {
           // Initialize stats for new user. Anonymous (guest) sign-ins have
           // no provider-supplied name, so mint one and persist it to the
@@ -66,12 +77,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             displayName = `Guest_${Math.floor(Math.random() * 10000)}`;
             await updateFirebaseAuthProfile(firebaseUser, { displayName });
           }
+          const playerCode = generatePlayerCode();
           await setDoc(doc(db, "players", firebaseUser.uid), {
             ...defaultStats,
             displayName,
+            playerCode,
             createdAt: serverTimestamp(),
           });
-          setPlayerStats(defaultStats);
+          setPlayerStats({ ...defaultStats, playerCode });
         }
 
         setUser({

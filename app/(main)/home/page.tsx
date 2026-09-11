@@ -5,11 +5,10 @@ import { Users, KeyRound, Flame, Award, Package, Shield, Crown, ShoppingBag } fr
 import { motion } from "framer-motion";
 import { HomeLobbyHero } from "@/components/home/HomeLobbyHero";
 import { PlayerHUD } from "@/components/home/PlayerHUD";
-import { MatchesRemaining } from "@/components/home/MatchesRemaining";
+import { LoadoutPreview } from "@/components/home/LoadoutPreview";
 import { QuickPlayButtons } from "@/components/home/QuickPlayButtons";
 import { NewsSection } from "@/components/home/NewsSection";
 import { WeekendLeague } from "@/components/home/WeekendLeague";
-import { PopularModes } from "@/components/home/PopularModes";
 import { RankProgress } from "@/components/home/RankProgress";
 import { RankLockBanner } from "@/components/game/RankLockBanner";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -39,8 +38,6 @@ export default function HomePage() {
         <HomeLobbyHero />
       </motion.div>
 
-      <RankLockBanner />
-
       {/* Compact gaming profile HUD - identity, trophies, daily matches,
           ranked matches and season, all in one dense strip. Replaces the
           old ProfileCard/DailyMatchCounter/SeasonCard tiles, which showed
@@ -49,12 +46,11 @@ export default function HomePage() {
         <PlayerHUD />
       </motion.div>
 
-      {/*
-        Below md this collapses to a single column and renders exactly as
-        before. From md up the cards tile into 2 (then 3) columns so a
-        desktop viewport shows the whole dashboard at once instead of
-        demanding a long scroll through a phone-width ribbon.
-      */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-5">
+        <QuickPlayButtons />
+        <LoadoutPreview />
+      </div>
+      <RankLockBanner />
       <motion.div
         variants={staggerParent(0.05)}
         initial="hidden"
@@ -62,16 +58,11 @@ export default function HomePage() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 auto-rows-min items-start"
       >
         <RankProgress />
-        <MatchesRemaining remaining={2} total={3} />
         <WeekendLeague />
-
-        <div className="md:col-span-2 lg:col-span-2">
-          <QuickPlayButtons />
-        </div>
 
         <motion.div
           variants={riseIn}
-          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2 lg:col-span-1"
+          className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-2 lg:col-span-1"
         >
           {SHORTCUTS.map(({ href, key, icon: Icon, accent }) => (
             <Link key={key} href={href}>
@@ -79,7 +70,7 @@ export default function HomePage() {
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.96 }}
                 style={{ ["--accent" as string]: accent } as React.CSSProperties}
-                className="h-full min-h-[76px] rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))]
+                className="h-full min-h-[76px] rounded-lg border border-[rgb(var(--c3))] bg-[rgb(var(--c2))]
                            flex flex-col items-center justify-center gap-1.5 p-2 transition-colors
                            hover:border-[rgb(var(--accent)/50%)] hover:shadow-[0_6px_18px_-6px_rgb(var(--accent)/50%)]"
               >
@@ -99,7 +90,6 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      <PopularModes />
     </div>
   );
 }

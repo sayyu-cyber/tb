@@ -152,7 +152,7 @@ export function BottomNav() {
                    bg-[rgb(var(--c1)/92%)] backdrop-blur-xl
                    pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-2 flex justify-center">
+        <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-2 flex justify-center md:hidden">
           <CoinBalance size="sm" />
         </div>
 

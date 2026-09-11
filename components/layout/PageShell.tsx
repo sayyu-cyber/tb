@@ -21,7 +21,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 export function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen bg-[rgb(var(--c1))] relative pb-24">
+      <div className="w-full max-w-[1200px] mx-auto min-h-screen bg-[rgb(var(--c1))] relative pb-24">
         {children}
         <BottomNav />
       </div>

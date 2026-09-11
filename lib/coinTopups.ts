@@ -15,6 +15,8 @@ import {
   doc,
   addDoc,
   updateDoc,
+  getDoc,
+  getDocs,
   query,
   where,
   orderBy,
@@ -23,6 +25,7 @@ import {
   Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { normalizePlayerCode } from "@/lib/playerCode";
 
 const COLLECTION = "coinTopupRequests";
 
@@ -89,4 +92,53 @@ export async function decideTopup(id: string, approve: boolean): Promise<void> {
 /** Called by the requesting player's own client once they see status === "approved". */
 export async function markTopupCredited(id: string): Promise<void> {
   await updateDoc(doc(db, COLLECTION, id), { status: "credited" });
+}
+
+export interface AdminPlayerLookup {
+  uid: string;
+  displayName: string;
+  coins: number;
+}
+
+/** Admin panel search - looks a player up by their unique player code
+ *  (lib/playerCode.ts, shown on their profile) so an admin can find exactly
+ *  one account before depositing coins into it, without needing to browse
+ *  or guess a display name. */
+export async function findPlayerByCode(code: string): Promise<AdminPlayerLookup | null> {
+  const trimmed = normalizePlayerCode(code);
+  if (!trimmed) return null;
+  const q = query(collection(db, "players"), where("playerCode", "==", trimmed), limit(1));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  const data = d.data();
+  // Coins live in playerEconomy, not players (see EconomyContext) -
+  // firestore.rules grants the admin read-only access to that doc so this
+  // shows the real balance rather than always reading 0.
+  const economySnap = await getDoc(doc(db, "playerEconomy", d.id));
+  const coins = economySnap.exists() ? economySnap.data().economy?.coins ?? economySnap.data().profile?.coins ?? 0 : 0;
+  return { uid: d.id, displayName: data.displayName || "Player", coins };
+}
+
+/**
+ * Admin direct deposit: unlike requestCoinTopup (a player requesting their
+ * own purchase), this is created BY the admin FOR another player, already
+ * "approved" - firestore.rules only lets this through when request.auth is
+ * the admin email and status is exactly 'approved'. The target player's own
+ * CoinTopupWatcher (mounted for every signed-in user) picks up the approved
+ * request next time its listener fires and credits the coins locally, same
+ * as a normal purchase approval - admin never writes into another user's
+ * playerEconomy doc directly, since that stays owner-only per the rules.
+ */
+export async function adminTopUp(uid: string, playerName: string, coins: number): Promise<void> {
+  await addDoc(collection(db, COLLECTION), {
+    uid,
+    playerName,
+    coins,
+    priceMVR: 0,
+    packName: "Admin Top-Up",
+    status: "approved",
+    createdAt: Date.now(),
+    decidedAt: Date.now(),
+  });
 }

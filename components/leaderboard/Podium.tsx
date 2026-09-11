@@ -1,90 +1,25 @@
 "use client";
-
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Crown } from "lucide-react";
+import { Crown, Trophy } from "lucide-react";
 import { LeaderboardEntry } from "@/types";
 
-interface PodiumProps {
-  topThree: LeaderboardEntry[];
-}
-
-export function Podium({ topThree }: PodiumProps) {
-  const positions = [
-    { index: 1, height: "h-28", order: 2 }, // 2nd place
-    { index: 0, height: "h-36", order: 1 }, // 1st place
-    { index: 2, height: "h-24", order: 3 }, // 3rd place
-  ];
-
+export function Podium({ topThree }: { topThree: LeaderboardEntry[] }) {
   return (
-    <div className="flex items-end justify-center gap-4 mb-8 px-4">
-      {positions.map(({ index, height, order }) => {
+    <div className="leaderboard-podium">
+      {[1, 0, 2].map(index => {
         const player = topThree[index];
-        if (!player) return null;
-
-        const isFirst = order === 1;
-        const crownColor = order === 1 ? "rgb(var(--gold))" : order === 2 ? "#C0C0C0" : "#CD7F32";
-
+        if (!player) return <div key={index} />;
+        const color = index === 0 ? "rgb(var(--gold))" : index === 1 ? "#BECFD1" : "#E8A07B";
         return (
-          <Link key={player.rank} href={`/player?uid=${player.uid}`} style={{ order }}>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: order * 0.15, duration: 0.5 }}
-            className="flex flex-col items-center"
-          >
-            {/* Player info */}
-            <div className="text-center mb-3">
-              {isFirst && (
-                <motion.div
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="mb-1"
-                >
-                  <Crown size={20} style={{ color: crownColor }} />
-                </motion.div>
-              )}
-              <div
-                className={`w-12 h-12 rounded-full mx-auto mb-1.5 flex items-center justify-center ${
-                  isFirst
-                    ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))]"
-                    : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
-                }`}
-              >
-                <span className={`font-bold text-sm ${isFirst ? "text-[#0F0F0F]" : "text-[rgb(var(--c5))]"}`}>
-                  {player.username.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c5))]"}`}>
-                {player.username}
-              </p>
-              <p className="text-[10px] text-[rgb(var(--c4))]">{player.trophies.toLocaleString()}</p>
-            </div>
-
-            {/* Podium block */}
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: "auto" }}
-              transition={{ delay: 0.3 + order * 0.1, duration: 0.5 }}
-              className={`w-20 ${height} rounded-t-xl relative overflow-hidden`}
-              style={{
-                background: isFirst
-                  ? "linear-gradient(180deg, rgb(var(--gold)/20%) 0%, rgb(var(--gold)/5%) 100%)"
-                  : "linear-gradient(180deg, rgba(42,42,42,0.5) 0%, rgba(26,26,26,0.3) 100%)",
-                borderTop: isFirst ? "2px solid rgb(var(--gold)/50%)" : "1px solid rgba(58,58,58,0.3)",
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span
-                  className={`text-2xl font-bold ${
-                    isFirst ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"
-                  }`}
-                >
-                  {order}
-                </span>
-              </div>
+          <Link key={player.uid} href={`/player?uid=${player.uid}`} className="podium-player" style={{"--podium-color":color} as React.CSSProperties}>
+            <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:.25,delay:index*.06}}>
+              <div className="podium-crown">{index === 0 && <Crown size={25} />}</div>
+              <div className="podium-avatar">{player.username.charAt(0).toUpperCase()}</div>
+              <p className="truncate font-bold text-sm mt-3" title={player.username}>{player.username}</p>
+              <p className="flex justify-center items-center gap-1 text-xs text-[rgb(var(--c4))] mt-1"><Trophy size={12} />{player.trophies.toLocaleString()}</p>
+              <div className="podium-plinth" style={{height:index === 0 ? 112 : index === 1 ? 80 : 62}}><span>{index + 1}</span></div>
             </motion.div>
-          </motion.div>
           </Link>
         );
       })}

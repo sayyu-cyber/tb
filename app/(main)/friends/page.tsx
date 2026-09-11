@@ -39,10 +39,13 @@ export default function FriendsPage() {
   const [searching, setSearching] = useState(false);
   const [incoming, setIncoming] = useState<FriendRequestDoc[]>([]);
   const [outgoing, setOutgoing] = useState<FriendRequestDoc[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([{requestId:'sample1',uid:'sample1',name:'Aishath'},{requestId:'sample2',uid:'sample2',name:'Mohamed Ahmed Very Long Player Name'}]);
   const [invites, setInvites] = useState<RoomInviteDoc[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string[]>([]);
+  const [rosterQuery, setRosterQuery] = useState('');
+  const [inviting, setInviting] = useState<string | null>(null);
+  const visibleFriends = friends.filter(friend => friend.name.toLowerCase().includes(rosterQuery.trim().toLowerCase()));
 
   useEffect(() => {
     if (!uid || isGuest) return;
@@ -88,6 +91,9 @@ export default function FriendsPage() {
   }
 
   async function handleInvite(friend: Friend, gameId: "mindi" | "gin-rummy") {
+    if (inviting) return;
+    setInviting(friend.uid);
+    setError(null);
     try {
       const gameType = gameId === "mindi" ? "mindi" : "gin_rummy";
       const code = await createRoom(uid, myName, gameType, null);
@@ -95,23 +101,27 @@ export default function FriendsPage() {
       router.push(`/play/${gameId}/room?code=${code}`);
     } catch (err) {
       setError(String(err));
+    } finally {
+      setInviting(null);
     }
   }
 
   if (isGuest) {
     return (
-      <div className="pt-4 pb-32 px-4">
-        <PageHeader title={t("page_friends")} />
+      <div className="hub-page friends-page">
+        <PageHeader title={t("page_friends")} icon={Users} />
         <div className="glass-card rounded-2xl p-6 text-center">
           <p className="text-[rgb(var(--c4))] text-sm">{t("friends_signInPrompt")}</p>
+          <Link href="/login" className="game-primary-action mt-5">{t('login_signIn')}</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_friends")} />
+    <div className="hub-page friends-page">
+      <PageHeader title={t("page_friends")} icon={Users} actions={<span className="hub-count">{friends.length}</span>} />
+      <div className="social-summary"><Users size={22} /><div><strong>{friends.length}</strong><span>{t('friends_tabFriends')}</span></div><UserPlus size={22} /><div><strong>{incoming.length}</strong><span>{t('friends_tabRequests')}</span></div><Gamepad2 size={22} /><div><strong>{invites.length}</strong><span>{t('gamesel_privateRoom')}</span></div></div>
 
       {invites.length > 0 && (
         <div className="space-y-2 mb-4">
@@ -139,15 +149,17 @@ export default function FriendsPage() {
         </div>
       )}
 
-      <div className="flex gap-2 mb-4">
+      <div className="hub-tabs">
         {(["friends", "requests", "search"] as const).map((tabKey) => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
+            aria-pressed={tab === tabKey}
             className={`flex-1 py-2 rounded-xl text-sm font-medium ${
               tab === tabKey ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
             }`}
           >
+            {tabKey === 'friends' ? <Users size={16} /> : tabKey === 'requests' ? <UserPlus size={16} /> : <Search size={16} />}
             {tabKey === "requests"
               ? incoming.length > 0
                 ? `${t("friends_tabRequests")} (${incoming.length})`
@@ -175,7 +187,7 @@ export default function FriendsPage() {
               maxLength={24}
               className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
             />
-            <button aria-label={t("a11y_search")} onClick={handleSearch} className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+            <button aria-label={t("a11y_search")} disabled={searching || !searchText.trim()} onClick={handleSearch} className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] disabled:opacity-40">
               <Search size={18} className="text-[rgb(var(--gold-ink))]" />
             </button>
           </div>
@@ -257,29 +269,35 @@ export default function FriendsPage() {
 
       {tab === "friends" && (
         <div className="space-y-2">
+          <label className="hub-search mb-4"><Search size={16} /><input aria-label="Filter friends" placeholder="Search your friends" value={rosterQuery} onChange={event=>setRosterQuery(event.target.value)} /></label>
           {friends.length === 0 ? (
             <div className="glass-card rounded-2xl p-6 text-center">
               <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
               <p className="text-[rgb(var(--c4))] text-sm">{t("friends_noFriendsYet")}</p>
+              <button onClick={()=>setTab('search')} className="game-primary-action mt-5"><UserPlus size={16} />{t('friends_tabSearch')}</button>
             </div>
           ) : (
-            friends.map((f) => (
-              <div key={f.requestId} className="glass-card rounded-xl p-3 flex items-center justify-between">
-                <Link href={`/player?uid=${f.uid}`} className="text-[rgb(var(--text-primary))] text-sm font-medium hover:text-[rgb(var(--gold-ink))] transition-colors">
+            visibleFriends.map((f) => (
+              <div key={f.requestId} className="friend-roster-row">
+                <Link href={`/player?uid=${f.uid}`} className="flex items-center gap-3 min-w-0 text-sm font-semibold hover:text-[rgb(var(--lagoon))] transition-colors">
+                  <span className="friend-avatar">{f.name.charAt(0).toUpperCase()}</span>
+                  <span className="truncate">
                   {f.name}
+                  </span>
                 </Link>
-                <div className="flex gap-2">
+                <div className="friend-actions">
                   <Link href={`/messages?with=${f.uid}&name=${encodeURIComponent(f.name)}`}>
-                    <motion.button
+                    <motion.span
                       whileTap={{ scale: 0.95 }}
                       className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold-ink))] text-xs flex items-center gap-1"
                     >
                       <MessageCircle size={12} /> {t("friends_message")}
-                    </motion.button>
+                    </motion.span>
                   </Link>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleInvite(f, "mindi")}
+                    disabled={inviting !== null}
                     className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold-ink))] text-xs flex items-center gap-1"
                   >
                     <Gamepad2 size={12} /> Mindi
@@ -287,6 +305,7 @@ export default function FriendsPage() {
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleInvite(f, "gin-rummy")}
+                    disabled={inviting !== null}
                     className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold-ink))] text-xs flex items-center gap-1"
                   >
                     <Gamepad2 size={12} /> Gin
@@ -298,6 +317,7 @@ export default function FriendsPage() {
               </div>
             ))
           )}
+          {friends.length > 0 && visibleFriends.length === 0 && <p className="py-12 text-center text-sm text-[rgb(var(--c4))]">No matching friends.</p>}
         </div>
       )}
     </div>

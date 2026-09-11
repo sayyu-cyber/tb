@@ -30,19 +30,19 @@ export function LobbyPhoto({ className }: { className?: string }) {
           the brand palette so the banner never looks broken. */}
       <div className="absolute inset-0 bg-gradient-to-br from-[rgb(var(--deep-dark))] via-[rgb(var(--deep))] to-[rgb(var(--coral))]" />
       <Image
-        src="/images/lobby-cards.webp"
+        src="/images/lobby-table.webp"
         alt=""
         fill
         priority
         sizes="100vw"
         className="object-cover"
-        style={{ objectPosition: "center 62%" }}
+        style={{ objectPosition: "center 58%" }}
       />
       {/* Bottom scrim: every caller's heading and quick links sit here. */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
       {/* Left scrim: text is always left-aligned, so guarantee contrast
           there independent of what's directly behind it in the photo. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-transparent to-black/15" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/25 to-transparent" />
     </div>
   );
 }

@@ -297,7 +297,7 @@ export function SideNav() {
           class, full size from md+). */}
       <aside
         className={cn(
-          "flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto items-center gap-2",
+          "hidden md:flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto items-center gap-2",
           "border-r border-[rgb(var(--c3))] bg-[rgb(var(--c1))] px-2 py-5",
           RAIL_WIDTH
         )}
