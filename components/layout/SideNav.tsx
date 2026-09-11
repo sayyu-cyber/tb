@@ -43,7 +43,7 @@ import { SPRING } from "@/lib/motion";
  * carries the same five items + More for mobile.
  */
 
-const RAIL_WIDTH = "w-[76px]";
+const RAIL_WIDTH = "w-14 md:w-[76px]";
 const SHEET_WIDTH = "w-72";
 
 interface HubItem {
@@ -292,10 +292,12 @@ export function SideNav() {
 
   return (
     <>
-      {/* Collapsed rail - always present, part of the layout. */}
+      {/* Collapsed rail - always present, part of the layout, at every
+          breakpoint (including mobile - narrower via RAIL_WIDTH's base
+          class, full size from md+). */}
       <aside
         className={cn(
-          "hidden md:flex md:flex-col shrink-0 sticky top-0 h-screen overflow-y-auto items-center gap-2",
+          "flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto items-center gap-2",
           "border-r border-[rgb(var(--c3))] bg-[rgb(var(--c1))] px-2 py-5",
           RAIL_WIDTH
         )}
@@ -352,7 +354,7 @@ export function SideNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setExpanded(false)}
-              className="hidden md:block fixed inset-0 z-40 bg-black/60"
+              className="fixed inset-0 z-40 bg-black/60"
               aria-hidden="true"
             />
             <motion.aside
@@ -362,7 +364,7 @@ export function SideNav() {
               exit={{ x: -24, opacity: 0 }}
               transition={SPRING}
               className={cn(
-                "hidden md:flex md:flex-col fixed left-0 top-0 z-50 h-screen overflow-y-auto",
+                "flex flex-col fixed left-0 top-0 z-50 h-screen overflow-y-auto",
                 "border-r border-[rgb(var(--c3))] bg-[rgb(var(--c1))] px-3 py-5 shadow-[var(--shadow-lg)]",
                 SHEET_WIDTH
               )}

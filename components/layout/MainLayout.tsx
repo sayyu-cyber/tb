@@ -15,10 +15,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/*
         BottomNav (Home/Play/Leaderboard/Friends + More) stays pinned at
         every breakpoint, unchanged. SideNav adds a persistent left column
-        at md+ alongside it, listing the grouped secondary destinations
-        (see constants/navigation.ts) that would otherwise sit behind the
-        mobile "More" sheet - it deliberately doesn't repeat the primary
-        tabs, so nothing lives in two nav surfaces at once.
+        at every breakpoint (including mobile) alongside it, listing the
+        grouped secondary destinations (see constants/navigation.ts) that
+        would otherwise sit behind the mobile "More" sheet - it deliberately
+        doesn't repeat the primary tabs, so nothing lives in two nav
+        surfaces at once.
 
         FriendsRail is the third column - a slim rail of friends and recent
         chats, styled and sized to match SideNav's collapsed rail. It
@@ -36,7 +37,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         grids on Home, Shop, Collection, Inventory). Anything that doesn't
         simply stays centred and readable rather than stretching.
       */}
-      <div className="md:flex min-h-screen bg-[rgb(var(--c1))]">
+      <div className="flex min-h-screen bg-[rgb(var(--c1))]">
         <SideNav />
         <div className="flex-1 min-w-0">
           <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto relative pb-24">

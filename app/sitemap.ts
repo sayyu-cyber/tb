@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thasbai.netlify.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tsbai.netlify.app";
 
 /**
  * Emitted as a static /sitemap.xml at build time.

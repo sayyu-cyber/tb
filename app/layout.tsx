@@ -14,7 +14,7 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
  * ones. Override via NEXT_PUBLIC_SITE_URL when deploying to a custom
  * domain so previews don't keep pointing at the Netlify subdomain.
  */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thasbai.netlify.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tsbai.netlify.app";
 
 const DESCRIPTION =
   "Play Mindi and Gin Rummy online — ranked matches, private rooms with friends, clubs, and the Weekend League. The premium Maldivian card game experience.";
