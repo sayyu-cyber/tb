@@ -178,6 +178,14 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 
   **Verification.** `npx tsc --noEmit`, `npx next lint`, `npm run check` all pass.
 
+- Lobby-style hero on Home and Play (2026-09-11). Brief, with a PUBG Mobile lobby screen as reference: make the two landing screens feel like booting into a game rather than opening a settings dashboard. PUBG's centerpiece is 3D character renders; this app has no 3D pipeline or character assets (same constraint noted earlier for card-back skins), so `components/home/LobbyScene.tsx` stands in - a hand-built SVG of a Maldivian lagoon at sunset (sky gradient, sun glow, island silhouette with palms, wave bands, two faint floating suit glyphs), built entirely from the existing palette tokens (`--gold`, `--lagoon`, `--coral`, `--deep`) so it holds up in both themes and isn't a one-off asset outside the design system - it's the app's actual setting ("The Home of Maldivian Card Games"), not generic decoration.
+
+  `components/home/PlayLobbyHero.tsx` sits at the top of `/play`: the scene as a full-bleed backdrop, quick links to Friends/Leaderboard/Inventory/Shop top-right (mirrors CREW/RANK/INVENTORY/SHOP), a Mindi/Gin Rummy switcher, and a large gold **START** button that drops straight into a casual match (online if signed in, vs AI for guests - reusing the same gating pattern as `GameSelectCard`). A small bottom dock (Invite/Practice/Room) covers the fast paths without duplicating the detailed mode cards, which still render unchanged below the hero for Ranked/Room/Pass & Play.
+
+  `components/home/HomeLobbyHero.tsx` gives Home the same scene and composition, doing Home's job instead: a welcome-back greeting, the Weekend League badge, coin balance, and a single PLAY button into `/play`. Everything else on Home (rank progress, daily matches, season card, shortcuts, news) is untouched underneath it.
+
+  **Verification.** `npx tsc --noEmit`, `npx next lint`, `npm run check` all pass. Not yet checked on a real device - worth confirming the SVG scene scales cleanly at very narrow widths and that the bottom dock's tap targets feel right on a phone.
+
 ## Suggested next steps
 1. Run `firebase deploy --only firestore:rules` to restore login.
 2. Verify the app builds cleanly (`npm run build`) with the uncommitted Economy/Firebase changes, then commit and push so this progress is safe.

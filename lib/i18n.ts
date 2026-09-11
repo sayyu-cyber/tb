@@ -81,6 +81,7 @@ export const TRANSLATIONS: Record<string, Translations> = {
     hi: "मालदीव के कार्ड गेम्स का घर",
     bn: "মালদ্বীপের কার্ড গেমসের ঘর",
   },
+  home_welcomeBack: { en: "Welcome back, {name}", dv: "އަނބުރާ މަރުޙަބާ, {name}", hi: "वापसी पर स्वागत है, {name}", bn: "আবার স্বাগতম, {name}" },
 
   // Shared PageHeader titles (components/layout/PageHeader.tsx) - used
   // across most secondary screens, so translating this one list covers a
@@ -433,6 +434,9 @@ export const TRANSLATIONS: Record<string, Translations> = {
   gamesel_privateRoom: { en: "Private Room", dv: "ޕްރައިވެޓް ރޫމް", hi: "प्राइवेट रूम", bn: "প্রাইভেট রুম" },
   gamesel_close: { en: "Close", dv: "ބަންދުކުރޭ", hi: "बंद करें", bn: "বন্ধ করুন" },
   gamesel_selectMode: { en: "Select Mode", dv: "މޯޑް ހޮއްވަވާ", hi: "मोड चुनें", bn: "মোড নির্বাচন করুন" },
+  gamesel_startButton: { en: "START", dv: "ފަށާ", hi: "शुरू करें", bn: "শুরু করুন" },
+  gamesel_dockInvite: { en: "Invite", dv: "ދަޢުވަތު", hi: "आमंत्रित करें", bn: "আমন্ত্রণ" },
+  gamesel_dockPractice: { en: "Practice", dv: "ފަރިތަކުރުން", hi: "अभ्यास", bn: "অনুশীলন" },
 
   // Room Lobby (components/game/RoomLobbyClient.tsx)
   roomlobby_title: { en: "Private Room", dv: "ޕްރައިވެޓް ރޫމް", hi: "प्राइवेट रूम", bn: "প্রাইভেট রুম" },

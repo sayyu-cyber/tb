@@ -1,11 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Gamepad2 } from "lucide-react";
 import { GameSelectCard } from "@/components/game/GameSelectCard";
+import { PlayLobbyHero } from "@/components/home/PlayLobbyHero";
 import { useTranslation } from "@/hooks/useTranslation";
 import { TOKEN } from "@/constants/theme";
-import { riseIn, staggerParent } from "@/lib/motion";
 
 // Both games used to render in identical gold, which made the two headline
 // modes of the whole app visually interchangeable. Each now owns a hue and
@@ -33,26 +32,21 @@ export default function PlayPage() {
   const t = useTranslation();
   return (
     <div className="px-4 pt-6 pb-6 space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3"
-      >
-        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
-          <Gamepad2 size={20} className="text-[rgb(var(--gold))]" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("play_title")}</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">{t("play_subtitle")}</p>
-        </div>
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <PlayLobbyHero />
       </motion.div>
 
-      {/* Stacked on mobile as before; side by side from md, where the
-          shell is wide enough for two full cards. */}
-      <div className="space-y-5 md:space-y-0 md:grid md:grid-cols-2 md:gap-5 md:items-start">
-        {games.map((game, index) => (
-          <GameSelectCard key={game.id} {...game} index={index} />
-        ))}
+      <div>
+        <h2 className="text-[rgb(var(--c4))] text-[11px] font-bold uppercase tracking-widest mb-3 px-1">
+          {t("play_subtitle")}
+        </h2>
+        {/* Stacked on mobile as before; side by side from md, where the
+            shell is wide enough for two full cards. */}
+        <div className="space-y-5 md:space-y-0 md:grid md:grid-cols-2 md:gap-5 md:items-start">
+          {games.map((game, index) => (
+            <GameSelectCard key={game.id} {...game} index={index} />
+          ))}
+        </div>
       </div>
 
       {/* Future placeholders */}

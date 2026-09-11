@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Users, KeyRound, Flame, Award, Package, Shield, Crown, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { ProfileCard } from "@/components/home/ProfileCard";
+import { HomeLobbyHero } from "@/components/home/HomeLobbyHero";
 import { SeasonCard } from "@/components/home/SeasonCard";
 import { MatchesRemaining } from "@/components/home/MatchesRemaining";
 import { QuickPlayButtons } from "@/components/home/QuickPlayButtons";
@@ -12,7 +13,6 @@ import { WeekendLeague } from "@/components/home/WeekendLeague";
 import { RankProgress } from "@/components/home/RankProgress";
 import { DailyMatchCounter } from "@/components/home/DailyMatchCounter";
 import { RankLockBanner } from "@/components/game/RankLockBanner";
-import { WeekendLeagueBadge } from "@/components/game/WeekendLeagueBadge";
 import { useTranslation } from "@/hooks/useTranslation";
 import { riseIn, staggerParent } from "@/lib/motion";
 
@@ -36,16 +36,8 @@ export default function HomePage() {
   const t = useTranslation();
   return (
     <div className="px-4 pt-6 pb-6 space-y-5">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("home_title")}</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">{t("home_tagline")}</p>
-        </div>
-        <WeekendLeagueBadge />
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <HomeLobbyHero />
       </motion.div>
 
       <RankLockBanner />
