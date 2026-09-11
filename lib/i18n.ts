@@ -650,6 +650,7 @@ export const TRANSLATIONS: Record<string, Translations> = {
   gin_points: { en: "Points", dv: "ޕޮއިންޓް", hi: "अंक", bn: "পয়েন্ট" },
   gin_yourTurn: { en: "Your turn", dv: "ތިބާގެ ފުރުޞަތު", hi: "आपकी बारी", bn: "আপনার পালা" },
   gin_opponentTurn: { en: "Opponent's turn", dv: "ދެކޮޅުގެ ފުރުޞަތު", hi: "प्रतिद्वंद्वी की बारी", bn: "প্রতিপক্ষের পালা" },
+  gin_opponent: { en: "Opponent", dv: "ދެކޮޅު", hi: "प्रतिद्वंद्वी", bn: "প্রতিপক্ষ" },
   gin_deadwood: { en: "Deadwood", dv: "ޑެޑްވުޑް", hi: "डेडवुड", bn: "ডেডউড" },
   gin_stock: { en: "Stock ({n})", dv: "ސްޓޮކް ({n})", hi: "स्टॉक ({n})", bn: "স্টক ({n})" },
   gin_discardPile: { en: "Discard pile", dv: "ޑިސްކާޑް ފައިލް", hi: "डिस्कार्ड पाइल", bn: "ডিসকার্ড পাইল" },

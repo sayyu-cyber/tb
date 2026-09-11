@@ -124,14 +124,14 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <Link href="/messages">
           <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            <ArrowLeft size={18} className="text-[rgb(var(--gold))]" />
+            <ArrowLeft size={18} className="text-[rgb(var(--gold-ink))]" />
           </button>
         </Link>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{otherName}</p>
       </div>
 
       {error && (
-        <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mx-4 mb-2">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mx-4 mb-2">{error}</p>
       )}
 
       <div className="flex-1 overflow-y-auto px-4 space-y-2">

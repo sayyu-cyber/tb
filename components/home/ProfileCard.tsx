@@ -44,7 +44,7 @@ export function ProfileCard() {
               {user.photoURL ? (
                 <img src={user.photoURL} alt="" className="h-full w-full object-cover" />
               ) : (
-                <User size={28} className="text-[rgb(var(--gold))]" aria-hidden="true" />
+                <User size={28} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
               )}
             </div>
           </div>
@@ -66,7 +66,7 @@ export function ProfileCard() {
 
         <div className="flex shrink-0 flex-col items-end">
           <div className="flex items-baseline gap-1.5">
-            <Trophy size={16} className="translate-y-[1px] text-[rgb(var(--gold))]" aria-hidden="true" />
+            <Trophy size={16} className="translate-y-[1px] text-[rgb(var(--gold-ink))]" aria-hidden="true" />
             <span className="gold-text-gradient text-2xl font-black leading-none">
               {playerStats?.trophies?.toLocaleString() || 0}
             </span>

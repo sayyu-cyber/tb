@@ -29,13 +29,13 @@ export default function CoinBalance({ showAnimation = false, size = 'md', classN
 
   return (
     <motion.div
-      className={`inline-flex items-center rounded-full bg-gradient-to-r from-amber-900/80 to-yellow-900/80 border border-amber-500/40 backdrop-blur-sm ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center rounded-full bg-gradient-to-r from-[rgb(var(--gold-deep)/40%)] to-[rgb(var(--gold-deep)/40%)] border border-[rgb(var(--gold)/40%)] backdrop-blur-sm ${sizeClasses[size]} ${className}`}
       initial={showAnimation ? { scale: 0.8, opacity: 0 } : false}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
     >
       <motion.svg
-        className={`${iconSizes[size]} text-amber-400`}
+        className={`${iconSizes[size]} text-[rgb(var(--gold-ink))]`}
         viewBox="0 0 24 24"
         fill="currentColor"
         animate={showAnimation ? { rotate: [0, 360] } : {}}
@@ -45,7 +45,7 @@ export default function CoinBalance({ showAnimation = false, size = 'md', classN
         <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="currentColor">T</text>
       </motion.svg>
       <motion.span
-        className="font-bold text-amber-100 tabular-nums"
+        className="font-bold text-[rgb(var(--gold-ink))] tabular-nums"
         key={coins}
         initial={showAnimation ? { y: -10, opacity: 0 } : false}
         animate={{ y: 0, opacity: 1 }}

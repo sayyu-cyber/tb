@@ -246,7 +246,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
+                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
               <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
@@ -264,7 +264,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                   : t("mindi_youLost")}
               </h1>
               {!isDraw && !result.forfeitedBy && (result.gin || result.undercut) && (
-                <p className="text-[rgb(var(--gold))] text-sm font-semibold mt-1 uppercase tracking-wide">
+                <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {result.gin ? t("gin_gin") : t("gin_undercut")}
                 </p>
               )}
@@ -283,7 +283,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
                   <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
                     <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
-                    <span className="text-[rgb(var(--gold))] font-bold">{result.score}</span>
+                    <span className="text-[rgb(var(--gold-ink))] font-bold">{result.score}</span>
                   </div>
                 </>
               )}
@@ -324,7 +324,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
   const opponentSeat = {
     uid: opponentUid,
-    name: opponentProfile?.displayName ?? t("gin_opponentTurn").split(" ")[0] ?? "Opponent",
+    name: opponentProfile?.displayName ?? t("gin_opponent"),
     avatarPreset: opponentProfile?.avatarPreset,
     cardBackId: opponentProfile?.cardBack,
     cardCount: state.hands[opponentUid]?.length ?? 0,

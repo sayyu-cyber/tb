@@ -19,10 +19,10 @@ export function RankLockBanner() {
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
-          <Lock size={20} className="text-[rgb(var(--gold))]" />
+          <Lock size={20} className="text-[rgb(var(--gold-ink))]" />
         </div>
         <div className="flex-1">
-          <h3 className="text-[rgb(var(--gold))] font-semibold text-sm">{t("home_ranksLocked")}</h3>
+          <h3 className="text-[rgb(var(--gold-ink))] font-semibold text-sm">{t("home_ranksLocked")}</h3>
           <p className="text-[rgb(var(--c4))] text-xs">{t("home_ranksLockedDesc")}</p>
         </div>
         <div className="flex items-center gap-1 text-[rgb(var(--c4))]">

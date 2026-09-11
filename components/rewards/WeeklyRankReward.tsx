@@ -42,7 +42,7 @@ export default function WeeklyRankReward() {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-gradient-to-b from-neutral-900 to-black border-2 rounded-2xl p-8 text-center max-w-md mx-4 relative overflow-hidden"
+            className="bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-2 rounded-2xl p-8 text-center max-w-md mx-4 relative overflow-hidden"
             style={{ borderColor: rankConfig.color }}
             initial={{ scale: 0.5, y: 100 }}
             animate={{ scale: 1, y: 0 }}
@@ -69,13 +69,13 @@ export default function WeeklyRankReward() {
             <p className="text-[rgb(var(--c5))] mb-6">Weekly Rank Rewards</p>
 
             <motion.div
-              className="bg-amber-900/30 rounded-xl p-4 border border-amber-500/20 mb-6"
+              className="bg-[rgb(var(--gold)/15%)] rounded-xl p-4 border border-[rgb(var(--gold)/20%)] mb-6"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="text-4xl font-bold text-amber-400 mb-1">+{rankConfig.weeklyReward}</div>
-              <div className="text-amber-200/60">Coins</div>
+              <div className="text-4xl font-bold text-[rgb(var(--gold-ink))] mb-1">+{rankConfig.weeklyReward}</div>
+              <div className="text-[rgb(var(--gold-ink)/60%)]">Coins</div>
             </motion.div>
 
             <motion.button

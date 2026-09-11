@@ -43,9 +43,9 @@ export default function TournamentPage() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-card rounded-2xl p-5 mb-4 relative overflow-hidden"
       >
-        <div className="absolute -top-8 -right-8 w-24 h-24 bg-orange-500/10 rounded-full blur-xl" />
+        <div className="absolute -top-8 -right-8 w-24 h-24 bg-[rgb(var(--coral)/10%)] rounded-full blur-xl" />
         <div className="flex items-center gap-2 mb-2">
-          <Flame size={18} className="text-orange-400" />
+          <Flame size={18} className="text-[rgb(var(--coral-ink))]" />
           <h2 className="text-[rgb(var(--text-primary))] font-semibold">
             {isWeekendLeague ? t("tournament_isLive") : t("page_weekendLeague")}
           </h2>
@@ -89,7 +89,7 @@ export default function TournamentPage() {
       </motion.div>
 
       <div className="flex items-center gap-2 mb-3">
-        <Trophy size={16} className="text-[rgb(var(--gold))]" />
+        <Trophy size={16} className="text-[rgb(var(--gold-ink))]" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("tournament_standings")}</h3>
       </div>
 
@@ -123,7 +123,7 @@ export default function TournamentPage() {
                   <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{s.displayName}</p>
                   <p className="text-[rgb(var(--c4))] text-[10px]">{s.currentRank}</p>
                 </div>
-                <span className="text-[rgb(var(--gold))] font-semibold text-sm">{s.weeklyTrophies.toLocaleString()}</span>
+                <span className="text-[rgb(var(--gold-ink))] font-semibold text-sm">{s.weeklyTrophies.toLocaleString()}</span>
               </motion.div>
             </Link>
           ))}

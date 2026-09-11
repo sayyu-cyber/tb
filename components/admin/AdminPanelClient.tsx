@@ -58,7 +58,7 @@ export function AdminPanelClient() {
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
-              tab === t.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
+              tab === t.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
             }`}
           >
             {t.label}
@@ -101,10 +101,10 @@ function TopupsTab() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => decideTopup(r.id, true)} className="px-3 py-1.5 rounded-lg bg-green-900/30 border border-green-700/40 text-green-400 text-xs">
+                  <button onClick={() => decideTopup(r.id, true)} className="px-3 py-1.5 rounded-lg bg-[rgb(var(--lagoon)/15%)] border border-[rgb(var(--lagoon)/35%)] text-[rgb(var(--lagoon-ink))] text-xs">
                     Approve
                   </button>
-                  <button onClick={() => decideTopup(r.id, false)} className="px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-700/40 text-red-400 text-xs">
+                  <button onClick={() => decideTopup(r.id, false)} className="px-3 py-1.5 rounded-lg bg-[rgb(var(--coral)/15%)] border border-[rgb(var(--coral)/35%)] text-[rgb(var(--coral-ink))] text-xs">
                     Reject
                   </button>
                 </div>
@@ -123,7 +123,7 @@ function TopupsTab() {
             {decided.map((r) => (
               <div key={r.id} className="flex items-center justify-between text-xs px-1">
                 <span className="text-[rgb(var(--c4))]">{r.playerName} — {r.packName}</span>
-                <span className={r.status === "rejected" ? "text-red-400" : "text-green-400"}>{r.status}</span>
+                <span className={r.status === "rejected" ? "text-[rgb(var(--coral-ink))]" : "text-[rgb(var(--lagoon-ink))]"}>{r.status}</span>
               </div>
             ))}
           </div>
@@ -225,7 +225,7 @@ function HallOfFameTab() {
         <div className="flex items-center justify-between mb-2">
           <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">Manual entries ({entries.length})</p>
           {entries.length > 0 && (
-            <button onClick={() => resetManualHallOfFame()} className="text-red-400 text-xs">
+            <button onClick={() => resetManualHallOfFame()} className="text-[rgb(var(--coral-ink))] text-xs">
               Reset all
             </button>
           )}
@@ -237,7 +237,7 @@ function HallOfFameTab() {
                 <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{e.displayName}</p>
                 <p className="text-[rgb(var(--c4))] text-xs">{e.peakTrophies.toLocaleString()} trophies {e.note && `— ${e.note}`}</p>
               </div>
-              <button onClick={() => removeManualHallOfFameEntry(e.id)} className="text-red-400 text-xs">
+              <button onClick={() => removeManualHallOfFameEntry(e.id)} className="text-[rgb(var(--coral-ink))] text-xs">
                 Remove
               </button>
             </div>
@@ -286,7 +286,7 @@ function ShopTab() {
               onChange={(e) => updatePrice(item.id, e.target.value)}
               className="w-20 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-lg px-2 py-1.5 text-[rgb(var(--text-primary))] text-xs outline-none"
             />
-            <button onClick={() => toggleHidden(item.id)} className={`text-xs px-2 py-1.5 rounded-lg ${hidden ? "bg-red-900/30 text-red-400" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))]"}`}>
+            <button onClick={() => toggleHidden(item.id)} className={`text-xs px-2 py-1.5 rounded-lg ${hidden ? "bg-[rgb(var(--coral)/15%)] text-[rgb(var(--coral-ink))]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))]"}`}>
               {hidden ? "Hidden" : "Visible"}
             </button>
           </div>

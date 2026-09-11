@@ -199,7 +199,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
+                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
               <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
@@ -209,7 +209,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                 {isDraw ? t("gin_stockRanOut") : youWon ? t("mindi_youWon") : t("mindi_youLost")}
               </h1>
               {!isDraw && (result.gin || result.undercut) && (
-                <p className="text-[rgb(var(--gold))] text-sm font-semibold mt-1 uppercase tracking-wide">
+                <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {result.gin ? t("gin_gin") : t("gin_undercut")}
                 </p>
               )}
@@ -228,7 +228,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
                   <div className="h-px bg-[rgb(var(--c3))]" />
                   <div className="flex items-center justify-between">
                     <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
-                    <span className="text-[rgb(var(--gold))] font-bold">{result.score}</span>
+                    <span className="text-[rgb(var(--gold-ink))] font-bold">{result.score}</span>
                   </div>
                 </>
               )}
@@ -270,9 +270,9 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   if (needsPassScreen) {
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center">
-        <Smartphone size={40} className="text-[rgb(var(--gold))] mb-4" />
+        <Smartphone size={40} className="text-[rgb(var(--gold-ink))] mb-4" />
         <h2 className="text-[rgb(var(--text-primary))] text-xl font-bold mb-2">{t("offline_passDeviceTo")}</h2>
-        <p className="text-[rgb(var(--gold))] text-2xl font-bold mb-6">{turn === "player" ? t("offline_player1") : t("offline_player2")}</p>
+        <p className="text-[rgb(var(--gold-ink))] text-2xl font-bold mb-6">{turn === "player" ? t("offline_player1") : t("offline_player2")}</p>
         <p className="text-[rgb(var(--c4))] text-xs mb-8">{t("offline_hideScreen")}</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -294,7 +294,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   const topSide: Side = mode === "ai" ? "opponent" : turn === "player" ? "opponent" : "player";
   const topSeat: ArenaSeatData = {
     uid: topSide,
-    name: mode === "ai" ? t("gin_opponentTurn").split(" ")[0] ?? "Opponent" : topSide === "player" ? t("offline_player1") : t("offline_player2"),
+    name: mode === "ai" ? t("gin_opponent") : topSide === "player" ? t("offline_player1") : t("offline_player2"),
     cardCount: (topSide === "player" ? playerHand : opponentHand).length,
     active: !isMyTurn,
   };

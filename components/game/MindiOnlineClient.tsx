@@ -227,7 +227,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
+                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
               }`}
             >
               <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
@@ -243,7 +243,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
                   : t("mindi_youLost")}
               </h1>
               {state.outcome.special && state.outcome.special !== "forfeit" && (
-                <p className="text-[rgb(var(--gold))] text-sm font-semibold mt-1 uppercase tracking-wide">
+                <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
                   {state.outcome.special === "baga" ? t("mindi_baga") : t("mindi_hukunbunye")}
                 </p>
               )}
@@ -288,9 +288,16 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     );
   }
 
-  const partnerSeat = numPlayers !== 2 ? seatDataFor(((mySeat + 2) % 4) as SeatIndex) : null;
-  const leftSeat = numPlayers !== 2 ? seatDataFor(((mySeat + 1) % 4) as SeatIndex) : seatDataFor((mySeat === 0 ? 1 : 0) as SeatIndex);
-  const rightSeat = numPlayers !== 2 ? seatDataFor(((mySeat + 3) % 4) as SeatIndex) : null;
+  // Seating is relative to the viewer, who is always at the bottom.
+  // 4-player: partner opposite, opponents left and right. 1v1 (the FFA room
+  // variant): the lone opponent sits opposite, NOT off to one side - putting
+  // them in the left slot left the top empty and the whole table lopsided.
+  const isDuel = numPlayers === 2;
+  const topSeat = isDuel
+    ? seatDataFor((mySeat === 0 ? 1 : 0) as SeatIndex)
+    : seatDataFor(((mySeat + 2) % 4) as SeatIndex);
+  const leftSeat = isDuel ? null : seatDataFor(((mySeat + 1) % 4) as SeatIndex);
+  const rightSeat = isDuel ? null : seatDataFor(((mySeat + 3) % 4) as SeatIndex);
   const myProfile = { name: t("mindi_you"), avatarPreset: playerStats?.avatarPreset };
 
   return (
@@ -302,7 +309,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         }
         subtitle={
           <>
-            {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
+            {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-[rgb(var(--suit-red))]" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
           </>
         }
       />
@@ -310,12 +317,12 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       <div className="px-4 pb-2">
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <Users size={14} className="text-[rgb(var(--gold))]" />
+            <Users size={14} className="text-[rgb(var(--gold-ink))]" />
             <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? t("mindi_you") : t("mindi_yourTeam")}</span>
-            <span className="text-[rgb(var(--gold))] font-bold">{state.tensCaptured[myTeam]} {t("spectate_tensLabel")}</span>
+            <span className="text-[rgb(var(--gold-ink))] font-bold">{state.tensCaptured[myTeam]} {t("spectate_tensLabel")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[rgb(var(--gold))] font-bold">{state.tensCaptured[myTeam === "A" ? "B" : "A"]} {t("spectate_tensLabel")}</span>
+            <span className="text-[rgb(var(--gold-ink))] font-bold">{state.tensCaptured[myTeam === "A" ? "B" : "A"]} {t("spectate_tensLabel")}</span>
             <span className="text-[rgb(var(--text-primary))] font-medium">{numPlayers === 2 ? t("mindi_opponent") : t("mindi_opponents")}</span>
           </div>
         </div>
@@ -324,7 +331,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       <ArenaTable>
         <div className="flex-1 flex flex-col items-center justify-between">
           <div className="h-14 flex items-center justify-center">
-            {partnerSeat && <OpponentSeat seat={partnerSeat} orientation="column" />}
+            <OpponentSeat seat={topSeat} orientation="column" />
           </div>
 
           <div className="flex items-center justify-between w-full max-w-sm">

@@ -42,7 +42,7 @@ export default function ProfilePage() {
         className="flex items-center gap-3"
       >
         <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
-          <User size={20} className="text-[rgb(var(--gold))]" />
+          <User size={20} className="text-[rgb(var(--gold-ink))]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("profile_title")}</h1>
@@ -64,7 +64,7 @@ export default function ProfilePage() {
           onClick={() => setEditing(true)}
           className="absolute top-3 right-3 p-2 rounded-lg bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] z-10"
         >
-          <Pencil size={14} className="text-[rgb(var(--gold))]" />
+          <Pencil size={14} className="text-[rgb(var(--gold-ink))]" />
         </button>
 
         {/* Avatar */}
@@ -88,8 +88,8 @@ export default function ProfilePage() {
 
         {/* Trophy display */}
         <div className="flex items-center justify-center gap-2 mt-3">
-          <Trophy size={18} className="text-[rgb(var(--gold))]" />
-          <span className="text-[rgb(var(--gold))] font-bold text-lg">
+          <Trophy size={18} className="text-[rgb(var(--gold-ink))]" />
+          <span className="text-[rgb(var(--gold-ink))] font-bold text-lg">
             {(playerStats?.trophies || 0).toLocaleString()}
           </span>
           <span className="text-[rgb(var(--c4))] text-xs">{t("profile_trophies").toLowerCase()}</span>
@@ -130,11 +130,11 @@ export default function ProfilePage() {
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
                   stat.highlight ? "bg-[rgb(var(--gold)/10%)]" : "bg-[rgb(var(--c2))]"
                 }`}>
-                  <stat.icon size={18} className={stat.highlight ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
+                  <stat.icon size={18} className={stat.highlight ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
                 </div>
                 <span className="text-[rgb(var(--c4))] text-sm">{stat.label}</span>
               </div>
-              <span className={`font-semibold text-sm ${stat.highlight ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--text-primary))]"}`}>
+              <span className={`font-semibold text-sm ${stat.highlight ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--text-primary))]"}`}>
                 {stat.value}
               </span>
             </motion.div>

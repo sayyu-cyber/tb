@@ -41,20 +41,20 @@ export default function MatchRewardPopup({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="relative w-full max-w-md mx-4 bg-gradient-to-b from-neutral-900 to-black border border-amber-500/30 rounded-2xl p-8 overflow-hidden"
+            className="relative w-full max-w-md mx-4 bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/30%)] rounded-2xl p-8 overflow-hidden"
             initial={{ scale: 0.5, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.5, y: 50 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
-            <div className={`absolute inset-0 opacity-20 ${isVictory ? 'bg-gradient-to-t from-amber-600/30 to-transparent' : 'bg-gradient-to-t from-gray-600/20 to-transparent'}`} />
+            <div className={`absolute inset-0 opacity-20 ${isVictory ? 'bg-gradient-to-t from-[rgb(var(--gold-deep)/30%)] to-transparent' : 'bg-gradient-to-t from-[rgb(var(--c3)/20%)] to-transparent'}`} />
             
             {isVictory && (
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {[...Array(12)].map((_, i) => (
                   <motion.div
                     key={i}
-                    className="absolute w-2 h-2 rounded-full bg-amber-400"
+                    className="absolute w-2 h-2 rounded-full bg-[rgb(var(--gold-bright))]"
                     initial={{ x: '50%', y: '50%', scale: 0 }}
                     animate={{
                       x: `${20 + Math.random() * 60}%`,
@@ -73,13 +73,13 @@ export default function MatchRewardPopup({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className={`text-6xl mb-4 ${isVictory ? 'text-amber-400' : 'text-[rgb(var(--c5))]'}`}
+                className={`text-6xl mb-4 ${isVictory ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c5))]'}`}
               >
                 {isVictory ? '🏆' : '🎮'}
               </motion.div>
 
               <motion.h2
-                className={`text-3xl font-bold mb-2 ${isVictory ? 'text-amber-300' : 'text-[rgb(var(--c5))]'}`}
+                className={`text-3xl font-bold mb-2 ${isVictory ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c5))]'}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -94,18 +94,18 @@ export default function MatchRewardPopup({
                 transition={{ delay: 0.5 }}
               >
                 <div className="flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-2 bg-amber-900/40 rounded-full px-4 py-2 border border-amber-500/30">
+                  <div className="flex items-center gap-2 bg-[rgb(var(--gold)/18%)] rounded-full px-4 py-2 border border-[rgb(var(--gold)/30%)]">
                     <CoinIcon size={18} />
-                    <span className="text-amber-100 font-bold">+{coinsEarned}</span>
+                    <span className="text-[rgb(var(--gold-ink))] font-bold">+{coinsEarned}</span>
                   </div>
                 </div>
 
                 {trophyChange !== 0 ? (
                   <div className="flex items-center justify-center gap-2">
-                    <span className={`text-lg ${trophyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className={`text-lg ${trophyChange >= 0 ? 'text-[rgb(var(--lagoon-ink))]' : 'text-[rgb(var(--coral-ink))]'}`}>
                       {trophyChange >= 0 ? '📈' : '📉'}
                     </span>
-                    <span className={`font-bold ${trophyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className={`font-bold ${trophyChange >= 0 ? 'text-[rgb(var(--lagoon-ink))]' : 'text-[rgb(var(--coral-ink))]'}`}>
                       {trophyChange > 0 ? '+' : ''}{trophyChange} Trophies
                     </span>
                   </div>
@@ -116,14 +116,14 @@ export default function MatchRewardPopup({
                   <p className="text-[rgb(var(--c4))] text-xs">Casual match — no trophies at stake</p>
                 )}
 
-                <div className="pt-4 border-t border-amber-500/20">
+                <div className="pt-4 border-t border-[rgb(var(--gold)/20%)]">
                   <p className="text-[rgb(var(--c5))] text-sm mb-2">New Balance</p>
                   <CoinBalance showAnimation size="lg" />
                 </div>
               </motion.div>
 
               <motion.button
-                className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold text-lg hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/30"
+                className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))] font-bold text-lg hover:from-[rgb(var(--gold))] hover:to-[rgb(var(--gold-bright))] transition-all border border-[rgb(var(--gold)/30%)]"
                 onClick={onClose}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}

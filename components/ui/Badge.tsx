@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 type Tone = "gold" | "lagoon" | "coral" | "deep" | "orchid" | "neutral";
 
 const TONES: Record<Tone, string> = {
-  gold: "text-[rgb(var(--gold))] bg-[rgb(var(--gold)/12%)] border-[rgb(var(--gold)/25%)]",
-  lagoon: "text-[rgb(var(--lagoon))] bg-[rgb(var(--lagoon)/12%)] border-[rgb(var(--lagoon)/25%)]",
-  coral: "text-[rgb(var(--coral))] bg-[rgb(var(--coral)/12%)] border-[rgb(var(--coral)/25%)]",
-  deep: "text-[rgb(var(--deep))] bg-[rgb(var(--deep)/14%)] border-[rgb(var(--deep)/28%)]",
-  orchid: "text-[rgb(var(--orchid))] bg-[rgb(var(--orchid)/12%)] border-[rgb(var(--orchid)/25%)]",
+  gold: "text-[rgb(var(--gold-ink))] bg-[rgb(var(--gold)/12%)] border-[rgb(var(--gold)/25%)]",
+  lagoon: "text-[rgb(var(--lagoon-ink))] bg-[rgb(var(--lagoon)/12%)] border-[rgb(var(--lagoon)/25%)]",
+  coral: "text-[rgb(var(--coral-ink))] bg-[rgb(var(--coral)/12%)] border-[rgb(var(--coral)/25%)]",
+  deep: "text-[rgb(var(--deep-ink))] bg-[rgb(var(--deep)/14%)] border-[rgb(var(--deep)/28%)]",
+  orchid: "text-[rgb(var(--orchid-ink))] bg-[rgb(var(--orchid)/12%)] border-[rgb(var(--orchid)/25%)]",
   neutral: "text-[rgb(var(--c5))] bg-[rgb(var(--c2))] border-[rgb(var(--c3))]",
 };
 

@@ -130,7 +130,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-center space-y-6">
           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[rgb(var(--gold))] mx-auto flex items-center justify-center">
-            <span className="text-[rgb(var(--gold))] text-xs font-bold">VS</span>
+            <span className="text-[rgb(var(--gold-ink))] text-xs font-bold">VS</span>
           </motion.div>
           <h2 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("rankedq_matchFound")}</h2>
           <p className="text-[rgb(var(--c4))] text-sm">{t("rankedq_starting").replace("{label}", label)}</p>
@@ -152,7 +152,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
           <motion.div animate={{ rotate: -360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-3 rounded-full border-2 border-[rgb(var(--gold)/10%)] border-b-[rgb(var(--gold)/50%)]" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Search size={32} className="text-[rgb(var(--gold))]" />
+            <Search size={32} className="text-[rgb(var(--gold-ink))]" />
           </div>
         </div>
 
@@ -164,11 +164,11 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
             {gameType === "mindi" ? t("casual_mindiNeeds4") : t("rankedq_waitingReal")}
           </p>
           <div className="flex items-center justify-center gap-2 mt-3 text-[rgb(var(--c4))] text-xs">
-            <Users2 size={14} className="text-[rgb(var(--gold))]" />
+            <Users2 size={14} className="text-[rgb(var(--gold-ink))]" />
             <span>{t("casual_noStakes")}</span>
           </div>
           {debugError && (
-            <p className="text-red-400 text-xs mt-3 break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">
+            <p className="text-[rgb(var(--coral-ink))] text-xs mt-3 break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2">
               {debugError}
             </p>
           )}

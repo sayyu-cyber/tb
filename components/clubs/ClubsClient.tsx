@@ -102,7 +102,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
       <PageHeader title={t("page_clubs")} />
 
       {error && (
-        <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       <div className="flex gap-2 mb-4">
@@ -166,7 +166,7 @@ function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: str
             <div key={c.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div className="min-w-0">
                 <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">
-                  {c.name} <span className="text-[rgb(var(--gold))] text-xs">[{c.tag}]</span>
+                  {c.name} <span className="text-[rgb(var(--gold-ink))] text-xs">[{c.tag}]</span>
                 </p>
                 <p className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
                   <Users size={10} /> {c.members.length} {t("clubs_members")}
@@ -226,12 +226,12 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
       <PageHeader title={club.name} />
 
       <div className="glass-card rounded-2xl p-4 mb-4">
-        <p className="text-[rgb(var(--gold))] text-sm font-bold">[{club.tag}]</p>
+        <p className="text-[rgb(var(--gold-ink))] text-sm font-bold">[{club.tag}]</p>
         {club.description && <p className="text-[rgb(var(--c4))] text-xs mt-1">{club.description}</p>}
       </div>
 
       {error && (
-        <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       <div className="flex gap-2 mb-4">
@@ -254,16 +254,16 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
           {sortedMembers.map((uid) => (
             <div key={uid} className="glass-card rounded-xl p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {uid === club.ownerUid && <Crown size={14} className="text-[rgb(var(--gold))]" />}
+                {uid === club.ownerUid && <Crown size={14} className="text-[rgb(var(--gold-ink))]" />}
                 <span className="text-[rgb(var(--text-primary))] text-sm">{club.memberNames[uid] || "Player"}</span>
                 {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("clubs_you")}</span>}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
-                  <Trophy size={10} className="text-[rgb(var(--gold))]" /> {club.memberTrophies[uid] ?? 0}
+                  <Trophy size={10} className="text-[rgb(var(--gold-ink))]" /> {club.memberTrophies[uid] ?? 0}
                 </span>
                 {isOwner && uid !== myUid && (
-                  <button onClick={() => handleKick(uid)} className="text-red-400 text-xs">
+                  <button onClick={() => handleKick(uid)} className="text-[rgb(var(--coral-ink))] text-xs">
                     {t("clubs_kick")}
                   </button>
                 )}
@@ -294,7 +294,7 @@ function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myNam
                         : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))]"
                     }`}
                   >
-                    {!mine && <p className="text-[10px] text-[rgb(var(--gold))] font-semibold mb-0.5">{m.senderName}</p>}
+                    {!mine && <p className="text-[10px] text-[rgb(var(--gold-ink))] font-semibold mb-0.5">{m.senderName}</p>}
                     {m.text}
                   </div>
                 </div>

@@ -30,7 +30,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
   const getRankIcon = () => {
     switch (rank) {
       case 1:
-        return <Crown size={18} className="text-[rgb(var(--gold))]" />;
+        return <Crown size={18} className="text-[rgb(var(--gold-ink))]" />;
       case 2:
         return <Medal size={18} className="text-[#C0C0C0]" />;
       case 3:
@@ -60,7 +60,7 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
       {/* Avatar */}
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] p-[1.5px]">
         <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
-          <span className="text-[rgb(var(--gold))] text-sm font-bold">
+          <span className="text-[rgb(var(--gold-ink))] text-sm font-bold">
             {entry.username.charAt(0).toUpperCase()}
           </span>
         </div>
@@ -72,14 +72,14 @@ export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowPr
           {entry.username}
         </p>
         {isCurrentUser && (
-          <span className="text-[9px] text-[rgb(var(--gold))] uppercase tracking-wider">You</span>
+          <span className="text-[9px] text-[rgb(var(--gold-ink))] uppercase tracking-wider">You</span>
         )}
       </div>
 
       {/* Trophies */}
       <div className="flex items-center gap-1.5">
-        <Trophy size={14} className={rank <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
-        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
+        <Trophy size={14} className={rank <= 3 ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
+        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c5))]"}`}>
           {entry.trophies.toLocaleString()}
         </span>
       </div>

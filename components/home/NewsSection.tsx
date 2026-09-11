@@ -8,9 +8,9 @@ import { NewsItem } from "@/types";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const typeColors = {
-  announcement: "text-[rgb(var(--gold))]",
+  announcement: "text-[rgb(var(--gold-ink))]",
   update: "text-[#3EB489]",
-  event: "text-[rgb(var(--gold-bright))]",
+  event: "text-[rgb(var(--gold-ink))]",
 };
 
 const typeLabels = {
@@ -40,12 +40,12 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
             {item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </span>
         </div>
-        <h4 className="text-[rgb(var(--text-primary))] text-sm font-medium truncate group-hover:text-[rgb(var(--gold))] transition-colors">
+        <h4 className="text-[rgb(var(--text-primary))] text-sm font-medium truncate group-hover:text-[rgb(var(--gold-ink))] transition-colors">
           {item.title}
         </h4>
         <p className="text-[rgb(var(--c4))] text-xs mt-0.5 line-clamp-1">{item.content}</p>
       </div>
-      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[rgb(var(--gold))] transition-colors mt-1 shrink-0" />
+      <ChevronRight size={16} className="text-[rgb(var(--c3))] group-hover:text-[rgb(var(--gold-ink))] transition-colors mt-1 shrink-0" />
     </motion.button>
   );
 }
@@ -62,7 +62,7 @@ export function NewsSection() {
       transition={{ type: "spring", stiffness: 420, damping: 34, delay: 0.25 }}
     >
       <div className="flex items-center gap-2 mb-3 px-1">
-        <Newspaper size={16} className="text-[rgb(var(--gold))]" />
+        <Newspaper size={16} className="text-[rgb(var(--gold-ink))]" />
         <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_newsUpdates")}</h3>
       </div>
 

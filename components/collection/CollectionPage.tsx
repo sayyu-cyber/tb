@@ -47,14 +47,14 @@ export default function CollectionPage() {
         <p className="text-[rgb(var(--c4))] text-sm mb-6">{t("collection_subtitle")}</p>
 
         {/* Overall Progress */}
-        <div className="bg-gradient-to-r from-neutral-900 to-black border border-amber-500/20 rounded-2xl p-6 mb-6">
+        <div className="bg-gradient-to-r from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/20%)] rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-amber-200">{t("collection_overallProgress")}</h2>
-            <span className="text-2xl font-bold text-amber-400">{percentage}%</span>
+            <h2 className="text-xl font-bold text-[rgb(var(--gold-ink))]">{t("collection_overallProgress")}</h2>
+            <span className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{percentage}%</span>
           </div>
           <div className="w-full bg-[rgb(var(--c3))] rounded-full h-3 overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"
+              className="h-full bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${percentage}%` }}
               transition={{ duration: 1 }}
@@ -71,13 +71,13 @@ export default function CollectionPage() {
               onClick={() => setActiveCategory(cat.key)}
               className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
                 activeCategory === cat.key
-                  ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))]'
-                  : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-amber-500/20'
+                  ? 'bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))]'
+                  : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-[rgb(var(--gold)/20%)]'
               }`}
             >
               <CategoryIcon category={cat.key} size={14} />
               {cat.label}
-              <span className={`ml-2 ${activeCategory === cat.key ? 'text-amber-200' : 'text-[rgb(var(--c3))]'}`}>
+              <span className={`ml-2 ${activeCategory === cat.key ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c3))]'}`}>
                 {cat.owned.length}/{cat.total}
               </span>
             </button>
@@ -96,8 +96,8 @@ export default function CollectionPage() {
                 className={`relative rounded-xl border p-3 transition-all ${
                   isOwned
                     ? isEquipped
-                      ? 'border-amber-500 bg-amber-900/20 ring-1 ring-amber-500/50'
-                      : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/40%)] hover:border-amber-500/30'
+                      ? 'border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)] ring-1 ring-[rgb(var(--gold)/50%)]'
+                      : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/40%)] hover:border-[rgb(var(--gold)/30%)]'
                     : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/20%)] opacity-50'
                 }`}
                 whileHover={isOwned ? { y: -2 } : {}}
@@ -126,14 +126,14 @@ export default function CollectionPage() {
                       {item.rarity}
                     </span>
                     {isEquipped && (
-                      <span className="text-amber-400 text-xs font-bold">{t("collection_equipped")}</span>
+                      <span className="text-[rgb(var(--gold-ink))] text-xs font-bold">{t("collection_equipped")}</span>
                     )}
                   </div>
                 )}
 
                 {isOwned && !isEquipped && (
                   <motion.button
-                    className="w-full mt-2 py-1.5 rounded-lg bg-[rgb(var(--c3))] text-[rgb(var(--c5))] text-xs font-bold hover:bg-amber-900/30 hover:text-amber-300 transition-all"
+                    className="w-full mt-2 py-1.5 rounded-lg bg-[rgb(var(--c3))] text-[rgb(var(--c5))] text-xs font-bold hover:bg-[rgb(var(--gold)/15%)] hover:text-[rgb(var(--gold-ink))] transition-all"
                     onClick={() => equipCosmetic(activeCategory, item.id)}
                     whileTap={{ scale: 0.95 }}
                   >

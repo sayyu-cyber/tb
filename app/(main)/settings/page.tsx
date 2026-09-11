@@ -36,7 +36,7 @@ export default function SettingsPage() {
         className="flex items-center gap-3"
       >
         <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
-          <Settings size={20} className="text-[rgb(var(--gold))]" />
+          <Settings size={20} className="text-[rgb(var(--gold-ink))]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("settings_title")}</h1>
@@ -117,7 +117,7 @@ export default function SettingsPage() {
                   }}
                   className={`py-2 rounded-xl text-sm font-medium transition-colors ${
                     settings.language === code
-                      ? "bg-[rgb(var(--gold)/15%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]"
+                      ? "bg-[rgb(var(--gold)/15%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]"
                       : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))]"
                   }`}
                 >
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={handleLogout}
-                  className="flex-1 py-3 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium border border-red-500/20"
+                  className="flex-1 py-3 rounded-xl bg-[rgb(var(--coral)/10%)] text-[rgb(var(--coral-ink))] text-sm font-medium border border-[rgb(var(--coral)/20%)]"
                 >
                   {t("settings_logout")}
                 </motion.button>
@@ -207,7 +207,7 @@ export default function SettingsPage() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowLogoutConfirm(true)}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400 hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[rgb(var(--coral)/5%)] border border-[rgb(var(--coral)/10%)] text-[rgb(var(--coral-ink))] hover:bg-[rgb(var(--coral)/10%)] transition-colors"
             >
               <LogOut size={18} />
               <span className="text-sm font-medium">{t("settings_logout")}</span>

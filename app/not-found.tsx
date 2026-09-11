@@ -21,7 +21,7 @@ export default function NotFound() {
         className="w-full max-w-sm space-y-6"
       >
         <div className="w-16 h-16 rounded-full bg-[rgb(var(--gold)/10%)] border border-[rgb(var(--gold)/20%)] flex items-center justify-center mx-auto">
-          <SearchX size={28} className="text-[rgb(var(--gold))]" />
+          <SearchX size={28} className="text-[rgb(var(--gold-ink))]" />
         </div>
 
         <div className="space-y-2">

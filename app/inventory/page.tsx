@@ -86,7 +86,7 @@ export default function InventoryPage() {
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap ${
-                  category === cat.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
+                  category === cat.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
                 }`}
               >
                 <CategoryIcon category={cat.id} size={14} />
@@ -123,7 +123,7 @@ export default function InventoryPage() {
                       <button
                         onClick={() => equipCosmetic(item.category, item.id)}
                         className={`w-full py-1.5 rounded-lg text-xs font-semibold ${
-                          isEquipped ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
+                          isEquipped ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
                         }`}
                       >
                         {isEquipped ? t("collection_equipped") : t("collection_equip")}

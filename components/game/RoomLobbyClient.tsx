@@ -144,7 +144,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
         <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
+          <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
         </motion.button>
       </Link>
 
@@ -155,7 +155,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
         </div>
 
         {error && (
-          <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">{error}</p>
+          <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2">{error}</p>
         )}
 
         {mode === "choose" && (
@@ -199,7 +199,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
                     onClick={() => setMindiMode("team2v2")}
                     className={`py-2.5 rounded-lg text-sm font-medium border ${
                       mindiMode === "team2v2"
-                        ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold))] text-[rgb(var(--gold))]"
+                        ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold))] text-[rgb(var(--gold-ink))]"
                         : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
                     }`}
                   >
@@ -209,7 +209,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
                     onClick={() => setMindiMode("ffa1v1")}
                     className={`py-2.5 rounded-lg text-sm font-medium border ${
                       mindiMode === "ffa1v1"
-                        ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold))] text-[rgb(var(--gold))]"
+                        ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold))] text-[rgb(var(--gold-ink))]"
                         : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
                     }`}
                   >
@@ -384,7 +384,7 @@ function RoomLobby({
         <p className="text-[rgb(var(--text-primary))] font-semibold">
           {removedAs === "banned" ? t("roomlobby_bannedMsg") : t("roomlobby_removedMsg")}
         </p>
-        <Link href="/play" className="text-[rgb(var(--gold))] text-sm underline">
+        <Link href="/play" className="text-[rgb(var(--gold-ink))] text-sm underline">
           {t("roomlobby_backToPlay")}
         </Link>
       </div>
@@ -395,7 +395,7 @@ function RoomLobby({
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))]">{t("roomlobby_closed")}</p>
-        <Link href="/play" className="text-[rgb(var(--gold))] text-sm underline">
+        <Link href="/play" className="text-[rgb(var(--gold-ink))] text-sm underline">
           {t("roomlobby_backToPlay")}
         </Link>
       </div>
@@ -409,7 +409,7 @@ function RoomLobby({
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
+          <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
         </button>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{t("roomlobby_roomTitle").replace("{game}", gameType === "mindi" ? "Mindi" : "Gin Rummy")}</p>
         <div className="w-10" />
@@ -418,9 +418,9 @@ function RoomLobby({
       <div className="glass-card rounded-2xl p-5 mb-4 text-center">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("roomlobby_roomCode")}</p>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-3xl font-bold text-[rgb(var(--gold))] tracking-widest">{code}</span>
+          <span className="text-3xl font-bold text-[rgb(var(--gold-ink))] tracking-widest">{code}</span>
           <button aria-label={t("a11y_copyCode")} onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
+            {copied ? <Check size={16} className="text-[rgb(var(--lagoon-ink))]" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
           </button>
         </div>
         {room.password && (
@@ -431,7 +431,7 @@ function RoomLobby({
       </div>
 
       {error && (
-        <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       <div className="glass-card rounded-2xl p-4 mb-4 flex-1">
@@ -442,16 +442,16 @@ function RoomLobby({
           {room.players.map((uid) => (
             <div key={uid} className="flex items-center justify-between bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3">
               <div className="flex items-center gap-2">
-                {uid === room.ownerUid && <Crown size={14} className="text-[rgb(var(--gold))]" />}
+                {uid === room.ownerUid && <Crown size={14} className="text-[rgb(var(--gold-ink))]" />}
                 <span className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || t("profile_player")}</span>
                 {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("common_you")}</span>}
               </div>
               {isOwner && uid !== myUid && (
                 <div className="flex items-center gap-3">
-                  <button onClick={() => handleKick(uid)} className="text-orange-400 text-xs">
+                  <button onClick={() => handleKick(uid)} className="text-[rgb(var(--coral-ink))] text-xs">
                     {t("common_kick")}
                   </button>
-                  <button onClick={() => handleBan(uid)} className="text-red-400 text-xs">
+                  <button onClick={() => handleBan(uid)} className="text-[rgb(var(--coral-ink))] text-xs">
                     {t("common_ban")}
                   </button>
                 </div>
@@ -475,13 +475,13 @@ function RoomLobby({
             <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3">{t("roomlobby_teams")}</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[rgb(var(--gold))] text-xs font-bold mb-1">{t("roomlobby_teamA")}</p>
+                <p className="text-[rgb(var(--gold-ink))] text-xs font-bold mb-1">{t("roomlobby_teamA")}</p>
                 {teamA.map((uid) => (
                   <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || t("profile_player")}</p>
                 ))}
               </div>
               <div className="space-y-1">
-                <p className="text-[rgb(var(--gold))] text-xs font-bold mb-1">{t("roomlobby_teamB")}</p>
+                <p className="text-[rgb(var(--gold-ink))] text-xs font-bold mb-1">{t("roomlobby_teamB")}</p>
                 {teamB.map((uid) => (
                   <p key={uid} className="text-[rgb(var(--text-primary))] text-sm">{room.playerNames[uid] || t("profile_player")}</p>
                 ))}

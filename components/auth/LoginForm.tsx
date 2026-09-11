@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, Chrome, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { GoldButton } from "@/components/ui/GoldButton";
+import { Button } from "@/components/ui/Button";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export function LoginForm() {
@@ -69,7 +69,7 @@ export function LoginForm() {
       {/* Logo small */}
       <div className="flex justify-center mb-8">
         <div className="w-16 h-16">
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_10px_rgb(var(--gold)/40%)]">
             <defs>
               <linearGradient id="goldGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" style={{ stopColor: "rgb(var(--gold-bright))" }} />
@@ -102,7 +102,7 @@ export function LoginForm() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center"
+            className="mb-4 p-3 bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-xl text-[rgb(var(--coral-ink))] text-sm text-center"
           >
             {error}
           </motion.div>
@@ -117,7 +117,7 @@ export function LoginForm() {
         disabled={loading}
         className="w-full flex items-center justify-center gap-3 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[rgb(var(--c4))] text-[rgb(var(--text-primary))] rounded-xl py-3.5 mb-4 transition-colors disabled:opacity-50"
       >
-        <Chrome size={20} className="text-[rgb(var(--gold))]" />
+        <Chrome size={20} className="text-[rgb(var(--gold-ink))]" />
         <span className="text-sm font-medium">{t("login_continueGoogle")}</span>
       </motion.button>
 
@@ -179,15 +179,15 @@ export function LoginForm() {
             type="button"
             aria-label={showPassword ? t("a11y_hidePassword") : t("a11y_showPassword")}
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))] hover:text-[rgb(var(--gold))] transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgb(var(--c4))] hover:text-[rgb(var(--gold-ink))] transition-colors"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
 
-        <GoldButton type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
-          {loading ? t("login_loading") : mode === "login" ? t("login_signIn") : t("login_createAccountBtn")}
-        </GoldButton>
+        <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
+          {mode === "login" ? t("login_signIn") : t("login_createAccountBtn")}
+        </Button>
       </form>
 
       {/* Toggle mode */}
@@ -198,7 +198,7 @@ export function LoginForm() {
             setMode(mode === "login" ? "signup" : "login");
             setError("");
           }}
-          className="text-[rgb(var(--gold))] hover:text-[rgb(var(--gold-bright))] font-medium transition-colors"
+          className="text-[rgb(var(--gold-ink))] hover:text-[rgb(var(--gold-ink))] font-medium transition-colors"
         >
           {mode === "login" ? t("login_signUp") : t("login_signIn")}
         </button>
@@ -209,7 +209,7 @@ export function LoginForm() {
         <button
           onClick={handleGuestMode}
           disabled={loading}
-          className="w-full text-[rgb(var(--c4))] hover:text-[rgb(var(--gold))] text-sm font-medium transition-colors disabled:opacity-50"
+          className="w-full text-[rgb(var(--c4))] hover:text-[rgb(var(--gold-ink))] text-sm font-medium transition-colors disabled:opacity-50"
         >
           {t("login_continueAsGuest")}
         </button>

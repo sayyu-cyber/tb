@@ -18,7 +18,7 @@ export function SettingToggle({ icon: Icon, label, description, enabled, onChang
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
           enabled ? "bg-[rgb(var(--gold)/10%)]" : "bg-[rgb(var(--c2))]"
         }`}>
-          <Icon size={18} className={enabled ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
+          <Icon size={18} className={enabled ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
         </div>
         <div>
           <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{label}</p>

@@ -155,7 +155,7 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
                         whileTap={{ scale: 0.98 }}
                         className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/30%)] text-[rgb(var(--text-primary))] font-medium rounded-xl py-3 mt-2"
                       >
-                        <UsersRound size={16} className="text-[rgb(var(--gold))]" aria-hidden="true" />
+                        <UsersRound size={16} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
                         <span className="text-sm">{t("gamesel_ranked2v2")}</span>
                       </motion.button>
                     </Link>
@@ -178,7 +178,7 @@ export function GameSelectCard({ id, name, description, icon, color, players, in
                       whileTap={{ scale: 0.98 }}
                       className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
                     >
-                      <KeyRound size={16} className="text-[rgb(var(--orchid))]" aria-hidden="true" />
+                      <KeyRound size={16} className="text-[rgb(var(--orchid-ink))]" aria-hidden="true" />
                       <span className="text-sm">{t("gamesel_privateRoom")}</span>
                     </motion.button>
                   </Link>

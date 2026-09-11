@@ -40,6 +40,12 @@ export function LobbyScene({ className }: { className?: string }) {
           <stop offset="0%" stopColor="rgb(var(--lagoon))" stopOpacity="0.75" />
           <stop offset="100%" stopColor="rgb(var(--deep-dark))" stopOpacity="0.95" />
         </linearGradient>
+        {/* Sun's reflection on the water: bright at the horizon, fading as
+            it comes toward the viewer. */}
+        <linearGradient id="lobbyGlint" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgb(var(--gold-bright))" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="rgb(var(--gold))" stopOpacity="0" />
+        </linearGradient>
       </defs>
 
       {/* Sky */}
@@ -82,23 +88,48 @@ export function LobbyScene({ className }: { className?: string }) {
         />
       </g>
 
-      {/* Two floating suit glyphs, softly blurred - a card-table wink without
-          drawing an actual card over the scene. */}
-      <text x="90" y="90" fontSize="46" fill="rgb(var(--gold))" opacity="0.18" fontFamily="serif">♠</text>
-      <text x="700" y="240" fontSize="38" fill="rgb(var(--text-primary))" opacity="0.12" fontFamily="serif">♦</text>
+      {/* Four suit glyphs drifting at different rates - the card-game wink,
+          and the only motion in the scene. `lobby-drift` is defined in
+          globals.css, so the global prefers-reduced-motion rule stills it. */}
+      <g className="lobby-drift" style={{ animationDelay: "0s" }}>
+        <text x="88" y="92" fontSize="46" fill="rgb(var(--gold))" opacity="0.2" fontFamily="serif">♠</text>
+      </g>
+      <g className="lobby-drift" style={{ animationDelay: "-2.5s" }}>
+        <text x="300" y="66" fontSize="30" fill="rgb(var(--coral))" opacity="0.22" fontFamily="serif">♥</text>
+      </g>
+      <g className="lobby-drift" style={{ animationDelay: "-5s" }}>
+        <text x="470" y="104" fontSize="26" fill="rgb(var(--lagoon))" opacity="0.2" fontFamily="serif">♣</text>
+      </g>
+      <g className="lobby-drift" style={{ animationDelay: "-7.5s" }}>
+        <text x="726" y="72" fontSize="34" fill="rgb(var(--gold-bright))" opacity="0.18" fontFamily="serif">♦</text>
+      </g>
 
-      {/* Waves, far to near */}
+      {/* Waves, far to near, with the sun's glint laid between them. */}
+      <path d="M0 210 Q100 190 200 208 T400 206 T600 210 T800 204 V320 H0 Z" fill="url(#lobbyWaveFar)" />
+      <path d="M596 206 L644 206 L680 320 L560 320 Z" fill="url(#lobbyGlint)" />
+      <path d="M0 246 Q120 224 240 244 T480 242 T720 246 T800 240 V320 H0 Z" fill="url(#lobbyWaveNear)" />
+
+      {/* Crests catching the last light. */}
       <path
-        d="M0 210 Q100 190 200 208 T400 206 T600 210 T800 204 V320 H0 Z"
-        fill="url(#lobbyWaveFar)"
+        d="M0 246 Q120 224 240 244 T480 242 T720 246 T800 240"
+        fill="none"
+        stroke="rgb(var(--lagoon))"
+        strokeOpacity="0.5"
+        strokeWidth="2"
       />
       <path
-        d="M0 246 Q120 224 240 244 T480 242 T720 246 T800 240 V320 H0 Z"
-        fill="url(#lobbyWaveNear)"
+        d="M0 278 Q140 262 280 278 T560 276 T800 280"
+        fill="none"
+        stroke="rgb(var(--gold))"
+        strokeOpacity="0.16"
+        strokeWidth="2"
       />
 
-      {/* Bottom fade so foreground UI text stays legible over the water. */}
-      <rect x="0" y="230" width="800" height="90" fill="rgb(var(--c1))" opacity="0.35" />
+      {/* Bottom fade so foreground UI text stays legible over the water.
+          Deliberately a fixed deep tone, not `--c1`: the hero always carries
+          white text, so in light theme a `--c1` wash would have gone nearly
+          white and taken the contrast with it. */}
+      <rect x="0" y="225" width="800" height="95" fill="rgb(var(--deep-dark))" opacity="0.45" />
     </svg>
   );
 }

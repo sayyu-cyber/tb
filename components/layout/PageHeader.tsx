@@ -13,11 +13,11 @@ export function PageHeader({ title }: { title: string }) {
       <button
         aria-label={t("a11y_goBack")}
         onClick={() => router.push("/home")}
-        className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/20%)] text-[rgb(var(--gold))] hover:bg-[rgb(var(--gold)/10%)] transition-all"
+        className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] hover:bg-[rgb(var(--gold)/10%)] transition-all"
       >
         <ArrowLeft size={20} />
       </button>
-      <h1 className="text-xl font-bold text-[rgb(var(--gold))]">{title}</h1>
+      <h1 className="text-xl font-bold text-[rgb(var(--gold-ink))]">{title}</h1>
     </div>
   );
 }

@@ -31,11 +31,14 @@ export function Avatar({
   presetId,
   size = "md",
   active = false,
+  count,
 }: {
   name: string;
   presetId?: string;
   size?: keyof typeof AVATAR_SIZES;
   active?: boolean;
+  /** Cards in hand. Shown as a badge, the way seated players read a table. */
+  count?: number;
 }) {
   const preset = getAvatarPreset(presetId);
   const initial = (name || "?").trim().charAt(0).toUpperCase() || "?";
@@ -43,8 +46,10 @@ export function Avatar({
     <div className="relative shrink-0">
       {active && (
         <motion.span
-          className="absolute -inset-1 rounded-2xl bg-[rgb(var(--gold)/35%)] blur-[6px]"
-          animate={{ opacity: [0.5, 0.9, 0.5] }}
+          // Glow follows the table's accent rather than always being gold,
+          // so "it's their turn" reads as part of this game's colour.
+          className="absolute -inset-1 rounded-2xl bg-[rgb(var(--accent,var(--gold))/40%)] blur-[6px]"
+          animate={{ opacity: [0.45, 0.9, 0.45] }}
           transition={{ duration: 1.6, repeat: Infinity }}
           aria-hidden="true"
         />
@@ -54,11 +59,21 @@ export function Avatar({
           AVATAR_SIZES[size],
           "relative rounded-2xl flex items-center justify-center font-bold text-white bg-gradient-to-br shadow-[var(--shadow-sm)] border-2",
           preset.gradient,
-          active ? "border-[rgb(var(--gold))]" : "border-black/10"
+          active ? "border-[rgb(var(--accent,var(--gold)))]" : "border-black/20"
         )}
       >
         {initial}
       </div>
+      {count !== undefined && (
+        <span
+          className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full
+                     bg-[rgb(var(--c1))] border border-[rgb(var(--accent,var(--gold))/55%)]
+                     text-[10px] font-bold tabular-nums leading-none
+                     text-[rgb(var(--text-primary))] flex items-center justify-center"
+        >
+          {count}
+        </span>
+      )}
     </div>
   );
 }
@@ -103,13 +118,18 @@ export interface ArenaSeatData {
 /** A seated opponent: avatar + name above a fanned, face-down hand in their skin. */
 export function OpponentSeat({ seat, orientation = "row" }: { seat: ArenaSeatData; orientation?: "row" | "column" }) {
   return (
-    <div className={cn("flex items-center gap-2", orientation === "column" && "flex-col")}>
-      <Avatar name={seat.name} presetId={seat.avatarPreset} size="sm" active={seat.active} />
-      <div className={cn("flex flex-col", orientation === "column" && "items-center")}>
-        <span className={cn("text-[11px] font-semibold truncate max-w-[6rem]", seat.active ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]")}>
+    <div className={cn("flex items-center gap-2", orientation === "column" && "flex-col gap-1")}>
+      <Avatar name={seat.name} presetId={seat.avatarPreset} size="sm" active={seat.active} count={seat.cardCount} />
+      <div className={cn("flex flex-col min-w-0", orientation === "column" && "items-center")}>
+        <span
+          className={cn(
+            "text-[11px] font-semibold truncate max-w-[6rem]",
+            seat.active ? "text-[rgb(var(--accent,var(--gold)))]" : "text-[rgb(var(--c5))]"
+          )}
+        >
           {seat.name}
         </span>
-        <CardFan count={seat.cardCount} size="xs" cardBackId={seat.cardBackId} />
+        <CardFan count={seat.cardCount} size="xs" cardBackId={seat.cardBackId} hideOverflowCount />
       </div>
     </div>
   );
@@ -127,15 +147,20 @@ export function TableWell({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="relative w-full max-w-sm min-h-[8.5rem] rounded-[2.5rem] flex items-center justify-center flex-wrap gap-1 px-4 py-3
-                 bg-[rgb(var(--c1)/55%)] shadow-[inset_0_2px_18px_rgba(0,0,0,0.35)]"
+                 bg-[rgb(var(--c1)/55%)]
+                 shadow-[inset_0_2px_18px_rgba(0,0,0,0.38),inset_0_-1px_0_rgb(255_255_255/6%)]"
       style={{
         backgroundImage:
-          "radial-gradient(70% 70% at 50% 40%, rgb(var(--accent)/18%), transparent 75%)," +
+          "radial-gradient(70% 70% at 50% 38%, rgb(var(--accent)/22%), transparent 75%)," +
           "repeating-linear-gradient(45deg, rgb(var(--accent)/6%) 0 2px, transparent 2px 10px)",
       }}
     >
-      <div className="absolute inset-[6px] rounded-[inherit] border border-[rgb(var(--accent)/25%)]" />
-      {children}
+      {/* Two hairlines: an accent rim, and a lighter one just inside it, so
+          the well reads as a recess cut into the table rather than a panel
+          floating on top of it. */}
+      <div className="absolute inset-[6px] rounded-[inherit] border border-[rgb(var(--accent)/30%)] pointer-events-none" />
+      <div className="absolute inset-[7px] rounded-[inherit] border-t border-white/10 pointer-events-none" />
+      <div className="relative flex items-center justify-center flex-wrap gap-1">{children}</div>
     </div>
   );
 }
@@ -158,7 +183,7 @@ export function SelfRow({
     <div className="flex items-center justify-between px-1 mb-2">
       <div className="flex items-center gap-2">
         <Avatar name={name} presetId={avatarPreset} size="sm" active={active} />
-        <span className={cn("text-xs font-semibold", active ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]")}>{name}</span>
+        <span className={cn("text-xs font-semibold", active ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c5))]")}>{name}</span>
       </div>
       {trailing}
     </div>
@@ -189,12 +214,19 @@ export function ArenaFelt({ accent, children }: { accent: string; children: Reac
 export function ArenaTable({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex-1 flex flex-col mx-3 mb-3 rounded-[2rem] relative overflow-hidden
-                     bg-[rgb(var(--c2)/45%)] border border-[rgb(var(--accent)/20%)] shadow-[var(--shadow-lg)]">
+                     bg-[rgb(var(--c2)/45%)] border border-[rgb(var(--accent)/25%)] shadow-[var(--shadow-lg)]">
+      {/* Light pooling down from the top of the table... */}
       <div
-        className="absolute inset-0 opacity-40 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(90% 50% at 50% 0%, rgb(var(--accent)/14%), transparent 70%)" }}
+        className="absolute inset-0 opacity-50 pointer-events-none"
+        style={{ backgroundImage: "radial-gradient(90% 55% at 50% 0%, rgb(var(--accent)/16%), transparent 70%)" }}
       />
-      <div className="absolute inset-[3px] rounded-[inherit] border border-white/5 pointer-events-none" />
+      {/* ...and falling off at the edges, which is what stops a flat fill
+          from looking like a div and starts it looking like a surface. */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ backgroundImage: "radial-gradient(120% 80% at 50% 45%, transparent 55%, rgb(0 0 0/38%) 100%)" }}
+      />
+      <div className="absolute inset-[3px] rounded-[inherit] border-t border-white/10 pointer-events-none" />
       <div className="relative z-10 flex-1 flex flex-col px-3 py-4">{children}</div>
     </div>
   );

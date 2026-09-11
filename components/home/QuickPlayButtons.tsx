@@ -23,7 +23,7 @@ export function QuickPlayButtons() {
   return (
     <motion.div variants={riseIn}>
       <div className="mb-3 flex items-center gap-2 px-1">
-        <Sparkles size={15} className="text-[rgb(var(--gold))]" aria-hidden="true" />
+        <Sparkles size={15} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
         <h3 className="text-sm font-bold tracking-tight text-[rgb(var(--text-primary))]">{t("home_quickPlay")}</h3>
       </div>
 

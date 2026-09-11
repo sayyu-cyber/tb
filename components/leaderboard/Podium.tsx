@@ -55,7 +55,7 @@ export function Podium({ topThree }: PodiumProps) {
                   {player.username.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
+              <p className={`text-xs font-medium truncate max-w-[80px] ${isFirst ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c5))]"}`}>
                 {player.username}
               </p>
               <p className="text-[10px] text-[rgb(var(--c4))]">{player.trophies.toLocaleString()}</p>
@@ -69,15 +69,15 @@ export function Podium({ topThree }: PodiumProps) {
               className={`w-20 ${height} rounded-t-xl relative overflow-hidden`}
               style={{
                 background: isFirst
-                  ? "linear-gradient(180deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 100%)"
+                  ? "linear-gradient(180deg, rgb(var(--gold)/20%) 0%, rgb(var(--gold)/5%) 100%)"
                   : "linear-gradient(180deg, rgba(42,42,42,0.5) 0%, rgba(26,26,26,0.3) 100%)",
-                borderTop: isFirst ? "2px solid rgba(212,175,55,0.5)" : "1px solid rgba(58,58,58,0.3)",
+                borderTop: isFirst ? "2px solid rgb(var(--gold)/50%)" : "1px solid rgba(58,58,58,0.3)",
               }}
             >
               <div className="absolute inset-0 flex items-center justify-center">
                 <span
                   className={`text-2xl font-bold ${
-                    isFirst ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"
+                    isFirst ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"
                   }`}
                 >
                   {order}

@@ -103,7 +103,7 @@ export default function PostMatchPage() {
           transition={{ type: "spring", stiffness: 200 }}
           className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
             isVictory 
-              ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgba(212,175,55,0.3)]" 
+              ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]" 
               : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
           }`}
         >
@@ -119,17 +119,17 @@ export default function PostMatchPage() {
         </h1>
 
         {error && (
-          <p className="text-red-400 text-xs">{error}</p>
+          <p className="text-[rgb(var(--coral-ink))] text-xs">{error}</p>
         )}
 
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center justify-center gap-2 mb-4">
             {isVictory ? (
-              <TrendingUp size={20} className="text-green-400" />
+              <TrendingUp size={20} className="text-[rgb(var(--lagoon-ink))]" />
             ) : (
-              <TrendingDown size={20} className="text-red-400" />
+              <TrendingDown size={20} className="text-[rgb(var(--coral-ink))]" />
             )}
-            <span className={`text-2xl font-bold ${isVictory ? "text-green-400" : "text-red-400"}`}>
+            <span className={`text-2xl font-bold ${isVictory ? "text-[rgb(var(--lagoon-ink))]" : "text-[rgb(var(--coral-ink))]"}`}>
               {matchData.trophyChange > 0 ? "+" : ""}{matchData.trophyChange}
             </span>
           </div>
@@ -138,8 +138,8 @@ export default function PostMatchPage() {
             <span className="text-[rgb(var(--c4))]">{matchData.oldTrophies}</span>
             <div className="flex-1 h-px bg-[rgb(var(--c3))] mx-3" />
             <div className="flex items-center gap-1">
-              <Trophy size={14} className="text-[rgb(var(--gold))]" />
-              <span className="text-[rgb(var(--gold))] font-bold">{matchData.newTrophies}</span>
+              <Trophy size={14} className="text-[rgb(var(--gold-ink))]" />
+              <span className="text-[rgb(var(--gold-ink))] font-bold">{matchData.newTrophies}</span>
             </div>
           </div>
 
@@ -159,7 +159,7 @@ export default function PostMatchPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
             onClick={() => setShowPromotion(true)}
-            className="text-[rgb(var(--gold))] text-sm underline"
+            className="text-[rgb(var(--gold-ink))] text-sm underline"
           >
             View Promotion
           </motion.button>
@@ -234,7 +234,7 @@ function PromotionAnimation({ rank, onClose }: { rank: string; onClose: () => vo
           transition={{ duration: 2, repeat: Infinity }}
           className="text-6xl mb-4"
         >
-          <Crown size={48} className="text-[rgb(var(--gold))]" />
+          <Crown size={48} className="text-[rgb(var(--gold-ink))]" />
         </motion.div>
         <h2 className="text-3xl font-bold gold-text-gradient mb-2">PROMOTED!</h2>
         <p className="text-[rgb(var(--text-primary))] text-xl mb-6">{rank}</p>

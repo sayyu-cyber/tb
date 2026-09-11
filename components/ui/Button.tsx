@@ -38,8 +38,11 @@ const VARIANTS: Record<Variant, string> = {
   primary:
     "text-[#0C0E12] bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] " +
     "shadow-[0_2px_12px_-2px_rgb(var(--gold)/45%)] hover:brightness-110 active:brightness-95",
+  // Both gradient stops were the same colour, so this rendered as a flat
+  // fill while `primary` next to it had depth. Darkening the bottom stop
+  // gives it the same lit-from-above read.
   accent:
-    "text-[#0C0E12] bg-gradient-to-b from-[rgb(var(--accent))] to-[rgb(var(--accent))] " +
+    "text-[#0C0E12] bg-gradient-to-b from-[rgb(var(--accent))] to-[rgb(var(--accent)/72%)] " +
     "shadow-[0_2px_12px_-2px_rgb(var(--accent)/45%)] hover:brightness-110 active:brightness-95",
   secondary:
     "text-[rgb(var(--text-primary))] bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] " +
@@ -47,7 +50,7 @@ const VARIANTS: Record<Variant, string> = {
   ghost:
     "text-[rgb(var(--c5))] hover:text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c2))]",
   danger:
-    "text-[rgb(var(--coral))] bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] " +
+    "text-[rgb(var(--coral-ink))] bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] " +
     "hover:bg-[rgb(var(--coral)/18%)]",
 };
 

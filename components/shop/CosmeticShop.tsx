@@ -45,8 +45,8 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
     <motion.div
       className={`
         relative rounded-xl overflow-hidden border transition-all duration-300
-        ${isFeatured ? 'border-amber-500/40' : 'border-[rgb(var(--c3)/30%)]'}
-        ${isEquipped ? 'ring-2 ring-amber-500/50' : ''}
+        ${isFeatured ? 'border-[rgb(var(--gold)/40%)]' : 'border-[rgb(var(--c3)/30%)]'}
+        ${isEquipped ? 'ring-2 ring-[rgb(var(--gold)/50%)]' : ''}
       `}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
@@ -62,18 +62,18 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
       )}
 
       {item.isVipExclusive && (
-        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-[rgb(var(--orchid))] to-[rgb(var(--orchid)/80%)] text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-0.5 rounded-full">
           VIP
         </div>
       )}
 
       {isFeatured && (
-        <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-black text-xs font-bold px-2 py-0.5 rounded-full">
           FEATURED
         </div>
       )}
 
-      <div className="relative aspect-square bg-gradient-to-b from-neutral-800 to-neutral-900 flex items-center justify-center overflow-hidden">
+      <div className="relative aspect-square bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] flex items-center justify-center overflow-hidden">
         <CategoryIcon category={item.category} size={44} className="text-[rgb(var(--c4))] opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         
@@ -97,7 +97,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
             <motion.button
               className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${
                 isEquipped
-                  ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30'
+                  ? 'bg-[rgb(var(--gold)/25%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]'
                   : 'bg-[rgb(var(--c3))] text-[rgb(var(--c5))] hover:bg-[rgb(var(--c4))]'
               }`}
               onClick={onEquip}
@@ -107,7 +107,7 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
             </motion.button>
           ) : (
             <motion.button
-              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold text-sm hover:from-amber-500 hover:to-yellow-500 transition-all flex items-center justify-center gap-1.5"
+              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))] font-bold text-sm hover:from-[rgb(var(--gold))] hover:to-[rgb(var(--gold-bright))] transition-all flex items-center justify-center gap-1.5"
               onClick={onPurchase}
               whileTap={{ scale: 0.95 }}
             >
@@ -127,26 +127,26 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
     <motion.div
       className={`
         relative rounded-xl overflow-hidden border p-4
-        ${pack.isBestValue ? 'border-amber-500/50 bg-gradient-to-b from-amber-900/20 to-black' : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/60%)]'}
+        ${pack.isBestValue ? 'border-[rgb(var(--gold)/50%)] bg-gradient-to-b from-[rgb(var(--gold)/10%)] to-[rgb(var(--c1))]' : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/60%)]'}
       `}
       whileHover={{ y: -4, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
       {pack.isPopular && (
-        <div className="absolute top-0 right-0 bg-blue-500 text-[rgb(var(--text-primary))] text-xs font-bold px-3 py-1 rounded-bl-xl">
+        <div className="absolute top-0 right-0 bg-[rgb(var(--deep))] text-[rgb(var(--text-primary))] text-xs font-bold px-3 py-1 rounded-bl-xl">
           POPULAR
         </div>
       )}
       {pack.isBestValue && (
-        <div className="absolute top-0 right-0 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-bl-xl">
+        <div className="absolute top-0 right-0 bg-[rgb(var(--gold))] text-black text-xs font-bold px-3 py-1 rounded-bl-xl">
           BEST VALUE
         </div>
       )}
 
       <div className="text-center mb-4">
         <CoinIcon size={40} className="mx-auto mb-2" />
-        <h3 className="text-lg font-bold text-amber-200">{pack.name}</h3>
-        <p className="text-3xl font-bold text-amber-400 mt-1">{pack.coins.toLocaleString()}</p>
+        <h3 className="text-lg font-bold text-[rgb(var(--gold-ink))]">{pack.name}</h3>
+        <p className="text-3xl font-bold text-[rgb(var(--gold-ink))] mt-1">{pack.coins.toLocaleString()}</p>
         <p className="text-[rgb(var(--c4))] text-sm">Coins</p>
       </div>
 
@@ -156,7 +156,7 @@ function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurc
       </div>
 
       <motion.button
-        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] font-bold hover:from-amber-500 hover:to-yellow-500 transition-all border border-amber-400/20"
+        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))] font-bold hover:from-[rgb(var(--gold))] hover:to-[rgb(var(--gold-bright))] transition-all border border-[rgb(var(--gold)/20%)]"
         onClick={onPurchase}
         whileTap={{ scale: 0.95 }}
       >
@@ -276,7 +276,7 @@ export default function CosmeticShop() {
     <div className="w-full max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-amber-300">{t('shop_headerTitle')}</h1>
+          <h1 className="text-3xl font-bold text-[rgb(var(--gold-ink))]">{t('shop_headerTitle')}</h1>
           <p className="text-[rgb(var(--c4))] text-sm">{t('shop_headerSubtitle')}</p>
         </div>
         <CoinBalance size="lg" />
@@ -294,8 +294,8 @@ export default function CosmeticShop() {
             className={`
               px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all
               ${activeTab === tab.id
-                ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-[rgb(var(--text-primary))] shadow-lg shadow-amber-500/20'
-                : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-amber-500/20'
+                ? 'bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))] shadow-lg shadow-[rgb(var(--gold)/20%)]'
+                : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-[rgb(var(--gold)/20%)]'
               }
             `}
             onClick={() => setActiveTab(tab.id as any)}
@@ -315,16 +315,16 @@ export default function CosmeticShop() {
             exit={{ opacity: 0, y: -20 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-amber-200">{t('shop_weeklyFeatured')}</h2>
-              <div className="flex items-center gap-2 bg-[rgb(var(--c2)/60%)] rounded-full px-4 py-1.5 border border-amber-500/20">
-                <span className="text-amber-400 text-sm">⏰</span>
-                <span className="text-amber-200 text-sm font-mono">{timeLeft}</span>
+              <h2 className="text-xl font-bold text-[rgb(var(--gold-ink))]">{t('shop_weeklyFeatured')}</h2>
+              <div className="flex items-center gap-2 bg-[rgb(var(--c2)/60%)] rounded-full px-4 py-1.5 border border-[rgb(var(--gold)/20%)]">
+                <span className="text-[rgb(var(--gold-ink))] text-sm">⏰</span>
+                <span className="text-[rgb(var(--gold-ink))] text-sm font-mono">{timeLeft}</span>
               </div>
             </div>
 
             {state.profile.vip.active && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-purple-900/30 to-violet-900/30 rounded-xl border border-purple-500/20">
-                <p className="text-purple-300 text-sm font-medium flex items-center gap-1.5">
+              <div className="mb-4 p-3 bg-gradient-to-r from-[rgb(var(--orchid)/15%)] to-[rgb(var(--orchid)/15%)] rounded-xl border border-[rgb(var(--orchid)/20%)]">
+                <p className="text-[rgb(var(--orchid-ink))] text-sm font-medium flex items-center gap-1.5">
                   <Crown size={14} aria-hidden="true" /> VIP Exclusive: +1 Featured cosmetic available
                 </p>
               </div>
@@ -361,7 +361,7 @@ export default function CosmeticShop() {
                   className={`
                     px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap
                     ${selectedCategory === cat.id
-                      ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30'
+                      ? 'bg-[rgb(var(--gold)/25%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]'
                       : 'bg-[rgb(var(--c3))] text-[rgb(var(--c4))] border border-[rgb(var(--c3)/30%)] hover:text-[rgb(var(--c5))]'
                     }
                   `}
@@ -397,8 +397,8 @@ export default function CosmeticShop() {
             exit={{ opacity: 0, y: -20 }}
           >
             {pendingTopup && (
-              <div className="mb-4 p-3 bg-amber-900/20 rounded-xl border border-amber-500/20">
-                <p className="text-amber-300 text-sm">
+              <div className="mb-4 p-3 bg-[rgb(var(--gold)/10%)] rounded-xl border border-[rgb(var(--gold)/20%)]">
+                <p className="text-[rgb(var(--gold-ink))] text-sm">
                   ⏳ Your {pendingTopup.packName} top-up ({pendingTopup.coins.toLocaleString()} coins) is pending admin approval.
                 </p>
               </div>
@@ -420,12 +420,12 @@ export default function CosmeticShop() {
           >
             <div className="max-w-lg mx-auto">
               <motion.div
-                className="bg-gradient-to-b from-purple-900/30 to-black border border-purple-500/30 rounded-2xl p-8 text-center relative overflow-hidden"
+                className="bg-gradient-to-b from-[rgb(var(--orchid)/15%)] to-[rgb(var(--c1))] border border-[rgb(var(--orchid)/30%)] rounded-2xl p-8 text-center relative overflow-hidden"
                 whileHover={{ scale: 1.01 }}
               >
                 <div className="absolute inset-0 opacity-10">
                   <motion.div
-                    className="absolute w-64 h-64 rounded-full bg-purple-500 blur-3xl"
+                    className="absolute w-64 h-64 rounded-full bg-[rgb(var(--orchid))] blur-3xl"
                     animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
                     transition={{ repeat: Infinity, duration: 8 }}
                   />
@@ -437,10 +437,10 @@ export default function CosmeticShop() {
                     animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 4 }}
                   >
-                    <Crown size={56} className="mx-auto text-[rgb(var(--orchid))]" />
+                    <Crown size={56} className="mx-auto text-[rgb(var(--orchid-ink))]" />
                   </motion.div>
-                  <h2 className="text-3xl font-bold text-purple-300 mb-2">{t('vip_pass')}</h2>
-                  <p className="text-purple-200/60 mb-6">{VIP_PLANS.find(p => p.id === selectedVipPlan)?.sub}</p>
+                  <h2 className="text-3xl font-bold text-[rgb(var(--orchid-ink))] mb-2">{t('vip_pass')}</h2>
+                  <p className="text-[rgb(var(--orchid-ink)/70%)] mb-6">{VIP_PLANS.find(p => p.id === selectedVipPlan)?.sub}</p>
 
                   <div className="grid grid-cols-2 gap-3 mb-6">
                     {VIP_PLANS.map((plan) => (
@@ -449,20 +449,20 @@ export default function CosmeticShop() {
                         onClick={() => setSelectedVipPlan(plan.id)}
                         className={`relative rounded-xl border p-4 text-left transition-all ${
                           selectedVipPlan === plan.id
-                            ? 'border-purple-400 bg-purple-900/30'
+                            ? 'border-[rgb(var(--orchid))] bg-[rgb(var(--orchid)/15%)]'
                             : 'border-[rgb(var(--c3)/40%)] bg-[rgb(var(--c2)/40%)]'
                         }`}
                       >
                         {plan.savingsNote && (
-                          <span className="absolute -top-2 right-2 bg-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          <span className="absolute -top-2 right-2 bg-[rgb(var(--gold))] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
                             SAVE
                           </span>
                         )}
-                        <p className="text-purple-200 text-sm font-bold">{plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')}</p>
+                        <p className="text-[rgb(var(--orchid-ink))] text-sm font-bold">{plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')}</p>
                         <p className="text-2xl font-bold text-[rgb(var(--text-primary))] mt-1">
-                          MVR <span className="text-purple-400">{plan.priceMVR}</span>
+                          MVR <span className="text-[rgb(var(--orchid-ink))]">{plan.priceMVR}</span>
                         </p>
-                        {plan.savingsNote && <p className="text-amber-400 text-[11px] mt-1">{plan.savingsNote}</p>}
+                        {plan.savingsNote && <p className="text-[rgb(var(--gold-ink))] text-[11px] mt-1">{plan.savingsNote}</p>}
                       </button>
                     ))}
                   </div>
@@ -483,14 +483,14 @@ export default function CosmeticShop() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
                       >
-                        <span className="text-purple-400">✓</span>
+                        <span className="text-[rgb(var(--orchid-ink))]">✓</span>
                         {benefit}
                       </motion.li>
                     ))}
                   </ul>
 
                   <motion.button
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] font-bold text-lg hover:from-purple-500 hover:to-violet-500 transition-all border border-purple-400/30"
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--orchid))] to-[rgb(var(--orchid)/80%)] text-[rgb(var(--text-primary))] font-bold text-lg hover:from-[rgb(var(--orchid))] hover:to-[rgb(var(--orchid)/80%)] transition-all border border-[rgb(var(--orchid)/30%)]"
                     onClick={() => {
                       const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
                       activateVip(plan.days);
@@ -510,11 +510,11 @@ export default function CosmeticShop() {
 
                   {state.profile.vip.active && (
                     <motion.div
-                      className="mt-4 p-3 bg-green-900/30 rounded-xl border border-green-500/20"
+                      className="mt-4 p-3 bg-[rgb(var(--lagoon)/15%)] rounded-xl border border-[rgb(var(--lagoon)/20%)]"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
-                      <p className="text-green-300 text-sm">
+                      <p className="text-[rgb(var(--lagoon-ink))] text-sm">
                         {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
                       </p>
                     </motion.div>

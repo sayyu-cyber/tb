@@ -23,14 +23,14 @@ export default function AchievementsPage() {
       >
         <div className="flex items-center justify-between mb-6">
           <p className="text-[rgb(var(--c4))] text-sm">{t("achievements_subtitle")}</p>
-          <span className="text-amber-400 font-bold text-lg shrink-0 ml-3">
+          <span className="text-[rgb(var(--gold-ink))] font-bold text-lg shrink-0 ml-3">
             {unlockedCount}/{totalCount}
           </span>
         </div>
 
         <div className="w-full bg-[rgb(var(--c3))] rounded-full h-2 mb-6 overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"
+            className="h-full bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${(unlockedCount / totalCount) * 100}%` }}
             transition={{ duration: 1 }}
@@ -43,7 +43,7 @@ export default function AchievementsPage() {
               key={ach.id}
               className={`rounded-xl p-4 border flex items-center gap-4 ${
                 ach.unlocked
-                  ? 'bg-gradient-to-r from-amber-900/20 to-yellow-900/20 border-amber-500/30'
+                  ? 'bg-gradient-to-r from-[rgb(var(--gold)/10%)] to-[rgb(var(--gold-deep)/15%)] border-[rgb(var(--gold)/30%)]'
                   : 'bg-[rgb(var(--c2)/40%)] border-[rgb(var(--c3)/20%)] opacity-60'
               }`}
               initial={{ opacity: 0, x: -20 }}
@@ -52,7 +52,7 @@ export default function AchievementsPage() {
             >
               <div className="text-3xl">{ach.unlocked ? ach.icon : '🔒'}</div>
               <div className="flex-1">
-                <h3 className={`font-bold ${ach.unlocked ? 'text-amber-200' : 'text-[rgb(var(--c4))]'}`}>
+                <h3 className={`font-bold ${ach.unlocked ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c4))]'}`}>
                   {ach.title}
                 </h3>
                 <p className="text-[rgb(var(--c4))] text-sm">{ach.description}</p>
@@ -66,13 +66,13 @@ export default function AchievementsPage() {
                 )}
               </div>
               <div className="text-right">
-                <div className="flex items-center gap-1 text-amber-400">
+                <div className="flex items-center gap-1 text-[rgb(var(--gold-ink))]">
                   <CoinIcon size={14} />
                   <span className="font-bold">{ach.reward}</span>
                 </div>
                 {ach.unlocked && (
                   <motion.span
-                    className="text-green-400 text-xs font-bold"
+                    className="text-[rgb(var(--lagoon-ink))] text-xs font-bold"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                   >

@@ -32,17 +32,17 @@ export default function DailyLoginCalendar() {
   return (
     <div className="w-full max-w-lg mx-auto">
       <motion.div
-        className="bg-gradient-to-b from-neutral-900 to-black border border-amber-500/20 rounded-2xl p-6"
+        className="bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/20%)] rounded-2xl p-6"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 420, damping: 34 }}
       >
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-amber-300">{t('rewards_title')}</h2>
+          <h2 className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{t('rewards_title')}</h2>
           <p className="text-[rgb(var(--c5))] text-sm mt-1">{t('rewards_subtitle')}</p>
-          <div className="mt-2 inline-flex items-center gap-2 bg-amber-900/30 rounded-full px-3 py-1">
-            <Flame size={16} className="text-[rgb(var(--coral))]" />
-            <span className="text-amber-200 text-sm font-medium">{t('rewards_streak').replace('{n}', String(dailyLogin.streak))}</span>
+          <div className="mt-2 inline-flex items-center gap-2 bg-[rgb(var(--gold)/15%)] rounded-full px-3 py-1">
+            <Flame size={16} className="text-[rgb(var(--coral-ink))]" />
+            <span className="text-[rgb(var(--gold-ink))] text-sm font-medium">{t('rewards_streak').replace('{n}', String(dailyLogin.streak))}</span>
           </div>
         </div>
 
@@ -60,9 +60,9 @@ export default function DailyLoginCalendar() {
                   relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1
                   border transition-all duration-300
                   ${isClaimed
-                    ? 'bg-amber-900/20 border-amber-500/10 opacity-60'
+                    ? 'bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold)/10%)] opacity-60'
                     : isNext
-                    ? 'bg-gradient-to-b from-amber-800/40 to-amber-900/40 border-amber-400/60 shadow-lg shadow-amber-500/20 cursor-pointer hover:shadow-amber-500/40'
+                    ? 'bg-gradient-to-b from-[rgb(var(--gold-deep)/40%)] to-[rgb(var(--gold-deep)/25%)] border-[rgb(var(--gold)/60%)] shadow-lg shadow-[rgb(var(--gold)/20%)] cursor-pointer hover:shadow-[rgb(var(--gold)/40%)]'
                     : 'bg-[rgb(var(--c3)/50%)] border-[rgb(var(--c3)/30%)] opacity-50'
                   }
                 `}
@@ -73,23 +73,23 @@ export default function DailyLoginCalendar() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <span className={`text-xs font-bold ${isClaimed ? 'text-amber-600' : isNext ? 'text-amber-300' : 'text-[rgb(var(--c4))]'}`}>
+                <span className={`text-xs font-bold ${isClaimed ? 'text-[rgb(var(--gold-ink))]' : isNext ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c4))]'}`}>
                   {t('rewards_day').replace('{n}', String(day))}
                 </span>
                 {isClaimed ? <Check size={16} strokeWidth={3} /> : day === 7 ? <Gift size={16} /> : <CoinIcon size={16} />}
-                <span className={`text-xs font-semibold ${isClaimed ? 'text-amber-700' : isNext ? 'text-amber-200' : 'text-[rgb(var(--c3))]'}`}>
+                <span className={`text-xs font-semibold ${isClaimed ? 'text-[rgb(var(--gold-ink))]' : isNext ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c3))]'}`}>
                   {reward.coins}
                 </span>
                 {day === 7 && !isClaimed && (
                   <motion.div
-                    className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                    className="absolute -top-1 -right-1 w-3 h-3 bg-[rgb(var(--coral))] rounded-full"
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ repeat: Infinity, duration: 1.5 }}
                   />
                 )}
                 {isNext && !isClaimed && (
                   <motion.div
-                    className="absolute inset-0 rounded-xl border-2 border-amber-400/50"
+                    className="absolute inset-0 rounded-xl border-2 border-[rgb(var(--gold)/50%)]"
                     animate={{ opacity: [0.3, 0.8, 0.3] }}
                     transition={{ repeat: Infinity, duration: 2 }}
                   />
@@ -102,7 +102,7 @@ export default function DailyLoginCalendar() {
         <div className="mt-4 text-center">
           <div className="w-full bg-[rgb(var(--c3))] rounded-full h-2 overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full"
+              className="h-full bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${(dailyLogin.rewards.filter(r => r.claimed).length / 7) * 100}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -123,7 +123,7 @@ export default function DailyLoginCalendar() {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-gradient-to-b from-neutral-900 to-black border border-amber-500/30 rounded-2xl p-8 text-center max-w-sm mx-4"
+              className="bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/30%)] rounded-2xl p-8 text-center max-w-sm mx-4"
               initial={{ scale: 0.5, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0.5, rotate: 10 }}
@@ -136,12 +136,12 @@ export default function DailyLoginCalendar() {
               >
                 🎉
               </motion.div>
-              <h3 className="text-2xl font-bold text-amber-300 mb-2">{t('rewards_dayClaimed').replace('{n}', String(claimedDay))}</h3>
-              <p className="text-amber-100 text-lg font-semibold">
+              <h3 className="text-2xl font-bold text-[rgb(var(--gold-ink))] mb-2">{t('rewards_dayClaimed').replace('{n}', String(claimedDay))}</h3>
+              <p className="text-[rgb(var(--gold-ink))] text-lg font-semibold">
                 +{DAILY_LOGIN_REWARDS[claimedDay - 1].coins} Coins
               </p>
               {DAILY_LOGIN_REWARDS[claimedDay - 1].bonusItem && (
-                <p className="text-amber-400 text-sm mt-1">
+                <p className="text-[rgb(var(--gold-ink))] text-sm mt-1">
                   {t('rewards_roomCardBonus')}
                 </p>
               )}

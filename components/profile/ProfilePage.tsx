@@ -41,15 +41,15 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Profile Header */}
-        <div className="bg-gradient-to-b from-neutral-900 to-black border border-amber-500/20 rounded-2xl p-6 mb-6">
+        <div className="bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/20%)] rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-600 to-yellow-600 flex items-center justify-center text-4xl border-2 border-amber-400/30">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] flex items-center justify-center text-4xl border-2 border-[rgb(var(--gold)/30%)]">
                 {profile.avatar}
               </div>
               {profile.vip.active && (
                 <motion.div
-                  className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-violet-600 text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-1 rounded-full border border-purple-400/30"
+                  className="absolute -top-1 -right-1 bg-gradient-to-r from-[rgb(var(--orchid))] to-[rgb(var(--orchid)/80%)] text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-1 rounded-full border border-[rgb(var(--orchid)/30%)]"
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ repeat: Infinity, duration: 2 }}
                 >
@@ -58,8 +58,8 @@ export default function ProfilePage() {
               )}
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-amber-200">{profile.displayName}</h1>
-              <p className="text-amber-400/60 font-medium">{profile.title}</p>
+              <h1 className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{profile.displayName}</h1>
+              <p className="text-[rgb(var(--gold-ink)/60%)] font-medium">{profile.title}</p>
               <div className="flex items-center gap-3 mt-2">
                 <CoinBalance size="md" />
                 <span className="text-[rgb(var(--c5))] text-sm">🏆 {profile.trophies} Trophies</span>
@@ -73,15 +73,15 @@ export default function ProfilePage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mt-6">
             <div className="bg-[rgb(var(--c2)/60%)] rounded-xl p-3 text-center border border-[rgb(var(--c3)/20%)]">
-              <div className="text-2xl font-bold text-amber-300">{profile.stats.matchesPlayed}</div>
+              <div className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{profile.stats.matchesPlayed}</div>
               <div className="text-[rgb(var(--c4))] text-xs">Matches Played</div>
             </div>
             <div className="bg-[rgb(var(--c2)/60%)] rounded-xl p-3 text-center border border-[rgb(var(--c3)/20%)]">
-              <div className="text-2xl font-bold text-green-400">{profile.stats.matchesWon}</div>
+              <div className="text-2xl font-bold text-[rgb(var(--lagoon-ink))]">{profile.stats.matchesWon}</div>
               <div className="text-[rgb(var(--c4))] text-xs">Wins</div>
             </div>
             <div className="bg-[rgb(var(--c2)/60%)] rounded-xl p-3 text-center border border-[rgb(var(--c3)/20%)]">
-              <div className="text-2xl font-bold text-amber-400">{profile.stats.winRate}%</div>
+              <div className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{profile.stats.winRate}%</div>
               <div className="text-[rgb(var(--c4))] text-xs">Win Rate</div>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function ProfilePage() {
         {/* VIP Status */}
         {profile.vip.active && (
           <motion.div
-            className="bg-gradient-to-r from-purple-900/30 to-violet-900/30 border border-purple-500/30 rounded-xl p-4 mb-6"
+            className="bg-gradient-to-r from-[rgb(var(--orchid)/15%)] to-[rgb(var(--orchid)/15%)] border border-[rgb(var(--orchid)/30%)] rounded-xl p-4 mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -98,11 +98,11 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <Crown size={14} className="text-2xl" />
                 <div>
-                  <h3 className="text-purple-300 font-bold">VIP Active</h3>
-                  <p className="text-purple-200/60 text-sm">{profile.vip.remainingDays} days remaining</p>
+                  <h3 className="text-[rgb(var(--orchid-ink))] font-bold">VIP Active</h3>
+                  <p className="text-[rgb(var(--orchid-ink)/70%)] text-sm">{profile.vip.remainingDays} days remaining</p>
                 </div>
               </div>
-              <div className="text-purple-400 text-sm font-bold">
+              <div className="text-[rgb(var(--orchid-ink))] text-sm font-bold">
                 Expires: {new Date(profile.vip.expiresAt).toLocaleDateString()}
               </div>
             </div>
@@ -117,7 +117,7 @@ export default function ProfilePage() {
               {activeRoomCards.map(card => (
                 <div
                   key={card.id}
-                  className="px-3 py-1.5 rounded-lg text-sm bg-green-900/30 text-green-300 border border-green-500/20"
+                  className="px-3 py-1.5 rounded-lg text-sm bg-[rgb(var(--lagoon)/15%)] text-[rgb(var(--lagoon-ink))] border border-[rgb(var(--lagoon)/20%)]"
                 >
                   {card.type === '1h' ? '1-Hour' : '24-Hour'} Active
                   {card.remainingTime && (
@@ -141,7 +141,7 @@ export default function ProfilePage() {
 
         {/* Equip Section */}
         <div className="bg-[rgb(var(--c2)/60%)] border border-[rgb(var(--c3)/30%)] rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-amber-200 mb-4">Equip Cosmetics</h2>
+          <h2 className="text-xl font-bold text-[rgb(var(--gold-ink))] mb-4">Equip Cosmetics</h2>
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
             {equipTabs.map(tab => (
               <button
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveEquipTab(tab.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                   activeEquipTab === tab.id
-                    ? 'bg-amber-600/30 text-amber-300 border border-amber-500/30'
+                    ? 'bg-[rgb(var(--gold)/25%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]'
                     : 'bg-[rgb(var(--c3))] text-[rgb(var(--c4))] hover:text-[rgb(var(--c5))]'
                 }`}
               >
@@ -168,8 +168,8 @@ export default function ProfilePage() {
                   onClick={() => equipCosmetic(activeEquipTab, item.id)}
                   className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
                     isEquipped
-                      ? 'border-amber-500 bg-amber-900/20'
-                      : 'border-[rgb(var(--c3))] hover:border-amber-500/30'
+                      ? 'border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]'
+                      : 'border-[rgb(var(--c3))] hover:border-[rgb(var(--gold)/30%)]'
                   }`}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                   </span>
                   <span className="text-xs text-[rgb(var(--c5))] truncate w-full text-center px-1">{item.name}</span>
                   {isEquipped && (
-                    <span className="text-amber-400 text-xs font-bold">Equipped</span>
+                    <span className="text-[rgb(var(--gold-ink))] text-xs font-bold">Equipped</span>
                   )}
                 </motion.button>
               );

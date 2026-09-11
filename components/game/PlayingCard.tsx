@@ -197,22 +197,32 @@ export function CardFan({
   size = "sm",
   cardBackId,
   className,
+  hideOverflowCount = false,
 }: {
   count: number;
   size?: keyof typeof SIZES;
   cardBackId?: string;
   className?: string;
+  /** Suppresses the "+N" tail, for callers that already show the count
+   *  elsewhere (the seat avatar's badge) and would otherwise say it twice. */
+  hideOverflowCount?: boolean;
 }) {
   const shown = Math.min(count, 6);
   const overlap = size === "xs" ? "-ml-4" : size === "sm" ? "-ml-6" : "-ml-8";
   return (
     <div className={cn("flex items-center", className)} aria-label={`${count} cards`}>
       {Array.from({ length: shown }).map((_, i) => (
-        <div key={i} className={i === 0 ? "" : overlap} style={{ zIndex: i }}>
+        <div
+          key={i}
+          className={i === 0 ? "" : overlap}
+          // Slight per-card tilt so a hand reads as held cards rather than a
+          // flat stack of rectangles.
+          style={{ zIndex: i, transform: `rotate(${(i - (shown - 1) / 2) * 3}deg)` }}
+        >
           <PlayingCard rank="" suit="spades" size={size} faceDown cardBackId={cardBackId} />
         </div>
       ))}
-      {count > shown && (
+      {count > shown && !hideOverflowCount && (
         <span className="ml-2 text-[10px] font-semibold tabular-nums text-[rgb(var(--c4))]">+{count - shown}</span>
       )}
     </div>

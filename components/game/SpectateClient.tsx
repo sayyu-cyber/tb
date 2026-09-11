@@ -1,19 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Eye, Trophy } from "lucide-react";
+import { ArrowLeft, Eye } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { watchMatch, MatchDoc } from "@/lib/matchmaking";
-import { getPublicProfile } from "@/lib/publicProfile";
-import { SUIT_SYMBOLS, SUIT_COLOR, rankLabel, cardId, teamOf, SeatIndex } from "@/lib/mindiEngine";
-import {
-  SUIT_SYMBOLS as GIN_SUIT_SYMBOLS,
-  SUIT_COLOR as GIN_SUIT_COLOR,
-  rankLabel as ginRankLabel,
-} from "@/lib/ginRummyEngine";
+import { getPublicProfile, PublicProfile } from "@/lib/publicProfile";
+import { SUIT_SYMBOLS, SUIT_COLOR, rankLabel, cardId } from "@/lib/mindiEngine";
+import { rankLabel as ginRankLabel } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, ArenaSeatData } from "@/components/game/GameArena";
 
 /**
  * Read-only Spectator Mode view. Deliberately never renders the contents of
@@ -23,10 +22,13 @@ import { useTranslation } from "@/hooks/useTranslation";
  * firestore.rules) technically contains full hands. This mirrors the same
  * "the UI hides it even though the raw doc has it" trust model already
  * accepted for players' own opponents.
+ *
+ * Uses the same arena shell as the players' own tables, so watching a match
+ * looks like the game rather than a separate debug screen.
  */
 export function SpectateClient({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchDoc<unknown> | null>(null);
-  const [names, setNames] = useState<Record<string, string>>({});
+  const [profiles, setProfiles] = useState<Record<string, PublicProfile>>({});
   const t = useTranslation();
 
   useEffect(() => {
@@ -36,10 +38,14 @@ export function SpectateClient({ matchId }: { matchId: string }) {
 
   useEffect(() => {
     if (!match) return;
-    const missing = match.players.filter((uid) => !(uid in names));
+    const missing = match.players.filter((uid) => !(uid in profiles));
     if (missing.length === 0) return;
-    Promise.all(missing.map((uid) => getPublicProfile(uid).then((p) => [uid, p?.displayName ?? "Player"] as const))).then(
-      (entries) => setNames((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
+    Promise.all(missing.map((uid) => getPublicProfile(uid).then((p) => [uid, p] as const))).then((entries) =>
+      setProfiles((prev) => {
+        const next = { ...prev };
+        for (const [uid, p] of entries) if (p) next[uid] = p;
+        return next;
+      })
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match?.players.join(",")]);
@@ -52,30 +58,54 @@ export function SpectateClient({ matchId }: { matchId: string }) {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <Link href="/play">
-          <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            <ArrowLeft size={18} className="text-[rgb(var(--gold))]" />
-          </button>
-        </Link>
-        <div className="flex items-center gap-1.5 text-[rgb(var(--c4))] text-xs">
-          <Eye size={14} className="text-[rgb(var(--gold))]" /> {t("spectate_spectating")}
-        </div>
-        <div className="w-9" />
-      </div>
+  const isMindi = match.gameType === "mindi";
 
-      {match.gameType === "mindi" ? (
-        <MindiSpectateView match={match as MatchDoc<MindiOnlineState>} names={names} />
+  return (
+    <ArenaFelt accent={isMindi ? "var(--lagoon)" : "var(--deep)"}>
+      <ArenaHeader
+        leaveSlot={
+          <Link href="/play">
+            <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+              <ArrowLeft size={18} className="text-[rgb(var(--gold-ink))]" />
+            </button>
+          </Link>
+        }
+        title={
+          <span className="flex items-center justify-center gap-1.5">
+            <Eye size={14} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
+            {t("spectate_spectating")}
+          </span>
+        }
+      />
+
+      {isMindi ? (
+        <MindiSpectateView match={match as MatchDoc<MindiOnlineState>} profiles={profiles} />
       ) : (
-        <GinSpectateView match={match as MatchDoc<GinOnlineState>} names={names} />
+        <GinSpectateView match={match as MatchDoc<GinOnlineState>} profiles={profiles} />
       )}
-    </div>
+    </ArenaFelt>
   );
 }
 
-function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>; names: Record<string, string> }) {
+/** Public-only seat data: name, avatar, skin and card COUNT - never the cards. */
+function seatFrom(uid: string, profile: PublicProfile | undefined, count: number, active: boolean, fallback: string): ArenaSeatData {
+  return {
+    uid,
+    name: profile?.displayName ?? fallback,
+    avatarPreset: profile?.avatarPreset,
+    cardBackId: profile?.cardBack,
+    cardCount: count,
+    active,
+  };
+}
+
+function MindiSpectateView({
+  match,
+  profiles,
+}: {
+  match: MatchDoc<MindiOnlineState>;
+  profiles: Record<string, PublicProfile>;
+}) {
   const state = match.state;
   const t = useTranslation();
 
@@ -92,53 +122,81 @@ function MindiSpectateView({ match, names }: { match: MatchDoc<MindiOnlineState>
     );
   }
 
+  const seatAt = (seat: number) => {
+    const uid = match.players[seat] ?? "";
+    return seatFrom(uid, profiles[uid], state.handsByUid[uid]?.length ?? 0, state.turnSeat === seat, t("profile_player"));
+  };
+
   return (
-    <div className="flex-1 flex flex-col px-4 py-2 space-y-4">
-      <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
-        <span className="text-[rgb(var(--text-primary))]">
-          {t("roomlobby_teamA")} — <span className="text-[rgb(var(--gold))] font-bold">{state.tensCaptured.A} {t("spectate_tensLabel")}</span>
-        </span>
-        <span className="text-[rgb(var(--c4))]">
-          {t("mindi_trump")}: <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[state.trumpSuit]}</span>
-        </span>
-        <span className="text-[rgb(var(--text-primary))]">
-          {t("roomlobby_teamB")} — <span className="text-[rgb(var(--gold))] font-bold">{state.tensCaptured.B} {t("spectate_tensLabel")}</span>
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        {match.players.map((uid, seat) => (
-          <div
-            key={uid}
-            className={`rounded-xl border p-3 ${state.turnSeat === seat ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
-          >
-            <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? t("profile_player")}</p>
-            <p className="text-[rgb(var(--c4))] text-xs">
-              {teamOf(seat as SeatIndex) === "A" ? t("roomlobby_teamA") : t("roomlobby_teamB")} · {state.handsByUid[uid]?.length ?? 0} {t("spectate_cards")}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex items-center gap-1.5 flex-wrap justify-center">
-          {state.trick.length === 0 ? (
-            <span className="text-[rgb(var(--c3))] text-xs">{t("spectate_waitingNextTrick")}</span>
-          ) : (
-            state.trick.map((play) => (
-              <div key={cardId(play.card)} className="w-10 h-14 rounded-md flex flex-col items-center justify-center border bg-[rgb(var(--c2))] border-[rgb(var(--c3))]">
-                <span className={`text-xs font-bold ${SUIT_COLOR[play.card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{rankLabel(play.card.rank)}</span>
-                <span className={`text-[10px] ${SUIT_COLOR[play.card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{SUIT_SYMBOLS[play.card.suit]}</span>
-              </div>
-            ))
-          )}
+    <>
+      <div className="px-4 pb-2">
+        <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
+          <span className="text-[rgb(var(--text-primary))]">
+            {t("roomlobby_teamA")} — <span className="text-[rgb(var(--gold-ink))] font-bold">{state.tensCaptured.A} {t("spectate_tensLabel")}</span>
+          </span>
+          <span className="text-[rgb(var(--c4))]">
+            {t("mindi_trump")}:{" "}
+            <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-[rgb(var(--suit-red))]" : "text-[rgb(var(--text-primary))]"}>
+              {SUIT_SYMBOLS[state.trumpSuit]}
+            </span>
+          </span>
+          <span className="text-[rgb(var(--text-primary))]">
+            {t("roomlobby_teamB")} — <span className="text-[rgb(var(--gold-ink))] font-bold">{state.tensCaptured.B} {t("spectate_tensLabel")}</span>
+          </span>
         </div>
       </div>
-    </div>
+
+      <ArenaTable>
+        <div className="flex-1 flex flex-col items-center justify-between gap-3">
+          {/* Seat 2 sits opposite seat 0, so the table reads the same way
+              round as it does for the players themselves. */}
+          <div className="h-14 flex items-center justify-center">
+            <OpponentSeat seat={seatAt(2)} orientation="column" />
+          </div>
+
+          <div className="flex items-center justify-between w-full max-w-sm">
+            <div className="w-20">
+              <OpponentSeat seat={seatAt(1)} orientation="column" />
+            </div>
+
+            <TableWell>
+              {state.trick.length === 0 ? (
+                <span className="text-[rgb(var(--c3))] text-xs">{t("spectate_waitingNextTrick")}</span>
+              ) : (
+                state.trick.map((play) => (
+                  <motion.div
+                    key={cardId(play.card)}
+                    initial={{ opacity: 0, scale: 0.7, y: -18 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 26 }}
+                  >
+                    <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
+                  </motion.div>
+                ))
+              )}
+            </TableWell>
+
+            <div className="w-20">
+              <OpponentSeat seat={seatAt(3)} orientation="column" />
+            </div>
+          </div>
+
+          <div className="h-14 flex items-center justify-center">
+            <OpponentSeat seat={seatAt(0)} orientation="column" />
+          </div>
+        </div>
+      </ArenaTable>
+    </>
   );
 }
 
-function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; names: Record<string, string> }) {
+function GinSpectateView({
+  match,
+  profiles,
+}: {
+  match: MatchDoc<GinOnlineState>;
+  profiles: Record<string, PublicProfile>;
+}) {
   const state = match.state;
   const topDiscard = state.discard.length > 0 ? state.discard[state.discard.length - 1] : null;
   const t = useTranslation();
@@ -147,50 +205,56 @@ function GinSpectateView({ match, names }: { match: MatchDoc<GinOnlineState>; na
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))] text-lg font-bold">
-          {state.result.winnerUid === "draw" ? t("spectate_matchDraw") : t("spectate_playerWon").replace("{name}", names[state.result.winnerUid] ?? t("profile_player"))}
+          {state.result.winnerUid === "draw"
+            ? t("spectate_matchDraw")
+            : t("spectate_playerWon").replace("{name}", profiles[state.result.winnerUid]?.displayName ?? t("profile_player"))}
         </p>
-        {state.result.gin && <p className="text-[rgb(var(--gold))] text-sm font-semibold">{t("spectate_gin")}</p>}
+        {state.result.gin && <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold">{t("spectate_gin")}</p>}
       </div>
     );
   }
 
+  const seatFor = (uid: string) =>
+    seatFrom(uid, profiles[uid], state.hands[uid]?.length ?? 0, state.turn === uid, t("profile_player"));
+
+  const [first, second] = match.players;
+
   return (
-    <div className="flex-1 flex flex-col px-4 py-2 space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        {match.players.map((uid) => (
-          <div
-            key={uid}
-            className={`rounded-xl border p-3 ${state.turn === uid ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"}`}
-          >
-            <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{names[uid] ?? t("profile_player")}</p>
-            <p className="text-[rgb(var(--c4))] text-xs">{state.hands[uid]?.length ?? 0} {t("spectate_cards")}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 flex items-center justify-center gap-6">
-        <div className="text-center">
-          <div className="w-12 h-16 rounded-md border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] flex items-center justify-center">
-            <Trophy size={16} className="text-[rgb(var(--c3))]" />
-          </div>
-          <p className="text-[rgb(var(--c4))] text-[10px] mt-1">{t("spectate_stock").replace("{n}", String(state.stock.length))}</p>
+    <ArenaTable>
+      <div className="flex-1 flex flex-col items-center justify-between gap-3">
+        <div className="h-14 flex items-center justify-center">
+          <OpponentSeat seat={seatFor(second ?? "")} orientation="column" />
         </div>
-        <div className="text-center">
-          {topDiscard ? (
-            <div className="w-12 h-16 rounded-md border bg-[rgb(var(--c2))] border-[rgb(var(--c3))] flex flex-col items-center justify-center">
-              <span className={`text-sm font-bold ${GIN_SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{ginRankLabel(topDiscard.rank)}</span>
-              <span className={`text-xs ${GIN_SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>{GIN_SUIT_SYMBOLS[topDiscard.suit]}</span>
+
+        <TableWell>
+          <div className="flex items-center justify-center gap-6">
+            <div className="flex flex-col items-center gap-1">
+              <PlayingCard rank="" suit="spades" size="lg" faceDown />
+              <span className="text-[10px] text-[rgb(var(--c4))]">
+                {t("spectate_stock").replace("{n}", String(state.stock.length))}
+              </span>
             </div>
-          ) : (
-            <div className="w-12 h-16 rounded-md border border-dashed border-[rgb(var(--c3))]" />
-          )}
-          <p className="text-[rgb(var(--c4))] text-[10px] mt-1">{t("spectate_discard")}</p>
-        </div>
-      </div>
+            <div className="flex flex-col items-center gap-1">
+              {topDiscard ? (
+                <PlayingCard rank={ginRankLabel(topDiscard.rank)} suit={suitFromLetter(topDiscard.suit)} size="lg" />
+              ) : (
+                <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
+              )}
+              <span className="text-[10px] text-[rgb(var(--c4))]">{t("spectate_discard")}</span>
+            </div>
+          </div>
+        </TableWell>
 
-      <p className="text-[rgb(var(--c4))] text-xs text-center">
-        {t("spectate_playerTurn").replace("{name}", names[state.turn] ?? t("profile_player")).replace("{phase}", state.phase === "draw" ? t("spectate_turnDrawing") : t("spectate_turnDiscarding"))}
-      </p>
-    </div>
+        <div className="h-14 flex items-center justify-center">
+          <OpponentSeat seat={seatFor(first ?? "")} orientation="column" />
+        </div>
+
+        <p className="text-[rgb(var(--c4))] text-xs text-center">
+          {t("spectate_playerTurn")
+            .replace("{name}", profiles[state.turn]?.displayName ?? t("profile_player"))
+            .replace("{phase}", state.phase === "draw" ? t("spectate_turnDrawing") : t("spectate_turnDiscarding"))}
+        </p>
+      </div>
+    </ArenaTable>
   );
 }

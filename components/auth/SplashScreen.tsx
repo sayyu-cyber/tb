@@ -35,7 +35,7 @@ export function SplashScreen() {
       <motion.div
         className="absolute w-72 h-72 rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgb(var(--gold)/15%) 0%, transparent 70%)",
         }}
         animate={{
           scale: [1, 1.1, 1],
@@ -60,9 +60,9 @@ export function SplashScreen() {
           className="w-28 h-28 mb-6"
           animate={{
             filter: [
-              "drop-shadow(0 0 10px rgba(212,175,55,0.3))",
-              "drop-shadow(0 0 25px rgba(212,175,55,0.6))",
-              "drop-shadow(0 0 10px rgba(212,175,55,0.3))",
+              "drop-shadow(0 0 10px rgb(var(--gold)/30%))",
+              "drop-shadow(0 0 25px rgb(var(--gold)/60%))",
+              "drop-shadow(0 0 10px rgb(var(--gold)/30%))",
             ],
           }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -103,7 +103,7 @@ export function SplashScreen() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.8 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="text-[rgb(var(--gold))] text-sm tracking-[0.3em] uppercase"
+          className="text-[rgb(var(--gold-ink))] text-sm tracking-[0.3em] uppercase"
         >
           The Home of Maldivian Card Games
         </motion.p>

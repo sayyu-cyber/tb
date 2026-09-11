@@ -35,7 +35,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
   const getRowIcon = () => {
     switch (position) {
       case 1:
-        return <Crown size={18} className="text-[rgb(var(--gold))]" />;
+        return <Crown size={18} className="text-[rgb(var(--gold-ink))]" />;
       case 2:
         return <Medal size={18} className="text-[#C0C0C0]" />;
       case 3:
@@ -60,7 +60,7 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
 
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-deep))] p-[1.5px]">
         <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
-          <span className="text-[rgb(var(--gold))] text-sm font-bold">{entry.displayName.charAt(0).toUpperCase()}</span>
+          <span className="text-[rgb(var(--gold-ink))] text-sm font-bold">{entry.displayName.charAt(0).toUpperCase()}</span>
         </div>
       </div>
 
@@ -78,8 +78,8 @@ export function HallOfFameRow({ entry, position, index }: HallOfFameRowProps) {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Star size={14} className={position <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c4))]"} />
-        <span className={`text-sm font-semibold ${position <= 3 ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
+        <Star size={14} className={position <= 3 ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
+        <span className={`text-sm font-semibold ${position <= 3 ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c5))]"}`}>
           {entry.peakTrophies.toLocaleString()}
         </span>
       </div>

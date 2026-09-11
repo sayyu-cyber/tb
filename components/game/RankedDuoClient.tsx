@@ -99,7 +99,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
         <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
+          <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
         </motion.button>
       </Link>
 
@@ -110,7 +110,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
         </div>
 
         {error && (
-          <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">{error}</p>
+          <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2">{error}</p>
         )}
 
         {mode === "choose" && (
@@ -265,7 +265,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
     return (
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))]">{t("rankedduo_closed")}</p>
-        <Link href="/play" className="text-[rgb(var(--gold))] text-sm underline">
+        <Link href="/play" className="text-[rgb(var(--gold-ink))] text-sm underline">
           {t("roomlobby_backToPlay")}
         </Link>
       </div>
@@ -279,7 +279,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
       <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))]">{t("rankedduo_weekendReq")}</p>
         <p className="text-[rgb(var(--c4))] text-sm">{t("rankedduo_climbMsg").replace("{rank}", String(rank)).replace("{trophies}", String(trophies))}</p>
-        <button onClick={handleLeave} className="text-[rgb(var(--gold))] text-sm underline">
+        <button onClick={handleLeave} className="text-[rgb(var(--gold-ink))] text-sm underline">
           {t("roomlobby_backToPlay")}
         </button>
       </div>
@@ -292,7 +292,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
         <div className="relative w-24 h-24 mx-auto">
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Search size={28} className="text-[rgb(var(--gold))]" />
+            <Search size={28} className="text-[rgb(var(--gold-ink))]" />
           </div>
         </div>
         <div>
@@ -300,7 +300,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
           <p className="text-[rgb(var(--c4))] text-sm mt-1">{t("rankedduo_faceTeam")}</p>
         </div>
         {error && (
-          <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 max-w-xs">{error}</p>
+          <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 max-w-xs">{error}</p>
         )}
         <button onClick={handleLeave} className="text-[rgb(var(--c4))] text-sm underline">
           {t("rankedq_cancel")}
@@ -313,7 +313,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
+          <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
         </button>
         <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">
           {t("rankedduo_title2").replace("{game}", gameType === "mindi" ? "Mindi" : "Gin Rummy")}
@@ -324,16 +324,16 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
       <div className="glass-card rounded-2xl p-5 mb-4 text-center">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("rankedduo_partyCodeLabel")}</p>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-3xl font-bold text-[rgb(var(--gold))] tracking-widest">{code}</span>
+          <span className="text-3xl font-bold text-[rgb(var(--gold-ink))] tracking-widest">{code}</span>
           <button aria-label={t("a11y_copyCode")} onClick={handleCopy} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
+            {copied ? <Check size={16} className="text-[rgb(var(--lagoon-ink))]" /> : <Copy size={16} className="text-[rgb(var(--c4))]" />}
           </button>
         </div>
         <p className="text-[rgb(var(--c4))] text-xs mt-2">{t("rankedduo_shareWithPartner")}</p>
       </div>
 
       {error && (
-        <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       <div className="glass-card rounded-2xl p-4 mb-4 flex-1">

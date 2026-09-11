@@ -49,7 +49,7 @@ export function SeasonCard() {
       <div className="flex items-end gap-2">
         <span className="text-4xl font-black text-[rgb(var(--accent))] tabular-nums">{days}</span>
         <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_days")}</span>
-        <span className="text-4xl font-bold text-[rgb(var(--gold))] ml-2">{hours}</span>
+        <span className="text-4xl font-bold text-[rgb(var(--gold-ink))] ml-2">{hours}</span>
         <span className="text-[rgb(var(--c4))] text-sm mb-1">{t("home_hours")}</span>
       </div>
 

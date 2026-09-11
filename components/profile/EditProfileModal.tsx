@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { AVATAR_PRESETS, BANNER_PRESETS } from "@/constants/profileCustomization";
+import { AVATAR_PRESETS, BANNER_PRESETS, getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface EditProfileModalProps {
@@ -18,8 +18,11 @@ interface EditProfileModalProps {
 export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, currentBanner }: EditProfileModalProps) {
   const { updatePlayerProfile, isGuest } = useAuth();
   const [name, setName] = useState(currentName);
-  const [avatar, setAvatar] = useState(currentAvatar ?? "gold");
-  const [banner, setBanner] = useState(currentBanner ?? "royal-gold");
+  // Resolved through the getters so a player still holding a legacy preset
+  // id (see LEGACY_AVATAR_IDS) opens the modal with their swatch actually
+  // marked as selected, rather than nothing highlighted.
+  const [avatar, setAvatar] = useState(() => getAvatarPreset(currentAvatar).id);
+  const [banner, setBanner] = useState(() => getBannerPreset(currentBanner).id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslation();
@@ -125,7 +128,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
               ))}
             </div>
 
-            {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
+            {error && <p className="text-[rgb(var(--coral-ink))] text-xs mb-3">{error}</p>}
 
             <motion.button
               whileTap={{ scale: 0.97 }}

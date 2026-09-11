@@ -45,7 +45,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
         onClick={() => setConfirming(true)}
         className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
       >
-        <ArrowLeft size={20} className="text-[rgb(var(--gold))]" />
+        <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
       </motion.button>
 
       <AnimatePresence>
@@ -62,10 +62,10 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card rounded-2xl p-6 w-full max-w-xs text-center space-y-4 border border-red-500/20"
+              className="glass-card rounded-2xl p-6 w-full max-w-xs text-center space-y-4 border border-[rgb(var(--coral)/20%)]"
             >
-              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
-                <AlertTriangle size={22} className="text-red-400" />
+              <div className="w-12 h-12 rounded-full bg-[rgb(var(--coral)/10%)] flex items-center justify-center mx-auto">
+                <AlertTriangle size={22} className="text-[rgb(var(--coral-ink))]" />
               </div>
               <div>
                 <h3 className="text-[rgb(var(--text-primary))] font-bold text-base">{t("leave_title")}</h3>
@@ -86,7 +86,7 @@ export function LeaveMatchButton({ exitHref, isOnlineMatch, onConfirmLeave }: Le
                   whileTap={{ scale: 0.97 }}
                   onClick={handleConfirm}
                   disabled={leaving}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-semibold disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] text-[rgb(var(--coral-ink))] text-sm font-semibold disabled:opacity-50"
                 >
                   {leaving ? t("leave_leaving") : t("leave_confirm")}
                 </motion.button>

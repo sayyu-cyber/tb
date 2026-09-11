@@ -112,7 +112,7 @@ export default function FriendsPage() {
           {invites.map((invite) => (
             <div key={invite.id} className="glass-card rounded-xl p-3 flex items-center justify-between border border-[rgb(var(--gold)/30%)]">
               <p className="text-[rgb(var(--text-primary))] text-sm">
-                <span className="text-[rgb(var(--gold))] font-semibold">{invite.fromName}</span> {t("friends_invitedToRoom")}
+                <span className="text-[rgb(var(--gold-ink))] font-semibold">{invite.fromName}</span> {t("friends_invitedToRoom")}
               </p>
               <div className="flex gap-2">
                 <button
@@ -154,7 +154,7 @@ export default function FriendsPage() {
       </div>
 
       {error && (
-        <p className="text-red-400 text-xs break-words bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {tab === "search" && (
@@ -170,7 +170,7 @@ export default function FriendsPage() {
               className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
             />
             <button aria-label={t("a11y_search")} onClick={handleSearch} className="px-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-              <Search size={18} className="text-[rgb(var(--gold))]" />
+              <Search size={18} className="text-[rgb(var(--gold-ink))]" />
             </button>
           </div>
 
@@ -194,7 +194,7 @@ export default function FriendsPage() {
                     <span className="text-[rgb(var(--c4))] text-xs">{t("friends_requested")}</span>
                   ) : (
                     <button aria-label={t("a11y_addFriend")} onClick={() => handleAddFriend(r)} className="p-2 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/30%)]">
-                      <UserPlus size={16} className="text-[rgb(var(--gold))]" />
+                      <UserPlus size={16} className="text-[rgb(var(--gold-ink))]" />
                     </button>
                   )}
                 </div>
@@ -216,11 +216,11 @@ export default function FriendsPage() {
                   <div key={r.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
                     <p className="text-[rgb(var(--text-primary))] text-sm">{r.fromName}</p>
                     <div className="flex gap-2">
-                      <button aria-label={t("a11y_acceptRequest")} onClick={() => respondToRequest(r.id, true)} className="p-2 rounded-lg bg-green-900/30 border border-green-700/40">
-                        <Check size={14} className="text-green-400" />
+                      <button aria-label={t("a11y_acceptRequest")} onClick={() => respondToRequest(r.id, true)} className="p-2 rounded-lg bg-[rgb(var(--lagoon)/15%)] border border-[rgb(var(--lagoon)/35%)]">
+                        <Check size={14} className="text-[rgb(var(--lagoon-ink))]" />
                       </button>
-                      <button aria-label={t("a11y_declineRequest")} onClick={() => respondToRequest(r.id, false)} className="p-2 rounded-lg bg-red-900/30 border border-red-700/40">
-                        <X size={14} className="text-red-400" />
+                      <button aria-label={t("a11y_declineRequest")} onClick={() => respondToRequest(r.id, false)} className="p-2 rounded-lg bg-[rgb(var(--coral)/15%)] border border-[rgb(var(--coral)/35%)]">
+                        <X size={14} className="text-[rgb(var(--coral-ink))]" />
                       </button>
                     </div>
                   </div>
@@ -259,14 +259,14 @@ export default function FriendsPage() {
           ) : (
             friends.map((f) => (
               <div key={f.requestId} className="glass-card rounded-xl p-3 flex items-center justify-between">
-                <Link href={`/player?uid=${f.uid}`} className="text-[rgb(var(--text-primary))] text-sm font-medium hover:text-[rgb(var(--gold))] transition-colors">
+                <Link href={`/player?uid=${f.uid}`} className="text-[rgb(var(--text-primary))] text-sm font-medium hover:text-[rgb(var(--gold-ink))] transition-colors">
                   {f.name}
                 </Link>
                 <div className="flex gap-2">
                   <Link href={`/messages?with=${f.uid}&name=${encodeURIComponent(f.name)}`}>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold))] text-xs flex items-center gap-1"
+                      className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold-ink))] text-xs flex items-center gap-1"
                     >
                       <MessageCircle size={12} /> {t("friends_message")}
                     </motion.button>
@@ -274,18 +274,18 @@ export default function FriendsPage() {
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleInvite(f, "mindi")}
-                    className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold))] text-xs flex items-center gap-1"
+                    className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold-ink))] text-xs flex items-center gap-1"
                   >
                     <Gamepad2 size={12} /> Mindi
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleInvite(f, "gin-rummy")}
-                    className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold))] text-xs flex items-center gap-1"
+                    className="px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--gold-ink))] text-xs flex items-center gap-1"
                   >
                     <Gamepad2 size={12} /> Gin
                   </motion.button>
-                  <button onClick={() => cancelOrRemove(f.requestId)} className="text-red-400/70 text-xs">
+                  <button onClick={() => cancelOrRemove(f.requestId)} className="text-[rgb(var(--coral-ink)/70%)] text-xs">
                     {t("friends_remove")}
                   </button>
                 </div>
