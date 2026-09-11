@@ -59,6 +59,11 @@ export function SideNav() {
   const pathname = usePathname();
   const t = useTranslation();
 
+  // Home-only by design: a persistent nav column reads as a dashboard
+  // there, but would compete with each other page's own back button/title
+  // bar and eat into already-tight content width (e.g. in-match screens).
+  if (pathname !== "/home") return null;
+
   return (
     <aside
       className="hidden md:flex md:flex-col md:w-60 lg:w-64 shrink-0 sticky top-0 h-screen overflow-y-auto

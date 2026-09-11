@@ -172,6 +172,12 @@ That's the only step needed to restore login. No GitHub push or Netlify rebuild 
 
   **Verification.** `npx tsc --noEmit`, `npx next lint`, `npm run check` all pass.
 
+- Arena applied to the offline clients too; sidebar restricted to Home (2026-09-11). The arena redesign had only reached `MindiOnlineClient`/`GinRummyOnlineClient` - the local "vs AI" and "Pass & Play" clients (`MindiGameClient.tsx`, `GinRummyGameClient.tsx`) were untouched and still rendered the old flat `SeatBadge`/`MiniCard` layout, which is what showed up when actually testing a match locally. Both now use the same `GameArena` shell (`OpponentSeat`, `TableWell`, `SelfRow`) as the online clients, so every way to play - ranked, casual, room, vs AI, or pass-and-play - looks identical. Bots get a plain default avatar (no preset, no card-back skin - there's no profile to read one from); the local human player's own avatar preset comes from `useAuth().playerStats`.
+
+  Also: `SideNav` (the persistent desktop sidebar) now only renders on `/home` - it was showing on every main-app page, which ate into already-tight width on screens like the game table and duplicated context that page-specific headers already provide.
+
+  **Verification.** `npx tsc --noEmit`, `npx next lint`, `npm run check` all pass.
+
 ## Suggested next steps
 1. Run `firebase deploy --only firestore:rules` to restore login.
 2. Verify the app builds cleanly (`npm run build`) with the uncommitted Economy/Firebase changes, then commit and push so this progress is safe.

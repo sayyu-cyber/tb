@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Home, Sparkles, Users, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,9 @@ import {
   HandOutcome,
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/contexts/AuthContext";
+import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
 
 interface MindiGameClientProps {
   /** "ai": you (seat 0) + 3 bots. "passplay": you + a local partner (seats 0 & 2) vs 2 bots. */
@@ -51,6 +54,7 @@ function pickBotNames(): string[] {
 export function MindiGameClient({ mode }: MindiGameClientProps) {
   const router = useRouter();
   const { processMatchEnd } = useEconomy();
+  const { playerStats } = useAuth();
   const t = useTranslation();
 
   const humanSeats: SeatIndex[] = useMemo(() => (mode === "ai" ? [0] : [0, 2]), [mode]);
@@ -276,21 +280,31 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
     );
   }
 
+  const botSeatData = (seat: SeatIndex): ArenaSeatData => ({
+    uid: `bot-${seat}`,
+    name: mode === "ai" ? botNamesRef.current[seat] : seatNames[seat],
+    cardCount: hands[seat]?.length ?? 0,
+    active: turnSeat === seat && !resolvingTrick,
+  });
+
+  const selfSeat = mode === "ai" ? 0 : turnSeat;
+  const selfHand = mode === "ai" ? yourHand : hands[turnSeat] ?? [];
+  const selfCanAct = isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat) && !resolvingTrick;
+
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <LeaveMatchButton exitHref="/play" isOnlineMatch={false} />
-        <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Mindi — {t("offline_casualSuffix")}</p>
-          <p className="text-[rgb(var(--c4))] text-[10px] flex items-center justify-center gap-1">
+    <ArenaFelt accent="var(--lagoon)">
+      <ArenaHeader
+        leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch={false} />}
+        title={<>Mindi — {t("offline_casualSuffix")}</>}
+        subtitle={
+          <>
             Trump: <span className={SUIT_COLOR[deal.trumpSuit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[deal.trumpSuit]}</span>
-          </p>
-        </div>
-        <div className="w-10" />
-      </div>
+          </>
+        }
+      />
 
       {/* Score strip */}
-      <div className="px-4 py-2">
+      <div className="px-4 pb-2">
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <Users size={14} className="text-[rgb(var(--gold))]" />
@@ -306,143 +320,72 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="flex-1 flex flex-col items-center justify-between py-4 px-4">
-        <SeatBadge
-          name={mode === "ai" ? botNamesRef.current[2] : seatNames[2]}
-          cardCount={hands[2].length}
-          active={turnSeat === 2 && !resolvingTrick}
-          isPartner
-        />
-
-        <div className="flex items-center justify-between w-full max-w-sm">
-          <SeatBadge
-            name={mode === "ai" ? botNamesRef.current[1] : seatNames[1]}
-            cardCount={hands[1].length}
-            active={turnSeat === 1 && !resolvingTrick}
-          />
-
-          {/* Trick area */}
-          <div className="relative w-32 h-32 flex items-center justify-center">
-            <AnimatePresence>
-              {trick.map((play) => (
-                <motion.div
-                  key={cardId(play.card)}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  className="absolute"
-                  style={seatOffset(play.seat)}
-                >
-                  <MiniCard card={play.card} trumpSuit={deal.trumpSuit} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {trick.length === 0 && (
-              <span className="text-[rgb(var(--c3))] text-xs">
-                {resolvingTrick ? "" : `${seatNames[turnSeat]}'s turn`}
-              </span>
-            )}
+      <ArenaTable>
+        <div className="flex-1 flex flex-col items-center justify-between">
+          <div className="h-14 flex items-center justify-center">
+            <OpponentSeat seat={botSeatData(2 as SeatIndex)} orientation="column" />
           </div>
 
-          <SeatBadge
-            name={mode === "ai" ? botNamesRef.current[3] : seatNames[3]}
-            cardCount={hands[3].length}
-            active={turnSeat === 3 && !resolvingTrick}
-          />
-        </div>
+          <div className="flex items-center justify-between w-full max-w-sm">
+            <div className="w-20">
+              <OpponentSeat seat={botSeatData(1 as SeatIndex)} orientation="column" />
+            </div>
 
-        {/* Your hand */}
-        <div className="w-full">
-          <p className="text-[rgb(var(--c4))] text-xs mb-2 text-center">
-            {isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat)
-              ? t("mindi_selectCard")
-              : `Waiting for ${seatNames[turnSeat]}…`}
-          </p>
-          <div className="flex justify-center gap-1.5 flex-wrap">
-            {(mode === "ai" ? yourHand : hands[turnSeat] ?? []).map((card) => {
-              const canPlay =
-                isHuman(turnSeat) &&
-                (mode === "ai" || revealedSeat === turnSeat) &&
-                !resolvingTrick &&
-                legalForYou.some((c) => cardId(c) === cardId(card));
-              return (
-                <motion.button
-                  key={cardId(card)}
-                  whileHover={canPlay ? { y: -8, scale: 1.05 } : {}}
-                  whileTap={canPlay ? { scale: 0.95 } : {}}
-                  onClick={() => canPlay && handleCardSelect(card)}
-                  disabled={!canPlay}
-                  className="w-12 h-16 rounded-lg bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/30%)] flex flex-col items-center justify-center disabled:opacity-40 disabled:border-[rgb(var(--c3))]"
-                >
-                  <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
-                    {rankLabel(card.rank)}
-                  </span>
-                  <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
-                    {SUIT_SYMBOLS[card.suit]}
-                  </span>
-                </motion.button>
-              );
-            })}
+            <TableWell>
+              {trick.length === 0 ? (
+                <span className="text-[rgb(var(--c3))] text-xs">
+                  {resolvingTrick ? "" : `${seatNames[turnSeat]}'s turn`}
+                </span>
+              ) : (
+                trick.map((play) => (
+                  <motion.div
+                    key={cardId(play.card)}
+                    initial={{ opacity: 0, scale: 0.7, y: -18 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 26 }}
+                  >
+                    <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
+                  </motion.div>
+                ))
+              )}
+            </TableWell>
+
+            <div className="w-20">
+              <OpponentSeat seat={botSeatData(3 as SeatIndex)} orientation="column" />
+            </div>
+          </div>
+
+          {/* Your hand */}
+          <div className="w-full">
+            <SelfRow
+              name={seatNames[selfSeat]}
+              avatarPreset={playerStats?.avatarPreset}
+              active={isHuman(turnSeat)}
+              trailing={
+                <span className="text-[rgb(var(--c4))] text-[11px]">
+                  {selfCanAct ? t("mindi_selectCard") : isHuman(turnSeat) ? "" : `Waiting for ${seatNames[turnSeat]}…`}
+                </span>
+              }
+            />
+            <div className="flex justify-center gap-1.5 flex-wrap">
+              {selfHand.map((card) => {
+                const canPlay = selfCanAct && legalForYou.some((c) => cardId(c) === cardId(card));
+                return (
+                  <PlayingCard
+                    key={cardId(card)}
+                    rank={rankLabel(card.rank)}
+                    suit={suitFromLetter(card.suit)}
+                    size="md"
+                    disabled={!canPlay}
+                    onClick={() => canPlay && handleCardSelect(card)}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function seatOffset(seat: SeatIndex): React.CSSProperties {
-  switch (seat) {
-    case 0:
-      return { bottom: 0 };
-    case 2:
-      return { top: 0 };
-    case 1:
-      return { left: 0 };
-    case 3:
-      return { right: 0 };
-  }
-}
-
-function MiniCard({ card, trumpSuit }: { card: Card; trumpSuit: Card["suit"] }) {
-  const isTrump = card.suit === trumpSuit;
-  return (
-    <div
-      className={`w-10 h-14 rounded-md flex flex-col items-center justify-center border ${
-        isTrump ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold)/60%)]" : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))]"
-      }`}
-    >
-      <span className={`text-xs font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
-        {rankLabel(card.rank)}
-      </span>
-      <span className={`text-[10px] ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
-        {SUIT_SYMBOLS[card.suit]}
-      </span>
-    </div>
-  );
-}
-
-function SeatBadge({
-  name,
-  cardCount,
-  active,
-  isPartner,
-}: {
-  name: string;
-  cardCount: number;
-  active: boolean;
-  isPartner?: boolean;
-}) {
-  return (
-    <div
-      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-colors ${
-        active ? "border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)]" : "border-[rgb(var(--c3))] bg-[rgb(var(--c2))]"
-      }`}
-    >
-      <span className={`text-[10px] font-medium ${active ? "text-[rgb(var(--gold))]" : "text-[rgb(var(--c5))]"}`}>
-        {name} {isPartner ? "· Partner" : ""}
-      </span>
-      <span className="text-[rgb(var(--c4))] text-[10px]">{cardCount} cards</span>
-    </div>
+      </ArenaTable>
+    </ArenaFelt>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Sparkles, Layers, Smartphone } from "lucide-react";
+import { Home, Sparkles, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useEconomy } from "@/contexts/EconomyContext";
 import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
@@ -21,6 +21,9 @@ import {
   GinHandResult,
 } from "@/lib/ginRummyEngine";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/contexts/AuthContext";
+import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
 
 interface GinRummyGameClientProps {
   /** "ai": you vs a bot. "passplay": two local players alternating with a pass-the-device screen. */
@@ -32,6 +35,7 @@ type Phase = "draw" | "discard";
 
 export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   const { processMatchEnd } = useEconomy();
+  const { playerStats } = useAuth();
   const t = useTranslation();
   const [showRewardPopup, setShowRewardPopup] = useState(false);
 
@@ -287,111 +291,119 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   const isMyTurn = mode === "ai" ? turn === "player" : true;
   const deadwoodShown = mode === "passplay" ? bestMeldArrangement(turn === "player" ? playerHand : opponentHand).deadwoodValue : currentArrangement.deadwoodValue;
 
+  // The seat shown at the top: in "ai" mode always the bot; in "passplay"
+  // whichever local player isn't currently holding the device.
+  const topSide: Side = mode === "ai" ? "opponent" : turn === "player" ? "opponent" : "player";
+  const topSeat: ArenaSeatData = {
+    uid: topSide,
+    name: mode === "ai" ? t("gin_opponentTurn").split(" ")[0] ?? "Opponent" : topSide === "player" ? t("offline_player1") : t("offline_player2"),
+    cardCount: (topSide === "player" ? playerHand : opponentHand).length,
+    active: !isMyTurn,
+  };
+  const selfName = mode === "ai" ? t("mindi_you") : turn === "player" ? t("offline_player1") : t("offline_player2");
+
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col">
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <LeaveMatchButton exitHref="/play" isOnlineMatch={false} />
-        <div className="text-center">
-          <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">Gin Rummy — {t("offline_casualSuffix")}</p>
-          <p className="text-[rgb(var(--c4))] text-[10px]">
+    <ArenaFelt accent="var(--deep)">
+      <ArenaHeader
+        leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch={false} />}
+        title={<>Gin Rummy — {t("offline_casualSuffix")}</>}
+        subtitle={
+          <>
             {isMyTurn ? t("gin_yourTurn") : t("gin_opponentTurn")} · Deadwood: {deadwoodShown}
-          </p>
-        </div>
-        <div className="w-10" />
-      </div>
+          </>
+        }
+      />
 
-      {/* Stock + discard */}
-      <div className="flex items-center justify-center gap-8 py-6">
-        <button
-          onClick={() => handleDraw("stock")}
-          disabled={phase !== "draw" || !isMyTurn || stock.length <= 2}
-          className="flex flex-col items-center gap-1 disabled:opacity-40"
-        >
-          <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--c3))] flex items-center justify-center">
-            <Layers size={20} className="text-[rgb(var(--c4))]" />
+      <ArenaTable>
+        <div className="flex-1 flex flex-col items-center justify-between">
+          <div className="h-14 flex items-center justify-center">
+            <OpponentSeat seat={topSeat} orientation="column" />
           </div>
-          <span className="text-[10px] text-[rgb(var(--c4))]">Stock ({stock.length})</span>
-        </button>
 
-        <button
-          onClick={() => handleDraw("discard")}
-          disabled={phase !== "draw" || !isMyTurn || !topDiscard}
-          className="flex flex-col items-center gap-1 disabled:opacity-40"
-        >
-          {topDiscard ? (
-            <div className="w-16 h-24 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/40%)] flex flex-col items-center justify-center">
-              <span className={`text-lg font-bold ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
-                {rankLabel(topDiscard.rank)}
-              </span>
-              <span className={`text-sm ${SUIT_COLOR[topDiscard.suit] === "red" ? "text-red-400" : "text-[rgb(var(--text-primary))]"}`}>
-                {SUIT_SYMBOLS[topDiscard.suit]}
-              </span>
+          <TableWell>
+            <div className="flex items-center justify-center gap-6">
+              <button
+                onClick={() => handleDraw("stock")}
+                disabled={phase !== "draw" || !isMyTurn || stock.length <= 2}
+                className="flex flex-col items-center gap-1 disabled:opacity-40"
+              >
+                <PlayingCard rank="" suit="spades" size="lg" faceDown />
+                <span className="text-[10px] text-[rgb(var(--c4))]">Stock ({stock.length})</span>
+              </button>
+
+              <button
+                onClick={() => handleDraw("discard")}
+                disabled={phase !== "draw" || !isMyTurn || !topDiscard}
+                className="flex flex-col items-center gap-1 disabled:opacity-40"
+              >
+                {topDiscard ? (
+                  <PlayingCard rank={rankLabel(topDiscard.rank)} suit={suitFromLetter(topDiscard.suit)} size="lg" />
+                ) : (
+                  <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
+                )}
+                <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_discardPile")}</span>
+              </button>
             </div>
-          ) : (
-            <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
-          )}
-          <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_discardPile")}</span>
-        </button>
-      </div>
+          </TableWell>
 
-      {/* Hand */}
-      <div className="flex-1 flex flex-col justify-end px-4 pb-6">
-        <p className="text-[rgb(var(--c4))] text-xs mb-3 text-center">
-          {!isMyTurn ? t("gin_waitingOpponent") : phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
-        </p>
-        <div className="flex justify-center gap-1.5 flex-wrap">
-          {activeHand.map((card) => {
-            const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
-            return (
-              <motion.button
-                key={cardId(card)}
-                whileHover={isMyTurn && phase === "discard" ? { y: -8 } : {}}
-                whileTap={isMyTurn && phase === "discard" ? { scale: 0.95 } : {}}
-                onClick={() => isMyTurn && handleSelectDiscard(card)}
-                disabled={!isMyTurn || phase !== "discard"}
-                className={`w-11 h-16 rounded-lg border flex flex-col items-center justify-center disabled:opacity-70 ${
-                  selected ? "bg-[rgb(var(--gold)/20%)] border-[rgb(var(--gold))] -translate-y-2" : "bg-gradient-to-br from-[rgb(var(--c2))] to-[rgb(var(--c1))] border-[rgb(var(--c3))]"
-                }`}
-              >
-                <span className={`text-sm font-bold ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
-                  {rankLabel(card.rank)}
+          <div className="w-full">
+            <SelfRow
+              name={selfName}
+              avatarPreset={playerStats?.avatarPreset}
+              active={isMyTurn}
+              trailing={
+                <span className="text-[rgb(var(--c4))] text-[11px]">
+                  {!isMyTurn ? t("gin_waitingOpponent") : phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
                 </span>
-                <span className={`text-xs ${SUIT_COLOR[card.suit] === "red" ? "text-red-400" : "text-[rgb(var(--gold))]"}`}>
-                  {SUIT_SYMBOLS[card.suit]}
-                </span>
-              </motion.button>
-            );
-          })}
-        </div>
+              }
+            />
+            <div className="flex justify-center gap-1.5 flex-wrap">
+              {activeHand.map((card) => {
+                const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
+                return (
+                  <PlayingCard
+                    key={cardId(card)}
+                    rank={rankLabel(card.rank)}
+                    suit={suitFromLetter(card.suit)}
+                    size="md"
+                    selected={Boolean(selected)}
+                    disabled={!isMyTurn || phase !== "discard"}
+                    onClick={() => isMyTurn && handleSelectDiscard(card)}
+                  />
+                );
+              })}
+            </div>
 
-        <AnimatePresence>
-          {selectedDiscard && phase === "discard" && isMyTurn && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex justify-center gap-3 mt-4"
-            >
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleConfirmDiscard}
-                className="px-6 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium"
-              >
-                Discard
-              </motion.button>
-              {canKnock && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleKnock}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold"
+            <AnimatePresence>
+              {selectedDiscard && phase === "discard" && isMyTurn && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="flex justify-center gap-3 mt-4"
                 >
-                  Knock
-                </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleConfirmDiscard}
+                    className="px-6 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium"
+                  >
+                    Discard
+                  </motion.button>
+                  {canKnock && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleKnock}
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold"
+                    >
+                      Knock
+                    </motion.button>
+                  )}
+                </motion.div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </ArenaTable>
+    </ArenaFelt>
   );
 }
