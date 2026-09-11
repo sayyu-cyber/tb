@@ -187,13 +187,18 @@ export function BottomNav() {
                 </button>
               </div>
 
-              <motion.div variants={staggerParent(0.03)} initial="hidden" animate="show" className="space-y-5">
+              <motion.div
+                variants={staggerParent(0.03)}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5"
+              >
                 {SECONDARY.map((group) => (
                   <div key={group.titleKey}>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[rgb(var(--c4))] mb-2 px-1">
                       {t(group.titleKey)}
                     </p>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="flex flex-col gap-1">
                       {group.items.map((item) => {
                         const accent = item.accent ?? "var(--gold)";
                         return (
@@ -203,12 +208,14 @@ export function BottomNav() {
                               prefetch={false}
                               onClick={() => setMoreOpen(false)}
                               style={{ ["--accent" as string]: accent } as React.CSSProperties}
-                              className="flex flex-col items-center gap-2 rounded-2xl border border-[rgb(var(--c3))]
-                                         bg-[rgb(var(--c2))] px-2 py-3 min-h-[76px] justify-center
-                                         transition-colors hover:border-[rgb(var(--accent)/45%)]"
+                              className="flex items-center gap-3 rounded-xl border border-transparent
+                                         px-2 py-2.5 min-h-[48px]
+                                         transition-colors hover:bg-[rgb(var(--c2))] hover:border-[rgb(var(--accent)/35%)]"
                             >
-                              <item.icon size={20} className="text-[rgb(var(--accent))]" aria-hidden="true" />
-                              <span className="text-[10px] font-medium text-center leading-tight text-[rgb(var(--c5))] line-clamp-2">
+                              <span className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 bg-[rgb(var(--accent)/12%)]">
+                                <item.icon size={18} className="text-[rgb(var(--accent))]" aria-hidden="true" />
+                              </span>
+                              <span className="text-[13px] font-medium leading-tight text-[rgb(var(--c5))] truncate">
                                 {t(item.key)}
                               </span>
                             </Link>
