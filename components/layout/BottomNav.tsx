@@ -63,10 +63,7 @@ export function BottomNav() {
   const secondaryActive = SECONDARY.some((g) => g.items.some((i) => isActiveHref(pathname, i.href)));
 
   return (
-    // Hidden at md+: SideNav lists every destination in a persistent left
-    // column there, so the mobile-only bottom bar and its "More" sheet
-    // would just be a redundant second nav on wider screens.
-    <div className="md:hidden">
+    <>
       <AnimatePresence>
         {moreOpen && (
           <motion.div
@@ -198,6 +195,6 @@ export function BottomNav() {
           </button>
         </div>
       </motion.nav>
-    </div>
+    </>
   );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Spade } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PRIMARY, SECONDARY, isActiveHref, type NavItem } from "@/constants/navigation";
+import { SECONDARY, isActiveHref, type NavItem } from "@/constants/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { SPRING } from "@/lib/motion";
 
@@ -15,8 +15,9 @@ import { SPRING } from "@/lib/motion";
  * column instead. Desktop has the width to spare, so there is no reason to
  * make a wide-screen player dig through a modal for Missions or Settings.
  *
- * Hidden below md - phones keep the bottom bar + sheet (see BottomNav),
- * which is the layout that actually fits a thumb-reachable 375px screen.
+ * Home/Play/Leaderboard/Friends stay in the bottom bar only (unchanged,
+ * visible at every breakpoint) - this sidebar deliberately doesn't repeat
+ * them, so a destination lives in exactly one nav surface, never both.
  */
 function Row({ item, active }: { item: NavItem; active: boolean }) {
   const t = useTranslation();
@@ -70,14 +71,8 @@ export function SideNav() {
         <span className="gold-text-gradient text-base font-bold tracking-tight">Thaasbai</span>
       </div>
 
-      <nav className="flex flex-col gap-0.5">
-        {PRIMARY.map((item) => (
-          <Row key={item.href} item={item} active={isActiveHref(pathname, item.href)} />
-        ))}
-      </nav>
-
-      {SECONDARY.map((group) => (
-        <div key={group.titleKey} className="mt-6">
+      {SECONDARY.map((group, i) => (
+        <div key={group.titleKey} className={i === 0 ? undefined : "mt-6"}>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[rgb(var(--c4))] mb-1.5 px-3">
             {t(group.titleKey)}
           </p>
