@@ -21,6 +21,7 @@ import {
 } from "@/lib/ginRummyEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
 import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow } from "@/components/game/GameArena";
@@ -67,10 +68,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const isMyTurn = state?.turn === myUid;
   const topDiscard = state && state.discard.length > 0 ? state.discard[state.discard.length - 1] : null;
 
-  const sortedHand = useMemo(
-    () => [...myHand].sort((a, b) => (a.suit === b.suit ? a.rank - b.rank : a.suit.localeCompare(b.suit))),
-    [myHand]
-  );
+  const sortedHand = useMemo(() => sortHand(myHand), [myHand]);
 
   const deadwoodAfterSelected = useMemo(() => {
     if (!selectedDiscard) return null;

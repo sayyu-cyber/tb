@@ -30,6 +30,7 @@ import {
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
 import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
@@ -73,7 +74,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const myTeam: Team = teamOf(mySeat);
   const state = match?.state;
   const numPlayers = state?.numPlayers ?? 4;
-  const myHand = state?.handsByUid[myUid] ?? [];
+  const myHand = sortHand(state?.handsByUid[myUid] ?? []);
   const isMyTurn = state?.turnSeat === mySeat;
   const ledSuit = state && state.trick.length > 0 ? state.trick[0].card.suit : null;
   const legalForMe = state ? getLegalPlays(myHand, ledSuit) : [];

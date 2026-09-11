@@ -23,6 +23,7 @@ import {
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { sortHand } from "@/lib/cardSort";
 import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
 
 interface GinRummyGameClientProps {
@@ -56,10 +57,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
   const needsPassScreen = mode === "passplay" && !result && revealedSide !== turn;
 
   const topDiscard = discard.length > 0 ? discard[discard.length - 1] : null;
-  const sortedPlayerHand = useMemo(
-    () => [...playerHand].sort((a, b) => (a.suit === b.suit ? a.rank - b.rank : a.suit.localeCompare(b.suit))),
-    [playerHand]
-  );
+  const sortedPlayerHand = useMemo(() => sortHand(playerHand), [playerHand]);
 
   const currentArrangement = useMemo(() => bestMeldArrangement(playerHand), [playerHand]);
   const deadwoodAfterSelected = useMemo(() => {
@@ -287,7 +285,7 @@ export function GinRummyGameClient({ mode }: GinRummyGameClientProps) {
     );
   }
 
-  const activeHand = mode === "passplay" ? (turn === "player" ? sortedPlayerHand : [...opponentHand].sort((a, b) => (a.suit === b.suit ? a.rank - b.rank : a.suit.localeCompare(b.suit)))) : sortedPlayerHand;
+  const activeHand = mode === "passplay" ? (turn === "player" ? sortedPlayerHand : sortHand(opponentHand)) : sortedPlayerHand;
   const isMyTurn = mode === "ai" ? turn === "player" : true;
   const deadwoodShown = mode === "passplay" ? bestMeldArrangement(turn === "player" ? playerHand : opponentHand).deadwoodValue : currentArrangement.deadwoodValue;
 

@@ -31,6 +31,7 @@ import {
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
+import { sortHand } from "@/lib/cardSort";
 import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData } from "@/components/game/GameArena";
 
 interface MindiGameClientProps {
@@ -172,7 +173,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
     setShowRewardPopup(true);
   }
 
-  const yourHand = hands[0] ?? [];
+  const yourHand = sortHand(hands[0] ?? []);
   const legalForYou = isHuman(turnSeat) ? getLegalPlays(hands[turnSeat], ledSuit) : [];
 
   if (outcome) {
@@ -288,7 +289,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
   });
 
   const selfSeat = mode === "ai" ? 0 : turnSeat;
-  const selfHand = mode === "ai" ? yourHand : hands[turnSeat] ?? [];
+  const selfHand = mode === "ai" ? yourHand : sortHand(hands[turnSeat] ?? []);
   const selfCanAct = isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat) && !resolvingTrick;
 
   return (
