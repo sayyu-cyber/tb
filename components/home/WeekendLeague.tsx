@@ -30,12 +30,12 @@ export function WeekendLeague() {
   }
 
   return (
-    <VividCard accent="var(--coral)" className="relative">
+    <VividCard accent="var(--coral)" className="home-league-panel relative">
       {/* Big trophy mark bled into the corner - the event's "artwork" in
           the absence of an uploaded banner image. */}
       <Trophy
         size={96}
-        className="pointer-events-none absolute -right-4 -bottom-4 text-white/10"
+        className="league-trophy pointer-events-none absolute text-white/10"
         aria-hidden="true"
       />
 

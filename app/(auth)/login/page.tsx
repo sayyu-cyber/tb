@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { ScatteredCards } from "@/components/auth/ScatteredCards";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
@@ -18,7 +19,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-4 relative overflow-hidden">
-      {/* Background decorations */}
+      {/* Background: drifting playing cards (ambient, low-opacity) plus the
+          existing soft gold glows on top, so the scene stays on the app's
+          own dark/gold palette rather than introducing new colours. */}
+      <ScatteredCards />
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-[rgb(var(--gold)/5%)] rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[rgb(var(--gold)/3%)] rounded-full blur-3xl" />

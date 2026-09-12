@@ -141,7 +141,7 @@ function RoomChooser({ gameId }: { gameId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
+    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
         <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
@@ -399,7 +399,7 @@ function RoomLobby({
 
   if (room === null) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
         {loadError ? (
           <div className="glass-card rounded-2xl p-6 max-w-xs">
             <Lock size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
@@ -436,7 +436,7 @@ function RoomLobby({
 
   if (removedAs) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))] font-semibold">
           {removedAs === "banned" ? t("roomlobby_bannedMsg") : t("roomlobby_removedMsg")}
         </p>
@@ -449,7 +449,7 @@ function RoomLobby({
 
   if (room.status === "closed") {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))]">{t("roomlobby_closed")}</p>
         <Link href="/play" className="text-[rgb(var(--gold-ink))] text-sm underline">
           {t("roomlobby_backToPlay")}
@@ -462,7 +462,7 @@ function RoomLobby({
   const isFull = room.players.length === room.maxPlayers;
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
+    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />

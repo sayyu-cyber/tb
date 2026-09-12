@@ -477,7 +477,7 @@ export const TRANSLATIONS: Record<string, Translations> = {
   gamesel_privateRoom: { en: "Private Room", dv: "ޕްރައިވެޓް ރޫމް", hi: "प्राइवेट रूम", bn: "প্রাইভেট রুম" },
   gamesel_close: { en: "Close", dv: "ބަންދުކުރޭ", hi: "बंद करें", bn: "বন্ধ করুন" },
   gamesel_selectMode: { en: "Select Mode", dv: "މޯޑް ހޮއްވަވާ", hi: "मोड चुनें", bn: "মোড নির্বাচন করুন" },
-  gamesel_startButton: { en: "START", dv: "ފަށާ", hi: "शुरू करें", bn: "শুরু করুন" },
+  gamesel_startButton: { en: "PLAY", dv: "ފަށާ", hi: "शुरू करें", bn: "শুরু করুন" },
   gamesel_dockInvite: { en: "Invite", dv: "ދަޢުވަތު", hi: "आमंत्रित करें", bn: "আমন্ত্রণ" },
   gamesel_dockPractice: { en: "Practice", dv: "ފަރިތަކުރުން", hi: "अभ्यास", bn: "অনুশীলন" },
 

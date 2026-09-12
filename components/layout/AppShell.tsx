@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const path = pathname.replace(/\/$/, "");
-  const inMatch = /\/play\/[^/]+\/(casual\/(ai|passplay|online\/live)|ranked\/live)$/.test(path);
+  const inMatch = /\/play\/[^/]+\/(casual\/(ai|passplay|online\/live)|ranked\/live)$/.test(path) || path === '/spectate';
   return (
     <ProtectedRoute>
       <div className={`app-shell ${inMatch ? "app-shell-match" : ""}`}>
@@ -30,7 +30,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           {!inMatch && <div className="app-shell-toolbar"><TopBar /></div>}
           {children}
         </main>
-        <BottomNav />
+        {!inMatch && <BottomNav />}
       </div>
     </ProtectedRoute>
   );

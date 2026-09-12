@@ -1,4 +1,5 @@
 "use client";
+import { TrickArea } from "./TrickArea";
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Eye, RefreshCw } from "lucide-react";
@@ -198,29 +199,14 @@ function MindiSpectateView({
           </div>
 
           <div className="flex items-center justify-between w-full max-w-sm">
-            <div className="w-20">
-              <OpponentSeat seat={seatAt(1)} orientation="column" />
+            <div className="shrink-0 flex justify-start">
+              <OpponentSeat seat={seatAt(1)} orientation="column" cardDirection="column" cardFacing="left" />
             </div>
 
-            <TableWell>
-              {state.trick.length === 0 ? (
-                <span className="text-[rgb(var(--c3))] text-xs">{t("spectate_waitingNextTrick")}</span>
-              ) : (
-                state.trick.map((play) => (
-                  <motion.div
-                    key={cardId(play.card)}
-                    initial={{ opacity: 0, scale: 0.7, y: -18 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 450, damping: 26 }}
-                  >
-                    <PlayingCard rank={rankLabel(play.card.rank)} suit={suitFromLetter(play.card.suit)} size="sm" />
-                  </motion.div>
-                ))
-              )}
-            </TableWell>
+            <TrickArea plays={state.trick} />
 
-            <div className="w-20">
-              <OpponentSeat seat={seatAt(3)} orientation="column" />
+            <div className="shrink-0 flex justify-end">
+              <OpponentSeat seat={seatAt(3)} orientation="column" cardDirection="column" cardFacing="right" />
             </div>
           </div>
 

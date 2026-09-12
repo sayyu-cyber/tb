@@ -273,3 +273,85 @@ export function CardFan({
     </div>
   );
 }
+
+/** Per-size vertical overlap for CardRow's "column" mode, tuned so a stack
+ *  of 13 reads as a fanned hand rather than either a flat pile (too little
+ *  overlap) or a solid brick (too much) - proportioned the same way
+ *  CardFan's horizontal `-ml` overlap is, just applied to card height. */
+const COLUMN_OVERLAP_PX: Record<keyof typeof SIZES, number> = { xs: 24, sm: 34, md: 40, lg: 54 };
+
+/** Same idea, but for cards turned 90° to face sideways (see `facing`
+ *  below) - once rotated, a card's on-screen vertical footprint is its
+ *  *width*, not its height, so the overlap has to be recomputed against
+ *  that shorter dimension or the stack reads as a flat brick. */
+const ROTATED_OVERLAP_PX: Record<keyof typeof SIZES, number> = { xs: 16, sm: 24, md: 32, lg: 44 };
+
+/**
+ * An opponent's hand, shown the same way the player's own hand is: one
+ * face-down card per slot, no cap, no "+N" tail — so at a glance every
+ * seat at the table reads as holding real cards of the same size, just
+ * turned over, rather than opponents getting a shrunken, compressed
+ * placeholder stack while only the local player's hand looks "real".
+ * Replaces CardFan at the seat level.
+ */
+export function CardRow({
+  count,
+  size = "sm",
+  cardBackId,
+  className,
+  direction = "row",
+  facing = "viewer",
+}: {
+  count: number;
+  size?: keyof typeof SIZES;
+  cardBackId?: string;
+  className?: string;
+  /** "row" (default) lays cards edge-to-edge in a wrapping line, same as
+   *  the player's own hand. "column" stacks them top-to-bottom instead,
+   *  overlapped into a vertical fan — for the left/right seats, where a
+   *  wide horizontal row would run off the felt or get clipped by the
+   *  side rail. */
+  direction?: "row" | "column";
+  /** Only meaningful when direction="column". A seat on the left/right of
+   *  the table sits sideways to the camera, so its hand should turn to
+   *  face across the table rather than square at the viewer like the top
+   *  seat's does: "left" turns the stack to face right (toward centre,
+   *  for a seat sitting on the table's left), "right" mirrors it. Default
+   *  "viewer" keeps the card upright, facing the camera. */
+  facing?: "viewer" | "left" | "right";
+}) {
+  if (direction === "column") {
+    const rotated = facing !== "viewer";
+    const overlap = rotated ? ROTATED_OVERLAP_PX[size] : COLUMN_OVERLAP_PX[size];
+    // rotate(90deg) turns "up" to point right (toward table centre from a
+    // left-side seat); rotate(-90deg) mirrors it for a right-side seat.
+    const baseRotate = facing === "left" ? 90 : facing === "right" ? -90 : 0;
+    return (
+      <div className={cn("flex flex-col items-center", className)} aria-label={`${count} cards`}>
+        {Array.from({ length: count }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              marginTop: i === 0 ? 0 : -overlap,
+              zIndex: i,
+              // Slight alternating tilt on top of the base facing rotation,
+              // so the stack still reads as a held fan of cards rather than
+              // a flat pile.
+              transform: `rotate(${baseRotate + (i % 2 === 0 ? -1 : 1) * 2.5}deg)`,
+            }}
+          >
+            <PlayingCard rank="" suit="spades" size={size} faceDown cardBackId={cardBackId} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex items-center justify-center flex-wrap gap-1.5", className)} aria-label={`${count} cards`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <PlayingCard key={i} rank="" suit="spades" size={size} faceDown cardBackId={cardBackId} />
+      ))}
+    </div>
+  );
+}

@@ -24,7 +24,7 @@ import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, TurnIndicator } from "@/components/game/GameArena";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell } from "@/components/game/GameArena";
 import { staggerParent, popIn } from "@/lib/motion";
 
 export interface GinOnlineState {
@@ -373,12 +373,12 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
       <ArenaTable tableThemeId={activeTableTheme}>
         <div className="flex-1 flex flex-col items-center justify-between">
-          <div className="h-14 flex items-center justify-center">
+          <div className="gin-opponent-position flex items-center justify-center">
             <OpponentSeat seat={opponentSeat} orientation="column" />
           </div>
 
           <TableWell>
-            <div className="flex items-center justify-center gap-6">
+            <div className="gin-draw-piles flex items-center justify-center gap-6">
               <button
                 onClick={() => handleDraw("stock")}
                 disabled={state.phase !== "draw" || !isMyTurn || state.stock.length <= 2}
@@ -410,25 +410,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           </TableWell>
 
           <div className="w-full">
-            <SelfRow
-              name={t("mindi_you")}
-              avatarPreset={playerStats?.avatarPreset}
-              active={isMyTurn}
-              trailing={
-                <TurnIndicator
-                  active={isMyTurn}
-                  activeLabel={state.phase === "draw" ? t("gin_drawCard") : t("gin_selectDiscard")}
-                  waitingLabel={t("gin_waitingOpponent")}
-                />
-              }
-            />
             <motion.div
               variants={staggerParent(0.04)}
               initial="hidden"
               animate="show"
-              className="flex justify-center gap-1.5 flex-wrap"
+              className="match-hand" role="group" aria-label="Your cards" style={{ '--hand-count': Math.max(1, sortedHand.length) } as React.CSSProperties}
             >
-              {sortedHand.map((card) => {
+              {sortedHand.map((card, index) => {
                 const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
                 return (
                   <motion.div key={cardId(card)} variants={popIn} layout>
@@ -448,7 +436,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
             <AnimatePresence>
               {selectedDiscard && state.phase === "discard" && isMyTurn && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="flex justify-center gap-3 mt-4">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="match-actions flex justify-center gap-3 mt-4">
                   <motion.button whileTap={{ scale: 0.95 }} onClick={handleConfirmDiscard} className="px-6 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium">
                     {t("gin_discard")}
                   </motion.button>

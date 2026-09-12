@@ -127,7 +127,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
 
   if (matchFound) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200 }} className="text-center space-y-6">
           <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-16 h-16 rounded-full border-2 border-[rgb(var(--gold))] mx-auto flex items-center justify-center">
             <span className="text-[rgb(var(--gold-ink))] text-xs font-bold">VS</span>
@@ -140,7 +140,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 relative">
+    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 relative">
       <Link href="/play" className="absolute top-6 left-4">
         <motion.button aria-label={t("a11y_cancel")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <X size={20} className="text-[rgb(var(--c4))]" />

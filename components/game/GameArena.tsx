@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { getAvatarPreset } from "@/constants/profileCustomization";
-import { CardFan } from "@/components/game/PlayingCard";
+import { PlayingCard } from "@/components/game/PlayingCard";
 import { cn } from "@/lib/utils";
 
 /**
@@ -93,7 +93,7 @@ export function ArenaHeader({
 }) {
   return (
     <div
-      className="mx-3 mt-3 px-4 py-2.5 flex items-center justify-between relative z-10 rounded-2xl
+      className="arena-match-header mx-3 mt-3 px-4 py-2.5 flex items-center justify-between relative z-10 rounded-2xl
                  bg-[rgb(var(--c2)/35%)] backdrop-blur-md border border-[rgb(var(--c3)/50%)]"
     >
       {leaveSlot}
@@ -121,11 +121,26 @@ export interface ArenaSeatData {
 /** A seated opponent: avatar + name above a fanned, face-down hand in their
  *  skin, sat on a glass pill when it's their turn - the premium "who's up"
  *  signal, distinct from the plain avatar glow used the rest of the time. */
-export function OpponentSeat({ seat, orientation = "row" }: { seat: ArenaSeatData; orientation?: "row" | "column" }) {
+export function OpponentSeat({
+  seat,
+  orientation = "row",
+  cardDirection = "row",
+  cardFacing = "viewer",
+}: {
+  seat: ArenaSeatData;
+  orientation?: "row" | "column";
+  /** Pass "column" for seats on the left/right of the table so their hand
+   *  fans vertically instead of running wide off the felt. */
+  cardDirection?: "row" | "column";
+  /** Pass "left"/"right" alongside cardDirection="column" so a side seat's
+   *  hand turns to face across the table (toward the centre) instead of
+   *  squarely at the viewer, the way the top seat's does. */
+  cardFacing?: "viewer" | "left" | "right";
+}) {
   return (
     <div
       className={cn(
-        "relative flex items-center gap-2 rounded-2xl transition-colors duration-300",
+        "arena-opponent relative flex items-center gap-2 rounded-2xl transition-colors duration-300",
         orientation === "column" && "flex-col gap-1",
         seat.active
           ? "px-2.5 py-2 bg-[rgb(var(--accent,var(--gold))/15%)] backdrop-blur-md ring-1 ring-inset ring-[rgb(var(--accent,var(--gold))/42%)] shadow-[0_0_24px_-5px_rgb(var(--accent,var(--gold))/65%)]"
@@ -149,7 +164,11 @@ export function OpponentSeat({ seat, orientation = "row" }: { seat: ArenaSeatDat
         >
           {seat.name}
         </span>
-        <CardFan count={seat.cardCount} size="xs" cardBackId={seat.cardBackId} hideOverflowCount />
+        {/* Only count and skin are used here; opponents' card identities
+            never enter this renderer. CSS shares dimensions with your hand. */}
+        <div className={`opponent-hand opponent-hand-${cardDirection}`} style={{ '--hand-count': Math.max(1, seat.cardCount), '--facing': cardDirection === 'row' ? '180deg' : cardFacing === 'left' ? '90deg' : '-90deg' } as React.CSSProperties} aria-label={`${seat.cardCount} face-down cards`}>
+          {Array.from({ length: seat.cardCount }, (_, index) => <div key={index} className="opponent-hand-slot"><PlayingCard rank="" suit="spades" size="md" faceDown cardBackId={seat.cardBackId} /></div>)}
+        </div>
       </div>
     </div>
   );
@@ -166,7 +185,7 @@ export function OpponentSeat({ seat, orientation = "row" }: { seat: ArenaSeatDat
 export function TableWell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="relative w-full max-w-[min(36rem,100%)] min-h-[8.5rem] sm:min-h-[10rem] lg:min-h-[12rem] rounded-[2rem] sm:rounded-[3rem] flex items-center justify-center flex-wrap gap-1 px-4 py-3
+      className="arena-play-well relative w-full max-w-[min(36rem,100%)] min-h-[8.5rem] sm:min-h-[10rem] lg:min-h-[12rem] rounded-[2rem] sm:rounded-[3rem] flex items-center justify-center flex-wrap gap-1 px-4 py-3
                  bg-black/30 backdrop-blur-[1px]
                  shadow-[inset_0_8px_30px_rgba(0,0,0,0.48),inset_0_-1px_0_rgb(255_255_255/8%),0_18px_34px_-26px_rgb(var(--accent)/70%)]"
       style={{

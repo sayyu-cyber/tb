@@ -33,7 +33,7 @@ const SHORTCUTS = [
 export default function HomePage() {
   const t = useTranslation();
   return (
-    <div className="px-4 pt-6 pb-6 space-y-5">
+    <div className="home-game-hub px-4 pt-6 pb-6 space-y-5">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <HomeLobbyHero />
       </motion.div>
@@ -85,7 +85,7 @@ export default function HomePage() {
           ))}
         </motion.div>
 
-        <div className="md:col-span-2 lg:col-span-3">
+        <div className="home-news md:col-span-2 lg:col-span-3">
           <NewsSection />
         </div>
       </motion.div>

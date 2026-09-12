@@ -37,9 +37,9 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
     <motion.button
       type="button"
       onClick={onClick}
-      initial={{ opacity: 0, x: -20 }}
+      initial={false}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.3 + index * 0.1 }}
+      transition={{ duration: 0.15 }}
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
       style={{ ["--accent" as string]: typeAccent[item.type] } as React.CSSProperties}

@@ -23,10 +23,10 @@ export function QuickPlayButtons() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {games.map(game => (
           <Link key={game.id} href={`/play/${game.id}/casual/${isGuest ? "ai" : "online"}`} className="game-cover group" style={{ "--accent": game.accent } as React.CSSProperties}>
-            <div className="game-cover-art"><GameDeckArt game={game.id} cardBackId={state.profile.equipped.cardBack} /></div>
+            <div className="game-cover-art"><span className="mode-ribbon">{t("gamesel_casualMode")}</span><GameDeckArt game={game.id} cardBackId={state.profile.equipped.cardBack} /></div>
             <div className="game-cover-bottom">
               <div className="min-w-0"><h3>{game.name}</h3><span className="mt-1 flex items-center gap-1.5 text-xs text-[rgb(var(--c4))]"><Users size={12} />{game.players} / {t("gamesel_casualMode")}</span></div>
-              <span className="game-play-icon"><Play size={19} fill="currentColor" /></span>
+              <span className="game-play-icon"><Play size={19} fill="currentColor" /><span>{t("nav_play")}</span></span>
             </div>
           </Link>
         ))}

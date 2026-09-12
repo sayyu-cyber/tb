@@ -31,8 +31,9 @@ export function RankProgress() {
     : 100;
 
   return (
-    <VividCard accent="var(--gold)">
-      <div className="flex items-center justify-between mb-3">
+    <VividCard accent="var(--gold)" className="home-rank-panel">
+      <div className="rank-emblem" style={{ color: rankData.color }}><TierIcon size={52} aria-hidden="true" /></div>
+      <div className="rank-heading flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {/* Tier badge - real colour per rank (rankData.color), distinct
               icon per tier, so Bronze/Silver/Gold/Platinum are legible at a
@@ -53,12 +54,12 @@ export function RankProgress() {
         <span className="text-white/70 text-xs">{t("profile_trophies").toLowerCase()}</span>
       </div>
 
-      <div className="h-2 bg-white/25 rounded-full overflow-hidden">
+      <div className="rank-meter h-2 bg-white/25 rounded-full overflow-hidden">
         <motion.div
           className="h-full bg-white rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         />
       </div>
 

@@ -96,7 +96,7 @@ function PartyChooser({ gameId }: { gameId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
+    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
       <Link href="/play" className="absolute top-6 left-4">
         <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
@@ -255,7 +255,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
 
   if (room === null) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
         <p className="text-[rgb(var(--c4))] text-sm">{t("rankedduo_loadingParty")}</p>
       </div>
     );
@@ -263,7 +263,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
 
   if (room.status === "closed") {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-4">
         <p className="text-[rgb(var(--text-primary))]">{t("rankedduo_closed")}</p>
         <Link href="/play" className="text-[rgb(var(--gold-ink))] text-sm underline">
           {t("roomlobby_backToPlay")}
@@ -276,7 +276,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
 
   if (!canQueue) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-3">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))]">{t("rankedduo_weekendReq")}</p>
         <p className="text-[rgb(var(--c4))] text-sm">{t("rankedduo_climbMsg").replace("{rank}", String(rank)).replace("{trophies}", String(trophies))}</p>
         <button onClick={handleLeave} className="text-[rgb(var(--gold-ink))] text-sm underline">
@@ -288,7 +288,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
 
   if (queueing) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-6">
+      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-6">
         <div className="relative w-24 h-24 mx-auto">
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -310,7 +310,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
+    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />

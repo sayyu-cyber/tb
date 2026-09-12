@@ -1,4 +1,5 @@
 "use client";
+import { TrickArea } from "./TrickArea";
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,7 +34,7 @@ import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, SelfRow, ArenaSeatData, TurnIndicator } from "@/components/game/GameArena";
+import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, ArenaSeatData } from "@/components/game/GameArena";
 import { staggerParent, popIn } from "@/lib/motion";
 
 export interface MindiOnlineState {
@@ -364,51 +365,22 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
             <OpponentSeat seat={topSeat} orientation="column" />
           </div>
 
-          <div className="flex items-center justify-between gap-2 sm:gap-6 w-full max-w-5xl">
-            <div className="w-20 sm:w-32 lg:w-44 flex justify-start">{leftSeat && <OpponentSeat seat={leftSeat} orientation="column" />}</div>
+          <div className="flex items-center justify-between gap-2 sm:gap-6 w-full">
+            <div className="shrink-0 flex justify-start">{leftSeat && <OpponentSeat seat={leftSeat} orientation="column" cardDirection="column" cardFacing="left" />}</div>
 
-            <TableWell>
-              {state.trick.length === 0 ? (
-                <span className="text-[rgb(var(--c3))] text-xs">{isMyTurn ? t("mindi_yourTurn") : t("mindi_waiting")}</span>
-              ) : (
-                <AnimatePresence>
-                  {state.trick.map((play) => (
-                    <motion.div
-                      key={cardId(play.card)}
-                      initial={{ opacity: 0, scale: 0.7, y: -18 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.7 }}
-                      transition={{ type: "spring", stiffness: 450, damping: 26 }}
-                    >
-                      <PlayingCard
-                        layoutId={cardId(play.card)}
-                        rank={rankLabel(play.card.rank)}
-                        suit={suitFromLetter(play.card.suit)}
-                        size="sm"
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              )}
-            </TableWell>
+            <TrickArea plays={state.trick} viewerSeat={mySeat} duel={isDuel} />
 
-            <div className="w-20 sm:w-32 lg:w-44 flex justify-end">{rightSeat && <OpponentSeat seat={rightSeat} orientation="column" />}</div>
+            <div className="shrink-0 flex justify-end">{rightSeat && <OpponentSeat seat={rightSeat} orientation="column" cardDirection="column" cardFacing="right" />}</div>
           </div>
 
           <div className="w-full">
-            <SelfRow
-              name={myProfile.name}
-              avatarPreset={myProfile.avatarPreset}
-              active={isMyTurn}
-              trailing={<TurnIndicator active={isMyTurn} activeLabel={t("mindi_selectCard")} waitingLabel={t("mindi_waitingOthers")} />}
-            />
             <motion.div
               variants={staggerParent(0.04)}
               initial="hidden"
               animate="show"
-              className="flex justify-center gap-1.5 flex-wrap"
+              className="match-hand" role="group" aria-label="Your cards" style={{ '--hand-count': Math.max(1, myHand.length) } as React.CSSProperties}
             >
-              {myHand.map((card) => {
+              {myHand.map((card, index) => {
                 const canPlay = isMyTurn && legalForMe.some((c) => cardId(c) === cardId(card));
                 return (
                   <motion.div key={cardId(card)} variants={popIn} layout>
