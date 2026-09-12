@@ -134,6 +134,33 @@
 }
 
 @layer components {
+  .app-shell { display:flex; min-height:100svh; background:rgb(var(--c1)); }
+  .app-side-nav { width:56px; height:calc(100svh - 62px); padding:14px 6px; }
+  .app-side-nav > div, .app-side-nav a, .app-side-nav button { flex-shrink:0; }
+  .app-shell-main { width:calc(100% - 56px); min-width:0; max-width:1440px; margin:0 auto; padding-bottom:112px; }
+  .app-shell-match .app-shell-main { width:100%; }
+  .app-shell-toolbar { padding:12px 16px 0; }
+  .app-top-bar { flex-wrap:wrap; }
+  .app-top-bar > div:first-child { display:block; min-width:0; flex:1 1 180px; }
+  .app-shell .hub-page { padding-inline:16px; }
+  .app-shell .glass-card { backdrop-filter:none; -webkit-backdrop-filter:none; }
+  @media(max-width:639px) {
+    .app-shell-toolbar { padding:8px 10px 0; }
+    .app-shell .hub-page { padding-inline:10px; }
+    .app-side-nav { height:calc(100svh - 96px); }
+    .app-shell-main > div[class*="px-4"] { padding-left:10px; padding-right:10px; }
+    .app-shell .hub-page-header { flex-wrap:wrap; }
+    .app-shell .hub-page-header h1 { font-size:18px; }
+    .app-shell .hub-tabs { max-width:100%; }
+    .app-shell .social-summary { flex-wrap:wrap; }
+    .app-shell .friend-actions { gap:5px; }
+    .app-shell .lobby-scene-content { padding-left:14px; padding-right:14px; }
+    .app-shell .lobby-scene h1 { font-size:32px; }
+    .app-shell .game-section-heading { flex-wrap:wrap; }
+    .app-shell .inventory-loadout { flex-wrap:wrap; }
+    .app-shell .cosmetic-display { height:120px; }
+    .app-shell .leaderboard-podium { gap:6px; }
+  }
   .hub-page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 24px 48px; }
   .hub-page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding: 8px 0 24px; border-bottom: 1px solid rgb(var(--c3)); }
   .hub-page-header h1 { overflow-wrap: anywhere; }
@@ -167,6 +194,7 @@
   .friend-avatar { width:42px; height:42px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:50%; color:rgb(var(--lagoon)); background:rgb(var(--lagoon)/10%); border:1px solid rgb(var(--lagoon)/35%); }
   .friend-actions { display:flex; gap:8px; flex-wrap:wrap; }
   .friends-page input { min-width:0; }
+  .friends-page > .hub-tabs > button { flex:1; padding:10px 8px; font-size:12px; gap:5px; }
   .friends-page .glass-card { border-radius:8px; backdrop-filter:none; }
   .admin-workspace { display:grid; grid-template-columns:180px minmax(0,1fr); gap:28px; }
   .admin-navigation { display:flex; flex-direction:column; align-self:start; gap:6px; position:sticky; top:16px; }

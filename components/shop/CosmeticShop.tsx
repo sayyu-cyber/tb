@@ -53,7 +53,6 @@ function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, 
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       whileHover={{ y: -4 }}
-      layout
     >
       {(isFeatured || item.rarity === 'Legendary') && (
         <motion.div
@@ -376,7 +375,6 @@ export default function CosmeticShop() {
     <div className="w-full max-w-6xl mx-auto">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">{t('shop_headerTitle')}</h2>
           <p className="text-[rgb(var(--c4))] text-sm">{t('shop_headerSubtitle')}</p>
         </div>
         <CoinBalance size="lg" />
@@ -407,7 +405,7 @@ export default function CosmeticShop() {
         ))}
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false} mode="popLayout">
         {activeTab === 'featured' && (
           <motion.div
             key="featured"

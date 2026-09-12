@@ -43,7 +43,7 @@ import { SPRING } from "@/lib/motion";
  * carries the same five items + More for mobile.
  */
 
-const RAIL_WIDTH = "w-14 md:w-[76px]";
+const RAIL_WIDTH = "w-14";
 const SHEET_WIDTH = "w-72";
 
 interface HubItem {
@@ -95,7 +95,7 @@ function CollapsedRow({ item, active }: { item: HubItem; active: boolean }) {
   return (
     <Link
       href={item.href}
-      prefetch={false}
+      prefetch
       aria-label={t(item.key)}
       title={t(item.key)}
       style={{ ["--accent" as string]: item.accent } as React.CSSProperties}
@@ -125,7 +125,7 @@ function ExpandedRow({ item, active, onNavigate }: { item: HubItem; active: bool
   return (
     <Link
       href={item.href}
-      prefetch={false}
+      prefetch
       onClick={onNavigate}
       style={{ ["--accent" as string]: item.accent } as React.CSSProperties}
       className="relative flex items-center gap-3 rounded-xl px-3 py-2.5"
@@ -286,7 +286,6 @@ export function SideNav() {
   // Netlify serves), so usePathname() returns "/home/", not "/home" - strip
   // a trailing slash before comparing.
   const path = pathname?.replace(/\/$/, "");
-  if (path !== "/home" && path !== "/play") return null;
 
   const closeAndNavigate = () => setExpanded(false);
 
@@ -297,7 +296,7 @@ export function SideNav() {
           class, full size from md+). */}
       <aside
         className={cn(
-          "hidden md:flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto items-center gap-2",
+          "app-side-nav flex flex-col shrink-0 sticky top-0 overflow-y-auto items-center gap-2",
           "border-r border-[rgb(var(--c3))] bg-[rgb(var(--c1))] px-2 py-5",
           RAIL_WIDTH
         )}

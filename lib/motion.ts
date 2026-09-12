@@ -35,8 +35,8 @@ export const EASE: Transition = { duration: 0.22, ease: [0.32, 0.72, 0, 1] };
 
 /** Small rise. The everyday entrance - subtle, 8px not 20px. */
 export const riseIn: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: SPRING },
+  hidden: { opacity: 1, y: 0 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.12 } },
 };
 
 /** Scale-and-fade, for things that "appear" rather than "arrive". */
@@ -75,8 +75,8 @@ export function staggerParent(stagger = 0.045, delayChildren = 0): Variants {
     hidden: {},
     show: {
       transition: {
-        staggerChildren: stagger,
-        delayChildren,
+        staggerChildren: Math.min(stagger, 0.008),
+        delayChildren: Math.min(delayChildren, 0.04),
         // Cap the cascade: beyond ~12 items the delay stops feeling
         // deliberate and starts feeling slow.
         staggerDirection: 1,

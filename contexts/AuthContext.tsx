@@ -30,7 +30,7 @@ interface AuthContextType {
   updatePlayerProfile: (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const defaultStats: PlayerStats = {
   totalMatches: 0,
@@ -50,61 +50,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
+    let generation = 0;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        let displayName = firebaseUser.displayName;
-
-        // Fetch player stats from Firestore
-        const statsDoc = await getDoc(doc(db, "players", firebaseUser.uid));
-        if (statsDoc.exists()) {
-          const existing = statsDoc.data() as PlayerStats;
-          // Backfill: accounts created before playerCode existed (or ones
-          // whose players doc was created via a path that doesn't set it,
-          // e.g. signInWithGoogle's own merge write) get one minted here,
-          // the single place every signed-in session passes through.
-          if (!existing.playerCode) {
-            const playerCode = generatePlayerCode();
-            await setDoc(doc(db, "players", firebaseUser.uid), { playerCode }, { merge: true });
-            existing.playerCode = playerCode;
-          }
-          setPlayerStats(existing);
-        } else {
-          // Initialize stats for new user. Anonymous (guest) sign-ins have
-          // no provider-supplied name, so mint one and persist it to the
-          // Firebase Auth profile itself - that way it's still there next
-          // time this same anonymous session resumes, not just this tab.
-          if (firebaseUser.isAnonymous && !displayName) {
-            displayName = `Guest_${Math.floor(Math.random() * 10000)}`;
-            await updateFirebaseAuthProfile(firebaseUser, { displayName });
-          }
-          const playerCode = generatePlayerCode();
-          await setDoc(doc(db, "players", firebaseUser.uid), {
-            ...defaultStats,
-            displayName,
-            playerCode,
-            createdAt: serverTimestamp(),
-          });
-          setPlayerStats({ ...defaultStats, playerCode });
-        }
-
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName,
-          photoURL: firebaseUser.photoURL,
-          isGuest: firebaseUser.isAnonymous,
-          createdAt: new Date(),
-        });
-        setIsGuest(firebaseUser.isAnonymous);
-      } else {
+      const current = ++generation;
+      if (!firebaseUser) {
         setUser(null);
         setPlayerStats(null);
         setIsGuest(false);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    });
 
-    return () => unsubscribe();
+      const displayName = firebaseUser.displayName || (firebaseUser.isAnonymous ? "Guest" : "Player");
+      // Authentication is already resolved; profile reads do not block navigation.
+      setUser({
+        uid: firebaseUser.uid, email: firebaseUser.email, displayName,
+        photoURL: firebaseUser.photoURL, isGuest: firebaseUser.isAnonymous, createdAt: new Date(),
+      });
+      setIsGuest(firebaseUser.isAnonymous);
+      setPlayerStats(null);
+      setLoading(false);
+
+      try {
+        const ref = doc(db, "players", firebaseUser.uid);
+        const statsDoc = await getDoc(ref);
+        if (current !== generation) return;
+        if (statsDoc.exists()) {
+          const existing = statsDoc.data() as PlayerStats;
+          if (!existing.playerCode) {
+            existing.playerCode = generatePlayerCode();
+            await setDoc(ref, { playerCode: existing.playerCode }, { merge: true });
+          }
+          if (current === generation) setPlayerStats(existing);
+        } else {
+          const playerCode = generatePlayerCode();
+          await setDoc(ref, { ...defaultStats, displayName, playerCode, createdAt: serverTimestamp() });
+          if (current === generation) setPlayerStats({ ...defaultStats, playerCode });
+        }
+      } catch (error) {
+        console.error("Failed to load player profile:", error);
+      }
+    });
+    return () => { generation++; unsubscribe(); };
   }, []);
 
   const signInWithGoogle = async () => {

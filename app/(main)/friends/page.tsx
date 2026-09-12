@@ -39,7 +39,7 @@ export default function FriendsPage() {
   const [searching, setSearching] = useState(false);
   const [incoming, setIncoming] = useState<FriendRequestDoc[]>([]);
   const [outgoing, setOutgoing] = useState<FriendRequestDoc[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([{requestId:'sample1',uid:'sample1',name:'Aishath'},{requestId:'sample2',uid:'sample2',name:'Mohamed Ahmed Very Long Player Name'}]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [invites, setInvites] = useState<RoomInviteDoc[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string[]>([]);

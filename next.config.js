@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  distDir: process.env.THAASBAI_BUILD_DIR || '.next',
   output: 'export',
   trailingSlash: true,
   images: {

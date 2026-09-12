@@ -20,7 +20,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (isGuest && pathname && guestRestrictedPaths.includes(pathname)) {
+    if (isGuest && pathname && guestRestrictedPaths.includes(pathname.replace(/\/$/, ''))) {
       router.push("/home");
     }
   }, [isGuest, pathname, router]);
@@ -34,13 +34,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
+    <div
       className="min-h-screen bg-[rgb(var(--c1))]"
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

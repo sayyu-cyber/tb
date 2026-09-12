@@ -80,7 +80,7 @@ function SearchBox() {
   };
 
   return (
-    <div ref={ref} className="relative hidden md:block w-full max-w-xs">
+    <div ref={ref} className="relative w-full max-w-xs">
       <div className="flex items-center gap-2 rounded-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] px-3.5 py-2 focus-within:border-[rgb(var(--gold)/45%)] transition-colors">
         <Search size={15} className="text-[rgb(var(--c4))] shrink-0" aria-hidden="true" />
         <input
@@ -322,10 +322,9 @@ function ProfileChip() {
 export function TopBar() {
   const pathname = usePathname();
   const path = pathname?.replace(/\/$/, "");
-  if (path !== "/home" && path !== "/play") return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 pt-1 pb-3">
+    <div className="app-top-bar flex items-center justify-between gap-3 pt-1 pb-3">
       <SearchBox />
       <div className="flex items-center gap-2 ml-auto">
         <CoinBalance size="sm" />

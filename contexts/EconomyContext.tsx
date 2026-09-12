@@ -1,7 +1,7 @@
 // contexts/EconomyContext.tsx
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect, useState } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { GameLoading } from '@/components/system/GameLoading';
 import { db } from '@/lib/firebase';
@@ -711,10 +711,14 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [state, dispatch] = useReducer(economyReducer, initialState);
   const [isLoading, setIsLoading] = useState(true);
+  const [remoteReadyUid, setRemoteReadyUid] = useState<string | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Load from Firebase on auth change
   useEffect(() => {
     setIsLoading(true);
+    setRemoteReadyUid(null);
 
     if (!user) {
       // Load from localStorage for guests
@@ -740,7 +744,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
 
     const fallbackTimer = window.setTimeout(() => {
       if (settled || cancelled) return;
-      const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`) || localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
       if (saved) {
         try {
           dispatch({ type: 'SET_STATE', payload: mergeEconomyState(JSON.parse(saved), user) });
@@ -788,10 +792,11 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
           if (cancelled) return;
           dispatch({ type: 'SET_STATE', payload: newState });
         }
+        if (!cancelled) setRemoteReadyUid(user.uid);
       } catch (error) {
         console.error('Failed to load from Firebase:', error);
         if (!cancelled) {
-          const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`) || localStorage.getItem(STORAGE_KEY);
+          const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
           if (saved) {
             try {
               dispatch({ type: 'SET_STATE', payload: mergeEconomyState(JSON.parse(saved), user) });
@@ -816,7 +821,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
         // Only update if the data is newer than our current state
         // This prevents loops while still allowing multi-device sync
         const lastTx = data.economy?.transactions?.[0]?.timestamp || 0;
-        const ourLastTx = state.economy?.transactions?.[0]?.timestamp || 0;
+        const ourLastTx = stateRef.current.economy?.transactions?.[0]?.timestamp || 0;
         if (lastTx > ourLastTx) {
           dispatch({ type: 'SET_STATE', payload: data });
         }
@@ -831,7 +836,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       window.clearTimeout(fallbackTimer);
       unsub();
     };
-  }, [user]);
+  }, [user?.uid]);
 
   // Save to Firebase on state change
   useEffect(() => {
@@ -840,9 +845,11 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (isLoading) return;
+    if (isLoading || state.profile.uid !== user.uid) return;
 
     localStorage.setItem(`${STORAGE_KEY}:${user.uid}`, JSON.stringify(state));
+    // A timed-out read must never upload fallback balances over remote data.
+    if (remoteReadyUid !== user.uid) return;
 
     const saveToFirebase = async () => {
       try {
@@ -867,7 +874,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     // Debounce save to prevent excessive writes
     const timer = setTimeout(saveToFirebase, 1000);
     return () => clearTimeout(timer);
-  }, [state, user, isLoading]);
+  }, [state, user?.uid, isLoading, remoteReadyUid]);
 
   // VIP and room card expiry check
   useEffect(() => {

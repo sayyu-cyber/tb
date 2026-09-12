@@ -19,7 +19,7 @@ function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean;
     <Link
       href={item.href}
       scroll={false}
-      prefetch={false}
+      prefetch
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className="relative flex flex-1 flex-col items-center gap-1 py-2 min-w-0 min-h-[52px] rounded-xl"
@@ -118,7 +118,7 @@ export function BottomNav() {
                           <motion.div key={`${group.titleKey}-${item.key}`} variants={riseIn}>
                             <Link
                               href={item.href}
-                              prefetch={false}
+                              prefetch
                               onClick={() => setMoreOpen(false)}
                               style={{ ["--accent" as string]: accent } as React.CSSProperties}
                               className="flex items-center gap-3 rounded-xl border border-transparent

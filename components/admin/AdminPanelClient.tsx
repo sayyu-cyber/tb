@@ -21,7 +21,7 @@ import { CoinTopupRequest, watchAllTopups, decideTopup, findPlayerByCode, adminT
 import { ManualHallOfFameEntry, watchManualHallOfFameEntries, addManualHallOfFameEntry, removeManualHallOfFameEntry, resetManualHallOfFame } from "@/lib/hallOfFame";
 import { ALL_COSMETICS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, RANK_CONFIGS } from "@/data/cosmetics";
 import { useTranslation } from "@/hooks/useTranslation";
-import { ShieldCheck, Wallet, CalendarDays, Trophy, ShoppingBag, Target, Swords } from "lucide-react";
+import { ShieldCheck, Wallet, CalendarDays, Trophy, ShoppingBag, Target, Swords, Search } from "lucide-react";
 
 type Tab = "topups" | "season" | "hof" | "shop" | "missions" | "ranked";
 
@@ -406,6 +406,7 @@ function HallOfFameTab() {
 }
 
 function ShopTab() {
+  const [query, setQuery] = useState('');
   const [overrides, setOverridesState] = useState<ShopOverrides>({ priceOverrides: {}, hiddenItemIds: [] });
   const [saved, setSaved] = useState(false);
 
@@ -432,7 +433,8 @@ function ShopTab() {
       <button onClick={handleSave} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm sticky top-0 z-10">
         {saved ? "Saved!" : "Save Shop Changes"}
       </button>
-      {ALL_COSMETICS.filter((c) => !c.isVipExclusive && c.price > 0).map((item) => {
+      <label className="hub-search"><Search size={16} /><input aria-label="Search shop settings" placeholder="Search cosmetics" value={query} onChange={event=>setQuery(event.target.value)} /></label>
+      {ALL_COSMETICS.filter((c) => !c.isVipExclusive && c.price > 0 && c.name.toLowerCase().includes(query.trim().toLowerCase())).map((item) => {
         const hidden = overrides.hiddenItemIds.includes(item.id);
         return (
           <div key={item.id} className={`glass-card rounded-xl p-3 flex items-center justify-between gap-2 ${hidden ? "opacity-50" : ""}`}>
@@ -440,12 +442,12 @@ function ShopTab() {
             <input
               type="number"
               defaultValue={overrides.priceOverrides[item.id] ?? item.price}
+              aria-label={`${item.name} price`}
+              min={0}
               onChange={(e) => updatePrice(item.id, e.target.value)}
               className="w-20 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-lg px-2 py-1.5 text-[rgb(var(--text-primary))] text-xs outline-none"
             />
-            <button onClick={() => toggleHidden(item.id)} className={`text-xs px-2 py-1.5 rounded-lg ${hidden ? "bg-[rgb(var(--coral)/15%)] text-[rgb(var(--coral-ink))]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))]"}`}>
-              {hidden ? "Hidden" : "Visible"}
-            </button>
+            <label className="flex items-center gap-2 text-xs text-[rgb(var(--c4))]"><input type="checkbox" checked={!hidden} onChange={()=>toggleHidden(item.id)} aria-label={`${item.name} visible`} />Visible</label>
           </div>
         );
       })}

@@ -12,8 +12,7 @@ import { Search } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function LeaderboardPage() {
-  const entries = ['Aishath','Mohamed Ahmed Very Long Name','Hussain','Sayyu','Fathimath'].map((username,index)=>({uid:index===3?'sample-user':`sample${index}`,username,trophies:500-index*70,rank:index+1,avatar:''}));
-  const loading=false, error=null, refresh=()=>{};
+  const { entries, loading, error, refresh } = useLeaderboard();
   const { user } = useAuth();
   const t = useTranslation();
   const [query, setQuery] = useState('');
