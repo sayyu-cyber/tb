@@ -35,6 +35,10 @@ export function SidebarTooltip({
 
   const show = useCallback(() => {
     if (!enabled || !anchorRef.current) return;
+    // Touch devices never fire a matching leave/blur when you tap a link, so
+    // the bubble would latch open next to whatever you last tapped. Hover
+    // affordances belong to devices that can actually hover.
+    if (typeof window !== "undefined" && !window.matchMedia("(hover: hover)").matches) return;
     const rect = anchorRef.current.getBoundingClientRect();
     // Vertically centred on the trigger, just past its right edge. Fixed
     // coordinates, so the page scrolling underneath doesn't drag it along.

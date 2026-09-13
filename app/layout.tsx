@@ -9,6 +9,7 @@ import { MotionProvider } from "@/components/system/MotionProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { RotateDeviceGate } from "@/components/layout/RotateDeviceGate";
 import { DESKTOP_VIEWPORT_SCRIPT } from "@/lib/desktopViewport";
+import { ViewportManager } from "@/components/system/ViewportManager";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -86,6 +87,10 @@ export default function RootLayout({
               {/* Innermost so any screen can raise a toast, and so the
                   toast stack renders above the app's own fixed chrome. */}
               <ToastProvider>
+                {/* Re-asserts the desktop layout viewport after hydration
+                    and after every navigation, both of which re-render the
+                    head metadata and would otherwise reset it. */}
+                <ViewportManager />
                 {/* Outside AppShell so it also covers the landing and login
                     pages - portrait isn't a supported orientation anywhere,
                     not just once you're signed in. */}
