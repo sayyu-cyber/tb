@@ -8,6 +8,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { MotionProvider } from "@/components/system/MotionProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { RotateDeviceGate } from "@/components/layout/RotateDeviceGate";
+import { DESKTOP_VIEWPORT_SCRIPT } from "@/lib/desktopViewport";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -74,6 +75,11 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body className={inter.className}>
+        {/* First thing in <body>: the whole <head> (including Next's own
+            viewport tag) is parsed by now, and nothing has painted yet, so
+            a landscape phone gets the desktop layout on its very first
+            frame instead of flashing the mobile one. */}
+        <script dangerouslySetInnerHTML={{ __html: DESKTOP_VIEWPORT_SCRIPT }} />
         <MotionProvider><AuthProvider>
           <SettingsProvider>
             <EconomyProvider>
