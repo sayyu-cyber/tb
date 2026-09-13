@@ -25,7 +25,7 @@ import {
 import { db } from "@/lib/firebase";
 
 const CLUBS_COLLECTION = "clubs";
-const MAX_MEMBERS = 30;
+export const MAX_MEMBERS = 30;
 
 export interface ClubDoc {
   id: string;
@@ -170,11 +170,11 @@ export async function sendClubMessage(clubId: string, senderUid: string, senderN
   });
 }
 
-export function watchClubMessages(clubId: string, onUpdate: (messages: ClubMessage[]) => void): Unsubscribe {
+export function watchClubMessages(clubId: string, onUpdate: (messages: ClubMessage[]) => void, onError?: (error: Error) => void): Unsubscribe {
   const q = query(collection(doc(db, CLUBS_COLLECTION, clubId), "messages"), orderBy("createdAt", "asc"), limit(200));
   return onSnapshot(q, (snap) => {
     onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClubMessage, "id">) })));
-  });
+  }, onError);
 }
 
 export async function getClub(clubId: string): Promise<ClubDoc | null> {

@@ -1,244 +1,83 @@
 "use client";
-
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Bell, Volume2, Music, LogOut, Shield, HelpCircle, Info, LayoutDashboard, Languages } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Settings, Bell, Volume2, Music, Shield, HelpCircle, Info, LayoutDashboard, Languages, User, Palette, Moon, Activity, ChevronRight, Gamepad2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useToast } from "@/contexts/ToastContext";
 import { SettingToggle } from "@/components/settings/SettingToggle";
-import { SettingButton } from "@/components/settings/SettingButton";
+import { SettingsSection } from "@/components/settings/SettingsSection";
+import { LogoutBar } from "@/components/settings/LogoutBar";
+import { LobbyPhoto } from "@/components/home/LobbyPhoto";
 import { isAdminEmail } from "@/lib/admin";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LANGUAGE_NAMES } from "@/lib/i18n";
-import { LanguageCode } from "@/types";
+import { LanguageCode, AppSettings } from "@/types";
 
-const LANGUAGE_OPTIONS: LanguageCode[] = ["en", "dv", "hi", "bn"];
-
+const categories = [
+  {id:"preferences",label:"Preferences",icon:Settings},
+  {id:"account",label:"Account",icon:User},
+  {id:"privacy",label:"Privacy & Security",icon:Shield},
+  {id:"help",label:"Help & Support",icon:HelpCircle},
+];
+const languages: LanguageCode[] = ["en","dv","hi","bn"];
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
-  const { logout, user } = useAuth();
-  const router = useRouter();
+  const { user, isGuest } = useAuth();
+  const { showToast } = useToast();
   const t = useTranslation();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-
-  const handleLogout = async () => {
-    await logout();
-  };
-
-  return (
-    <div className="px-4 pt-6 pb-6 space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3"
-      >
-        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
-          <Settings size={20} className="text-[rgb(var(--gold-ink))]" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("settings_title")}</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">{t("settings_subtitle")}</p>
-        </div>
-      </motion.div>
-
-      {/* Preferences */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card rounded-2xl p-4"
-      >
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-2 px-1">{t("settings_preferences")}</h3>
-
-        <SettingToggle
-          icon={Bell}
-          label={t("settings_notifications")}
-          description="Push notifications for matches"
-          enabled={settings.notifications}
-          onChange={() => updateSettings({ notifications: !settings.notifications })}
-        />
-
-        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-
-        <SettingToggle
-          icon={Volume2}
-          label={t("settings_sound")}
-          description="Game sounds and UI feedback"
-          enabled={settings.sound}
-          onChange={() => updateSettings({ sound: !settings.sound })}
-          accent="var(--lagoon)"
-        />
-
-        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-
-        <SettingToggle
-          icon={Music}
-          label={t("settings_music")}
-          description="Ambient game music"
-          enabled={settings.music}
-          onChange={() => updateSettings({ music: !settings.music })}
-          accent="var(--orchid)"
-        />
-
-        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-
-        <SettingButton
-          icon={Languages}
-          label={t("settings_language")}
-          description={LANGUAGE_NAMES[settings.language]}
-          onClick={() => setShowLanguagePicker((v) => !v)}
-          accent="var(--deep)"
-        />
-
-        <AnimatePresence>
-          {showLanguagePicker && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="grid grid-cols-2 gap-2 px-1 pb-2 overflow-hidden"
-            >
-              {LANGUAGE_OPTIONS.map((code) => (
-                <button
-                  key={code}
-                  onClick={() => {
-                    updateSettings({ language: code });
-                    setShowLanguagePicker(false);
-                  }}
-                  className={`py-2 rounded-xl text-sm font-medium transition-colors ${
-                    settings.language === code
-                      ? "bg-[rgb(var(--gold)/15%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]"
-                      : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))]"
-                  }`}
-                >
-                  {LANGUAGE_NAMES[code]}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Account */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card rounded-2xl p-4"
-      >
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-2 px-1">{t("settings_account")}</h3>
-
-        {isAdminEmail(user?.email) && (
-          <>
-            <SettingButton icon={LayoutDashboard} label="Admin Panel" description="Manage the app" onClick={() => router.push("/admin")} accent="var(--deep)" />
-            <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-          </>
-        )}
-
-        <SettingButton
-          icon={Shield}
-          label="Privacy & Security"
-          description="Manage your data"
-          onClick={() => {}}
-          accent="var(--lagoon)"
-        />
-
-        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-
-        <SettingButton
-          icon={HelpCircle}
-          label="Help & Support"
-          description="FAQs and contact"
-          onClick={() => {}}
-          accent="var(--deep)"
-        />
-
-        <div className="h-px bg-[rgb(var(--c2))] mx-1" />
-
-        <SettingButton
-          icon={Info}
-          label="About"
-          description="Version 1.0.0"
-          onClick={() => setShowAbout((v) => !v)}
-        />
-
-        <AnimatePresence>
-          {showAbout && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="mx-1 mb-1 rounded-xl bg-[rgb(var(--c2))] px-3 py-3 text-center">
-                <p className="text-[rgb(var(--gold-ink))] text-sm font-bold tracking-wide">THAASBAI</p>
-                <p className="text-[rgb(var(--c4))] text-xs mt-0.5">The Home of Maldivian Card Games</p>
-                <p className="text-[rgb(var(--c4))] text-[11px] mt-2">Version 1.0.0</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Logout */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <AnimatePresence>
-          {showLogoutConfirm ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="glass-card rounded-2xl p-4 space-y-3"
-            >
-              <p className="text-[rgb(var(--text-primary))] text-sm text-center">{t("settings_logoutConfirm")}</p>
-              <div className="flex gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 py-3 rounded-xl bg-[rgb(var(--c2))] text-[rgb(var(--c5))] text-sm font-medium"
-                >
-                  {t("common_cancel")}
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleLogout}
-                  className="flex-1 py-3 rounded-xl bg-[rgb(var(--coral)/10%)] text-[rgb(var(--coral-ink))] text-sm font-medium border border-[rgb(var(--coral)/20%)]"
-                >
-                  {t("settings_logout")}
-                </motion.button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowLogoutConfirm(true)}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[rgb(var(--coral)/5%)] border border-[rgb(var(--coral)/10%)] text-[rgb(var(--coral-ink))] hover:bg-[rgb(var(--coral)/10%)] transition-colors"
-            >
-              <LogOut size={18} />
-              <span className="text-sm font-medium">{t("settings_logout")}</span>
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-center pt-4"
-      >
-        <p className="text-[rgb(var(--c2))] text-[10px] tracking-wider">THAASBAI v1.0.0</p>
-        <p className="text-[rgb(var(--c2))] text-[10px] mt-1">The Home of Maldivian Card Games</p>
-      </motion.div>
+  const [active, setActive] = useState("preferences");
+  function save(change: Partial<AppSettings>) {
+    try { updateSettings(change); }
+    catch { showToast("Couldn't save your changes on this device.", "error"); }
+  }
+  function focusSection(id: string) {
+    setActive(id);
+    const section = document.getElementById("settings-" + id);
+    section?.scrollIntoView({block:"start",behavior:"auto"});
+    section?.focus({preventScroll:true});
+  }
+  return <div className="settings-hub">
+    <header className="settings-hero"><LobbyPhoto className="absolute inset-0" />
+      <div className="settings-hero-copy"><span>THAASBAI</span><h1><Settings aria-hidden="true" />{t("settings_title")}</h1>
+      <p>Customize your experience</p></div>
+    </header>
+    <nav className="settings-categories" aria-label="Settings categories">
+      {categories.map(({id,label,icon:Icon}) => <button key={id} aria-current={active === id ? "location" : undefined}
+        onClick={() => focusSection(id)}><Icon size={18} />{label}</button>)}
+    </nav>
+    <div className="settings-dashboard">
+      <SettingsSection id="preferences" title="Game Preferences" icon={Gamepad2} tone="teal">
+        <SettingToggle icon={Bell} label={t("settings_notifications")} description="Push delivery is not connected yet." enabled={false} disabled onChange={() => {}} />
+        <SettingToggle icon={Volume2} label={t("settings_sound")} description="Game sound effects are not connected yet." enabled={false} disabled onChange={() => {}} />
+        <SettingToggle icon={Music} label={t("settings_music")} description="Ambient game music" enabled={settings.music} onChange={() => save({music:!settings.music})} />
+        <div className="settings-row"><Languages size={20} aria-hidden="true" /><label htmlFor="settings-language">{t("settings_language")}</label>
+          <select id="settings-language" value={settings.language} onChange={e => save({language:e.target.value as LanguageCode})}>
+            {languages.map(code => <option value={code} key={code}>{LANGUAGE_NAMES[code]}</option>)}
+          </select></div>
+      </SettingsSection>
+      <SettingsSection id="appearance" title="Appearance" icon={Palette} tone="gold">
+        <div className="settings-row"><Moon size={20} /><div><h3>Theme</h3><p>Thaasbai Dark</p></div><span className="settings-status"><Moon size={16} /> Dark</span></div>
+        <div className="settings-row"><Activity size={20} /><div><h3>Reduced Motion</h3><p>Follows your device accessibility preference.</p></div><span className="settings-status">System</span></div>
+      </SettingsSection>
+      <SettingsSection id="account" title="Account" icon={User} tone="blue">
+        {isAdminEmail(user?.email) && <Link className="settings-row settings-link" href="/admin"><LayoutDashboard size={20} /><div><h3>Admin Panel</h3><p>Manage the app</p></div><ChevronRight size={18} /></Link>}
+        <Link className="settings-row settings-link" href="/profile"><User size={20} /><div><h3>Username &amp; Profile</h3><p>Display name and avatar</p></div><ChevronRight size={18} /></Link>
+        <div className="settings-row"><Shield size={20} /><div><h3>{isGuest ? "Guest Session" : "Signed-in Account"}</h3><p>{isGuest ? "Sign in to keep your progress." : user?.email || user?.displayName || "Player"}</p></div></div>
+      </SettingsSection>
+      <SettingsSection id="privacy" title="Privacy & Security" icon={Shield} tone="teal">
+        <div className="settings-row"><Shield size={20} /><div><h3>Device Preferences</h3><p>Music and language preferences are stored in this browser.</p></div></div>
+        <p className="settings-note">Account deletion, data export, and two-factor authentication are not available in the app yet.</p>
+      </SettingsSection>
+      <SettingsSection id="help" title="Help & Support" icon={HelpCircle} tone="blue">
+        <details className="settings-faq"><summary>Where can I change my cards and table?</summary><p>Equip owned cosmetics from your <Link href="/inventory">Inventory</Link>.</p></details>
+        <details className="settings-faq"><summary>How do I play with friends?</summary><p>Create or join a <Link href="/play/mindi/room">Private Room</Link> using a room code.</p></details>
+        <details className="settings-faq"><summary>Why is music silent?</summary><p>Enable Background Music, then interact with the page. Your browser may block audio until you click or tap.</p></details>
+      </SettingsSection>
+      <SettingsSection id="about" title="About Thaasbai" icon={Info} tone="gold">
+        <div className="settings-about"><strong>Good Cards. Greater Friends.</strong><p>The Home of Maldivian Card Games</p><span>Version 1.0.0</span></div>
+      </SettingsSection>
     </div>
-  );
+    <LogoutBar />
+  </div>;
 }

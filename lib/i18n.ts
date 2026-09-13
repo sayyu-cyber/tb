@@ -56,6 +56,15 @@ export const TRANSLATIONS: Record<string, Translations> = {
   nav_expandMenu: { en: "Expand menu", dv: "މެނޫ ފުޅާކުރޭ", hi: "मेनू खोलें", bn: "মেনু প্রসারিত করুন" },
   nav_collapseMenu: { en: "Collapse menu", dv: "މެނޫ ކުޑަކުރޭ", hi: "मेनू बंद करें", bn: "মেনু সংকুচিত করুন" },
   nav_notifications: { en: "Notifications", dv: "ނޮޓިފިކޭޝަންތައް", hi: "सूचनाएं", bn: "বিজ্ঞপ্তি" },
+
+  // Sidebar (components/layout/sidebar/*) - the collapsible left rail.
+  nav_tournaments: { en: "Tournaments", dv: "މުބާރާތްތައް", hi: "टूर्नामेंट", bn: "টুর্নামেন্ট" },
+  nav_onlinePlayers: { en: "Online Players", dv: "އޮންލައިން ކުޅުންތެރިން", hi: "ऑनलाइन खिलाड़ी", bn: "অনলাইন খেলোয়াড়" },
+  nav_activeChats: { en: "Active Chats", dv: "އެކްޓިވް ޗެޓްތައް", hi: "सक्रिय चैट", bn: "সক্রিয় চ্যাট" },
+  nav_noFriendsOnline: { en: "No friends online", dv: "އޮންލައިންގައި ރަޙްމަތްތެރިއެއް ނެތް", hi: "कोई दोस्त ऑनलाइन नहीं", bn: "কোনো বন্ধু অনলাইনে নেই" },
+  nav_noActiveChats: { en: "No active chats", dv: "އެކްޓިވް ޗެޓެއް ނެތް", hi: "कोई सक्रिय चैट नहीं", bn: "কোনো সক্রিয় চ্যাট নেই" },
+  nav_socialError: { en: "Couldn't load social activity.", dv: "ސޯޝަލް ހަރަކާތްތައް ލޯޑް ނުވިއެވެ.", hi: "सोशल गतिविधि लोड नहीं हो सकी।", bn: "সোশ্যাল কার্যকলাপ লোড করা যায়নি।" },
+  nav_socialLoading: { en: "Loading social activity", dv: "ސޯޝަލް ހަރަކާތްތައް ލޯޑްވަނީ", hi: "सोशल गतिविधि लोड हो रही है", bn: "সোশ্যাল কার্যকলাপ লোড হচ্ছে" },
   notifications_empty: { en: "You're all caught up", dv: "ތިބާ ހުރިހާ ކަމެއް ބައްލަވައިފި", hi: "आप पूरी तरह अपडेट हैं", bn: "আপনি সব দেখে ফেলেছেন" },
   notifications_newMessage: { en: "New message from {name}", dv: "{name} ގެ އައު މެސެޖެއް", hi: "{name} की ओर से नया संदेश", bn: "{name} থেকে নতুন বার্তা" },
 
@@ -387,6 +396,24 @@ export const TRANSLATIONS: Record<string, Translations> = {
     bn: "এক্সক্লুসিভ রিওয়ার্ড, অতিরিক্ত র‍্যাংকড ম্যাচ এবং প্রিমিয়াম সুবিধা আনলক করুন।",
   },
   vip_upgradeNow: { en: "Upgrade Now", dv: "މިހާރު އަޕްގްރޭޑްކުރޭ", hi: "अभी अपग्रेड करें", bn: "এখনই আপগ্রেড করুন" },
+
+  // Sidebar VIP promo (components/layout/sidebar/VipSidebarCard.tsx).
+  vip_upgradeTo: { en: "Upgrade to", dv: "އަޕްގްރޭޑްކުރޭ", hi: "अपग्रेड करें", bn: "আপগ্রেড করুন" },
+  vip_promoBody: {
+    en: "Get more matches, exclusive rewards and more!",
+    dv: "އިތުރު މެޗްތަކާއި، ޚާއްޞަ އިނާމްތަކާއި އިތުރު ކަންތައް ހޯއްދަވާ!",
+    hi: "अधिक मैच, विशेष पुरस्कार और बहुत कुछ पाएं!",
+    bn: "আরও ম্যাচ, একচেটিয়া পুরস্কার এবং আরও অনেক কিছু পান!",
+  },
+  vip_viewPlans: { en: "View Plans", dv: "ޕްލޭންތައް ބައްލަވާ", hi: "प्लान देखें", bn: "প্ল্যান দেখুন" },
+  vip_activeTitle: { en: "VIP Active", dv: "ވީއައިޕީ އެކްޓިވް", hi: "VIP सक्रिय", bn: "VIP সক্রিয়" },
+  vip_activeBody: {
+    en: "Your premium benefits are unlocked.",
+    dv: "ތިބާގެ ޕްރީމިއަމް ބެނިފިޓްސް ހުޅުވިފައި.",
+    hi: "आपके प्रीमियम लाभ अनलॉक हैं।",
+    bn: "আপনার প্রিমিয়াম সুবিধা আনলক করা আছে।",
+  },
+  vip_visitShop: { en: "Visit Shop", dv: "ފިހާރައަށް ވަޑައިގަންނަވާ", hi: "दुकान देखें", bn: "দোকানে যান" },
   home_shortcutShop: { en: "Cosmetic Shop", dv: "ކޮސްމެޓިކް ފިހާރަ", hi: "कॉस्मेटिक शॉप", bn: "কসমেটিক দোকান" },
 
   home_quickPlay: { en: "Quick Play", dv: "ކުއިކް ޕްލޭ", hi: "क्विक प्ले", bn: "কুইক প্লে" },

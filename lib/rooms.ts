@@ -116,6 +116,11 @@ export async function createRoom(
   throw new Error("Could not generate a unique room code - please try again");
 }
 
+export async function getRoom(code: string): Promise<RoomDoc | null> {
+  const snap = await getDoc(doc(db, ROOMS_COLLECTION, code.trim().toUpperCase()));
+  return snap.exists() ? { ...snap.data(), code: snap.id } as RoomDoc : null;
+}
+
 export async function joinRoom(
   code: string,
   uid: string,

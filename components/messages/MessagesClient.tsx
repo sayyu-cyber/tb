@@ -162,7 +162,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] pb-24">
+    <div className="flex flex-col h-[calc(100vh-4rem)] pb-6">
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <Link href="/messages">
           <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">

@@ -21,6 +21,8 @@ import {
   where,
   limit,
   onSnapshot,
+  orderBy,
+  documentId,
   Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -44,6 +46,57 @@ export interface PlayerSearchResult {
   uid: string;
   displayName: string;
   trophies: number;
+  photoURL?: string;
+  lastSeen?: number;
+}
+
+export interface RecentPlayer extends PlayerSearchResult {
+  playedAt: number;
+  gameType: GameType;
+}
+
+function socialProfile(uid: string, data: Record<string, unknown>): PlayerSearchResult {
+  return { uid, displayName: typeof data.displayName === 'string' ? data.displayName : 'Player',
+    trophies: typeof data.trophies === 'number' ? data.trophies : 0,
+    photoURL: typeof data.photoURL === 'string' ? data.photoURL : undefined,
+    lastSeen: typeof data.lastSeen === 'number' ? data.lastSeen : undefined };
+}
+
+export function watchSocialProfiles(uids: string[], onUpdate: (profiles: Record<string, PlayerSearchResult>) => void, onError: (error: Error) => void): Unsubscribe {
+  const profiles: Record<string, PlayerSearchResult> = {};
+  const unique = Array.from(new Set(uids));
+  if (!unique.length) { onUpdate({}); return () => {}; }
+  const stops: Unsubscribe[] = [];
+  for (let i = 0; i < unique.length; i += 30) {
+    const batch = unique.slice(i, i + 30);
+    stops.push(onSnapshot(query(collection(db, 'players'), where(documentId(), 'in', batch)), snap => {
+      batch.forEach(id => { delete profiles[id]; });
+      snap.docs.forEach(item => { profiles[item.id] = socialProfile(item.id, item.data()); });
+      onUpdate({ ...profiles });
+    }, onError));
+  }
+  return () => stops.forEach(stop => stop());
+}
+
+export async function getFriendSuggestions(uid: string): Promise<PlayerSearchResult[]> {
+  const snap = await getDocs(query(collection(db, 'players'), orderBy('lastSeen', 'desc'), limit(20)));
+  return snap.docs.filter(item => item.id !== uid).map(item => socialProfile(item.id, item.data()));
+}
+
+export async function getRecentPlayers(uid: string): Promise<RecentPlayer[]> {
+  const snap = await getDocs(query(collection(db, 'matches'), where('players', 'array-contains', uid), orderBy('createdAt', 'desc'), limit(12)));
+  const history = new Map<string, { playedAt: number; gameType: GameType }>();
+  snap.docs.forEach(item => {
+    const match = item.data();
+    if (!Array.isArray(match.players)) return;
+    match.players.forEach((id: string) => {
+      if (id !== uid && !history.has(id)) history.set(id, { playedAt: match.createdAt, gameType: match.gameType });
+    });
+  });
+  const ids = Array.from(history.keys()).slice(0, 15);
+  if (!ids.length) return [];
+  const profiles = await getDocs(query(collection(db, 'players'), where(documentId(), 'in', ids)));
+  return profiles.docs.map(item => ({ ...socialProfile(item.id, item.data()), ...history.get(item.id)! })).sort((a,b) => b.playedAt - a.playedAt);
 }
 
 export interface RoomInviteDoc {
@@ -189,8 +242,11 @@ export function watchFriends(
 ): Unsubscribe {
   let fromResults: FriendRequestDoc[] = [];
   let toResults: FriendRequestDoc[] = [];
+  let fromReady = false;
+  let toReady = false;
 
   const emit = () => {
+    if (!fromReady || !toReady) return;
     const friends: Friend[] = [
       ...fromResults.map((r) => ({ requestId: r.id, uid: r.to, name: r.toName })),
       ...toResults.map((r) => ({ requestId: r.id, uid: r.from, name: r.fromName })),
@@ -202,6 +258,7 @@ export function watchFriends(
     query(collection(db, REQUESTS_COLLECTION), where("from", "==", uid), where("status", "==", "accepted"), limit(250)),
     (snap) => {
       fromResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
+      fromReady = true;
       emit();
     },
     onError
@@ -210,6 +267,7 @@ export function watchFriends(
     query(collection(db, REQUESTS_COLLECTION), where("to", "==", uid), where("status", "==", "accepted"), limit(250)),
     (snap) => {
       toResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
+      toReady = true;
       emit();
     },
     onError

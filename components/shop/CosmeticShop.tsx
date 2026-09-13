@@ -1,254 +1,22 @@
 // src/components/shop/CosmeticShop.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
-import { CosmeticItem, Rarity } from '../../types/economy';
-import { ALL_COSMETICS, RARITY_COLORS, RARITY_GLOW, COIN_PACKS } from '../../data/cosmetics';
-import { getWeeklyFeaturedRotation } from '../../lib/cosmeticRotation';
+import { CosmeticItem } from '../../types/economy';
+import { ALL_COSMETICS, COIN_PACKS } from '../../data/cosmetics';
+import { getWeeklyFeaturedRotation, getRotationWeekNumber } from '../../lib/cosmeticRotation';
 import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '../../lib/coinTopups';
 import { useAuth } from '../../contexts/AuthContext';
 import CoinBalance from '../economy/CoinBalance';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../contexts/ToastContext';
-import { CategoryIcon, CoinIcon, Crown } from '../ui/icons';
-import { CosmeticPreview } from '../ui/CosmeticPreview';
-import { AlertTriangle, Search, Timer, Check, Sparkles, ShoppingBag, Coins, ShieldCheck } from 'lucide-react';
-
-function RarityBadge({ rarity }: { rarity: Rarity }) {
-  return (
-    <span
-      className="text-xs font-bold px-2 py-0.5 rounded-full border"
-      style={{
-        color: RARITY_COLORS[rarity],
-        borderColor: `${RARITY_COLORS[rarity]}40`,
-        backgroundColor: `${RARITY_COLORS[rarity]}15`,
-      }}
-    >
-      {rarity}
-    </span>
-  );
-}
-
-function CosmeticCard({ item, isOwned, isFeatured = false, onPurchase, onEquip, isEquipped = false, price }: {
-  item: CosmeticItem;
-  isOwned: boolean;
-  isFeatured?: boolean;
-  onPurchase: () => void;
-  onEquip: () => void;
-  isEquipped?: boolean;
-  price?: number;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-  const t = useTranslation();
-
-  return (
-    <motion.div
-      className={`
-        cosmetic-shop-card relative rounded-lg overflow-hidden border transition-colors duration-200
-        ${isFeatured ? 'border-[rgb(var(--gold)/40%)]' : 'border-[rgb(var(--c3)/30%)]'}
-        ${isEquipped ? 'ring-2 ring-[rgb(var(--gold)/50%)]' : ''}
-      `}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      whileHover={{ y: -4 }}
-    >
-      {(isFeatured || item.rarity === 'Legendary') && (
-        <motion.div
-          className="absolute inset-0 opacity-0 pointer-events-none"
-          style={{ boxShadow: RARITY_GLOW[item.rarity] }}
-          animate={{ opacity: isHovered ? 0.6 : 0 }}
-        />
-      )}
-
-      {item.isVipExclusive && (
-        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-[rgb(var(--orchid))] to-[rgb(var(--orchid)/80%)] text-[rgb(var(--text-primary))] text-xs font-bold px-2 py-0.5 rounded-full">
-          VIP
-        </div>
-      )}
-
-      {isFeatured && (
-        <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-black text-xs font-bold px-2 py-0.5 rounded-full">
-          FEATURED
-        </div>
-      )}
-
-      <div className="cosmetic-display relative flex items-center justify-center overflow-hidden">
-        <CosmeticPreview item={item} />
-        
-        <motion.div
-          className="pointer-events-none absolute inset-0 bg-black/80 flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered ? 1 : 0 }}
-        >
-          <p className="text-[rgb(var(--c5))] text-sm text-center px-4">{item.description}</p>
-        </motion.div>
-      </div>
-
-      <div className="p-3 bg-[rgb(var(--c2)/80%)]">
-        <div className="flex flex-col items-start gap-2 mb-3">
-          <h3 className="text-sm font-bold text-[rgb(var(--text-primary))] min-h-10">{item.name}</h3>
-          <RarityBadge rarity={item.rarity} />
-        </div>
-
-        <div className="flex items-center justify-between">
-          {isOwned ? (
-            <motion.button
-              className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${
-                isEquipped
-                  ? 'bg-[rgb(var(--gold)/25%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]'
-                  : 'bg-[rgb(var(--c3))] text-[rgb(var(--c5))] hover:bg-[rgb(var(--c4))]'
-              }`}
-              onClick={onEquip}
-              disabled={isEquipped || item.category === 'emote' || item.category === 'sticker'}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isEquipped ? t('shop_equipped') : item.category === 'emote' || item.category === 'sticker' ? t('inventory_owned') : t('shop_equip')}
-            </motion.button>
-          ) : (
-            <motion.button
-              className="flex-1 py-2 rounded-lg bg-[rgb(var(--gold))] text-[#14180e] font-bold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
-              onClick={onPurchase}
-              whileTap={{ scale: 0.95 }}
-            >
-              <CoinIcon size={15} />
-              <span>{(price ?? item.price).toLocaleString()}</span>
-            </motion.button>
-          )}
-        </div>
-        <p className="mt-3 text-[11px] leading-relaxed text-[rgb(var(--c4))] line-clamp-2 min-h-8">{item.description}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-function CoinPackCard({ pack, onPurchase }: { pack: typeof COIN_PACKS[0]; onPurchase: () => void }) {
-  const t = useTranslation();
-  return (
-    <motion.div
-      className={`
-        relative rounded-xl overflow-hidden border p-4
-        ${pack.isBestValue ? 'border-[rgb(var(--gold)/50%)] bg-gradient-to-b from-[rgb(var(--gold)/10%)] to-[rgb(var(--c1))]' : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/60%)]'}
-      `}
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      {pack.isPopular && (
-        <div className="absolute top-0 right-0 bg-[rgb(var(--deep))] text-[rgb(var(--text-primary))] text-xs font-bold px-3 py-1 rounded-bl-xl">
-          POPULAR
-        </div>
-      )}
-      {pack.isBestValue && (
-        <div className="absolute top-0 right-0 bg-[rgb(var(--gold))] text-black text-xs font-bold px-3 py-1 rounded-bl-xl">
-          BEST VALUE
-        </div>
-      )}
-
-      <div className="text-center mb-4">
-        <CoinIcon size={40} className="mx-auto mb-2" />
-        <h3 className="text-lg font-bold text-[rgb(var(--gold-ink))]">{pack.name}</h3>
-        <p className="text-3xl font-bold text-[rgb(var(--gold-ink))] mt-1">{pack.coins.toLocaleString()}</p>
-        <p className="text-[rgb(var(--c4))] text-sm">Coins</p>
-      </div>
-
-      <div className="flex items-center justify-center gap-1 mb-4">
-        <span className="text-[rgb(var(--c5))] text-sm">MVR</span>
-        <span className="text-xl font-bold text-[rgb(var(--text-primary))]">{pack.priceMVR}</span>
-      </div>
-
-      <motion.button
-        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))] font-bold hover:from-[rgb(var(--gold))] hover:to-[rgb(var(--gold-bright))] transition-all border border-[rgb(var(--gold)/20%)]"
-        onClick={onPurchase}
-        whileTap={{ scale: 0.95 }}
-      >
-        {t('shop_purchase')}
-      </motion.button>
-
-      <p className="text-center text-[rgb(var(--c3))] text-xs mt-2">Requires admin approval before coins are credited</p>
-    </motion.div>
-  );
-}
-
-/** Shown instead of letting a purchase silently fail when the player can't
- *  afford an item - tells them exactly how many more coins they need and
- *  offers the two real ways to get there: buy a coin pack, or keep playing
- *  to earn the rest (matches/missions/rank rewards already grant coins). */
-function InsufficientBalanceModal({
-  item,
-  price,
-  balance,
-  onTopUp,
-  onClose,
-}: {
-  item: CosmeticItem;
-  price: number;
-  balance: number;
-  onTopUp: () => void;
-  onClose: () => void;
-}) {
-  const t = useTranslation();
-  const shortfall = price - balance;
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="glass-card rounded-2xl p-6 w-full max-w-sm text-center"
-        initial={{ opacity: 0, y: 12, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.97 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--coral)/15%)] border border-[rgb(var(--coral)/35%)]">
-          <AlertTriangle size={26} className="text-[rgb(var(--coral-ink))]" aria-hidden="true" />
-        </div>
-
-        <h3 className="text-lg font-bold text-[rgb(var(--text-primary))] mb-1">{t('shop_insufficientTitle')}</h3>
-        <p className="text-[rgb(var(--c4))] text-sm mb-4">
-          {t('shop_insufficientBody').replace('{item}', item.name)}
-        </p>
-
-        <div className="rounded-xl bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] p-3 mb-4 space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-[rgb(var(--c4))]">
-            <span>{t('shop_yourBalance')}</span>
-            <span className="flex items-center gap-1 font-semibold text-[rgb(var(--text-primary))]"><CoinIcon size={12} />{balance.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-[rgb(var(--c4))]">
-            <span>{t('shop_itemPrice')}</span>
-            <span className="flex items-center gap-1 font-semibold text-[rgb(var(--text-primary))]"><CoinIcon size={12} />{price.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs pt-1.5 border-t border-[rgb(var(--c3))]">
-            <span className="text-[rgb(var(--coral-ink))] font-semibold">{t('shop_youNeed')}</span>
-            <span className="flex items-center gap-1 font-bold text-[rgb(var(--coral-ink))]"><CoinIcon size={12} />{shortfall.toLocaleString()} {t('shop_more')}</span>
-          </div>
-        </div>
-
-        <p className="text-[rgb(var(--c4))] text-xs mb-5">{t('shop_insufficientAdvice')}</p>
-
-        <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium"
-          >
-            {t('shop_keepPlaying')}
-          </button>
-          <button
-            onClick={onTopUp}
-            className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-bold"
-          >
-            {t('shop_topUpNow')}
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
+import { CategoryIcon, Crown } from '../ui/icons';
+import { ShopItemCard as CosmeticCard } from './ShopItemCard';
+import { ShopItemDialog } from './ShopItemDialog';
+import { CoinPackCard } from './StoreCoinPacks';
+import { Plus, ArrowRight, Search, Timer, Sparkles, ShoppingBag, Coins, ShieldCheck } from 'lucide-react';
 
 const VIP_PLANS = [
   { id: 'weekly' as const, days: 7, priceMVR: 100, label: 'Weekly', sub: '7 Days of Premium Benefits' },
@@ -267,7 +35,11 @@ export default function CosmeticShop() {
   const [timeLeft, setTimeLeft] = useState('');
   const [selectedVipPlan, setSelectedVipPlan] = useState<'weekly' | 'monthly'>('weekly');
   const [myTopups, setMyTopups] = useState<CoinTopupRequest[]>([]);
-  const [insufficientItem, setInsufficientItem] = useState<CosmeticItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<CosmeticItem | null>(null);
+  const [intent, setIntent] = useState<'preview' | 'buy'>('preview');
+  const [topupBusy, setTopupBusy] = useState(false);
+  const topupPending = useRef(false);
+  const purchasePending = useRef(false);
   const shopOverrides = state.shopOverrides;
   const t = useTranslation();
   const { showToast } = useToast();
@@ -284,17 +56,22 @@ export default function CosmeticShop() {
     return shopOverrides?.hiddenItemIds.includes(item.id) ?? false;
   }
 
-  // Shared by both the Featured and Permanent grids: check the balance
-  // BEFORE calling purchaseCosmetic, so a failed purchase (insufficient
-  // coins) surfaces as an explicit warning instead of the button silently
-  // doing nothing (purchaseCosmetic itself just returns false in that case).
   function handlePurchase(item: CosmeticItem) {
-    const price = priceFor(item);
-    if (state.economy.coins < price) {
-      setInsufficientItem(item);
-      return;
-    }
-    if (purchaseCosmetic(item.id)) showToast(`${item.name} - ${t('inventory_owned')}`, 'success');
+    setIntent('buy'); setSelectedItem(item);
+  }
+  function confirmPurchase(item: CosmeticItem) {
+    if (purchasePending.current) return;
+    if (isItemOwned(item.id)) { showToast("You already own this item.", "info"); return; }
+    if (isHidden(item)) { showToast("This item is no longer available.", "error"); return; }
+    purchasePending.current = true;
+    try {
+      if (purchaseCosmetic(item.id)) { showToast(item.name + " added to your inventory.", "success"); setSelectedItem(null); }
+      else showToast("Purchase could not be completed. Check your balance.", "error");
+    } finally { window.setTimeout(() => { purchasePending.current = false; }, 250); }
+  }
+  function handleEquip(item: CosmeticItem) {
+    equipCosmetic(item.category, item.id);
+    showToast(item.name + " equipped.", "success");
   }
 
   const pendingTopup = myTopups.find((topup) => topup.status === 'pending');
@@ -304,6 +81,8 @@ export default function CosmeticShop() {
       showToast(t('toast_signInToTopUp'), 'info');
       return;
     }
+    if (topupPending.current || pendingTopup) return;
+    topupPending.current = true; setTopupBusy(true);
     // This used to fire-and-forget: a rejected write (offline, rules
     // change) still showed the "pending approval" alert, so the player
     // believed a request existed that never did.
@@ -312,16 +91,14 @@ export default function CosmeticShop() {
       showToast(t('toast_topupPending').replace('{pack}', pack.name), 'success');
     } catch {
       showToast(t('toast_topupFailed'), 'error');
-    }
+    } finally { topupPending.current = false; setTopupBusy(false); }
   }
 
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date();
-      const nextSunday = new Date();
-      nextSunday.setDate(now.getDate() + (7 - now.getDay()));
-      nextSunday.setHours(0, 0, 0, 0);
-      const diff = nextSunday.getTime() - now.getTime();
+      const nextRotation = Date.UTC(2024, 0, 1) + (getRotationWeekNumber(now) + 1) * 7 * 86400000;
+      const diff = nextRotation - now.getTime();
       
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -353,7 +130,7 @@ export default function CosmeticShop() {
   const permanentItems = (selectedCategory === 'all'
     ? ALL_COSMETICS.filter(c => !c.isVipExclusive)
     : ALL_COSMETICS.filter(c => c.category === selectedCategory && !c.isVipExclusive)
-  ).filter((c) => !isHidden(c) && c.name.toLowerCase().includes(queryText.trim().toLowerCase()))
+  ).filter((c) => !isHidden(c) && [c.name, c.rarity, c.category].join(' ').toLowerCase().includes(queryText.trim().toLowerCase()))
     .sort((a, b) => sort === 'price' ? priceFor(a) - priceFor(b) : sort === 'name' ? a.name.localeCompare(b.name) : 0);
 
   const isItemEquipped = (item: CosmeticItem) => {
@@ -372,14 +149,11 @@ export default function CosmeticShop() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <p className="text-[rgb(var(--c4))] text-sm">{t('shop_headerSubtitle')}</p>
-        </div>
-        <CoinBalance size="lg" />
-      </div>
-
+    <div className="storefront">
+      <header className="store-hero">
+        <div><p className="store-eyebrow">THAASBAI</p><h1><ShoppingBag size={34} />Shop</h1><h2>Premium cosmetics and coin packs</h2><p>Customize your table, cards, and experience. Stand out in every game.</p></div>
+        <div className="store-balance"><span>Your Balance</span><div><CoinBalance size="lg" /><button aria-label="Get coins" title="Get coins" onClick={() => setActiveTab('coins')}><Plus size={20} /></button></div></div>
+      </header>
       <div className="hub-tabs" aria-label={t('page_shop')}>
         {[
           { id: 'featured', label: t('shop_tabFeatured') },
@@ -405,6 +179,8 @@ export default function CosmeticShop() {
         ))}
       </div>
 
+      <section className="store-vip-strip"><Crown size={32} /><div><strong>{state.profile.vip.active ? "VIP Active" : "VIP Exclusive: +1 Featured cosmetic available"}</strong><p>{state.profile.vip.active ? "Your extra weekly cosmetic slot is unlocked." : "Upgrade to VIP Pass to unlock an extra featured item every week."}</p></div>{!state.profile.vip.active && <button onClick={() => setActiveTab('vip')}>View VIP Plans<ArrowRight size={17} /></button>}</section>
+
       <AnimatePresence initial={false} mode="popLayout">
         {activeTab === 'featured' && (
           <motion.div
@@ -416,20 +192,13 @@ export default function CosmeticShop() {
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold text-[rgb(var(--gold-ink))]">{t('shop_weeklyFeatured')}</h2>
               <div className="flex items-center gap-2 bg-[rgb(var(--c2)/60%)] rounded-full px-4 py-1.5 border border-[rgb(var(--gold)/20%)]">
-                <Timer size={16} className="text-[rgb(var(--gold))]" />
+                <span className="text-xs text-[rgb(var(--c4))]">Refreshes in</span><Timer size={16} className="text-[rgb(var(--gold))]" aria-label="Featured items rotate weekly" />
                 <span className="text-[rgb(var(--gold-ink))] text-sm font-mono">{timeLeft}</span>
               </div>
             </div>
 
-            {state.profile.vip.active && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-[rgb(var(--orchid)/15%)] to-[rgb(var(--orchid)/15%)] rounded-xl border border-[rgb(var(--orchid)/20%)]">
-                <p className="text-[rgb(var(--orchid-ink))] text-sm font-medium flex items-center gap-1.5">
-                  <Crown size={14} aria-hidden="true" /> VIP Exclusive: +1 Featured cosmetic available
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="store-item-grid">
+              {featuredItems.length === 0 && <p>No featured items right now. Check back after the next rotation.</p>}
               {featuredItems.map((item) => (
                 <CosmeticCard
                   key={item.id}
@@ -437,7 +206,8 @@ export default function CosmeticShop() {
                   isOwned={isItemOwned(item.id)}
                   isFeatured
                   onPurchase={() => handlePurchase(item)}
-                  onEquip={() => equipCosmetic(item.category, item.id)}
+                  onEquip={() => handleEquip(item)}
+                  onPreview={() => { setIntent('preview'); setSelectedItem(item); }}
                   isEquipped={isItemEquipped(item)}
                   price={priceFor(item)}
                 />
@@ -474,7 +244,7 @@ export default function CosmeticShop() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="store-item-grid">
               {permanentItems.length === 0 && <p className="col-span-full py-12 text-center text-sm text-[rgb(var(--c4))]">{t('inventory_nothingHere')}</p>}
               {permanentItems.map((item) => (
                 <CosmeticCard
@@ -482,32 +252,11 @@ export default function CosmeticShop() {
                   item={item}
                   isOwned={isItemOwned(item.id)}
                   onPurchase={() => handlePurchase(item)}
-                  onEquip={() => equipCosmetic(item.category, item.id)}
+                  onEquip={() => handleEquip(item)}
+                  onPreview={() => { setIntent('preview'); setSelectedItem(item); }}
                   isEquipped={isItemEquipped(item)}
                   price={priceFor(item)}
                 />
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === 'coins' && (
-          <motion.div
-            key="coins"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            {pendingTopup && (
-              <div className="mb-4 p-3 bg-[rgb(var(--gold)/10%)] rounded-xl border border-[rgb(var(--gold)/20%)]">
-                <p className="text-[rgb(var(--gold-ink))] text-sm">
-                  ⏳ Your {pendingTopup.packName} top-up ({pendingTopup.coins.toLocaleString()} coins) is pending admin approval.
-                </p>
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {COIN_PACKS.map((pack) => (
-                <CoinPackCard key={pack.id} pack={pack} onPurchase={() => handlePurchaseCoinPack(pack)} />
               ))}
             </div>
           </motion.div>
@@ -525,14 +274,6 @@ export default function CosmeticShop() {
                 className="bg-gradient-to-b from-[rgb(var(--orchid)/15%)] to-[rgb(var(--c1))] border border-[rgb(var(--orchid)/30%)] rounded-2xl p-8 text-center relative overflow-hidden"
                 whileHover={{ scale: 1.01 }}
               >
-                <div className="absolute inset-0 opacity-10">
-                  <motion.div
-                    className="absolute w-64 h-64 rounded-full bg-[rgb(var(--orchid))] blur-3xl"
-                    animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
-                    transition={{ repeat: Infinity, duration: 8 }}
-                  />
-                </div>
-
                 <div className="relative z-10">
                   <motion.div
                     className="text-6xl mb-4"
@@ -593,8 +334,10 @@ export default function CosmeticShop() {
 
                   <motion.button
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--orchid))] to-[rgb(var(--orchid)/80%)] text-[rgb(var(--text-primary))] font-bold text-lg hover:from-[rgb(var(--orchid))] hover:to-[rgb(var(--orchid)/80%)] transition-all border border-[rgb(var(--orchid)/30%)]"
+                    disabled={state.profile.vip.active}
                     onClick={() => {
                       const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
+                      if (state.profile.vip.active) return;
                       activateVip(plan.days);
                       showToast(
                         t('toast_vipActivated').replace(
@@ -607,7 +350,7 @@ export default function CosmeticShop() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {t('vip_activateBtn').replace('{plan}', selectedVipPlan === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel'))}
+                    {state.profile.vip.active ? 'VIP Active' : t('vip_activateBtn').replace('{plan}', selectedVipPlan === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel'))}
                   </motion.button>
 
                   {state.profile.vip.active && (
@@ -628,20 +371,13 @@ export default function CosmeticShop() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {insufficientItem && (
-          <InsufficientBalanceModal
-            item={insufficientItem}
-            price={priceFor(insufficientItem)}
-            balance={state.economy.coins}
-            onClose={() => setInsufficientItem(null)}
-            onTopUp={() => {
-              setInsufficientItem(null);
-              setActiveTab('coins');
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {(activeTab === 'featured' || activeTab === 'coins') && <section className="store-coin-section">
+        <header><Coins size={22} /><h2>Coin Packs</h2><p>Get coins to buy exclusive cosmetics</p>{activeTab === 'featured' && <button onClick={() => setActiveTab('coins')}>View All<ArrowRight size={16} /></button>}</header>
+        <p className="store-payment-note">Prices in MVR. Top-ups require admin approval before coins are credited.</p>
+        {pendingTopup && <p role="status" className="store-payment-note">Your {pendingTopup.packName} request is pending admin approval.</p>}
+        <div className="store-coin-grid">{(activeTab === 'featured' ? COIN_PACKS.slice(0, 4) : COIN_PACKS).map(pack => <CoinPackCard key={pack.id} pack={pack} disabled={topupBusy || !!pendingTopup} onPurchase={() => handlePurchaseCoinPack(pack)} />)}</div>
+      </section>}
+      {selectedItem && <ShopItemDialog item={selectedItem} intent={intent} price={priceFor(selectedItem)} balance={state.economy.coins} owned={isItemOwned(selectedItem.id)} equipped={isItemEquipped(selectedItem)} onClose={() => setSelectedItem(null)} onBuy={() => confirmPurchase(selectedItem)} onEquip={() => { handleEquip(selectedItem); setSelectedItem(null); }} onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }} />}
     </div>
   );
 }

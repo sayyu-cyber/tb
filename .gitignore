@@ -40,3 +40,10 @@ functions/lib/
 functions/node_modules/
 *.tsbuildinfo
 firebase-debug.log
+artifacts/friends-test/component.js
+artifacts/play-test/component.js
+artifacts/home-test/component.js
+artifacts/room-test/component.js
+artifacts/shop-test/component.js
+artifacts/clubs-test/component.js
+artifacts/settings-test/component.js

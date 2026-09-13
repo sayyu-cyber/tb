@@ -1,383 +1,101 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { Users, Crown, Send, LogOut, Trophy, RefreshCw } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Compass, Plus, Search, Users, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  ClubDoc,
-  ClubMessage,
-  watchMyClub,
-  watchClubList,
-  watchClubMessages,
-  createClub,
-  joinClub,
-  leaveClub,
-  kickMember,
-  sendClubMessage,
-} from "@/lib/clubs";
-import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/contexts/ToastContext";
+import { ClubDoc, watchMyClub, watchClubList, joinClub } from "@/lib/clubs";
+import { Button } from "@/components/ui/Button";
+import { LobbyPhoto } from "@/components/home/LobbyPhoto";
+import { ClubHome } from "./ClubHome";
+import { ClubCard } from "./ClubCard";
+import { CreateClubDialog } from "./CreateClubDialog";
 
 export function ClubsClient() {
-  const { user, playerStats, isGuest } = useAuth();
-  const myUid = user?.uid ?? "";
-  const myName = user?.displayName ?? "Player";
-  const myTrophies = playerStats?.trophies ?? 0;
-  const t = useTranslation();
-
-  const [myClub, setMyClub] = useState<ClubDoc | null | undefined>(undefined);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [retryKey, setRetryKey] = useState(0);
-
-  useEffect(() => {
-    if (!myUid || isGuest) {
-      setMyClub(null);
-      return;
-    }
-    setLoadError(null);
-    // Without an error handler here, a denied/failed query never calls
-    // setMyClub at all, and the "loading" branch below would spin forever
-    // with no way out - see the note on watchMyClub.
-    return watchMyClub(myUid, setMyClub, (err) => setLoadError(err.message));
-  }, [myUid, isGuest, retryKey]);
-
-  if (isGuest) {
-    return (
-      <div className="pt-4 pb-32 px-4">
-        <PageHeader title={t("page_clubs")} />
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_signInPrompt")}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="pt-4 pb-32 px-4">
-        <PageHeader title={t("page_clubs")} />
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_loadError")}</p>
-          <button
-            onClick={() => setRetryKey((k) => k + 1)}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
-          >
-            <RefreshCw size={13} aria-hidden="true" />
-            {t("error_tryAgain")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (myClub === undefined) {
-    return (
-      <div className="pt-4 pb-32 px-4">
-        <PageHeader title={t("page_clubs")} />
-        <div className="space-y-2 mt-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return myClub ? (
-    <ClubHome club={myClub} myUid={myUid} myName={myName} />
-  ) : (
-    <ClubBrowser myUid={myUid} myName={myName} myTrophies={myTrophies} />
-  );
-}
-
-function ClubBrowser({ myUid, myName, myTrophies }: { myUid: string; myName: string; myTrophies: number }) {
+  const { user, isGuest, playerStats } = useAuth();
+  const { showToast } = useToast();
   const [clubs, setClubs] = useState<ClubDoc[]>([]);
-  const [mode, setMode] = useState<"browse" | "create">("browse");
-  const [name, setName] = useState("");
-  const [tag, setTag] = useState("");
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [listLoaded, setListLoaded] = useState(false);
-  const [listError, setListError] = useState(false);
-  const t = useTranslation();
-
-  useEffect(
-    () =>
-      watchClubList(
-        (list) => {
-          setClubs(list);
-          setListLoaded(true);
-        },
-        () => {
-          setListError(true);
-          setListLoaded(true);
-        }
-      ),
-    []
-  );
-
-  async function handleCreate() {
-    if (!name.trim() || !tag.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await createClub(myUid, myName, myTrophies, name, tag, description);
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleJoin(clubId: string) {
-    setError(null);
-    try {
-      await joinClub(clubId, myUid, myName, myTrophies);
-    } catch (err) {
-      setError(String(err));
-    }
-  }
-
-  return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_clubs")} />
-
-      {error && (
-        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
-      )}
-
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setMode("browse")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "browse" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
-        >
-          {t("clubs_browse")}
-        </button>
-        <button
-          onClick={() => setMode("create")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${mode === "create" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
-        >
-          {t("clubs_create")}
-        </button>
-      </div>
-
-      {mode === "create" ? (
-        <div className="glass-card rounded-2xl p-5 space-y-3">
-          <input
-            aria-label={t("clubs_namePlaceholder")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("clubs_namePlaceholder")}
-            maxLength={30}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
-          />
-          <input
-            aria-label={t("clubs_tagPlaceholder")}
-            value={tag}
-            onChange={(e) => setTag(e.target.value.toUpperCase())}
-            placeholder={t("clubs_tagPlaceholder")}
-            maxLength={5}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
-          />
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("clubs_descriptionPlaceholder")}
-            maxLength={200}
-            rows={3}
-            className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)] resize-none"
-          />
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            disabled={busy || !name.trim() || !tag.trim()}
-            onClick={handleCreate}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold disabled:opacity-50"
-          >
-            {busy ? t("clubs_creating") : t("clubs_createClub")}
-          </motion.button>
-        </div>
-      ) : !listLoaded ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-14 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : listError ? (
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_loadError")}</p>
-        </div>
-      ) : clubs.length === 0 ? (
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <Users size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{t("clubs_noClubsYet")}</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {clubs.map((c) => (
-            <div key={c.id} className="glass-card rounded-xl p-3 flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">
-                  {c.name} <span className="text-[rgb(var(--gold-ink))] text-xs">[{c.tag}]</span>
-                </p>
-                <p className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
-                  <Users size={10} /> {c.members.length} {t("clubs_members")}
-                </p>
-              </div>
-              <button
-                onClick={() => handleJoin(c.id)}
-                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-xs font-semibold shrink-0"
-              >
-                {t("clubs_join")}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myName: string }) {
-  const [tab, setTab] = useState<"members" | "chat">("members");
-  const [messages, setMessages] = useState<ClubMessage[]>([]);
-  const [text, setText] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const isOwner = club.ownerUid === myUid;
-  const t = useTranslation();
+  const [mine, setMine] = useState<ClubDoc | null>();
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [tab, setTab] = useState<"browse" | "mine">("browse");
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [create, setCreate] = useState(false);
+  const [detail, setDetail] = useState(false);
+  const [pending, setPending] = useState("");
+  const action = useRef(false);
+  const uid = user?.uid ?? "";
 
   useEffect(() => {
-    if (tab !== "chat") return;
-    return watchClubMessages(club.id, setMessages);
-  }, [tab, club.id]);
+    setMine(undefined); setClubs([]); setLoaded(false); setError(""); setDetail(false);
+    if (!uid || isGuest) return;
+    const fail = () => setError("Couldn't load clubs. Please try again.");
+    const stopMine = watchMyClub(uid, setMine, fail);
+    const stopList = watchClubList(list => { setClubs(list); setLoaded(true); }, fail);
+    return () => { stopMine(); stopList(); };
+  }, [uid, isGuest, attempt]);
 
-  useEffect(() => {
-    if (tab === "chat") bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, tab]);
-
-  async function handleSend() {
-    if (!text.trim()) return;
-    const toSend = text;
-    setText("");
-    await sendClubMessage(club.id, myUid, myName, toSend).catch((err) => setError(String(err)));
+  async function join(club: ClubDoc) {
+    if (action.current || mine || !uid || isGuest || mine === undefined) return;
+    action.current = true; setPending(club.id);
+    try {
+      await joinClub(club.id, uid, user?.displayName ?? "Player", playerStats?.trophies ?? 0);
+      showToast("Joined " + club.name + ".", "success");
+      setTab("mine"); setDetail(true);
+    } catch {
+      showToast("Failed to join club. Please try again.", "error");
+    } finally { action.current = false; setPending(""); }
   }
 
-  async function handleLeave() {
-    await leaveClub(club.id, myUid).catch((err) => setError(String(err)));
-  }
+  const ready = loaded && mine !== undefined && !error;
+  const query = search.trim().toLocaleLowerCase();
+  const matches = clubs.filter(c => [c.name, c.tag, c.description].join(" ").toLocaleLowerCase().includes(query));
+  const visible = expanded || query ? matches : matches.slice(0, 4);
+  const card = (club: ClubDoc) => <ClubCard key={club.id} club={club} uid={uid} hasClub={!!mine}
+    busy={pending === club.id} disabled={!!pending} onJoin={() => join(club)}
+    onOpen={() => { setTab("mine"); setDetail(true); }} />;
 
-  async function handleKick(uid: string) {
-    await kickMember(club.id, myUid, uid).catch((err) => setError(String(err)));
-  }
-
-  const sortedMembers = [...club.members].sort((a, b) => (club.memberTrophies[b] ?? 0) - (club.memberTrophies[a] ?? 0));
-
-  return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={club.name} />
-
-      <div className="glass-card rounded-2xl p-4 mb-4">
-        <p className="text-[rgb(var(--gold-ink))] text-sm font-bold">[{club.tag}]</p>
-        {club.description && <p className="text-[rgb(var(--c4))] text-xs mt-1">{club.description}</p>}
+  return <div className="clubs-hub">
+    <header className="clubs-hero">
+      <LobbyPhoto className="absolute inset-0" />
+      <div className="clubs-hero-copy"><span className="clubs-eyebrow">THAASBAI COMMUNITY</span>
+        <h1><Users aria-hidden="true" /> Clubs</h1>
+        <p>Find your people. Play together. Build your legacy.</p>
+        <Button disabled={!ready || !!mine || isGuest} onClick={() => setCreate(true)}><Plus size={18} /> Create Club</Button>
       </div>
-
-      {error && (
-        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
-      )}
-
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setTab("members")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "members" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
-        >
-          {t("clubs_membersTab").replace("{n}", String(club.members.length))}
-        </button>
-        <button
-          onClick={() => setTab("chat")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "chat" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
-        >
-          {t("clubs_chatTab")}
-        </button>
+    </header>
+    {isGuest || !uid ? <div className="clubs-empty"><Users /><h2>Find your community</h2><p>Sign in to join a club and chat with members.</p><Link href="/login">Sign In</Link></div> : <>
+      <div className="clubs-tools">
+        <div role="tablist" aria-label="Club sections" className="clubs-tabs">
+          {(["browse", "mine"] as const).map((value, index) => <button key={value} role="tab" id={"club-tab-" + value}
+            aria-controls="club-panel" aria-selected={tab === value} tabIndex={tab === value ? 0 : -1}
+            onKeyDown={e => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
+              e.preventDefault(); const next = e.key === "Home" ? "browse" : e.key === "End" ? "mine" : index ? "browse" : "mine";
+              setTab(next); setDetail(false); document.getElementById("club-tab-" + next)?.focus();
+            } }} onClick={() => { setTab(value); setDetail(false); }}>
+            {value === "browse" ? <Compass size={18} /> : <Users size={18} />}{value === "browse" ? "Browse" : "My Clubs"}
+          </button>)}
+        </div>
+        {tab === "browse" && <label className="clubs-search"><Search size={18} /><input aria-label="Search clubs" placeholder="Search clubs by name or tag..." value={search} onChange={e => setSearch(e.target.value)} /></label>}
       </div>
-
-      {tab === "members" ? (
-        <div className="space-y-2">
-          {sortedMembers.map((uid) => (
-            <div key={uid} className="glass-card rounded-xl p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {uid === club.ownerUid && <Crown size={14} className="text-[rgb(var(--gold-ink))]" />}
-                <span className="text-[rgb(var(--text-primary))] text-sm">{club.memberNames[uid] || "Player"}</span>
-                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("clubs_you")}</span>}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
-                  <Trophy size={10} className="text-[rgb(var(--gold-ink))]" /> {club.memberTrophies[uid] ?? 0}
-                </span>
-                {isOwner && uid !== myUid && (
-                  <button onClick={() => handleKick(uid)} className="text-[rgb(var(--coral-ink))] text-xs">
-                    {t("clubs_kick")}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-          <button
-            onClick={handleLeave}
-            className="w-full mt-3 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium flex items-center justify-center gap-2"
-          >
-            <LogOut size={14} /> {t("clubs_leaveClub")}
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col" style={{ height: "50vh" }}>
-          <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {messages.length === 0 && (
-              <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">{t("clubs_noMessagesYet")}</p>
-            )}
-            {messages.map((m) => {
-              const mine = m.senderUid === myUid;
-              return (
-                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                      mine
-                        ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]"
-                        : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))]"
-                    }`}
-                  >
-                    {!mine && <p className="text-[10px] text-[rgb(var(--gold-ink))] font-semibold mb-0.5">{m.senderName}</p>}
-                    {m.text}
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={bottomRef} />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              aria-label={t("clubs_messagePlaceholder")}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={t("clubs_messagePlaceholder")}
-              maxLength={500}
-              className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
-            />
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleSend}
-              disabled={!text.trim()}
-              className="p-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] disabled:opacity-40"
-            >
-              <Send size={16} />
-            </motion.button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+      <div id="club-panel" role="tabpanel" aria-labelledby={"club-tab-" + tab}>
+        {error ? <div className="clubs-empty" role="alert"><p>{error}</p><Button variant="secondary" onClick={() => setAttempt(v => v + 1)}><RefreshCw size={16} /> Retry</Button></div>
+        : !ready ? <div className="clubs-grid" aria-label="Loading clubs" aria-busy="true">{[0,1,2,3].map(i => <div className="club-skeleton" key={i} />)}</div>
+        : tab === "mine" && detail && mine ? <><Button variant="ghost" onClick={() => setDetail(false)}><ArrowLeft size={16} /> My Clubs</Button><ClubHome club={mine} myUid={uid} myName={user?.displayName ?? "Player"} /></>
+        : tab === "mine" ? <section><h2>My Clubs</h2>{mine ? <div className="clubs-grid clubs-owned">{card(mine)}</div> : <div className="clubs-empty"><Users /><h3>You haven&apos;t joined a club yet.</h3><Button variant="secondary" onClick={() => setTab("browse")}>Browse Clubs</Button></div>}</section>
+        : <>
+          <section><div className="clubs-section-title"><div><h2>{query ? "Search Results" : "Suggested Clubs"}</h2><p>{query ? matches.length + " clubs found" : "Discover the latest communities"}</p></div>
+            {!query && matches.length > 4 && <Button variant="ghost" onClick={() => setExpanded(v => !v)}>{expanded ? "Show Less" : "View All"}</Button>}</div>
+            {visible.length ? <div className="clubs-grid">{visible.map(card)}</div> : <div className="clubs-empty"><Users /><h3>{query ? "No clubs match your search." : "No clubs found"}</h3><p>Try another search or create a club of your own.</p>{query && <Button variant="secondary" onClick={() => setSearch("")}>Clear Search</Button>}</div>}
+          </section>
+          <section className="clubs-mine"><h2>My Clubs</h2>{mine ? <div className="clubs-grid clubs-owned">{card(mine)}</div> : <div className="clubs-membership"><Users size={24} /><div><h3>Your next team starts here.</h3><p>You can belong to one club at a time.</p></div><Button onClick={() => setCreate(true)}><Plus size={16} /> Create Club</Button></div>}</section>
+        </>}
+      </div>
+      {create && <CreateClubDialog uid={uid} playerName={user?.displayName ?? "Player"} trophies={playerStats?.trophies ?? 0}
+        onClose={() => setCreate(false)} onCreated={() => { setCreate(false); setTab("mine"); setDetail(true); }} />}
+    </>}
+  </div>;
 }

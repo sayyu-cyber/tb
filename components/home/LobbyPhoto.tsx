@@ -28,12 +28,13 @@ export function LobbyPhoto({ className }: { className?: string }) {
       {/* Gradient fallback, painted first: if the photo file is missing or
           still loading, this - not flat grey - is what shows through. Uses
           the brand palette so the banner never looks broken. */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[rgb(var(--deep-dark))] via-[rgb(var(--deep))] to-[rgb(var(--coral))]" />
+      <div className="absolute inset-0 bg-[#0c1916]" />
       <Image
         src="/images/lobby-table.webp"
         alt=""
         fill
         priority
+        unoptimized
         sizes="100vw"
         className="object-cover"
         style={{ objectPosition: "center 58%" }}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { NewsItem } from "@/types";
 
 const mockNews: NewsItem[] = [
@@ -28,19 +27,6 @@ const mockNews: NewsItem[] = [
 ];
 
 export function useNews() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchNews = async () => {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setNews(mockNews);
-      setLoading(false);
-    };
-
-    fetchNews();
-  }, []);
-
-  return { news, loading };
+  // Local editorial content is available immediately; no simulated network delay.
+  return { news: mockNews, loading: false };
 }

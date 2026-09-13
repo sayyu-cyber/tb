@@ -6,19 +6,18 @@ import { ArrowLeft, Users, Lock, Copy, Check, LogOut, Play, Crown, RefreshCw } f
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEconomy } from "@/contexts/EconomyContext";
+import { PrivateRoomSetup } from "./PrivateRoomSetup";
+import { RoomInviteDialog } from "./RoomInviteDialog";
+import { rememberRoom } from "@/lib/roomHistory";
 import { GameType } from "@/lib/matchmaking";
 import { dealMindiHand, dealMindiHandFFA1v1 } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import {
-  createRoom,
-  joinRoom,
   kickPlayer,
   banPlayer,
   leaveRoom,
-  closeRoom,
   startRoomMatch,
   setSeatOrder,
   watchRoom,
@@ -84,199 +83,11 @@ export function RoomLobbyClient({ gameId }: { gameId: string }) {
   const code = searchParams.get("code");
 
   if (!code) {
-    return <RoomChooser gameId={gameId} />;
+    return <PrivateRoomSetup gameId={gameId} />;
   }
   return <RoomLobby gameId={gameId} gameType={gameType} code={code} myUid={user?.uid ?? ""} />;
 }
 
-function RoomChooser({ gameId }: { gameId: string }) {
-  const router = useRouter();
-  const { user } = useAuth();
-  const { getActiveRoomCards } = useEconomy();
-  const [mode, setMode] = useState<"choose" | "create" | "join">("choose");
-  const [password, setPassword] = useState("");
-  const [joinCode, setJoinCode] = useState("");
-  const [joinPassword, setJoinPassword] = useState("");
-  const [mindiMode, setMindiMode] = useState<"team2v2" | "ffa1v1">("team2v2");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const t = useTranslation();
-
-  // Rooms can only be opened while a Room Card is active - once activated,
-  // any number of rooms can be created until it expires (see
-  // components/roomcards/RoomCardManager.tsx and lib/rooms.ts's docs).
-  const hasActiveRoomCard = getActiveRoomCards().length > 0;
-
-  async function handleCreate() {
-    if (!user?.uid || !hasActiveRoomCard) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const code = await createRoom(
-        user.uid,
-        user.displayName ?? "Player",
-        gameTypeFor(gameId),
-        password || null,
-        "casual",
-        mindiMode
-      );
-      router.push(`/play/${gameId}/room?code=${code}`);
-    } catch (err) {
-      setError(String(err));
-      setBusy(false);
-    }
-  }
-
-  async function handleJoin() {
-    if (!user?.uid || !joinCode.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await joinRoom(joinCode, user.uid, user.displayName ?? "Player", joinPassword);
-      router.push(`/play/${gameId}/room?code=${joinCode.trim().toUpperCase()}`);
-    } catch (err) {
-      setError(String(err));
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
-      <Link href="/play" className="absolute top-6 left-4">
-        <motion.button aria-label={t("a11y_goBack")} whileTap={{ scale: 0.9 }} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-          <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
-        </motion.button>
-      </Link>
-
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-[rgb(var(--text-primary))]">{t("roomlobby_title")}</h1>
-          <p className="text-[rgb(var(--c4))] text-sm mt-1">{t("roomlobby_subtitle")}</p>
-        </div>
-
-        {error && (
-          <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2">{error}</p>
-        )}
-
-        {mode === "choose" && (
-          <div className="space-y-3">
-            {hasActiveRoomCard ? (
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setMode("create")}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold"
-              >
-                {t("roomlobby_createRoom")}
-              </motion.button>
-            ) : (
-              <div className="space-y-2 p-4 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-                <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{t("roomlobby_needCard")}</p>
-                <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_needCardDesc")}</p>
-                <Link href="/room-cards">
-                  <motion.button whileTap={{ scale: 0.98 }} className="w-full mt-1 py-2.5 rounded-lg bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold text-sm">
-                    {t("roomlobby_goToRoomCards")}
-                  </motion.button>
-                </Link>
-              </div>
-            )}
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setMode("join")}
-              className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] font-medium"
-            >
-              {t("roomlobby_joinWithCode")}
-            </motion.button>
-          </div>
-        )}
-
-        {mode === "create" && (
-          <div className="space-y-3 glass-card rounded-2xl p-5">
-            {gameId === "mindi" && (
-              <div className="space-y-2">
-                <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_mode")}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setMindiMode("team2v2")}
-                    className={`py-2.5 rounded-lg text-sm font-medium border ${
-                      mindiMode === "team2v2"
-                        ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold))] text-[rgb(var(--gold-ink))]"
-                        : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
-                    }`}
-                  >
-                    {t("roomlobby_team2v2")}
-                  </button>
-                  <button
-                    onClick={() => setMindiMode("ffa1v1")}
-                    className={`py-2.5 rounded-lg text-sm font-medium border ${
-                      mindiMode === "ffa1v1"
-                        ? "bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold))] text-[rgb(var(--gold-ink))]"
-                        : "bg-[rgb(var(--c2))] border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
-                    }`}
-                  >
-                    {t("roomlobby_ffa1v1")}
-                  </button>
-                </div>
-                <p className="text-[rgb(var(--c3))] text-[11px]">{t("roomlobby_ffaComingSoon")}</p>
-              </div>
-            )}
-            <p className="text-[rgb(var(--c4))] text-xs">{t("roomlobby_optionalPassword")}</p>
-            <input
-              aria-label={t("roomlobby_passwordPlaceholder")}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("roomlobby_passwordPlaceholder")}
-              maxLength={32}
-              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
-            />
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              disabled={busy}
-              onClick={handleCreate}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold disabled:opacity-50"
-            >
-              {busy ? t("common_creating") : t("roomlobby_createRoomBtn")}
-            </motion.button>
-          </div>
-        )}
-
-        {mode === "join" && (
-          <div className="space-y-3 glass-card rounded-2xl p-5">
-            <input
-              aria-label={t("roomlobby_roomCodePlaceholder")}
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder={t("roomlobby_roomCodePlaceholder")}
-              maxLength={6}
-              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm tracking-widest text-center font-bold outline-none focus:border-[rgb(var(--gold)/50%)]"
-            />
-            <input
-              aria-label={t("roomlobby_passwordIfRequired")}
-              value={joinPassword}
-              onChange={(e) => setJoinPassword(e.target.value)}
-              placeholder={t("roomlobby_passwordIfRequired")}
-              maxLength={32}
-              className="w-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
-            />
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              disabled={busy}
-              onClick={handleJoin}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold disabled:opacity-50"
-            >
-              {busy ? t("common_joining") : t("roomlobby_joinRoomBtn")}
-            </motion.button>
-          </div>
-        )}
-
-        {mode !== "choose" && (
-          <button onClick={() => setMode("choose")} className="w-full text-center text-[rgb(var(--c4))] text-sm">
-            {t("common_back")}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function RoomLobby({
   gameId,
@@ -322,6 +133,7 @@ function RoomLobby({
       code,
       (r) => {
         setRoom(r);
+        if (r?.players.includes(myUid)) rememberRoom(myUid, code);
         setHasLoadedOnce(true);
       },
       () => {
@@ -329,7 +141,7 @@ function RoomLobby({
         setHasLoadedOnce(true);
       }
     );
-  }, [code, retryKey]);
+  }, [code, retryKey, myUid]);
 
   useEffect(() => {
     if (room?.status === "started" && room.matchId) {
@@ -353,10 +165,12 @@ function RoomLobby({
     // Previously this flipped to the "copied" checkmark unconditionally and
     // swallowed the rejection, so on an insecure origin or with clipboard
     // permission denied the player saw a tick but had nothing to paste.
+    if (!navigator.clipboard) { showToast(t("toast_copyFailed"), "error"); return; }
     navigator.clipboard
       ?.writeText(code)
       .then(() => {
         setCopied(true);
+        showToast("Room code copied", "success");
         setTimeout(() => setCopied(false), 1500);
       })
       .catch(() => showToast(t("toast_copyFailed"), "error"));
@@ -462,7 +276,7 @@ function RoomLobby({
   const isFull = room.players.length === room.maxPlayers;
 
   return (
-    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
+    <div className="private-active-lobby match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
@@ -486,6 +300,7 @@ function RoomLobby({
         )}
       </div>
 
+      <RoomInviteDialog room={room} myUid={myUid} />
       {error && (
         <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
       )}

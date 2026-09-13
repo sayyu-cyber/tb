@@ -1,54 +1,15 @@
 "use client";
-
-import { motion } from "framer-motion";
-import { LucideIcon } from "lucide-react";
-
-interface SettingToggleProps {
-  icon: LucideIcon;
-  label: string;
-  description?: string;
-  enabled: boolean;
-  onChange: () => void;
-  /** CSS colour token, e.g. "var(--lagoon)" - gives this row its own
-   *  domain hue (the same "each feature owns a colour" system Home uses)
-   *  instead of every row defaulting to gold. Falls back to gold when
-   *  omitted. */
-  accent?: string;
-}
-
-export function SettingToggle({ icon: Icon, label, description, enabled, onChange, accent }: SettingToggleProps) {
-  return (
-    <div
-      className="flex items-center justify-between py-4 px-1"
-      style={accent ? ({ ["--accent" as string]: accent } as React.CSSProperties) : undefined}
-    >
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-          enabled ? "bg-[rgb(var(--accent,var(--gold))/12%)]" : "bg-[rgb(var(--c2))]"
-        }`}>
-          <Icon size={18} className={enabled ? "text-[rgb(var(--accent,var(--gold-ink)))]" : "text-[rgb(var(--c4))]"} />
-        </div>
-        <div>
-          <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{label}</p>
-          {description && (
-            <p className="text-[rgb(var(--c4))] text-[11px] mt-0.5">{description}</p>
-          )}
-        </div>
-      </div>
-
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={onChange}
-        className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${
-          enabled ? "bg-[rgb(var(--accent,var(--gold)))]" : "bg-[rgb(var(--c3))]"
-        }`}
-      >
-        <motion.div
-          animate={{ x: enabled ? 20 : 2 }}
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-md"
-        />
-      </motion.button>
-    </div>
-  );
+import { useId } from "react";
+import type { LucideIcon } from "lucide-react";
+export function SettingToggle({icon:Icon,label,description,enabled,onChange,disabled=false}: {
+  icon:LucideIcon;label:string;description?:string;enabled:boolean;onChange:()=>void;disabled?:boolean;accent?:string;
+}) {
+  const id=useId();
+  return <div className="settings-row">
+    <Icon size={20} aria-hidden="true" /><div><h3 id={id}>{label}</h3>{description && <p id={id+"-description"}>{description}</p>}</div>
+    <button className="settings-switch" type="button" role="switch" aria-checked={enabled}
+      aria-labelledby={id} aria-describedby={description ? id+"-description" : undefined} disabled={disabled} onClick={onChange}>
+      <span><span /></span>
+    </button>
+  </div>;
 }

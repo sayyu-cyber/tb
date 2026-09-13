@@ -17,16 +17,35 @@ import { useTranslation } from "@/hooks/useTranslation";
  * countdown, and an explicit "Enter League" route into the real ranked
  * queue.
  */
-export function WeekendLeague() {
+export function WeekendLeague({ variant = "home" }: { variant?: "home" | "play" }) {
   const t = useTranslation();
   const { isWeekendLeague } = useRankLock();
-  // Next Friday at 20:00
+  // Use the same Thursday 23:59 start as the existing rank-lock window.
   const now = new Date();
   const nextFriday = new Date(now);
-  nextFriday.setDate(now.getDate() + ((5 - now.getDay() + 7) % 7));
-  nextFriday.setHours(20, 0, 0, 0);
+  nextFriday.setDate(now.getDate() + ((4 - now.getDay() + 7) % 7));
+  nextFriday.setHours(23, 59, 0, 0);
   if (nextFriday <= now) {
     nextFriday.setDate(nextFriday.getDate() + 7);
+  }
+
+  if (variant === "play") {
+    // Match the rank-lock window, which begins Thursday at 23:59.
+    const nextStart = new Date(now);
+    nextStart.setDate(now.getDate() + ((4 - now.getDay() + 7) % 7));
+    nextStart.setHours(23, 59, 0, 0);
+    if (nextStart <= now) nextStart.setDate(nextStart.getDate() + 7);
+    return <section className="play-league" aria-labelledby="play-league-title">
+      <div className="play-league-copy">
+        <p className="play-eyebrow">THE WEEKEND CHALLENGE</p>
+        <h2 id="play-league-title">{t("home_weekendLeagueTitle")}</h2>
+        <p>Compete this weekend and climb the ranks.</p>
+        <small>{t("home_doubleTrophiesDuring")}</small>
+        <Link href="/tournament" className="play-ranked">{t("home_enterLeague")}<ArrowRight size={17} /></Link>
+      </div>
+      <div className="play-league-clock">{isWeekendLeague ? <div className="play-league-live"><span>LIVE NOW</span><strong>Weekend League is on</strong><p>Your next challenge awaits.</p></div> : <CountdownTimer targetDate={nextStart} label={t("home_startsIn")} />}</div>
+      <div className="play-league-emblem" aria-hidden="true"><Trophy strokeWidth={1.3} /><span>WEEKEND LEAGUE</span></div>
+    </section>;
   }
 
   return (

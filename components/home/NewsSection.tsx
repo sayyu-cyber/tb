@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { Newspaper, ChevronRight, X, Megaphone, Sparkles, PartyPopper } from "lucide-react";
 import { useNews } from "@/hooks/useNews";
 import { NewsItem } from "@/types";
@@ -72,6 +72,11 @@ function NewsCard({ item, index, onClick }: { item: NewsItem; index: number; onC
 export function NewsSection() {
   const { news, loading } = useNews();
   const [selected, setSelected] = useState<NewsItem | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (selected) dialog.current?.showModal();
+    else dialog.current?.close();
+  }, [selected]);
   const t = useTranslation();
 
   return (
@@ -82,7 +87,7 @@ export function NewsSection() {
     >
       <div className="flex items-center gap-2 mb-3 px-1">
         <Newspaper size={16} className="text-[rgb(var(--gold-ink))]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("home_newsUpdates")}</h3>
+        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">Latest Updates</h3>
       </div>
 
       <div className="space-y-2">
@@ -90,22 +95,15 @@ export function NewsSection() {
           [...Array(3)].map((_, i) => (
             <div key={i} className="h-16 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
           ))
-        ) : (
+        ) : !news.length ? <p>No recent updates</p> : (
           news.map((item, index) => (
             <NewsCard key={item.id} item={item} index={index} onClick={() => setSelected(item)} />
           ))
         )}
       </div>
 
-      <AnimatePresence>
+      <dialog ref={dialog} className="home-news-dialog" aria-label={selected?.title || "Update"} onCancel={() => setSelected(null)} onClick={event => { if (event.target === event.currentTarget) setSelected(null); }}>
         {selected && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-black/70 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0"
-            onClick={() => setSelected(null)}
-          >
             <motion.div
               initial={{ opacity: 0, y: 40, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -130,9 +128,8 @@ export function NewsSection() {
               <h3 className="text-[rgb(var(--text-primary))] font-bold text-lg mb-2">{selected.title}</h3>
               <p className="text-[rgb(var(--c5))] text-sm leading-relaxed">{selected.content}</p>
             </motion.div>
-          </motion.div>
         )}
-      </AnimatePresence>
+      </dialog>
     </motion.div>
   );
 }

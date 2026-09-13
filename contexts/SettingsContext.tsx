@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { AppSettings } from "@/types";
 import { LANGUAGE_DIRECTION } from "@/lib/i18n";
 
@@ -20,17 +20,25 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const currentSettings = useRef(defaultSettings);
 
   useEffect(() => {
-    const saved = localStorage.getItem("thaasbai_settings");
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem("thaasbai_settings");
+      if (saved) {
         // Merge onto defaults so an older saved blob (from before
         // `language` existed) still ends up with a valid value.
-        setSettings({ ...defaultSettings, ...JSON.parse(saved) });
-      } catch {
-        setSettings(defaultSettings);
+        const parsed = JSON.parse(saved);
+        const restored = { ...defaultSettings, ...parsed };
+        if (!["en", "dv", "hi", "bn"].includes(restored.language)) restored.language = "en";
+        for (const key of ["music", "sound", "notifications"] as const) {
+          if (typeof restored[key] !== "boolean") restored[key] = defaultSettings[key];
+        }
+        currentSettings.current = restored;
+        setSettings(restored);
       }
+    } catch {
+      setSettings(defaultSettings);
     }
   }, []);
 
@@ -42,11 +50,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [settings.language]);
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings((prev) => {
-      const updated = { ...prev, ...newSettings };
-      localStorage.setItem("thaasbai_settings", JSON.stringify(updated));
-      return updated;
-    });
+    const updated = { ...currentSettings.current, ...newSettings };
+    localStorage.setItem("thaasbai_settings", JSON.stringify(updated));
+    currentSettings.current = updated;
+    setSettings(updated);
   };
 
   return (

@@ -1,200 +1,65 @@
 "use client";
-
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Users, Swords, Lock, Bot, Smartphone, KeyRound, UsersRound, Globe } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { useTranslation } from "@/hooks/useTranslation";
-import { riseIn, SPRING } from "@/lib/motion";
-import { cn } from "@/lib/utils";
-import { GameDeckArt } from "./GameDeckArt";
+import { Users, Trophy, Lock, Bot, Smartphone, Globe, ChevronRight, Check, Play, Crown } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import { useRankLock } from "@/hooks/useRankLock";
+import { GameDeckArt } from "./GameDeckArt";
 
 interface GameSelectCardProps {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  players: string;
-  index: number;
+  id: string; name: string; description: string; icon: string;
+  color: string; players: string; index: number;
 }
+const modes = [
+  { id: "online", label: "Casual", detail: "Quick & fun", Icon: Trophy },
+  { id: "ai", label: "Vs AI", detail: "Practice mode", Icon: Bot },
+  { id: "passplay", label: "Pass & Play", detail: "Local multiplayer", Icon: Smartphone },
+] as const;
 
-export function GameSelectCard({ id, name, description, icon, color, players, index }: GameSelectCardProps) {
-  const [expanded, setExpanded] = useState(true);
+export function GameSelectCard({ id, name, description, icon, color, players }: GameSelectCardProps) {
+  const [mode, setMode] = useState<typeof modes[number]["id"]>("online");
   const { state } = useEconomy();
   const { isGuest } = useAuth();
+  const { isWeekendLeague } = useRankLock();
   const t = useTranslation();
-
+  const online = mode === "online";
   return (
-    <motion.div
-      variants={riseIn}
-      initial="hidden"
-      animate="show"
-      transition={{ ...SPRING, delay: index * 0.06 }}
-      // `color` is the game's accent token; every tint below derives from
-      // it, so Mindi and Gin Rummy no longer render identically in gold.
-      style={{ ["--accent" as string]: color } as React.CSSProperties}
-      className="game-mode-card surface-accent edge-light relative overflow-hidden rounded-lg"
-    >
-      <div className="game-cover-art"><GameDeckArt game={id} cardBackId={state.profile.equipped.cardBack} /></div>
-
-      <div className="relative p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-          <div className="min-w-0">
-            <span
-              aria-hidden="true"
-              className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl
-                         bg-[rgb(var(--accent)/14%)] border border-[rgb(var(--accent)/28%)]
-                         text-2xl font-serif text-[rgb(var(--accent))]"
-            >
-              {icon}
-            </span>
-            <h2 className="text-2xl font-bold tracking-tight text-[rgb(var(--text-primary))]">{name}</h2>
-            <p className="text-[rgb(var(--c5))] text-sm mt-1 leading-relaxed">{description}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[rgb(var(--accent)/28%)]
-                          bg-[rgb(var(--accent)/10%)] px-3 py-1.5">
-            <Users size={13} className="text-[rgb(var(--accent))]" aria-hidden="true" />
-            <span className="text-[rgb(var(--accent))] text-xs font-semibold whitespace-nowrap">{players}</span>
-          </div>
+    <article className={`play-game play-game-${id}`} style={{ "--accent": color } as React.CSSProperties} aria-labelledby={`${id}-title`}>
+      <div className="play-game-cover">
+        <span className="play-player-count"><Users size={15} />{players}</span>
+        <div className="play-game-intro">
+          <span className="play-suit" aria-hidden="true">{icon}</span>
+          <div><h2 id={`${id}-title`}>{name}</h2><p>{description}</p></div>
         </div>
-
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-3 overflow-hidden"
-            >
-              {/* Casual Mode */}
-              <div className="space-y-2">
-                <p className="flex items-center gap-2 text-[rgb(var(--c4))] text-[10px] font-bold uppercase tracking-widest"><span className="h-3 w-0.5 rounded bg-[rgb(var(--accent))]" />{t("gamesel_casualMode")}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link href={`/play/${id}/casual/ai`}>
-                    <motion.span
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
-                    >
-                      <Bot size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
-                      <span className="text-sm">{t("gamesel_vsAI")}</span>
-                    </motion.span>
-                  </Link>
-                  <Link href={`/play/${id}/casual/passplay`}>
-                    <motion.span
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
-                    >
-                      <Smartphone size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
-                      <span className="text-sm">{t("gamesel_passPlay")}</span>
-                    </motion.span>
-                  </Link>
-                </div>
-                {isGuest ? (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-                    <Lock size={16} className="text-[rgb(var(--c4))]" />
-                    <p className="text-[rgb(var(--c4))] text-sm">{t("gamesel_signInCasualOnline")}</p>
-                  </div>
-                ) : (
-                  <Link href={`/play/${id}/casual/online`}>
-                    <motion.span
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
-                    >
-                      <Globe size={16} className="text-[rgb(var(--accent))]" aria-hidden="true" />
-                      <span className="text-sm">{id === "mindi" ? t("gamesel_onlineMindi") : t("gamesel_online")}</span>
-                    </motion.span>
-                  </Link>
-                )}
-              </div>
-
-              {/* Ranked Mode */}
-              <div className="space-y-2 pt-2">
-                <p className="flex items-center gap-2 text-[rgb(var(--c4))] text-[10px] font-bold uppercase tracking-widest"><span className="h-3 w-0.5 rounded bg-[rgb(var(--gold))]" />{t("gamesel_rankedMode")}</p>
-                {isGuest ? (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-                    <Lock size={16} className="text-[rgb(var(--c4))]" />
-                    <p className="text-[rgb(var(--c4))] text-sm">{t("gamesel_signInRanked")}</p>
-                  </div>
-                ) : id === "mindi" ? (
-                  <Link href={`/play/${id}/ranked-duo`}>
-                    <motion.span
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] text-[#0C0E12] font-bold text-sm shadow-[0_4px_18px_-4px_rgb(var(--gold)/50%)] hover:brightness-110 transition-[filter]"
-                    >
-                      <Swords size={16} />
-                      <span>{t("gamesel_playRankedDuo")}</span>
-                    </motion.span>
-                  </Link>
-                ) : (
-                  <>
-                    <Link href={`/play/${id}/ranked`}>
-                      <motion.span
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] text-[#0C0E12] font-bold text-sm shadow-[0_4px_18px_-4px_rgb(var(--gold)/50%)] hover:brightness-110 transition-[filter]"
-                      >
-                        <Swords size={16} />
-                        <span>{t("gamesel_ranked1v1")}</span>
-                      </motion.span>
-                    </Link>
-                    <Link href={`/play/${id}/ranked-duo`}>
-                      <motion.span
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full flex items-center justify-center gap-2 bg-[rgb(var(--c2))] border border-[rgb(var(--gold)/30%)] text-[rgb(var(--text-primary))] font-medium rounded-xl py-3 mt-2"
-                      >
-                        <UsersRound size={16} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
-                        <span className="text-sm">{t("gamesel_ranked2v2")}</span>
-                      </motion.span>
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Private Room */}
-              <div className="space-y-2 pt-2">
-                <p className="flex items-center gap-2 text-[rgb(var(--c4))] text-[10px] font-bold uppercase tracking-widest"><span className="h-3 w-0.5 rounded bg-[rgb(var(--orchid))]" />{t("gamesel_playWithFriends")}</p>
-                {isGuest ? (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-                    <Lock size={16} className="text-[rgb(var(--c4))]" />
-                    <p className="text-[rgb(var(--c4))] text-sm">{t("gamesel_signInPrivateRooms")}</p>
-                  </div>
-                ) : (
-                  <Link href={`/play/${id}/room`}>
-                    <motion.span
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] text-[rgb(var(--text-primary))] text-sm font-medium transition-colors hover:border-[rgb(var(--accent)/45%)] hover:bg-[rgb(var(--accent)/8%)]"
-                    >
-                      <KeyRound size={16} className="text-[rgb(var(--orchid-ink))]" aria-hidden="true" />
-                      <span className="text-sm">{t("gamesel_privateRoom")}</span>
-                    </motion.span>
-                  </Link>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Toggle button */}
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
-          className="w-full mt-4 min-h-[44px] rounded-xl border border-[rgb(var(--accent)/28%)]
-                     text-[rgb(var(--accent))] text-sm font-semibold
-                     hover:bg-[rgb(var(--accent)/10%)] transition-colors"
-        >
-          {expanded ? t("gamesel_close") : t("gamesel_selectMode")}
-        </motion.button>
+        <div className="play-deck"><GameDeckArt game={id} cardBackId={state.profile.equipped.cardBack} /></div>
       </div>
-    </motion.div>
+      <div className="play-game-controls">
+        <div className="play-mode-selector" role="group" aria-label={`${name} casual mode`}>
+          {modes.map(({ id: value, label, detail, Icon }) => (
+            <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)}>
+              <Icon size={22} aria-hidden="true" /><span><strong>{label}</strong><small>{detail}</small></span>
+              {mode === value && <Check size={12} className="play-mode-check" aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+        <Link className="play-launch" href={online && isGuest ? "/login" : `/play/${id}/casual/${mode}`}>
+          {online ? <Globe size={18} /> : <Play size={18} />}
+          <span>{online ? (isGuest ? "Sign in to play online" : "Online") : mode === "ai" ? "Play vs AI" : "Start Pass & Play"}
+            {online && id === "mindi" && !isGuest && <small>Auto-teamed, no partner needed</small>}
+          </span><ChevronRight size={18} />
+        </Link>
+        <div className="play-mode-heading"><Crown size={15} /><span>{t("gamesel_rankedMode")}</span>{isWeekendLeague && <span className="play-event-tag">Weekend League</span>}</div>
+        {isGuest ? <div className="play-restricted"><Lock size={16} /><span>{t("gamesel_signInRanked")}</span></div> : <>
+          <Link className="play-ranked" href={`/play/${id}/${id === "mindi" ? "ranked-duo" : "ranked"}`}><Trophy size={19} /><span>{id === "mindi" ? t("gamesel_playRankedDuo") : t("gamesel_ranked1v1")}</span><ChevronRight size={19} /></Link>
+          {id !== "mindi" && <Link className="play-duo" href={`/play/${id}/ranked-duo`}><Users size={14} />{t("gamesel_ranked2v2")}<ChevronRight size={14} /></Link>}
+        </>}
+        <div className="play-private">
+          <div className="play-mode-heading"><Lock size={14} /><span>{t("gamesel_playWithFriends")}</span></div>
+          {isGuest ? <div className="play-restricted"><Lock size={16} /><span>{t("gamesel_signInPrivateRooms")}</span></div> : <Link className="play-room" href={`/play/${id}/room`}><Lock size={17} /><span>{t("gamesel_privateRoom")}</span><ChevronRight size={18} /></Link>}
+        </div>
+      </div>
+    </article>
   );
 }

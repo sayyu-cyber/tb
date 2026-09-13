@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import { useMemo } from "react";
-import { User, Trophy, Calendar, Crown, Swords } from "lucide-react";
+import { User, Trophy, Calendar, Crown, Swords, Users } from "lucide-react";
+import Link from "next/link";
+import { useHomeSocial } from "@/contexts/HomeSocialContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSeasonInfo } from "@/hooks/useSeasonInfo";
 import { useCountdown } from "@/hooks/useCountdown";
@@ -25,6 +27,7 @@ export function PlayerHUD() {
   const fallbackEndDate = useMemo(() => new Date(), []);
   const { days: seasonDays } = useCountdown(season?.endDate ?? fallbackEndDate);
   const t = useTranslation();
+  const social = useHomeSocial();
 
   if (!user) return null;
 
@@ -39,28 +42,29 @@ export function PlayerHUD() {
       icon: Trophy,
       accent: "var(--gold)",
       label: t("home_trophiesLabel"),
-      value: trophies.toLocaleString(),
+      value: playerStats ? trophies.toLocaleString() : "--",
       sub: currentRank,
     },
     {
       icon: Calendar,
       accent: "var(--lagoon)",
       label: t("profile_matches"),
-      value: String(playerStats?.totalMatches ?? 0),
+      value: playerStats ? String(playerStats.totalMatches ?? 0) : "--",
       sub: null,
     },
     {
       icon: Swords,
       accent: "var(--deep)",
       label: t("profile_wins"),
-      value: String(playerStats?.wins ?? 0),
+      value: playerStats ? String(playerStats.wins ?? 0) : "--",
       sub: null,
     },
+    { icon: Users, accent: "var(--lagoon)", label: "Friends", value: social.loading || social.error ? "--" : String(social.friends.length), sub: null },
     {
       icon: Crown,
       accent: "var(--orchid)",
       label: season?.name ?? t("home_seasonEndsIn"),
-      value: season ? `${seasonDays} ${t("home_days")}` : "0",
+      value: season ? `${seasonDays} ${t("home_days")}` : "--",
       sub: null,
     },
   ];
@@ -129,6 +133,7 @@ export function PlayerHUD() {
             </div>
           </div>
         )}
+        <Link href="/profile" className="home-profile-link"><User size={15} />View Profile</Link>
       </div>
     </motion.div>
   );
