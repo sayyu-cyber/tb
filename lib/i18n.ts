@@ -65,6 +65,21 @@ export const TRANSLATIONS: Record<string, Translations> = {
   nav_noActiveChats: { en: "No active chats", dv: "އެކްޓިވް ޗެޓެއް ނެތް", hi: "कोई सक्रिय चैट नहीं", bn: "কোনো সক্রিয় চ্যাট নেই" },
   nav_socialError: { en: "Couldn't load social activity.", dv: "ސޯޝަލް ހަރަކާތްތައް ލޯޑް ނުވިއެވެ.", hi: "सोशल गतिविधि लोड नहीं हो सकी।", bn: "সোশ্যাল কার্যকলাপ লোড করা যায়নি।" },
   nav_socialLoading: { en: "Loading social activity", dv: "ސޯޝަލް ހަރަކާތްތައް ލޯޑްވަނީ", hi: "सोशल गतिविधि लोड हो रही है", bn: "সোশ্যাল কার্যকলাপ লোড হচ্ছে" },
+
+  // Landscape gate (components/layout/RotateDeviceGate.tsx).
+  rotate_title: { en: "Rotate your phone", dv: "ފޯނު އަނބުރާލައްވާ", hi: "अपना फ़ोन घुमाएं", bn: "আপনার ফোন ঘোরান" },
+  rotate_body: {
+    en: "Thaasbai is built for landscape. Turn your phone sideways to play.",
+    dv: "ތާސްބައި ފަރުމާކޮށްފައިވަނީ ހުރަސްކޮށެވެ. ކުޅުމަށް ފޯނު ހުރަހަށް އަނބުރާލައްވާ.",
+    hi: "थासबाई लैंडस्केप के लिए बना है। खेलने के लिए अपना फ़ोन बगल में घुमाएं।",
+    bn: "থাসবাই ল্যান্ডস্কেপের জন্য তৈরি। খেলতে আপনার ফোন পাশ ফিরিয়ে ধরুন।",
+  },
+  rotate_lockHint: {
+    en: "Screen not turning? Switch off Rotation Lock in your phone's settings.",
+    dv: "ސްކްރީން ނުއެނބުރެނީތޯ؟ ފޯނުގެ ސެޓިންގްސްއިން ރޮޓޭޝަން ލޮކް ނިއްވާލައްވާ.",
+    hi: "स्क्रीन नहीं घूम रही? अपने फ़ोन की सेटिंग्स में रोटेशन लॉक बंद करें।",
+    bn: "স্ক্রিন ঘুরছে না? আপনার ফোনের সেটিংসে রোটেশন লক বন্ধ করুন।",
+  },
   notifications_empty: { en: "You're all caught up", dv: "ތިބާ ހުރިހާ ކަމެއް ބައްލަވައިފި", hi: "आप पूरी तरह अपडेट हैं", bn: "আপনি সব দেখে ফেলেছেন" },
   notifications_newMessage: { en: "New message from {name}", dv: "{name} ގެ އައު މެސެޖެއް", hi: "{name} की ओर से नया संदेश", bn: "{name} থেকে নতুন বার্তা" },
 

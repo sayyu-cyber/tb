@@ -7,6 +7,7 @@ import { EconomyProvider } from "@/contexts/EconomyContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { MotionProvider } from "@/components/system/MotionProvider";
 import { AppShell } from "@/components/layout/AppShell";
+import { RotateDeviceGate } from "@/components/layout/RotateDeviceGate";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -78,7 +79,13 @@ export default function RootLayout({
             <EconomyProvider>
               {/* Innermost so any screen can raise a toast, and so the
                   toast stack renders above the app's own fixed chrome. */}
-              <ToastProvider><AppShell>{children}</AppShell></ToastProvider>
+              <ToastProvider>
+                {/* Outside AppShell so it also covers the landing and login
+                    pages - portrait isn't a supported orientation anywhere,
+                    not just once you're signed in. */}
+                <RotateDeviceGate />
+                <AppShell>{children}</AppShell>
+              </ToastProvider>
             </EconomyProvider>
           </SettingsProvider>
         </AuthProvider></MotionProvider>

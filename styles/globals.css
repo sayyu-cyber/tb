@@ -1452,3 +1452,60 @@
 @media(prefers-reduced-motion:reduce) {
   .app-sidebar, .app-sidebar *, .app-sidebar-tip { transition:none !important; animation:none !important; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Landscape gate (components/layout/RotateDeviceGate.tsx)
+
+   Hidden everywhere except a phone held upright. The conditions matter:
+     orientation:portrait  the actual thing we're asking them to change
+     max-width:767px       phones only - tablets at 768+ have room to work,
+                           and this is the same phone/tablet split the rest
+                           of the app uses
+     pointer:coarse        a touch screen that can physically be turned. A
+                           desktop window dragged tall and narrow is also
+                           "portrait", and gating that would be nonsense.
+   Raise 767px to ~900px if you want small tablets gated too.
+   ───────────────────────────────────────────────────────────────────── */
+.rotate-gate { display:none; }
+
+@media(orientation:portrait) and (max-width:767px) and (pointer:coarse) {
+  /* Nothing behind the gate should scroll or be reachable. */
+  body { overflow:hidden; }
+
+  .rotate-gate {
+    position:fixed; inset:0; z-index:999;
+    display:flex; align-items:center; justify-content:center;
+    padding:32px 28px;
+    background:radial-gradient(120% 90% at 50% 0%,#131a1c,#070a0b 70%);
+    color:#f5f5ef;
+    text-align:center;
+  }
+  .rotate-gate-inner { display:flex; flex-direction:column; align-items:center; gap:14px; max-width:340px; }
+  .rotate-gate-icon {
+    display:grid; place-items:center; width:96px; height:96px; margin-bottom:6px;
+    border:1px solid rgba(244,205,98,.35); border-radius:26px;
+    color:#f4cd62;
+    background:linear-gradient(150deg,rgba(226,178,59,.16),rgba(226,178,59,.04));
+    box-shadow:0 0 40px -14px rgba(244,205,98,.8);
+    /* The icon performs the gesture being asked for. */
+    animation:rotate-gate-turn 2.6s ease-in-out infinite;
+  }
+  .rotate-gate h2 { font-size:22px; font-weight:800; color:#f4cd62; }
+  .rotate-gate p { font-size:14px; line-height:1.65; color:#c8cfcd; }
+  .rotate-gate-hint {
+    margin-top:6px; padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.08);
+    font-size:12px !important; color:#8f9895 !important;
+  }
+}
+
+@keyframes rotate-gate-turn {
+  0%, 18% { transform:rotate(0deg); }
+  46%, 82% { transform:rotate(-90deg); }
+  100% { transform:rotate(0deg); }
+}
+/* Reduced motion still needs the icon to communicate "sideways", so it rests
+   in the rotated position rather than animating there. */
+@media(prefers-reduced-motion:reduce) {
+  .rotate-gate-icon { animation:none !important; transform:rotate(-90deg); }
+}
