@@ -8,10 +8,18 @@ import { CoinTopupWatcher } from "@/components/economy/CoinTopupWatcher";
 import { PresenceHeartbeat } from "@/components/system/PresenceHeartbeat";
 import { HomeSocialProvider } from "@/contexts/HomeSocialContext";
 
+/**
+ * Routes that render with no app chrome and, crucially, OUTSIDE
+ * ProtectedRoute. The legal pages are here because Google Play and the App
+ * Store both require a privacy policy a reviewer can open at a plain URL
+ * while signed out - behind a login wall it fails review.
+ */
+const PUBLIC_PATHS = new Set(["/", "/login", "/privacy", "/terms"]);
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const path = pathname.replace(/\/$/, "") || "/";
-  if (path === "/" || path === "/login") return <>{children}</>;
+  if (PUBLIC_PATHS.has(path)) return <>{children}</>;
   return <AppFrame>{children}</AppFrame>;
 }
 

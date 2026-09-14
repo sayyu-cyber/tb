@@ -13,7 +13,10 @@ interface CoinBalanceProps {
 
 export default function CoinBalance({ showAnimation = false, size = 'md', className = '' }: CoinBalanceProps) {
   const { state } = useEconomy();
-  const { coins } = state.profile;
+  // economy.coins, not profile.coins: this display used to read the other
+  // balance from the one the shop's affordability checks used, so after a
+  // weekly rank reward it showed coins the shop then refused to spend.
+  const { coins } = state.economy;
 
   const sizeClasses = {
     sm: 'text-sm px-2 py-1 gap-1',

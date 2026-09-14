@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,8 +27,18 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslation();
+  const { showToast } = useToast();
+  const panel = useRef<HTMLDivElement>(null);
+  const savingRef = useRef(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    panel.current?.querySelector<HTMLInputElement>("input")?.focus();
+    return () => previous?.focus();
+  }, [isOpen]);
 
   async function handleSave() {
+    if (savingRef.current) return;
     const trimmed = name.trim();
     if (!trimmed) {
       setError(t("editprofile_emptyName"));
@@ -38,14 +49,17 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
       return;
     }
     setSaving(true);
+    savingRef.current = true;
     setError(null);
     try {
       await updatePlayerProfile({ displayName: trimmed, avatarPreset: avatar, bannerPreset: banner });
+      showToast("Profile updated.", "success");
       onClose();
     } catch (err) {
-      setError(String(err));
+      setError("Couldn't save profile changes. Please try again.");
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }
 
@@ -60,6 +74,18 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
           onClick={() => !saving && onClose()}
         >
           <motion.div
+            ref={panel}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-profile-title"
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && !savingRef.current) { event.stopPropagation(); onClose(); }
+              if (event.key !== "Tab") return;
+              const elements = Array.from(panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled)') || []);
+              const first = elements[0], last = elements[elements.length - 1];
+              if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+              else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+            }}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
@@ -67,8 +93,8 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
             className="glass-card rounded-2xl p-5 w-full max-w-sm border border-[rgb(var(--gold)/20%)] max-h-[85vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[rgb(var(--text-primary))] font-bold text-lg">{t("editprofile_title")}</h3>
-              <button aria-label={t("a11y_close")} onClick={onClose} className="p-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
+              <h3 id="edit-profile-title" className="text-[rgb(var(--text-primary))] font-bold text-lg">{t("editprofile_title")}</h3>
+              <button disabled={saving} aria-label={t("a11y_close")} onClick={onClose} className="p-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
                 <X size={16} className="text-[rgb(var(--c4))]" />
               </button>
             </div>
@@ -83,6 +109,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
             <input
               aria-label={t("editprofile_usernamePlaceholder")}
               value={name}
+              disabled={saving}
               onChange={(e) => setName(e.target.value)}
               maxLength={24}
               placeholder={t("editprofile_usernamePlaceholder")}
@@ -95,6 +122,8 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
                 <button
                   key={preset.id}
                   onClick={() => setAvatar(preset.id)}
+                  aria-pressed={avatar === preset.id}
+                  disabled={saving}
                   className="flex flex-col items-center gap-1"
                 >
                   <div
@@ -119,6 +148,8 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
                 <button
                   key={preset.id}
                   onClick={() => setBanner(preset.id)}
+                  aria-pressed={banner === preset.id}
+                  disabled={saving}
                   className={`h-12 rounded-xl bg-gradient-to-r ${preset.gradient} bg-[rgb(var(--c2))] border-2 flex items-end justify-start px-2 pb-1 ${
                     banner === preset.id ? "border-white" : "border-[rgb(var(--c3))]"
                   }`}
@@ -128,7 +159,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
               ))}
             </div>
 
-            {error && <p className="text-[rgb(var(--coral-ink))] text-xs mb-3">{error}</p>}
+            {error && <p role="alert" className="text-[rgb(var(--coral-ink))] text-xs mb-3">{error}</p>}
 
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -138,6 +169,7 @@ export function EditProfileModal({ isOpen, onClose, currentName, currentAvatar, 
             >
               {saving ? t("editprofile_saving") : t("editprofile_save")}
             </motion.button>
+            <button disabled={saving} onClick={onClose} className="w-full mt-2 py-2 text-sm text-[rgb(var(--c4))] disabled:opacity-50">Cancel</button>
           </motion.div>
         </motion.div>
       )}

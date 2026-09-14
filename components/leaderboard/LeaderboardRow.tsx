@@ -1,89 +1,70 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { Trophy, Crown, Medal } from "lucide-react";
-import { LeaderboardEntry } from "@/types";
+import { Trophy } from "lucide-react";
+import { LeaderboardAvatar } from "./LeaderboardAvatar";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { LeaderboardEntry } from "@/types";
 
-interface LeaderboardRowProps {
+/**
+ * One ranking row, rendered as a real <tr> so the table stays semantic for
+ * assistive tech (the brief asked for this explicitly).
+ *
+ * The current player is marked three ways, not just colour: a gold outline,
+ * a visible "YOU" chip, and aria-current. Colour alone would fail the
+ * accessibility requirement in §37.
+ *
+ * Stat cells fall back to an em dash rather than a fabricated zero when a
+ * player has never played - "0%" reads as a real measured win rate, "—"
+ * correctly reads as "no data".
+ */
+export function LeaderboardRow({
+  entry,
+  isCurrentUser,
+}: {
   entry: LeaderboardEntry;
-  index: number;
-  isCurrentUser?: boolean;
-}
-
-export function LeaderboardRow({ entry, index, isCurrentUser }: LeaderboardRowProps) {
-  const rank = entry.rank;
-
-  const getRankStyle = () => {
-    switch (rank) {
-      case 1:
-        return "bg-gradient-to-r from-[rgb(var(--gold)/20%)] to-transparent border-l-2 border-[rgb(var(--gold))]";
-      case 2:
-        return "bg-gradient-to-r from-[#C0C0C0]/10 to-transparent border-l-2 border-[#C0C0C0]";
-      case 3:
-        return "bg-gradient-to-r from-[#CD7F32]/10 to-transparent border-l-2 border-[#CD7F32]";
-      default:
-        return "border-l-2 border-transparent hover:bg-[rgb(var(--c2)/50%)]";
-    }
-  };
-
-  const getRankIcon = () => {
-    switch (rank) {
-      case 1:
-        return <Crown size={18} className="text-[rgb(var(--gold-ink))]" />;
-      case 2:
-        return <Medal size={18} className="text-[#C0C0C0]" />;
-      case 3:
-        return <Medal size={18} className="text-[#CD7F32]" />;
-      default:
-        return (
-          <span className="text-[rgb(var(--c4))] font-bold text-sm w-5 text-center">
-            {rank}
-          </span>
-        );
-    }
-  };
+  isCurrentUser: boolean;
+}) {
+  const t = useTranslation();
+  const played = entry.totalMatches ?? 0;
+  const hasPlayed = played > 0;
 
   return (
-    <Link href={`/player?uid=${entry.uid}`}>
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: Math.min(index, 6) * 0.025, duration: 0.2 }}
-      className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${getRankStyle()} ${
-        isCurrentUser ? "bg-[rgb(var(--gold)/5%)] border-[rgb(var(--gold)/30%)]" : ""
-      }`}
+    <tr
+      className="lb-row"
+      data-you={isCurrentUser ? "true" : undefined}
+      data-top={entry.rank <= 3 ? entry.rank : undefined}
+      aria-current={isCurrentUser ? "true" : undefined}
+      id={isCurrentUser ? "lb-current-user" : undefined}
     >
-      {/* Rank */}
-      <div className="w-8 shrink-0 flex justify-center">{getRankIcon()}</div>
+      <td className="lb-cell-rank">
+        <span className="lb-rank-number">{entry.rank}</span>
+      </td>
 
-      {/* Avatar */}
-      <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-[rgb(var(--lagoon))] to-[rgb(var(--lagoon-deep))] p-[1.5px]">
-        <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
-          <span className="text-[rgb(var(--gold-ink))] text-sm font-bold">
-            {entry.username.charAt(0).toUpperCase()}
+      <td className="lb-cell-player">
+        <Link href={`/player?uid=${encodeURIComponent(entry.uid)}`} className="lb-player-link">
+          <LeaderboardAvatar
+            name={entry.username}
+            photoURL={entry.avatar}
+            presetId={entry.avatarPreset}
+            size={36}
+          />
+          <span className="lb-player-text">
+            <span className="lb-player-name">{entry.username}</span>
+            {entry.currentRank && <span className="lb-player-tier">{entry.currentRank}</span>}
           </span>
-        </div>
-      </div>
+          {isCurrentUser && <span className="lb-you-chip">{t("leaderboard_you")}</span>}
+        </Link>
+      </td>
 
-      {/* Username */}
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${rank <= 3 ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c5))]"}`}>
-          {entry.username}
-        </p>
-        {isCurrentUser && (
-          <span className="text-[9px] text-[rgb(var(--gold-ink))] uppercase tracking-wider">You</span>
-        )}
-      </div>
+      <td className="lb-cell-num lb-hide-sm">{hasPlayed ? played.toLocaleString() : "—"}</td>
+      <td className="lb-cell-num lb-hide-sm">{hasPlayed ? (entry.wins ?? 0).toLocaleString() : "—"}</td>
+      <td className="lb-cell-num lb-hide-md">{hasPlayed ? `${entry.winPercentage ?? 0}%` : "—"}</td>
 
-      {/* Trophies */}
-      <div className="flex items-center gap-1.5">
-        <Trophy size={14} className={rank <= 3 ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
-        <span className={`text-sm font-semibold ${rank <= 3 ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c5))]"}`}>
-          {entry.trophies.toLocaleString()}
-        </span>
-      </div>
-    </motion.div>
-    </Link>
+      <td className="lb-cell-trophies">
+        <Trophy size={14} aria-hidden="true" />
+        {entry.trophies.toLocaleString()}
+      </td>
+    </tr>
   );
 }

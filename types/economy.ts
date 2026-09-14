@@ -21,10 +21,18 @@ export type CoinSource =
   | 'bonus';
 
 export interface PlayerEconomy {
+  /** The player's balance. This is the ONE canonical coin figure - see the
+   *  deprecation note on PlayerProfile.coins. Everything that grants,
+   *  spends, checks affordability or displays a balance reads this. */
   coins: number;
   transactions: CoinTransaction[];
   totalEarned: number;
   totalSpent: number;
+  /** Bumped when the stored shape changes so a document written by an older
+   *  build can be migrated exactly once on load (see ECONOMY_SCHEMA_VERSION
+   *  and reconcileCoins in contexts/EconomyContext.tsx). Absent on documents
+   *  written before the single-balance migration. */
+  schemaVersion?: number;
 }
 
 // ─── COSMETICS ───────────────────────────────────────
@@ -238,7 +246,18 @@ export interface PlayerProfile {
   displayName: string;
   avatar: string;
   title: string;
-  coins: number;
+  /**
+   * @deprecated Use `PlayerEconomy.coins`. Kept optional only so documents
+   * written before the single-balance migration still type-check while they
+   * are being read and reconciled.
+   *
+   * There used to be two balances maintained in parallel, and they drifted:
+   * the weekly-rank-reward function incremented only this one, CoinBalance
+   * displayed only this one, and every affordability check read
+   * `economy.coins`. A player could be shown coins the shop refused to let
+   * them spend. Nothing writes this field any more.
+   */
+  coins?: number;
   trophies: number;
   rank: string;
   rankColor: string;

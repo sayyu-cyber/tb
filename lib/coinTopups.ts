@@ -116,7 +116,15 @@ export async function findPlayerByCode(code: string): Promise<AdminPlayerLookup 
   // firestore.rules grants the admin read-only access to that doc so this
   // shows the real balance rather than always reading 0.
   const economySnap = await getDoc(doc(db, "playerEconomy", d.id));
-  const coins = economySnap.exists() ? economySnap.data().economy?.coins ?? economySnap.data().profile?.coins ?? 0 : 0;
+  // economy.coins is canonical, but a document the player hasn't opened
+  // since the single-balance migration may still carry a higher legacy
+  // profile.coins (the weekly reward function used to write only that one).
+  // Mirror reconcileCoins' max() so the admin sees what the player will
+  // actually have, not a figure that jumps the moment they next sign in.
+  const economyData = economySnap.exists() ? economySnap.data() : undefined;
+  const coins = economyData
+    ? Math.max(economyData.economy?.coins ?? 0, economyData.profile?.coins ?? 0)
+    : 0;
   return { uid: d.id, displayName: data.displayName || "Player", coins };
 }
 

@@ -106,13 +106,49 @@ const generateWeeklyMissions = (): WeeklyMission[] => {
 
 const initialDailyLoginRewards = DAILY_LOGIN_REWARDS.map(r => ({ ...r, claimed: false }));
 
+/**
+ * Stored-shape version for `playerEconomy` documents.
+ *
+ * 2 — single canonical balance. Before this, `profile.coins` and
+ *     `economy.coins` were maintained in parallel and drifted (the weekly
+ *     rank-reward function incremented only `profile.coins`, CoinBalance
+ *     displayed only `profile.coins`, and every affordability check read
+ *     `economy.coins`). `economy.coins` won because it is what all the
+ *     spend guards already used and it sits with the rest of the ledger.
+ */
+const ECONOMY_SCHEMA_VERSION = 2;
+
+/**
+ * One-time reconciliation for documents written before v2.
+ *
+ * Takes the HIGHER of the two old balances, deliberately. Players who were
+ * paid a weekly rank reward have a `profile.coins` above their
+ * `economy.coins`, and picking the canonical field blindly would silently
+ * confiscate coins they were genuinely awarded. Over-crediting is not a
+ * risk in the other direction: every reducer path updated both fields, so
+ * only the function-written one could ever run ahead.
+ *
+ * This must run EXACTLY ONCE per document, which is what the version field
+ * is for. Running it on every load would be a spend-infinitely bug: after a
+ * purchase drops `economy.coins` below the stale `profile.coins`, the next
+ * reload would restore the higher figure.
+ */
+function reconcileCoins(data: Partial<EconomyState>, fallback: number): number {
+  const stored = data.economy?.coins;
+  if ((data.economy?.schemaVersion ?? 0) >= ECONOMY_SCHEMA_VERSION) {
+    return stored ?? fallback;
+  }
+  const legacy = data.profile?.coins;
+  if (stored === undefined && legacy === undefined) return fallback;
+  return Math.max(stored ?? 0, legacy ?? 0);
+}
+
 const initialState: EconomyState = {
   profile: {
     uid: '',
     displayName: 'Player',
     avatar: '/avatars/default.png',
     title: 'Novice',
-    coins: 100,
     trophies: 0,
     rank: 'Bronze',
     rankColor: '#CD7F32',
@@ -145,6 +181,7 @@ const initialState: EconomyState = {
     transactions: [],
     totalEarned: 100,
     totalSpent: 0,
+    schemaVersion: ECONOMY_SCHEMA_VERSION,
   },
   missions: {
     daily: generateDailyMissions(),
@@ -233,12 +270,24 @@ function stateForUser(user: NonNullable<ReturnType<typeof useAuth>['user']>): Ec
 
 function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<ReturnType<typeof useAuth>['user']>): EconomyState {
   const base = stateForUser(user);
+  // Strip the legacy balance by OMITTING the key, never by setting it to
+  // undefined: this object is handed straight to setDoc({ merge: true }),
+  // and the Firestore instance is a plain getFirestore() without
+  // ignoreUndefinedProperties, so an undefined value throws and would break
+  // every economy save. An absent key is simply not written.
+  const legacyProfile = { ...(data.profile ?? {}) };
+  delete legacyProfile.coins;
   return {
     ...base,
     ...data,
     profile: {
       ...base.profile,
-      ...(data.profile ?? {}),
+      // legacyProfile, not data.profile - see the destructure above. The
+      // old balance has already been folded into economy.coins by
+      // reconcileCoins, so carrying it further would only invite a stale
+      // read. (The field lingers in Firestore, since a merge write cannot
+      // delete it, but it is inert from here on.)
+      ...legacyProfile,
       uid: user.uid,
       displayName: data.profile?.displayName || user.displayName || base.profile.displayName,
       equipped: { ...base.profile.equipped, ...(data.profile?.equipped ?? {}) },
@@ -248,7 +297,16 @@ function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<Return
       roomCards: data.profile?.roomCards ?? base.profile.roomCards,
       achievements: data.profile?.achievements ?? base.profile.achievements,
     },
-    economy: { ...base.economy, ...(data.economy ?? {}) },
+    // Coins are resolved through reconcileCoins rather than a plain spread,
+    // so a pre-v2 document is migrated once and then left alone. Stamping
+    // the version here is what makes it once-only - the next save writes it
+    // back, and subsequent loads take the canonical field verbatim.
+    economy: {
+      ...base.economy,
+      ...(data.economy ?? {}),
+      coins: reconcileCoins(data, base.economy.coins),
+      schemaVersion: ECONOMY_SCHEMA_VERSION,
+    },
     missions: {
       ...base.missions,
       ...(data.missions ?? {}),
@@ -284,7 +342,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
       };
       return {
         ...state,
-        profile: { ...state.profile, coins: state.profile.coins + amount },
         economy: {
           ...state.economy,
           coins: state.economy.coins + amount,
@@ -307,7 +364,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
       };
       return {
         ...state,
-        profile: { ...state.profile, coins: state.profile.coins - amount },
         economy: {
           ...state.economy,
           coins: state.economy.coins - amount,
@@ -334,7 +390,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
           missions: { ...state.missions, weekly },
           profile: {
             ...state.profile,
-            coins: state.profile.coins + reward,
             collection: grantCosmeticToCollection(state.profile.collection, completedMission.rewardCosmeticId),
           },
           economy: {
@@ -355,7 +410,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         return {
           ...state,
           missions: { ...state.missions, daily },
-          profile: { ...state.profile, coins: state.profile.coins + reward + bonus },
           economy: {
             ...state.economy,
             coins: state.economy.coins + reward + bonus,
@@ -388,7 +442,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
           ...state,
           profile: {
             ...state.profile,
-            coins: state.profile.coins + reward.coins,
             roomCards: [...state.profile.roomCards, newCard],
           },
           economy: {
@@ -408,7 +461,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         ...state,
         profile: {
           ...state.profile,
-          coins: state.profile.coins + reward.coins,
           collection: grantCosmeticToCollection(state.profile.collection, reward.bonusItem),
         },
         economy: {
@@ -471,7 +523,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         ...state,
         profile: {
           ...state.profile,
-          coins: state.profile.coins - price,
           collection: grantCosmeticToCollection(state.profile.collection, itemId),
         },
         economy: {
@@ -514,7 +565,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         achievements: updatedAchievements,
         profile: {
           ...state.profile,
-          coins: state.profile.coins + achievement.reward,
           achievements: [...state.profile.achievements, achievementId],
         },
         economy: {
@@ -563,7 +613,6 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         ...state,
         profile: {
           ...state.profile,
-          coins: state.profile.coins - price,
           roomCards: [...state.profile.roomCards, newCard],
         },
         economy: {
@@ -725,8 +774,27 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          dispatch({ type: 'SET_STATE', payload: parsed });
+          // This path deliberately trusts the stored blob (it does not go
+          // through mergeEconomyState, which needs a signed-in user), but the
+          // coin field still has to be normalised or a guest holding a pre-v2
+          // blob would keep a second, unread balance forever. Guests cannot
+          // have drifted - only the scheduled function wrote profile.coins,
+          // and guests have no server document - so this is purely shape.
+          const parsed = JSON.parse(saved) as Partial<EconomyState>;
+          const profile = { ...(parsed.profile ?? {}) };
+          delete profile.coins;
+          dispatch({
+            type: 'SET_STATE',
+            payload: {
+              ...parsed,
+              profile,
+              economy: {
+                ...parsed.economy,
+                coins: reconcileCoins(parsed, initialState.economy.coins),
+                schemaVersion: ECONOMY_SCHEMA_VERSION,
+              },
+            } as EconomyState,
+          });
         } catch {
           console.error('Failed to parse localStorage');
         }

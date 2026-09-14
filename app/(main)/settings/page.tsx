@@ -67,7 +67,9 @@ export default function SettingsPage() {
       </SettingsSection>
       <SettingsSection id="privacy" title="Privacy & Security" icon={Shield} tone="teal">
         <div className="settings-row"><Shield size={20} /><div><h3>Device Preferences</h3><p>Music and language preferences are stored in this browser.</p></div></div>
-        <p className="settings-note">Account deletion, data export, and two-factor authentication are not available in the app yet.</p>
+        <Link className="settings-row settings-link" href="/privacy"><Shield size={20} /><div><h3>Privacy Policy</h3><p>What we collect, why, and how to have it removed.</p></div></Link>
+        <Link className="settings-row settings-link" href="/terms"><Shield size={20} /><div><h3>Terms of Service</h3><p>Account rules, coins, and fair play.</p></div></Link>
+        <p className="settings-note">Account deletion and data export are handled by request — see the Privacy Policy for how to ask. Two-factor authentication is not available in the app yet.</p>
       </SettingsSection>
       <SettingsSection id="help" title="Help & Support" icon={HelpCircle} tone="blue">
         <details className="settings-faq"><summary>Where can I change my cards and table?</summary><p>Equip owned cosmetics from your <Link href="/inventory">Inventory</Link>.</p></details>

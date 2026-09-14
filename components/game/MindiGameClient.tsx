@@ -1,15 +1,14 @@
 "use client";
-import { TrickArea } from "./TrickArea";
+import { MindiTable } from "./MindiTable";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Home, Sparkles, Users, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BOT_NAMES } from "@/constants/ranks";
 import { useEconomy } from "@/contexts/EconomyContext";
 import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
-import { LeaveMatchButton } from "@/components/game/LeaveMatchButton";
 import {
   Card,
   SeatIndex,
@@ -31,10 +30,8 @@ import {
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, ArenaSeatData } from "@/components/game/GameArena";
-import { staggerParent, popIn } from "@/lib/motion";
+import { ArenaSeatData } from "@/components/game/GameArena";
 
 interface MindiGameClientProps {
   /** "ai": you (seat 0) + 3 bots. "passplay": you + a local partner (seats 0 & 2) vs 2 bots. */
@@ -64,7 +61,7 @@ const LOCAL_SEAT_DECK_SKINS: Record<SeatIndex, string> = {
 export function MindiGameClient({ mode }: MindiGameClientProps) {
   const router = useRouter();
   const { processMatchEnd, state: economyState } = useEconomy();
-  const { playerStats } = useAuth();
+  const { playerStats, user } = useAuth();
   const t = useTranslation();
 
   const humanSeats: SeatIndex[] = useMemo(() => (mode === "ai" ? [0] : [0, 2]), [mode]);
@@ -270,7 +267,7 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
           onClose={() => setShowRewardPopup(false)}
           isVictory={outcome.winner === "A"}
           coinsEarned={outcome.winner === "A" ? 10 : 2}
-          trophyChange={outcome.winner === "A" ? 15 : -5}
+          trophyChange={0}
           newCoinBalance={0}
         />
       </>
@@ -303,89 +300,13 @@ export function MindiGameClient({ mode }: MindiGameClientProps) {
     active: turnSeat === seat && !resolvingTrick,
   });
 
-  const selfSeat = mode === "ai" ? 0 : turnSeat;
-  const selfHand = mode === "ai" ? yourHand : sortHand(hands[turnSeat] ?? []);
+  const selfSeat: SeatIndex = mode === "ai" ? 0 : revealedSeat ?? 0;
+  const selfHand = mode === "ai" ? yourHand : sortHand(hands[selfSeat] ?? []);
   const selfCanAct = isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat) && !resolvingTrick;
 
-  return (
-    <ArenaFelt accent="var(--lagoon)" tableThemeId={economyState.profile.equipped.tableTheme}>
-      <ArenaHeader
-        leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch={false} />}
-        title={<>Mindi — {t("offline_casualSuffix")}</>}
-        subtitle={
-          <>
-            Trump: <span className={SUIT_COLOR[deal.trumpSuit] === "red" ? "text-[rgb(var(--suit-red))]" : "text-[rgb(var(--text-primary))]"}>{SUIT_SYMBOLS[deal.trumpSuit]}</span>
-          </>
-        }
-      />
-
-      {/* Score strip */}
-      <div className="px-4 pb-2">
-        <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <Users size={14} className="text-[rgb(var(--gold-ink))]" />
-            <span className="text-[rgb(var(--text-primary))] font-medium">Your team</span>
-            <span className="text-[rgb(var(--gold-ink))] font-bold">{tensCaptured.A} tens</span>
-            <span className="text-[rgb(var(--c4))]">· {tricksWon.A} tricks</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[rgb(var(--c4))]">{tricksWon.B} tricks ·</span>
-            <span className="text-[rgb(var(--gold-ink))] font-bold">{tensCaptured.B} tens</span>
-            <span className="text-[rgb(var(--text-primary))] font-medium">Opponents</span>
-          </div>
-        </div>
-      </div>
-
-      <ArenaTable tableThemeId={economyState.profile.equipped.tableTheme}>
-        <div className="flex-1 flex flex-col items-center justify-between">
-          <div className="min-h-16 sm:min-h-20 flex items-center justify-center">
-            <OpponentSeat seat={botSeatData(((selfSeat + 2) % 4) as SeatIndex)} orientation="column" />
-          </div>
-
-          <div className="flex items-center justify-between gap-2 sm:gap-6 w-full">
-            <div className="shrink-0 flex justify-start">
-              <OpponentSeat seat={botSeatData(((selfSeat + 1) % 4) as SeatIndex)} orientation="column" cardDirection="column" cardFacing="left" />
-            </div>
-
-            <TrickArea plays={trick} viewerSeat={selfSeat} />
-
-            <div className="shrink-0 flex justify-end">
-              <OpponentSeat seat={botSeatData(((selfSeat + 3) % 4) as SeatIndex)} orientation="column" cardDirection="column" cardFacing="right" />
-            </div>
-          </div>
-
-          {/* Your hand */}
-          <div className="w-full">
-            <motion.div
-              key={dealSeq}
-              variants={staggerParent(0.04)}
-              initial="hidden"
-              animate="show"
-              className="match-hand" role="group" aria-label="Your cards" style={{ '--hand-count': Math.max(1, selfHand.length) } as React.CSSProperties}
-            >
-              {selfHand.map((card, index) => {
-                const canPlay = selfCanAct && legalForYou.some((c) => cardId(c) === cardId(card));
-                return (
-                  // `layout` here (not just on the inner PlayingCard) lets
-                  // the remaining hand close the gap smoothly when a card
-                  // is played, instead of snapping to the new position
-                  // while only the inner card tries to catch up.
-                  <motion.div key={cardId(card)} variants={popIn} layout>
-                    <PlayingCard
-                      layoutId={cardId(card)}
-                      rank={rankLabel(card.rank)}
-                      suit={suitFromLetter(card.suit)}
-                      size="md"
-                      disabled={!canPlay}
-                      onClick={() => canPlay && handleCardSelect(card)}
-                    />
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </div>
-        </div>
-      </ArenaTable>
-    </ArenaFelt>
-  );
+  return <MindiTable key={dealSeq} hand={selfHand} legal={legalForYou} viewer={selfSeat}
+    top={botSeatData(((selfSeat+2)%4) as SeatIndex)} left={botSeatData(((selfSeat+1)%4) as SeatIndex)} right={botSeatData(((selfSeat+3)%4) as SeatIndex)}
+    name={mode === "ai" ? user?.displayName ?? "You" : seatNames[selfSeat]} avatar={playerStats?.avatarPreset}
+    active={selfCanAct} trump={deal.trumpSuit} trick={trick} tens={tensCaptured} tricks={tricksWon}
+    mode={mode === "ai" ? "Casual" : "Pass & Play"} tableSkin={economyState.profile.equipped.tableTheme} onPlay={handleCardSelect}/>;
 }

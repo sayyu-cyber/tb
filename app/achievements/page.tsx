@@ -1,14 +1,10 @@
 "use client";
 import AchievementsPage from "@/components/achievements/AchievementsPage";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { useTranslation } from "@/hooks/useTranslation";
 
+/**
+ * The page now renders its own hero (title, subtitle, trophy mark), so the
+ * shared PageHeader would be a duplicate title stacked above it.
+ */
 export default function AchievementsRoute() {
-  const t = useTranslation();
-  return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_achievements")} />
-      <AchievementsPage />
-    </div>
-  );
+  return <AchievementsPage />;
 }

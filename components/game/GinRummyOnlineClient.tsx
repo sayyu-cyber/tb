@@ -1,31 +1,25 @@
 "use client";
+import { GinRummyTable } from "./GinRummyTable";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Home, Sparkles, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { updateMatchResult } from "@/lib/trophyUpdates";
 import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
-import { LeaveMatchButton } from "@/components/game/LeaveMatchButton";
 import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
 import {
   Card,
   cardId,
-  rankLabel,
-  SUIT_SYMBOLS,
-  SUIT_COLOR,
   bestMeldArrangement,
   scoreKnock,
 } from "@/lib/ginRummyEngine";
 import { useTranslation } from "@/hooks/useTranslation";
-import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
 import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
-import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell } from "@/components/game/GameArena";
-import { staggerParent, popIn } from "@/lib/motion";
 
 export interface GinOnlineState {
   hands: Record<string, Card[]>;
@@ -60,7 +54,11 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
   useEffect(() => {
     setMatchLoadError(false);
-    const unsub = watchMatch<GinOnlineState>(matchId, setMatch, () => setMatchLoadError(true));
+    setMatch(null);
+    const unsub = watchMatch<GinOnlineState>(matchId, next => {
+      setMatch(next);
+      if (!next) setMatchLoadError(true);
+    }, () => setMatchLoadError(true));
     return unsub;
   }, [matchId, retryKey]);
 
@@ -142,12 +140,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   async function handleKnock() {
     if (!selectedDiscard || !deadwoodAfterSelected || !opponentUid) return;
     const discardCard = selectedDiscard;
-    const arrangement = deadwoodAfterSelected;
     setSelectedDiscard(null);
     await updateMatchState<GinOnlineState>(matchId, (current) => {
       const s = current.state;
       if (s.turn !== myUid || s.phase !== "discard") return null;
       const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
+      if (!s.hands[myUid].some(c => cardId(c) === cardId(discardCard))) return null;
+      const arrangement = bestMeldArrangement(hand);
       if (arrangement.deadwoodValue > 10) return null;
       const raw = scoreKnock("player", arrangement, s.hands[opponentUid]);
       const winnerUid = raw.winner === "player" ? myUid : opponentUid;
@@ -214,8 +213,9 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
           },
         },
       };
-    }).catch(() => {
+    }).catch((error) => {
       showToast(t("toast_forfeitFailed"), "error");
+      throw error;
     });
 
     // We're leaving, so we won't be around to click "Rewards" ourselves -
@@ -231,7 +231,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
   if (!match || !state) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center px-6 text-center">
+      <div className="gin-room gin-load-screen">
         {matchLoadError ? (
           <div className="glass-card rounded-2xl p-6 max-w-xs">
             <p className="text-[rgb(var(--c4))] text-sm">{t("common_loadMatchError")}</p>
@@ -242,16 +242,10 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
               <RefreshCw size={13} aria-hidden="true" />
               {t("error_tryAgain")}
             </button>
+            <Link href="/play" className="block mt-4 underline">Return to Lobby</Link>
           </div>
         ) : (
-          <motion.p
-            initial={{ opacity: 0.4 }}
-            animate={{ opacity: [0.4, 0.9, 0.4] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            className="text-[rgb(var(--c4))] text-sm"
-          >
-            {t("common_loadingMatch")}
-          </motion.p>
+          <div role="status" className="gin-load-table"><h1>Gin Rummy</h1><div className="gin-load-cards" aria-hidden="true">{[0,1,2,3,4].map(i=><span key={i}/>)}</div><p>{t("common_loadingMatch")}</p></div>
         )}
       </div>
     );
@@ -357,100 +351,9 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const activeTableTheme =
     match.players[0] === myUid ? economyState.profile.equipped.tableTheme : opponentProfile?.tableTheme || "tt_default";
 
-  return (
-    <ArenaFelt accent="var(--deep)" tableThemeId={activeTableTheme}>
-      <ArenaHeader
-        leaveSlot={<LeaveMatchButton exitHref="/play" isOnlineMatch onConfirmLeave={handleForfeit} />}
-        title={
-          <>Gin Rummy — {match.pool === "casual" ? t("gamesel_online") : match.pool === "weekend" ? t("page_weekendLeague") : t("mindi_poolRanked")}</>
-        }
-        subtitle={
-          <>
-            {isMyTurn ? t("gin_yourTurn") : t("gin_opponentTurn")} · {t("gin_deadwood")}: {bestMeldArrangement(myHand).deadwoodValue}
-          </>
-        }
-      />
-
-      <ArenaTable tableThemeId={activeTableTheme}>
-        <div className="flex-1 flex flex-col items-center justify-between">
-          <div className="gin-opponent-position flex items-center justify-center">
-            <OpponentSeat seat={opponentSeat} orientation="column" />
-          </div>
-
-          <TableWell>
-            <div className="gin-draw-piles flex items-center justify-center gap-6">
-              <button
-                onClick={() => handleDraw("stock")}
-                disabled={state.phase !== "draw" || !isMyTurn || state.stock.length <= 2}
-                className="flex flex-col items-center gap-1 disabled:opacity-40"
-              >
-                <PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={economyState.profile.equipped.cardBack} />
-                <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_stock").replace("{n}", String(state.stock.length))}</span>
-              </button>
-
-              <button
-                onClick={() => handleDraw("discard")}
-                disabled={state.phase !== "draw" || !isMyTurn || !topDiscard}
-                className="flex flex-col items-center gap-1 disabled:opacity-40"
-              >
-                {topDiscard ? (
-                  <PlayingCard
-                    key={cardId(topDiscard)}
-                    layoutId={cardId(topDiscard)}
-                    rank={rankLabel(topDiscard.rank)}
-                    suit={suitFromLetter(topDiscard.suit)}
-                    size="lg"
-                  />
-                ) : (
-                  <div className="w-16 h-24 rounded-xl border border-dashed border-[rgb(var(--c3))]" />
-                )}
-                <span className="text-[10px] text-[rgb(var(--c4))]">{t("gin_discardPile")}</span>
-              </button>
-            </div>
-          </TableWell>
-
-          <div className="w-full">
-            <motion.div
-              variants={staggerParent(0.04)}
-              initial="hidden"
-              animate="show"
-              className="match-hand" role="group" aria-label="Your cards" style={{ '--hand-count': Math.max(1, sortedHand.length) } as React.CSSProperties}
-            >
-              {sortedHand.map((card, index) => {
-                const selected = selectedDiscard && cardId(selectedDiscard) === cardId(card);
-                return (
-                  <motion.div key={cardId(card)} variants={popIn} layout>
-                    <PlayingCard
-                      layoutId={cardId(card)}
-                      rank={rankLabel(card.rank)}
-                      suit={suitFromLetter(card.suit)}
-                      size="md"
-                      selected={Boolean(selected)}
-                      disabled={!isMyTurn || state.phase !== "discard"}
-                      onClick={() => handleSelectDiscard(card)}
-                    />
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-
-            <AnimatePresence>
-              {selectedDiscard && state.phase === "discard" && isMyTurn && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="match-actions flex justify-center gap-3 mt-4">
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleConfirmDiscard} className="px-6 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium">
-                    {t("gin_discard")}
-                  </motion.button>
-                  {canKnock && (
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={handleKnock} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold">
-                      {t("gin_knock")}
-                    </motion.button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </ArenaTable>
-    </ArenaFelt>
-  );
+  return <GinRummyTable hand={sortedHand} selected={selectedDiscard} opponent={opponentSeat}
+    name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} stock={state.stock.length} discard={topDiscard}
+    phase={state.phase} myTurn={isMyTurn} canKnock={canKnock} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+    tableSkin={activeTableTheme} cardBack={economyState.profile.equipped.cardBack} online
+    onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} onKnock={handleKnock} onLeave={handleForfeit}/>;
 }

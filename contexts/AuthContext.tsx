@@ -21,6 +21,9 @@ interface AuthContextType {
   user: User | null;
   playerStats: PlayerStats | null;
   loading: boolean;
+  profileLoading: boolean;
+  profileError: boolean;
+  retryProfile: () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, username: string) => Promise<void>;
@@ -48,6 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState(false);
+  const [profileAttempt, setProfileAttempt] = useState(0);
 
   useEffect(() => {
     let generation = 0;
@@ -58,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPlayerStats(null);
         setIsGuest(false);
         setLoading(false);
+        setProfileLoading(false);
+        setProfileError(false);
         return;
       }
 
@@ -65,10 +73,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Authentication is already resolved; profile reads do not block navigation.
       setUser({
         uid: firebaseUser.uid, email: firebaseUser.email, displayName,
-        photoURL: firebaseUser.photoURL, isGuest: firebaseUser.isAnonymous, createdAt: new Date(),
+        photoURL: firebaseUser.photoURL, isGuest: firebaseUser.isAnonymous,
+        createdAt: new Date(firebaseUser.metadata.creationTime || NaN),
       });
       setIsGuest(firebaseUser.isAnonymous);
       setPlayerStats(null);
+      setProfileLoading(true);
+      setProfileError(false);
       setLoading(false);
 
       try {
@@ -89,10 +100,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("Failed to load player profile:", error);
+        if (current === generation) setProfileError(true);
+      } finally {
+        if (current === generation) setProfileLoading(false);
       }
     });
     return () => { generation++; unsubscribe(); };
-  }, []);
+  }, [profileAttempt]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -137,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updatePlayerProfile = async (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => {
     const { displayName, ...cosmeticUpdates } = updates;
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) throw new Error("Please sign in again before editing your profile.");
 
     if (displayName && displayName !== auth.currentUser.displayName) {
       await updateFirebaseAuthProfile(auth.currentUser, { displayName });
@@ -163,6 +177,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         playerStats,
         loading,
+        profileLoading,
+        profileError,
+        retryProfile: () => setProfileAttempt(value => value + 1),
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,

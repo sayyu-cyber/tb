@@ -1,10 +1,45 @@
-﻿import * as functions from 'firebase-functions/v1';
-import { initializeApp } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { logger } from 'firebase-functions';
+import { FieldValue } from 'firebase-admin/firestore';
+import { db } from './admin';
 
-initializeApp();
+/**
+ * Scheduled maintenance jobs.
+ *
+ * Nothing in this file has ever run in production: the project was on the
+ * Spark plan, which cannot deploy Cloud Functions at all, and the runtime was
+ * pinned to Node 18, which Google decommissioned on 2025-10-30. Both are
+ * fixed now (see package.json), so the next deploy is the first time this
+ * code executes against real data. It has been rewritten accordingly rather
+ * than merely ported - see the notes on each job.
+ */
 
-const db = getFirestore();
+// Server-authoritative economy callables, re-exported so they deploy as part
+// of this codebase. Admin init lives in ./admin (imported above), which is
+// what makes the order safe regardless of how CommonJS hoists these requires.
+export { purchaseCosmetic, purchaseRoomCard, creditTopup } from './economy';
+
+/** Firestore caps a WriteBatch at 500 operations. The original versions of
+ *  these jobs put every player in one batch, so they would have thrown the
+ *  moment the game passed 500 players - a failure that would only have shown
+ *  up in production, at the worst possible time. */
+const BATCH_LIMIT = 450;
+
+async function commitInChunks(
+  refs: FirebaseFirestore.DocumentReference[],
+  update: (ref: FirebaseFirestore.DocumentReference) => Record<string, unknown>
+): Promise<number> {
+  let written = 0;
+  for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+    const batch = db.batch();
+    for (const ref of refs.slice(i, i + BATCH_LIMIT)) {
+      batch.update(ref, update(ref));
+    }
+    await batch.commit();
+    written += Math.min(BATCH_LIMIT, refs.length - i);
+  }
+  return written;
+}
 
 function generateDailyMissions() {
   const templates = [
@@ -42,64 +77,119 @@ function generateWeeklyMissions() {
   }));
 }
 
-export const dailyMissionReset = functions.pubsub
-  .schedule('0 0 * * *')
-  .timeZone('Indian/Maldives')
-  .onRun(async (context: functions.EventContext) => {
+export const dailyMissionReset = onSchedule(
+  { schedule: '0 0 * * *', timeZone: 'Indian/Maldives' },
+  async () => {
     const snapshot = await db.collection('playerEconomy').get();
-    const batch = db.batch();
-    snapshot.docs.forEach((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
-      const ref = db.collection('playerEconomy').doc(doc.id);
-      batch.update(ref, {
+    const written = await commitInChunks(
+      snapshot.docs.map((d) => d.ref),
+      () => ({
         'missions.daily': generateDailyMissions(),
         'missions.lastDailyReset': Date.now(),
-      });
-    });
-    await batch.commit();
-    console.log(`Reset daily missions for ${snapshot.size} players`);
-  });
+      })
+    );
+    logger.info(`Reset daily missions for ${written} players`);
+  }
+);
 
-export const weeklyMissionReset = functions.pubsub
-  .schedule('0 0 * * 0')
-  .timeZone('Indian/Maldives')
-  .onRun(async (context: functions.EventContext) => {
+export const weeklyMissionReset = onSchedule(
+  { schedule: '0 0 * * 0', timeZone: 'Indian/Maldives' },
+  async () => {
     const snapshot = await db.collection('playerEconomy').get();
-    const batch = db.batch();
-    snapshot.docs.forEach((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
-      const ref = db.collection('playerEconomy').doc(doc.id);
-      batch.update(ref, {
+    const written = await commitInChunks(
+      snapshot.docs.map((d) => d.ref),
+      () => ({
         'missions.weekly': generateWeeklyMissions(),
         'missions.lastWeeklyReset': Date.now(),
-      });
-    });
-    await batch.commit();
-    console.log(`Reset weekly missions for ${snapshot.size} players`);
-  });
+      })
+    );
+    logger.info(`Reset weekly missions for ${written} players`);
+  }
+);
 
-export const weeklyRankRewards = functions.pubsub
-  .schedule('59 23 * * 4')
-  .timeZone('Indian/Maldives')
-  .onRun(async (context: functions.EventContext) => {
-    const snapshot = await db.collection('playerEconomy').get();
-    const rankRewards: Record<string, number> = {
-      Bronze: 50,
-      Silver: 150,
-      Gold: 350,
-      Platinum: 700,
-    };
-    const batch = db.batch();
-    snapshot.docs.forEach((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
-      const data = doc.data();
-      const rank = data.profile?.rank || 'Bronze';
-      const coins = rankRewards[rank] || 50;
-      const ref = db.collection('playerEconomy').doc(doc.id);
-      batch.update(ref, {
-        'profile.coins': FieldValue.increment(coins),
-        'economy.totalEarned': FieldValue.increment(coins),
-        'weeklyRankReward.lastClaimed': Date.now(),
-        'weeklyRankReward.pending': true,
-      });
+/** ISO-ish week stamp ("2026-W37"), used to make the payout idempotent. */
+function weekKey(date: Date): string {
+  const target = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  // Thursday of the current week decides the ISO year.
+  target.setUTCDate(target.getUTCDate() + 3 - ((target.getUTCDay() + 6) % 7));
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  firstThursday.setUTCDate(firstThursday.getUTCDate() + 3 - ((firstThursday.getUTCDay() + 6) % 7));
+  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
+  return `${target.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+const RANK_REWARDS: Record<string, number> = {
+  Bronze: 50,
+  Silver: 150,
+  Gold: 350,
+  Platinum: 700,
+};
+
+/**
+ * Weekly rank payout.
+ *
+ * ⚠️ DO NOT DEPLOY THIS FUNCTION UNTIL THE CLIENT PATH IS REMOVED.
+ * `EconomyContext`'s `checkAndClaimWeeklyRank` still grants this reward from
+ * the browser. With both live, every player is paid twice. Deleting the
+ * client path is part of the "rewire the client onto Cloud Functions" task;
+ * until then, deploy the two mission-reset jobs only:
+ *
+ *     firebase deploy --only functions:dailyMissionReset,functions:weeklyMissionReset
+ *
+ * Two bugs fixed here versus the original:
+ *
+ * 1. It read the rank from `playerEconomy/{uid}.profile.rank`, which is set
+ *    to 'Bronze' at account creation and then NEVER written again. Every
+ *    player - Platinum included - would have been paid the Bronze rate. The
+ *    authoritative rank is `players/{uid}.currentRank`, written by
+ *    lib/trophyUpdates.ts, so that is what this reads now.
+ * 2. It had no idempotency guard, so a retry (or a manual re-run) paid
+ *    everyone again. A week stamp is now recorded and re-checked.
+ */
+export const weeklyRankRewards = onSchedule(
+  { schedule: '59 23 * * 4', timeZone: 'Indian/Maldives' },
+  async () => {
+    const stamp = weekKey(new Date());
+
+    // Two collection reads rather than one-per-player: ranks live in
+    // `players`, balances in `playerEconomy`.
+    const [economySnap, playersSnap] = await Promise.all([
+      db.collection('playerEconomy').get(),
+      db.collection('players').get(),
+    ]);
+
+    const rankByUid = new Map<string, string>();
+    playersSnap.docs.forEach((d) => rankByUid.set(d.id, d.data().currentRank || 'Bronze'));
+
+    let paid = 0;
+    let skipped = 0;
+    const pending = economySnap.docs.filter((d) => {
+      if (d.data().weeklyRankReward?.lastPaidWeek === stamp) {
+        skipped++;
+        return false;
+      }
+      return true;
     });
-    await batch.commit();
-    console.log(`Distributed rank rewards to ${snapshot.size} players`);
-  });
+
+    for (let i = 0; i < pending.length; i += BATCH_LIMIT) {
+      const batch = db.batch();
+      for (const d of pending.slice(i, i + BATCH_LIMIT)) {
+        const rank = rankByUid.get(d.id) || 'Bronze';
+        const coins = RANK_REWARDS[rank] ?? RANK_REWARDS.Bronze;
+        batch.update(d.ref, {
+          // economy.coins is the single canonical balance (see the
+          // single-balance migration in contexts/EconomyContext.tsx).
+          'economy.coins': FieldValue.increment(coins),
+          'economy.totalEarned': FieldValue.increment(coins),
+          'weeklyRankReward.lastPaidWeek': stamp,
+          'weeklyRankReward.lastClaimed': Date.now(),
+          'weeklyRankReward.pending': true,
+        });
+        paid++;
+      }
+      await batch.commit();
+    }
+
+    logger.info(`Weekly rank rewards ${stamp}: paid ${paid}, already-paid ${skipped}`);
+  }
+);

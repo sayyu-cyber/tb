@@ -1,190 +1,87 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { User, Trophy, Swords, Target, Star, TrendingUp, Award, Heart, Pencil, Copy, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { CalendarDays, Clock3, Copy, Grid2X2, Medal, Pencil, Settings, Trophy, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEconomy } from "@/contexts/EconomyContext";
+import { useToast } from "@/contexts/ToastContext";
 import { RankBadge } from "@/components/ui/RankBadge";
-import { StatCard } from "@/components/profile/StatCard";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { LobbyPhoto } from "@/components/home/LobbyPhoto";
 import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
-import { useTranslation } from "@/hooks/useTranslation";
+import { resolveAchievements } from "@/lib/achievements";
+import { auth } from "@/lib/firebase";
+import { getProfileHistory, ProfileMatch } from "@/lib/profileHistory";
+import { AchievementsPreview, ProfileGameStats, ProfileHistory, ProfileMilestones, ProfileSkeleton, ProfileStatsGrid, metric } from "@/components/profile/ProfileSections";
 
 export default function ProfilePage() {
-  const { user, playerStats } = useAuth();
+  const { user, playerStats, profileLoading, profileError, retryProfile } = useAuth();
+  const { state } = useEconomy();
+  const { showToast } = useToast();
   const [editing, setEditing] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const t = useTranslation();
-
-  if (!user) return null;
-
-  const avatarPreset = getAvatarPreset(playerStats?.avatarPreset);
-  const bannerPreset = getBannerPreset(playerStats?.bannerPreset);
-
-  const stats = [
-    { icon: Swords, label: t("profile_matches"), value: playerStats?.totalMatches || 0 },
-    { icon: Trophy, label: t("profile_wins"), value: playerStats?.wins || 0, highlight: true },
-    { icon: Target, label: t("profile_losses"), value: playerStats?.losses || 0 },
-    { icon: TrendingUp, label: t("profile_winPct"), value: `${playerStats?.winPercentage || 0}%` },
-  ];
-
-  const extraStats = [
-    { icon: Star, label: t("profile_highestRank"), value: playerStats?.highestRank || t("profile_unranked") },
-    { icon: Heart, label: t("profile_favoriteGame"), value: playerStats?.favoriteGame || t("profile_none") },
-    { icon: Award, label: t("profile_trophies"), value: (playerStats?.trophies || 0).toLocaleString(), highlight: true },
-  ];
-
-  return (
-    <div className="px-4 pt-6 pb-6 space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3"
-      >
-        <div className="w-10 h-10 rounded-xl bg-[rgb(var(--gold)/10%)] flex items-center justify-center">
-          <User size={20} className="text-[rgb(var(--gold-ink))]" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">{t("profile_title")}</h1>
-          <p className="text-[rgb(var(--c4))] text-xs">{t("profile_subtitle")}</p>
-        </div>
-      </motion.div>
-
-      {/* Profile Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className={`glass-card rounded-2xl p-6 text-center relative overflow-hidden bg-gradient-to-b ${bannerPreset.gradient}`}
-      >
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[rgb(var(--gold))] to-transparent" />
-
-        <button
-          aria-label={t("a11y_editProfile")}
-          onClick={() => setEditing(true)}
-          className="absolute top-3 right-3 p-2 rounded-lg bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] z-10"
-        >
-          <Pencil size={14} className="text-[rgb(var(--gold-ink))]" />
-        </button>
-
-        {/* Avatar */}
-        <div className="relative inline-block mb-4">
-          <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${avatarPreset.gradient} p-[2px] mx-auto`}>
-            <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center overflow-hidden">
-              {user.photoURL ? (
-                <img src={user.photoURL} alt={user.displayName || ""} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl font-bold text-[rgb(var(--text-primary))]">{(user.displayName || "P").charAt(0).toUpperCase()}</span>
-              )}
-            </div>
-          </div>
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <RankBadge rank={playerStats?.currentRank || "Unranked"} size="sm" />
-          </div>
-        </div>
-
-        <h2 className="text-xl font-bold text-[rgb(var(--text-primary))] mt-2">{user.displayName || t("profile_player")}</h2>
-        <p className="text-[rgb(var(--c4))] text-sm">{user.email || t("profile_guestPlayer")}</p>
-
-        {/* Player code - unique ID others use to find you for friend
-            requests, and that support/admin uses to look you up for a
-            coin top-up. Tap to copy. */}
-        {playerStats?.playerCode && (
-          <button
-            onClick={() => {
-              navigator.clipboard?.writeText(playerStats.playerCode!);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            }}
-            className="mt-3 mx-auto flex items-center gap-2 rounded-full bg-[rgb(var(--c2)/70%)] border border-[rgb(var(--c3))] px-3 py-1.5"
-            aria-label={t("profile_copyPlayerCode")}
-          >
-            <span className="text-[10px] uppercase tracking-wider text-[rgb(var(--c4))]">{t("profile_playerCode")}</span>
-            <span className="font-mono text-sm font-bold tracking-widest text-[rgb(var(--gold-ink))]">
-              {playerStats.playerCode}
-            </span>
-            {copied ? (
-              <Check size={13} className="text-[rgb(var(--lagoon-ink))]" aria-hidden="true" />
-            ) : (
-              <Copy size={13} className="text-[rgb(var(--c4))]" aria-hidden="true" />
-            )}
-          </button>
-        )}
-
-        {/* Trophy display */}
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <Trophy size={18} className="text-[rgb(var(--gold-ink))]" />
-          <span className="text-[rgb(var(--gold-ink))] font-bold text-lg">
-            {(playerStats?.trophies || 0).toLocaleString()}
-          </span>
-          <span className="text-[rgb(var(--c4))] text-xs">{t("profile_trophies").toLowerCase()}</span>
-        </div>
-      </motion.div>
-
-      {/* Main Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">{t("profile_statistics")}</h3>
-        <div className="grid grid-cols-2 gap-3">
-          {stats.map((stat, index) => (
-            <StatCard key={stat.label} {...stat} delay={0.25 + index * 0.05} />
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Extra Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-      >
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-3 px-1">{t("profile_achievements")}</h3>
-        <div className="space-y-2">
-          {extraStats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + index * 0.05 }}
-              className="flex items-center justify-between p-4 rounded-xl bg-[rgb(var(--c2)/50%)] border border-[rgb(var(--c3))]"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  stat.highlight ? "bg-[rgb(var(--gold)/10%)]" : "bg-[rgb(var(--c2))]"
-                }`}>
-                  <stat.icon size={18} className={stat.highlight ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--c4))]"} />
-                </div>
-                <span className="text-[rgb(var(--c4))] text-sm">{stat.label}</span>
-              </div>
-              <span className={`font-semibold text-sm ${stat.highlight ? "text-[rgb(var(--gold-ink))]" : "text-[rgb(var(--text-primary))]"}`}>
-                {stat.value}
-              </span>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Placeholder for future features */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-center py-4"
-      >
-        <p className="text-[rgb(var(--c3))] text-[10px] tracking-wider uppercase">{t("profile_moreComingSoon")}</p>
-      </motion.div>
-
-      <EditProfileModal
-        isOpen={editing}
-        onClose={() => setEditing(false)}
-        currentName={user.displayName || ""}
-        currentAvatar={playerStats?.avatarPreset}
-        currentBanner={playerStats?.bannerPreset}
-      />
-    </div>
-  );
+  const [tab, setTab] = useState("overview");
+  const [history, setHistory] = useState<ProfileMatch[] | null>(null);
+  const [historyError, setHistoryError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const [admin, setAdmin] = useState(false);
+  const uid = user?.uid;
+  useEffect(() => {
+    let active = true;
+    setAdmin(false);
+    const current = auth.currentUser;
+    if (current && current.uid === uid) current.getIdTokenResult().then(token => {
+      if (active) setAdmin(token.claims.admin === true || token.claims.role === "admin");
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [uid]);
+  useEffect(() => {
+    if (!uid) return;
+    let active = true;
+    setHistory(null); setHistoryError(false);
+    getProfileHistory(uid).then(records => { if (active) setHistory(records); }).catch(() => { if (active) setHistoryError(true); });
+    return () => { active = false; };
+  }, [uid, attempt]);
+  useEffect(() => setPhotoFailed(false), [user?.photoURL]);
+  if (!user) return <ProfileSkeleton />;
+  const avatar = getAvatarPreset(playerStats?.avatarPreset), banner = getBannerPreset(playerStats?.bannerPreset);
+  const achievements = resolveAchievements(state.achievements, { matchesWon: state.profile.stats.matchesWon, highestRank: state.profile.stats.highestRank, weekendChampion: state.profile.stats.weekendChampion, collection: state.profile.collection });
+  async function copyId() {
+    if (!playerStats?.playerCode) return;
+    try { await navigator.clipboard.writeText(playerStats.playerCode); showToast("User ID copied.", "success"); }
+    catch { showToast("Couldn't copy User ID.", "error"); }
+  }
+  return <div className="player-profile">
+    <header className="profile-page-header"><div className="profile-heading"><User /><div><h1>Profile</h1><p>Your stats &amp; achievements</p></div></div>
+      <nav className="profile-tabs" aria-label="Profile sections">
+        <button aria-current={tab === "overview" ? "page" : undefined} onClick={() => setTab("overview")}><Grid2X2 /> Overview</button>
+        <button aria-current={tab === "stats" ? "page" : undefined} onClick={() => setTab("stats")}><Trophy /> Game Stats</button>
+        <Link href="/achievements/"><Medal /> Achievements</Link>
+        <button aria-current={tab === "history" ? "page" : undefined} onClick={() => setTab("history")}><Clock3 /> History</button>
+        <Link href="/settings/"><Settings /> Settings</Link>
+      </nav>
+    </header>
+    <section className="profile-hero" aria-label="Player identity">
+      <LobbyPhoto className="absolute inset-0" />
+      <div className={`profile-banner-tint bg-gradient-to-r ${banner.gradient}`} aria-hidden="true" />
+      <button className="profile-edit" onClick={() => setEditing(true)}><Pencil size={16} /> Edit Profile</button>
+      <div className="profile-identity"><div className="profile-avatar-wrap"><div className={`profile-avatar bg-gradient-to-br ${avatar.gradient}`}>
+        {user.photoURL && !photoFailed ? <img src={user.photoURL} alt={user.displayName || "Your avatar"} onError={() => setPhotoFailed(true)} /> : <span aria-label="Avatar initial">{(user.displayName || "Player").charAt(0).toUpperCase()}</span>}
+      </div>{playerStats?.currentRank && <RankBadge rank={playerStats.currentRank} />}</div>
+      <div className="profile-identity-copy"><h2>{user.displayName || "Player"} {admin && <span className="profile-admin">ADMIN</span>}</h2>{user.email && <p className="profile-email">{user.email}</p>}
+        {playerStats?.playerCode && <button className="profile-code" title="Copy ID" aria-label="Copy User ID" onClick={copyId}><span>ID</span><strong>{playerStats.playerCode}</strong><Copy size={14} /></button>}
+        <div className="profile-identity-meta"><span><Trophy /><strong>{metric(playerStats?.trophies)}</strong> trophies</span>{Number.isFinite(user.createdAt?.getTime()) && <span><CalendarDays /><span>Member since<strong>{user.createdAt.toLocaleDateString(undefined, { month: "short", year: "numeric" })}</strong></span></span>}</div>
+      </div></div>
+    </section>
+    {profileError && <div className="profile-error" role="alert">Couldn&apos;t load your profile statistics. <button onClick={retryProfile}>Retry</button></div>}
+    {profileLoading ? <ProfileSkeleton /> : <>
+      {tab !== "history" && <ProfileStatsGrid stats={playerStats} />}
+      {historyError && <div className="profile-error" role="alert">Game statistics and history unavailable. <button onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
+      {tab !== "history" && <ProfileGameStats history={history} onHistory={() => setTab("history")} />}
+      {tab === "overview" && <><AchievementsPreview achievements={achievements} /><ProfileMilestones stats={playerStats} /></>}
+      {(tab === "history" || tab === "stats") && (history ? <ProfileHistory records={history} /> : !historyError && <ProfileSkeleton />)}
+    </>}
+    {editing && <EditProfileModal isOpen onClose={() => setEditing(false)} currentName={user.displayName || ""} currentAvatar={playerStats?.avatarPreset} currentBanner={playerStats?.bannerPreset} />}
+  </div>;
 }

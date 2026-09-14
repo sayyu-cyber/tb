@@ -47,3 +47,6 @@ artifacts/room-test/component.js
 artifacts/shop-test/component.js
 artifacts/clubs-test/component.js
 artifacts/settings-test/component.js
+artifacts/gin-test/component.js
+artifacts/mindi-test/component.js
+artifacts/profile-test/component.js

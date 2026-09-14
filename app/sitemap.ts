@@ -22,6 +22,10 @@ const ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.S
   { path: "/tournament/", priority: 0.6, changeFrequency: "weekly" },
   { path: "/clubs/", priority: 0.5, changeFrequency: "weekly" },
   { path: "/shop/", priority: 0.5, changeFrequency: "weekly" },
+  // Publicly reachable by design - store reviewers need to open these while
+  // signed out (see PUBLIC_PATHS in components/layout/AppShell.tsx).
+  { path: "/privacy/", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/terms/", priority: 0.3, changeFrequency: "yearly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

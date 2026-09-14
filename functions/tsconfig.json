@@ -1,17 +1,27 @@
-﻿{
+{
   "compilerOptions": {
     "module": "commonjs",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
+    // rootDir is the repo root so the functions build can compile the SHARED
+    // catalogue (../data/cosmetics.ts) rather than keeping a second copy of
+    // every price. A duplicated price list is the kind of thing that drifts
+    // silently and then lets the client and server disagree about what an
+    // item costs. Consequence: emitted paths gain the source folder, so
+    // package.json's "main" is lib/functions/src/index.js, not lib/index.js.
+    "rootDir": "..",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017",
+    "target": "es2022",
+    "lib": ["es2022"],
     "esModuleInterop": true,
     "skipLibCheck": true
   },
   "compileOnSave": true,
   "include": [
-    "src"
+    "src",
+    "../data/cosmetics.ts",
+    "../types/economy.ts"
   ]
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "functions",
   "scripts": {
     "build": "tsc",
@@ -9,12 +9,14 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "18"
+    "//": "Node 18 was DECOMMISSIONED on 2025-10-30 - deploys targeting it are rejected outright, which is why nothing here has ever shipped. Node 20 decommissions 2026-10-30, so 22 is the only choice that avoids doing this again within weeks.",
+    "node": "22"
   },
-  "main": "lib/index.js",
+  "//main": "Nested because tsconfig's rootDir is the repo root, so the shared catalogue in ../data can be compiled instead of duplicated. See functions/tsconfig.json.",
+  "main": "lib/functions/src/index.js",
   "dependencies": {
-    "firebase-admin": "^12.0.0",
-    "firebase-functions": "^4.5.0"
+    "firebase-admin": "^13.7.0",
+    "firebase-functions": "^6.5.0"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
