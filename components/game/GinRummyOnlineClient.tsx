@@ -2,20 +2,27 @@
 import { GinRummyTable } from "./GinRummyTable";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Home, Sparkles, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { updateMatchResult } from "@/lib/trophyUpdates";
-import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
 import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
 import {
   Card,
   cardId,
   bestMeldArrangement,
-  scoreKnock,
+  findGinLayout,
+  replenishStock,
+  randomDiscard,
+  scoreGin,
+  TURN_SECONDS,
 } from "@/lib/ginRummyEngine";
+import { GinResultScreen } from "./GinResultScreen";
+import { MindiDealIntro } from "./MindiDealIntro";
+import type { CutCard } from "@/lib/openingCut";
+import type { FirstPlayerDraw, SeatIndex } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
@@ -27,12 +34,21 @@ export interface GinOnlineState {
   discard: Card[];
   turn: string;
   phase: "draw" | "discard";
+  /** Epoch ms this turn expires. Shared so both clients run one clock. */
+  turnDeadline?: number | null;
+  /**
+   * The opening cut, stored so both clients play the same ceremony and agree
+   * on who starts. Keyed by uid. Absent on matches created before this
+   * existed - those simply start without the ceremony.
+   */
+  firstCut?: { cards: Record<string, CutCard>; winner: string };
+  /** How many times the discard pile has been recycled into the stock. */
+  reshuffles?: number;
   result: {
-    winnerUid: string | "draw";
-    knockerUid: string | null;
-    gin: boolean;
-    undercut: boolean;
-    deadwood: Record<string, number>;
+    winnerUid: string;
+    /** The winning 4+3+3. Empty on a forfeit, which has no layout. */
+    layout: Card[][];
+    loserDeadwood: number;
     score: number;
     forfeitedBy?: string;
   } | null;
@@ -41,6 +57,7 @@ export interface GinOnlineState {
 export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const { user, playerStats } = useAuth();
   const { processMatchEnd, state: economyState } = useEconomy();
+  const router = useRouter();
   const myUid = user?.uid ?? "";
 
   const [match, setMatch] = useState<MatchDoc<GinOnlineState> | null>(null);
@@ -49,6 +66,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const [selectedDiscard, setSelectedDiscard] = useState<Card | null>(null);
   const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
+  const [introSeen, setIntroSeen] = useState(false);
   const t = useTranslation();
   const { showToast } = useToast();
 
@@ -72,49 +90,33 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
   const sortedHand = useMemo(() => sortHand(myHand), [myHand]);
 
-  const deadwoodAfterSelected = useMemo(() => {
-    if (!selectedDiscard) return null;
-    const rest = myHand.filter((c) => cardId(c) !== cardId(selectedDiscard));
-    return bestMeldArrangement(rest);
-  }, [myHand, selectedDiscard]);
-
-  const canKnock = state?.phase === "discard" && !!deadwoodAfterSelected && deadwoodAfterSelected.deadwoodValue <= 10;
+  useEffect(()=>{
+    if (!isMyTurn || state?.phase!=="discard") setSelectedDiscard(null);
+  },[isMyTurn,state?.phase]);
 
   async function handleDraw(source: "stock" | "discard") {
     if (!state || !isMyTurn || state.phase !== "draw") return;
     await updateMatchState<GinOnlineState>(matchId, (current) => {
       const s = current.state;
-      if (s.turn !== myUid || s.phase !== "draw") return null;
-      if (s.stock.length <= 2) {
-        return {
-          status: "completed",
-          state: {
-            ...s,
-            result: {
-              winnerUid: "draw",
-              knockerUid: null,
-              gin: false,
-              undercut: false,
-              deadwood: {
-                [myUid]: bestMeldArrangement(s.hands[myUid]).deadwoodValue,
-                [opponentUid]: bestMeldArrangement(s.hands[opponentUid]).deadwoodValue,
-              },
-              score: 0,
-            },
-          },
-        };
-      }
+      if (current.status!=="active" || s.result || s.turn !== myUid || s.phase !== "draw" || !current.players.includes(myUid)) return null;
       const hand = [...s.hands[myUid]];
       let stock = [...s.stock];
       let discard = [...s.discard];
+      let reshuffles = s.reshuffles ?? 0;
       if (source === "discard") {
         if (discard.length === 0) return null;
         hand.push(discard.pop()!);
       } else {
-        if (stock.length === 0) return null;
+        // No knocking means a hand ends only when somebody melds 4+3+3, so an
+        // empty stock is refilled from the discard pile rather than ending it.
+        if (stock.length === 0) {
+          const refilled = replenishStock(stock, discard);
+          if (refilled.stock.length === 0) return null;
+          stock = [...refilled.stock]; discard = [...refilled.discard]; reshuffles += 1;
+        }
         hand.push(stock.pop()!);
       }
-      return { state: { ...s, hands: { ...s.hands, [myUid]: hand }, stock, discard, phase: "discard" } };
+      return { state: { ...s, hands: { ...s.hands, [myUid]: hand }, stock, discard, reshuffles, phase: "discard" } };
     });
   }
 
@@ -123,72 +125,116 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     setSelectedDiscard((prev) => (prev && cardId(prev) === cardId(card) ? null : card));
   }
 
+  /**
+   * Applies a discard. Going out is detected here rather than through a
+   * separate action: with no knocking, the discard IS the move that wins.
+   */
+  async function discardCardTo(discardCard: Card) {
+    if (!opponentUid) return;
+    await updateMatchState<GinOnlineState>(matchId, (current) => {
+      const s = current.state;
+      if (current.status!=="active" || s.result || s.turn !== myUid || s.phase !== "discard" || !s.hands[myUid]?.some(card=>cardId(card)===cardId(discardCard))) return null;
+      const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
+      const base = { ...s, hands: { ...s.hands, [myUid]: hand }, discard: [...s.discard, discardCard] };
+
+      const layout = findGinLayout(hand);
+      if (layout) {
+        const scored = scoreGin("player", layout, s.hands[opponentUid] ?? []);
+        return {
+          status: "completed",
+          state: { ...base, turnDeadline: null,
+            result: { winnerUid: myUid, layout, loserDeadwood: scored.loserDeadwood, score: scored.score } },
+        };
+      }
+      // The deadline is written with the handover so both clients read one
+      // clock from the document rather than each starting their own.
+      return { state: { ...base, phase: "draw", turn: opponentUid, turnDeadline: Date.now() + TURN_SECONDS * 1000 } };
+    });
+    setSelectedDiscard(null);
+  }
+
   async function handleConfirmDiscard() {
-    if (!selectedDiscard || !opponentUid) return;
-    const discardCard = selectedDiscard;
-    setSelectedDiscard(null);
-    await updateMatchState<GinOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (s.turn !== myUid || s.phase !== "discard") return null;
-      const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
-      return {
-        state: { ...s, hands: { ...s.hands, [myUid]: hand }, discard: [...s.discard, discardCard], phase: "draw", turn: opponentUid },
-      };
-    });
+    if (!selectedDiscard) return;
+    await discardCardTo(selectedDiscard);
   }
 
-  async function handleKnock() {
-    if (!selectedDiscard || !deadwoodAfterSelected || !opponentUid) return;
-    const discardCard = selectedDiscard;
-    setSelectedDiscard(null);
-    await updateMatchState<GinOnlineState>(matchId, (current) => {
+  /**
+   * Plays out the rest of the turn when the clock expires.
+   *
+   * Guarded on `isMyTurn` so only the player who is actually on the clock
+   * writes - the opponent watches the same deadline pass and does nothing.
+   * Without that, both clients would race to auto-play the same turn.
+   */
+  // The first turn has no deadline yet: it is written once the player on the
+  // clock has actually finished watching the ceremony, so they do not lose
+  // most of their turn to the cut and the deal. Only that player writes it,
+  // so there is no race.
+  const ceremonyOver = introSeen || !state?.firstCut;
+  useEffect(() => {
+    if (!state || !ceremonyOver || !isMyTurn || state.result || state.turnDeadline) return;
+    void updateMatchState<GinOnlineState>(matchId, (current) => {
       const s = current.state;
-      if (s.turn !== myUid || s.phase !== "discard") return null;
-      const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
-      if (!s.hands[myUid].some(c => cardId(c) === cardId(discardCard))) return null;
-      const arrangement = bestMeldArrangement(hand);
-      if (arrangement.deadwoodValue > 10) return null;
-      const raw = scoreKnock("player", arrangement, s.hands[opponentUid]);
-      const winnerUid = raw.winner === "player" ? myUid : opponentUid;
-      return {
-        status: "completed",
-        state: {
-          ...s,
-          hands: { ...s.hands, [myUid]: hand },
-          discard: [...s.discard, discardCard],
-          result: {
-            winnerUid,
-            knockerUid: myUid,
-            gin: raw.gin,
-            undercut: raw.undercut,
-            deadwood: { [myUid]: raw.playerDeadwood, [opponentUid]: raw.opponentDeadwood },
-            score: raw.score,
-          },
-        },
-      };
-    });
-  }
+      if (current.status !== "active" || s.result || s.turn !== myUid || s.turnDeadline) return null;
+      return { state: { ...s, turnDeadline: Date.now() + TURN_SECONDS * 1000 } };
+    }).catch(() => {/* the opponent's clock will still run; not worth a toast */});
+  }, [state, ceremonyOver, isMyTurn, matchId, myUid]);
 
-  async function handleShowRewards() {
-    if (!state?.result || rewardsApplied) {
-      setShowRewardPopup(true);
-      return;
-    }
+  useEffect(() => {
+    if (!state || !ceremonyOver || !isMyTurn || state.result || !state.turnDeadline) return;
+    const timer = setTimeout(async () => {
+      await updateMatchState<GinOnlineState>(matchId, (current) => {
+        const s = current.state;
+        if (current.status !== "active" || s.result || s.turn !== myUid) return null;
+        // Re-checked inside the update: the turn may have been played
+        // normally in the moments before this fired.
+        if ((s.turnDeadline ?? 0) > Date.now()) return null;
+        let hand = [...(s.hands[myUid] ?? [])];
+        let stock = [...s.stock], discard = [...s.discard], reshuffles = s.reshuffles ?? 0;
+        if (s.phase === "draw") {
+          if (stock.length === 0) {
+            const refilled = replenishStock(stock, discard);
+            if (refilled.stock.length === 0) return null;
+            stock = [...refilled.stock]; discard = [...refilled.discard]; reshuffles += 1;
+          }
+          hand = [...hand, stock.pop()!];
+        }
+        const thrown = randomDiscard(hand);
+        const kept = hand.filter(card => cardId(card) !== cardId(thrown));
+        const base = { ...s, hands: { ...s.hands, [myUid]: kept }, stock, discard: [...discard, thrown], reshuffles };
+        const layout = findGinLayout(kept);
+        if (layout) {
+          const scored = scoreGin("player", layout, s.hands[opponentUid] ?? []);
+          return { status: "completed", state: { ...base, turnDeadline: null,
+            result: { winnerUid: myUid, layout, loserDeadwood: scored.loserDeadwood, score: scored.score } } };
+        }
+        return { state: { ...base, phase: "draw", turn: opponentUid, turnDeadline: Date.now() + TURN_SECONDS * 1000 } };
+      }).catch(() => {/* a lost race just means the turn was played normally */});
+    }, Math.max(0, state.turnDeadline - Date.now()));
+    return () => clearTimeout(timer);
+  }, [state, ceremonyOver, isMyTurn, matchId, myUid, opponentUid]);
+
+  /**
+   * Rewards are applied as soon as the match ends rather than when a button
+   * is pressed, because the result screen now shows what was earned. Guarded
+   * by `rewardsApplied` so a re-render cannot pay out twice.
+   */
+  useEffect(() => {
+    if (!state?.result || rewardsApplied) return;
     setRewardsApplied(true);
     const isVictory = state.result.winnerUid === myUid;
     processMatchEnd(isVictory, "gin_rummy");
     // Casual is a no-stakes queue (see CasualOnlineClient) - skip the real
     // trophy/rank update, same treatment as Mindi's casual pool.
-    if (state.result.winnerUid !== "draw" && match?.pool !== "casual") {
+    if (match?.pool !== "casual") {
       const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
       // See MindiOnlineClient - a swallowed failure here reads to the
       // player as "I won and got nothing".
-      await updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {
+      void updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {
         showToast(t("toast_trophiesFailed"), "error");
       });
     }
-    setShowRewardPopup(true);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.result, rewardsApplied, myUid, match?.pool]);
 
   async function handleForfeit() {
     if (!match || !opponentUid) return;
@@ -199,15 +245,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
         status: "completed",
         state: {
           ...s,
+          turnDeadline: null,
           result: {
             winnerUid: opponentUid,
-            knockerUid: null,
-            gin: false,
-            undercut: false,
-            deadwood: {
-              [myUid]: bestMeldArrangement(s.hands[myUid] ?? []).deadwoodValue,
-              [opponentUid]: bestMeldArrangement(s.hands[opponentUid] ?? []).deadwoodValue,
-            },
+            // A forfeit has no winning layout; the result screen shows the
+            // forfeit line instead of melds.
+            layout: [],
+            loserDeadwood: bestMeldArrangement(s.hands[myUid] ?? []).deadwoodValue,
             score: 0,
             forfeitedBy: myUid,
           },
@@ -253,92 +297,12 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
 
   if (state.result) {
     const { result } = state;
-    const isDraw = result.winnerUid === "draw";
     const youWon = result.winnerUid === myUid;
-    return (
-      <>
-        <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
-          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
-              }`}
-            >
-              <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
-            </motion.div>
-            <div>
-              <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
-                {result.forfeitedBy
-                  ? youWon
-                    ? t("mindi_opponentForfeited")
-                    : t("mindi_youForfeited")
-                  : isDraw
-                  ? t("gin_stockRanOut")
-                  : youWon
-                  ? t("mindi_youWon")
-                  : t("mindi_youLost")}
-              </h1>
-              {!isDraw && !result.forfeitedBy && (result.gin || result.undercut) && (
-                <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {result.gin ? t("gin_gin") : t("gin_undercut")}
-                </p>
-              )}
-            </div>
-            <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{t("gin_yourDeadwood")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{result.deadwood[myUid] ?? 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{t("gin_opponentDeadwood")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{result.deadwood[opponentUid] ?? 0}</span>
-              </div>
-              {!isDraw && (
-                <>
-                  <div className="h-px bg-[rgb(var(--c3))]" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-[rgb(var(--c4))] text-xs">{t("gin_points")}</span>
-                    <span className="text-[rgb(var(--gold-ink))] font-bold">{result.score}</span>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="flex gap-3 max-w-xs mx-auto">
-              <Link href="/play" className="flex-1">
-                <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2">
-                  <Home size={16} />
-                  {t("common_exit")}
-                </motion.button>
-              </Link>
-              {!isDraw && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleShowRewards}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
-                >
-                  <Sparkles size={16} />
-                  {t("common_rewards")}
-                </motion.button>
-              )}
-            </div>
-          </motion.div>
-        </div>
-        {!isDraw && (
-          <MatchRewardPopup
-            isOpen={showRewardPopup}
-            onClose={() => setShowRewardPopup(false)}
-            isVictory={youWon}
-            coinsEarned={youWon ? 10 : 2}
-            trophyChange={match?.pool === "casual" ? 0 : youWon ? 15 : -5}
-            newCoinBalance={0}
-          />
-        )}
-      </>
-    );
+    return <GinResultScreen result={{ winner: youWon ? "player" : "opponent", layout: result.layout, loserDeadwood: result.loserDeadwood, score: result.score }}
+      youWon={youWon} forfeited={!!result.forfeitedBy} coins={youWon ? 10 : 2}
+      balance={economyState.economy.coins} onContinue={() => router.push("/play")} continueLabel="Find a new match" />;
   }
+
 
   const opponentSeat = {
     uid: opponentUid,
@@ -351,9 +315,32 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const activeTableTheme =
     match.players[0] === myUid ? economyState.profile.equipped.tableTheme : opponentProfile?.tableTheme || "tt_default";
 
+  // Only at the very start: reload mid-match and you rejoin straight into
+  // play rather than re-watching the cut. Seat 0 is always the local player,
+  // so the ceremony reads the same way for both of them.
+  const showIntro = !introSeen && !!state.firstCut && state.discard.length <= 1
+    && (state.hands[myUid]?.length ?? 0) === 10;
+  const cut = state.firstCut;
+  const cutDraw = cut && {
+    cards: { 0: cut.cards[myUid], 1: cut.cards[opponentUid] },
+    winner: (cut.winner === myUid ? 0 : 1) as SeatIndex,
+  };
+
+  // The ceremony replaces the table rather than sitting on top of it. Rendered
+  // together, the table paints first and the dialog only opens on the effect
+  // after it, so the player sees the table flash before the cut.
+  if (showIntro && cutDraw) {
+    return <MindiDealIntro game="gin" draw={cutDraw as FirstPlayerDraw}
+      names={{ 0: user?.displayName ?? "You", 1: opponentSeat.name, 2: "", 3: "" }}
+      seats={[0, 1]} viewer={0} handSize={10}
+      cardBacks={{ 0: economyState.profile.equipped.cardBack, 1: opponentProfile?.cardBack }}
+      tableSkin={activeTableTheme} onDone={() => setIntroSeen(true)} />;
+  }
+
   return <GinRummyTable hand={sortedHand} selected={selectedDiscard} opponent={opponentSeat}
     name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} stock={state.stock.length} discard={topDiscard}
-    phase={state.phase} myTurn={isMyTurn} canKnock={canKnock} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+    phase={state.phase} myTurn={isMyTurn} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+    deadline={state.turnDeadline ?? null} reshuffles={state.reshuffles ?? 0}
     tableSkin={activeTableTheme} cardBack={economyState.profile.equipped.cardBack} online
-    onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} onKnock={handleKnock} onLeave={handleForfeit}/>;
+    onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} onLeave={handleForfeit}/>;
 }

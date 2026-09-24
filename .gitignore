@@ -5,6 +5,7 @@ node_modules/
 
 # Next.js
 .next/
+.next-dev/
 .next-production/
 out/
 
@@ -50,3 +51,8 @@ artifacts/settings-test/component.js
 artifacts/gin-test/component.js
 artifacts/mindi-test/component.js
 artifacts/profile-test/component.js
+artifacts/shell-test/component.js
+artifacts/dev-polish*.log
+artifacts/auth-test/component.js
+artifacts/gameplay-test/
+artifacts/mindi-test/duel-*.png

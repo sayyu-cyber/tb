@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User } from "lucide-react";
@@ -94,6 +94,14 @@ export function AppSidebar() {
   // Until the stored preference has been read, transitions are suppressed so
   // a restored "expanded" doesn't animate open on every page load.
   const [ready, setReady] = useState(false);
+  const [overlay, setOverlay] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const media = window.matchMedia(PUSH_QUERY);
+    const sync = () => setOverlay(!media.matches);
+    sync(); media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     try {
@@ -134,13 +142,29 @@ export function AppSidebar() {
   // Only at the overlay breakpoints - locking the body on desktop, where the
   // panel is just part of the layout, would strand the player mid-page.
   useEffect(() => {
-    if (!expanded || pushesContent()) return;
+    if (!expanded || !overlay) return;
     const previous = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const main = document.querySelector<HTMLElement>(".app-shell-main");
+    const wasInert = main?.inert ?? false;
+    if (main) main.inert = true;
     document.body.style.overflow = "hidden";
+    panelRef.current?.querySelector<HTMLButtonElement>(".app-sidebar-toggle")?.focus();
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const items = Array.from(panelRef.current?.querySelectorAll<HTMLElement>('a[href],button:not(:disabled)') || []).filter(item => item.getClientRects().length > 0);
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    window.addEventListener("keydown", trap);
     return () => {
       document.body.style.overflow = previous;
+      if (main) main.inert = wasInert;
+      window.removeEventListener("keydown", trap);
+      previousFocus?.focus();
     };
-  }, [expanded]);
+  }, [expanded, overlay]);
 
   // Following a link closes the drawer only where it was covering the page.
   // On desktop the panel is part of the layout, so navigating shouldn't
@@ -156,7 +180,7 @@ export function AppSidebar() {
         data-expanded={expanded ? "true" : "false"}
         data-ready={ready ? "true" : undefined}
       >
-        <div className="app-sidebar-panel" id={PANEL_ID}>
+        <div className="app-sidebar-panel" id={PANEL_ID} ref={panelRef} role={expanded && overlay ? "dialog" : undefined} aria-modal={expanded && overlay ? true : undefined} aria-label={expanded && overlay ? t("nav_moreTitle") : undefined}>
           <div className="app-sidebar-head">
             <Link href="/home" onClick={handleNavigate} className="app-sidebar-mark" aria-label={t("nav_home")}>
               <span className="app-sidebar-mark-glyph" aria-hidden="true">

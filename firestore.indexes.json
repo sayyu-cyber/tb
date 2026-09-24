@@ -1,4 +1,7 @@
-﻿{
-  "indexes": [{ "collectionGroup": "matches", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "players", "arrayConfig": "CONTAINS" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] }],
+{
+  "indexes": [
+    { "collectionGroup": "matches", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "players", "arrayConfig": "CONTAINS" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "reports", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] }
+  ],
   "fieldOverrides": []
 }

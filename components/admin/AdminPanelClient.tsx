@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -21,9 +22,23 @@ import { CoinTopupRequest, watchAllTopups, decideTopup, findPlayerByCode, adminT
 import { ManualHallOfFameEntry, watchManualHallOfFameEntries, addManualHallOfFameEntry, removeManualHallOfFameEntry, resetManualHallOfFame } from "@/lib/hallOfFame";
 import { ALL_COSMETICS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, RANK_CONFIGS } from "@/data/cosmetics";
 import { useTranslation } from "@/hooks/useTranslation";
-import { ShieldCheck, Wallet, CalendarDays, Trophy, ShoppingBag, Target, Swords, Search } from "lucide-react";
+import { ShieldCheck, Wallet, CalendarDays, Trophy, ShoppingBag, Target, Swords, Search, Flag } from "lucide-react";
+import { REPORT_REASONS, resolveReport, watchOpenReports, type ReportDoc } from "@/lib/moderation";
 
-type Tab = "topups" | "season" | "hof" | "shop" | "missions" | "ranked";
+type Tab = "topups" | "reports" | "season" | "hof" | "shop" | "missions" | "ranked";
+
+/** Tab icon lookup. Was an inline ternary chain that had to be extended in
+ *  lockstep with the tab list — easy to get wrong, and it silently fell
+ *  through to the last icon when it was. */
+const TAB_ICONS: Record<Tab, typeof Wallet> = {
+  topups: Wallet,
+  reports: Flag,
+  season: CalendarDays,
+  hof: Trophy,
+  shop: ShoppingBag,
+  missions: Target,
+  ranked: Swords,
+};
 
 export function AdminPanelClient() {
   const { user } = useAuth();
@@ -43,6 +58,7 @@ export function AdminPanelClient() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "topups", label: "Top-ups" },
+    { id: "reports", label: "Reports" },
     { id: "season", label: "Season" },
     { id: "hof", label: "Hall of Fame" },
     { id: "shop", label: "Shop" },
@@ -64,7 +80,10 @@ export function AdminPanelClient() {
               tab === t.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
             }`}
           >
-            {t.id === 'topups' ? <Wallet size={17} /> : t.id === 'season' ? <CalendarDays size={17} /> : t.id === 'hof' ? <Trophy size={17} /> : t.id === 'shop' ? <ShoppingBag size={17} /> : t.id === 'missions' ? <Target size={17} /> : <Swords size={17} />}
+            {(() => {
+              const Icon = TAB_ICONS[t.id];
+              return <Icon size={17} />;
+            })()}
             {t.label}
           </button>
         ))}
@@ -72,6 +91,7 @@ export function AdminPanelClient() {
       <section className="admin-content" aria-label={tabs.find(item=>item.id === tab)?.label}>
       <h2 className="text-lg font-bold mb-5">{tabs.find(item=>item.id === tab)?.label}</h2>
       {tab === "topups" && <TopupsTab />}
+      {tab === "reports" && <ReportsTab />}
       {tab === "season" && <SeasonTab />}
       {tab === "hof" && <HallOfFameTab />}
       {tab === "shop" && <ShopTab />}
@@ -227,6 +247,126 @@ function DirectTopupPanel() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Abuse report queue.
+ *
+ * Reports are write-only for players (firestore.rules), so this is the only
+ * place they surface. Without it the report button would file complaints
+ * into a collection nobody ever opens, which is worse than having no button
+ * at all — it implies a moderation process that does not exist.
+ *
+ * Deliberately shows the reported PLAYER's name as a link to their profile,
+ * because the first thing a moderator needs is context on the account, and
+ * the profile is where the block control lives.
+ */
+function ReportsTab() {
+  const { user } = useAuth();
+  const [reports, setReports] = useState<ReportDoc[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(
+    () =>
+      watchOpenReports(
+        (items) => {
+          setReports(items);
+          setError(null);
+        },
+        () => setError("Couldn't load reports. Check that the Firestore rules are deployed.")
+      ),
+    []
+  );
+
+  async function resolve(id: string, status: "actioned" | "dismissed") {
+    if (!user) return;
+    setBusy(id);
+    try {
+      await resolveReport(id, status, user.uid);
+    } catch {
+      setError("Couldn't update that report. Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const reasonLabel = (reason: string) =>
+    REPORT_REASONS.find((r) => r.id === reason)?.label ?? reason;
+
+  if (error) {
+    return (
+      <p className="text-[rgb(var(--coral-ink))] text-xs" role="alert">
+        {error}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">
+        Open reports ({reports.length})
+      </p>
+
+      {reports.length === 0 ? (
+        <p className="text-[rgb(var(--c3))] text-xs">Nothing to review.</p>
+      ) : (
+        <div className="space-y-2">
+          {reports.map((report) => (
+            <div key={report.id} className="glass-card rounded-xl p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[rgb(var(--text-primary))] text-sm font-medium">
+                    <Link
+                      href={`/player?uid=${encodeURIComponent(report.targetUid)}`}
+                      className="underline underline-offset-2"
+                    >
+                      {report.targetName}
+                    </Link>
+                    <span className="text-[rgb(var(--c4))] font-normal"> · {reasonLabel(report.reason)}</span>
+                  </p>
+                  <p className="text-[rgb(var(--c4))] text-xs">
+                    Reported by {report.reporterName} · {report.context} ·{" "}
+                    {new Date(report.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    disabled={busy === report.id}
+                    onClick={() => resolve(report.id, "actioned")}
+                    className="px-3 py-1.5 rounded-lg bg-[rgb(var(--coral)/15%)] border border-[rgb(var(--coral)/35%)] text-[rgb(var(--coral-ink))] text-xs"
+                  >
+                    Actioned
+                  </button>
+                  <button
+                    disabled={busy === report.id}
+                    onClick={() => resolve(report.id, "dismissed")}
+                    className="px-3 py-1.5 rounded-lg bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-xs"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+
+              {report.evidence && (
+                <blockquote className="text-xs text-[rgb(var(--c5))] border-l-2 border-[rgb(var(--c3))] pl-3 break-words">
+                  {report.evidence}
+                </blockquote>
+              )}
+              {report.details && (
+                <p className="text-xs text-[rgb(var(--c4))] break-words">{report.details}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-[rgb(var(--c3))] text-[11px] leading-relaxed">
+        &ldquo;Actioned&rdquo; and &ldquo;Dismiss&rdquo; both close the report. Neither takes any
+        action on the account by itself — open the player&rsquo;s profile to block them.
+      </p>
     </div>
   );
 }

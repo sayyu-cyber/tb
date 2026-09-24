@@ -10,8 +10,11 @@
 
 const SUIT_ORDER: Record<string, number> = { S: 0, H: 1, C: 2, D: 3 };
 
-export function sortHand<T extends { suit: string; rank: number }>(cards: T[]): T[] {
+export type HandSort = "suit" | "rank";
+
+export function sortHand<T extends { suit: string; rank: number }>(cards: T[], order: HandSort = "suit"): T[] {
   return [...cards].sort((a, b) => {
+    if (order === "rank" && a.rank !== b.rank) return a.rank - b.rank;
     const suitDiff = (SUIT_ORDER[a.suit] ?? 99) - (SUIT_ORDER[b.suit] ?? 99);
     if (suitDiff !== 0) return suitDiff;
     return a.rank - b.rank;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, ChevronDown, User, Settings, LogOut, UserPlus, Search, Crown } from "lucide-react";
+import { Bell, ChevronDown, User, Settings, LogOut, UserPlus, Search, Crown, Gamepad2, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -12,7 +12,8 @@ import { RankBadge } from "@/components/ui/RankBadge";
 import { Badge } from "@/components/ui/Badge";
 import { isAdminEmail } from "@/lib/admin";
 import { watchIncomingRequests, type FriendRequestDoc } from "@/lib/friends";
-import { watchConversations, type DmConversation } from "@/lib/messages";
+import { useHomeSocial } from "@/contexts/HomeSocialContext";
+import { useToast } from "@/contexts/ToastContext";
 import CoinBalance from "@/components/economy/CoinBalance";
 
 /** Closes a popover on an outside click or Escape - shared by the bell,
@@ -24,7 +25,11 @@ function useOutsideClose(open: boolean, close: () => void) {
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      close();
+      ref.current?.querySelector<HTMLElement>('input,button')?.focus();
+    };
     document.addEventListener("mousedown", onClick);
     window.addEventListener("keydown", onKey);
     return () => {
@@ -53,6 +58,9 @@ function useSearchIndex() {
       { label: "Shop", sub: "Page", href: "/shop" },
       { label: "Inventory", sub: "Page", href: "/inventory" },
       { label: "Clubs", sub: "Page", href: "/clubs" },
+      { label: "Achievements", sub: "Progress", href: "/achievements" },
+      { label: "Profile", sub: "Player", href: "/profile" },
+      { label: "Settings", sub: "Preferences", href: "/settings" },
     ],
     [isGuest]
   );
@@ -67,11 +75,17 @@ function SearchBox() {
   const index = useSearchIndex();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const pathname = usePathname();
   const ref = useOutsideClose(open, () => setOpen(false));
+  useEffect(() => { setOpen(false); setQuery(""); setActive(0); }, [pathname]);
 
   const results = query.trim()
     ? index.filter((r) => r.label.toLowerCase().includes(query.trim().toLowerCase()))
     : index.slice(0, 5);
+  useEffect(() => {
+    if (open) document.getElementById(`launcher-result-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
 
   const go = (href: string) => {
     setOpen(false);
@@ -80,15 +94,25 @@ function SearchBox() {
   };
 
   return (
-    <div ref={ref} className="relative w-full max-w-xs">
+    <div ref={ref} className="launcher-search relative w-full max-w-xs">
       <div className="flex items-center gap-2 rounded-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] px-3.5 py-2 focus-within:border-[rgb(var(--gold)/45%)] transition-colors">
         <Search size={15} className="text-[rgb(var(--c4))] shrink-0" aria-hidden="true" />
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true); }}
           onFocus={() => setOpen(true)}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="launcher-results"
+          aria-autocomplete="list"
+          aria-activedescendant={open && results[active] ? `launcher-result-${active}` : undefined}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && results[0]) go(results[0].href);
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              e.preventDefault(); setOpen(true);
+              setActive(value => results.length ? (value + (e.key === "ArrowDown" ? 1 : -1) + results.length) % results.length : 0);
+            }
+            if (e.key === "Enter" && results[active]) { e.preventDefault(); go(results[active].href); }
+            if (e.key === "Escape" || e.key === "Tab") setOpen(false);
           }}
           placeholder={t("search_placeholder")}
           aria-label={t("search_placeholder")}
@@ -103,19 +127,29 @@ function SearchBox() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 mt-2 rounded-2xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] shadow-[var(--shadow-lg)] p-1.5 z-50 max-h-72 overflow-y-auto"
+            id="launcher-results"
+            role="listbox"
+            aria-label="Games and destinations"
+            className="launcher-results absolute left-0 right-0 mt-2 border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] shadow-[var(--shadow-lg)] p-1.5 z-50 max-h-72 overflow-y-auto"
           >
             {results.length === 0 ? (
               <p className="py-4 text-center text-xs text-[rgb(var(--c4))]">{t("search_noResults")}</p>
             ) : (
-              results.map((r) => (
+              results.map((r, i) => (
                 <button
+                  id={`launcher-result-${i}`}
+                  role="option"
+                  aria-selected={active === i}
+                  tabIndex={-1}
                   key={r.href}
+                  onMouseDown={event => event.preventDefault()}
+                  onMouseEnter={() => setActive(i)}
                   onClick={() => go(r.href)}
-                  className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left hover:bg-[rgb(var(--c1))] transition-colors"
+                  className="launcher-result"
                 >
-                  <span className="text-sm font-semibold text-[rgb(var(--text-primary))]">{r.label}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--c4))]">{r.sub}</span>
+                  <Gamepad2 size={18} aria-hidden="true" />
+                  <span><strong>{r.label}</strong><small>{r.sub}</small></span>
+                  <ArrowUpRight size={14} aria-hidden="true" />
                 </button>
               ))
             )}
@@ -130,22 +164,23 @@ function SearchBox() {
  *  unread message (same lastReadAt tracking FriendsRail uses) - no invented
  *  counts. */
 function NotificationBell() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
+  const { chats: conversations, error: chatError } = useHomeSocial();
   const t = useTranslation();
   const [open, setOpen] = useState(false);
   const [requests, setRequests] = useState<FriendRequestDoc[]>([]);
-  const [conversations, setConversations] = useState<DmConversation[]>([]);
+  const [requestError, setRequestError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const uid = user?.uid;
+  const pathname = usePathname();
   const ref = useOutsideClose(open, () => setOpen(false));
+  useEffect(() => setOpen(false), [pathname]);
 
   useEffect(() => {
-    if (!user) return;
-    const unsubReq = watchIncomingRequests(user.uid, setRequests);
-    const unsubConvo = watchConversations(user.uid, setConversations);
-    return () => {
-      unsubReq();
-      unsubConvo();
-    };
-  }, [user]);
+    setRequests([]); setRequestError(false);
+    if (!uid || isGuest) return;
+    return watchIncomingRequests(uid, setRequests, () => setRequestError(true));
+  }, [uid, isGuest, attempt]);
 
   if (!user) return null;
 
@@ -177,9 +212,10 @@ function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-72 rounded-2xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] shadow-[var(--shadow-lg)] p-2 z-50"
+            className="notification-popover absolute right-0 mt-2 w-72 rounded-xl border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] shadow-[var(--shadow-lg)] p-2 z-50"
           >
-            {count === 0 ? (
+            {(requestError || chatError) && <p className="p-3 text-xs" role="status">Some notifications are unavailable. {requestError && <button className="underline" onClick={() => setAttempt(value => value + 1)}>Retry</button>}</p>}
+            {count === 0 && !requestError && !chatError ? (
               <p className="py-6 text-center text-xs text-[rgb(var(--c4))]">{t("notifications_empty")}</p>
             ) : (
               <div className="flex flex-col gap-1">
@@ -228,8 +264,12 @@ function NotificationBell() {
 function ProfileChip() {
   const { user, playerStats, logout } = useAuth();
   const { state } = useEconomy();
+  const { showToast } = useToast();
   const t = useTranslation();
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const pathname = usePathname();
+  useEffect(() => setOpen(false), [pathname]);
   const ref = useOutsideClose(open, () => setOpen(false));
 
   if (!user) return null;
@@ -241,6 +281,7 @@ function ProfileChip() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-label={`${t("nav_profile")}: ${user.displayName || t("profile_player")}`}
         className="flex items-center gap-2 rounded-full pl-1 pr-2.5 py-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[rgb(var(--gold)/45%)] transition-colors"
       >
         <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] p-[2px]">
@@ -300,7 +341,13 @@ function ProfileChip() {
             </Link>
             <div className="my-1 h-px bg-[rgb(var(--c3))]" />
             <button
-              onClick={() => logout()}
+              disabled={signingOut}
+              onClick={async () => {
+                if (signingOut) return;
+                setSigningOut(true);
+                try { await logout(); } catch { showToast("Couldn't sign out. Please try again.", "error"); }
+                finally { setSigningOut(false); }
+              }}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-[rgb(var(--coral-ink))] hover:bg-[rgb(var(--coral)/10%)] transition-colors"
             >
               <LogOut size={16} aria-hidden="true" />
@@ -320,9 +367,6 @@ function ProfileChip() {
  * Self-gates by pathname like SideNav/FriendsRail.
  */
 export function TopBar() {
-  const pathname = usePathname();
-  const path = pathname?.replace(/\/$/, "");
-
   return (
     <div className="app-top-bar flex items-center justify-between gap-3 pt-1 pb-3">
       <SearchBox />

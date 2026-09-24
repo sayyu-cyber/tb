@@ -11,8 +11,9 @@ import { useRankLock } from "@/hooks/useRankLock";
 import { useMatchLimits } from "@/hooks/useMatchLimits";
 import { RankLockBanner } from "@/components/game/RankLockBanner";
 import { joinQueue, leaveQueue, tryFormMatch, watchForMatch, GameType, Pool } from "@/lib/matchmaking";
-import { dealMindiHand } from "@/lib/mindiEngine";
+import { dealMindiHand, openMindiHand } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
+import { cutForFirstPlay } from "@/lib/openingCut";
 import { isQualified } from "@/lib/weekendLeague";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
@@ -25,11 +26,13 @@ function gameConfig(gameId: string): { gameType: GameType; neededPlayers: number
 
 function buildInitialState(gameType: GameType, players: string[]): MindiOnlineState | GinOnlineState {
   if (gameType === "mindi") {
-    const deal = dealMindiHand(3);
+    // Draw for first play, then deal - see openMindiHand.
+    const { deal, draw } = openMindiHand(3);
     const handsByUid: Record<string, ReturnType<typeof dealMindiHand>["hands"][0]> = {};
     for (let seat = 0; seat < 4; seat++) handsByUid[players[seat]] = deal.hands[seat as 0 | 1 | 2 | 3];
     const state: MindiOnlineState = {
       handsByUid,
+      firstDraw: draw,
       trumpSuit: deal.trumpSuit,
       turnSeat: deal.leader,
       trick: [],
@@ -41,13 +44,19 @@ function buildInitialState(gameType: GameType, players: string[]): MindiOnlineSt
     return state;
   }
 
+  // Cut for first play before dealing, exactly as Mindi does. The cut is
+  // stored so both clients replay the same ceremony, and its winner takes the
+  // opening turn rather than it always falling to players[0].
+  const cut = cutForFirstPlay<string>([players[0], players[1]]);
   const deal = dealGinHand();
   const state: GinOnlineState = {
     hands: { [players[0]]: deal.playerHand, [players[1]]: deal.opponentHand },
     stock: deal.stock,
     discard: deal.discard,
-    turn: players[0],
+    turn: cut.winner,
     phase: "draw",
+    firstCut: cut,
+    turnDeadline: null,
     result: null,
   };
   return state;

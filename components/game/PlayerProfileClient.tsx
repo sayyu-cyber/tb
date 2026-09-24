@@ -4,13 +4,17 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Trophy, Star, Swords, Percent, Eye } from "lucide-react";
+import { Trophy, Star, Swords, Percent, Eye, Flag, Ban, ShieldOff } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { getPublicProfile, PublicProfile } from "@/lib/publicProfile";
 import { getActiveMatchId } from "@/lib/matchmaking";
 import { RANKS } from "@/constants/ranks";
 import { getAvatarPreset, getBannerPreset } from "@/constants/profileCustomization";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { ReportDialog } from "@/components/moderation/ReportDialog";
+import { blockUser, unblockUser, watchBlocks } from "@/lib/moderation";
 
 function rankColor(rank: string): string {
   const match = Object.values(RANKS).find((r) => r.name === rank);
@@ -24,7 +28,19 @@ export function PlayerProfileClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [liveMatchId, setLiveMatchId] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
   const t = useTranslation();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  // Live, so the button label stays correct if the player is blocked or
+  // unblocked from Settings in another tab.
+  useEffect(() => {
+    if (!user || !uid || user.uid === uid) return;
+    return watchBlocks(user.uid, (list) => setBlocked(list.includes(uid)));
+  }, [user, uid]);
 
   useEffect(() => {
     if (!uid) {
@@ -133,8 +149,53 @@ export function PlayerProfileClient() {
               <span className="text-[rgb(var(--text-primary))] text-sm font-medium capitalize">{profile.favoriteGame.replace("_", " ")}</span>
             </div>
           )}
+
+          {/* Safety controls. Hidden on your own profile - there is nothing
+              sensible about reporting or blocking yourself, and the calls
+              would be rejected anyway. */}
+          {user && user.uid !== uid && (
+            <div className="mod-actions">
+              <button type="button" onClick={() => setReportOpen(true)}>
+                <Flag size={15} aria-hidden="true" />
+                Report
+              </button>
+              <button
+                type="button"
+                disabled={blockBusy}
+                onClick={async () => {
+                  setBlockBusy(true);
+                  try {
+                    if (blocked) {
+                      await unblockUser(user.uid, uid);
+                      showToast(`Unblocked ${profile.displayName}.`, "success");
+                    } else {
+                      await blockUser(user.uid, uid);
+                      showToast(`Blocked ${profile.displayName}.`, "success");
+                    }
+                  } catch {
+                    showToast("Could not update block. Please try again.", "error");
+                  } finally {
+                    setBlockBusy(false);
+                  }
+                }}
+              >
+                {blocked ? <ShieldOff size={15} aria-hidden="true" /> : <Ban size={15} aria-hidden="true" />}
+                {blocked ? "Unblock" : "Block"}
+              </button>
+            </div>
+          )}
         </motion.div>
       ) : null}
+
+      {user && profile && (
+        <ReportDialog
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          targetUid={uid}
+          targetName={profile.displayName}
+          context="profile"
+        />
+      )}
     </div>
   );
 }

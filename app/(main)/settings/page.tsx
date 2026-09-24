@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, Bell, Volume2, Music, Shield, HelpCircle, Info, LayoutDashboard, Languages, User, Palette, Moon, Activity, ChevronRight, Gamepad2 } from "lucide-react";
+import { Settings, Bell, Volume2, Music, Shield, HelpCircle, Info, LayoutDashboard, Languages, User, Palette, Moon, Activity, ChevronRight, Gamepad2, Ban } from "lucide-react";
+import { BlockedPlayers } from "@/components/moderation/BlockedPlayers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -67,6 +68,7 @@ export default function SettingsPage() {
       </SettingsSection>
       <SettingsSection id="privacy" title="Privacy & Security" icon={Shield} tone="teal">
         <div className="settings-row"><Shield size={20} /><div><h3>Device Preferences</h3><p>Music and language preferences are stored in this browser.</p></div></div>
+        <div className="settings-row"><Ban size={20} /><div style={{width:"100%"}}><h3>Blocked Players</h3><p>Blocked players cannot message you, and you will not see their messages.</p><BlockedPlayers /></div></div>
         <Link className="settings-row settings-link" href="/privacy"><Shield size={20} /><div><h3>Privacy Policy</h3><p>What we collect, why, and how to have it removed.</p></div></Link>
         <Link className="settings-row settings-link" href="/terms"><Shield size={20} /><div><h3>Terms of Service</h3><p>Account rules, coins, and fair play.</p></div></Link>
         <p className="settings-note">Account deletion and data export are handled by request — see the Privacy Policy for how to ask. Two-factor authentication is not available in the app yet.</p>

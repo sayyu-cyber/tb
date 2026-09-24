@@ -1,5 +1,6 @@
 "use client";
 import { MindiTable } from "./MindiTable";
+import { MindiDealIntro } from "./MindiDealIntro";
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
 import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
 import {
   Card,
+  Suit,
   SeatIndex,
   Team,
   TrickPlay,
@@ -24,6 +26,8 @@ import {
   nextSeatFFA1v1,
   getLegalPlays,
   resolveTrick,
+  establishTrump,
+  FirstPlayerDraw,
   isTen,
   checkHandOutcome,
   HandOutcome,
@@ -35,8 +39,12 @@ import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
 import { ArenaSeatData } from "@/components/game/GameArena";
 
 export interface MindiOnlineState {
+  lastTrick?: import("@/lib/mindiEngine").CompletedTrick;
   handsByUid: Record<string, Card[]>;
-  trumpSuit: Card["suit"];
+  /** Null until a player reneges - see establishTrump in lib/mindiEngine.ts.
+   *  Matches created before the rules rewrite carry a suit here from the
+   *  deal; those still resolve correctly, the suit is just fixed up front. */
+  trumpSuit: Suit | null;
   turnSeat: SeatIndex;
   trick: TrickPlay[];
   tensCaptured: Record<Team, number>;
@@ -47,6 +55,10 @@ export interface MindiOnlineState {
    *  created before this field existed). 2 = the 1v1 FFA room variant
    *  (dealMindiHandFFA1v1) - only seats 0 and 1 are ever used. */
   numPlayers?: 2 | 4;
+  /** The four-card draw that decided who leads, stored so every client shows
+   *  the same opening ceremony. Absent on matches created before this
+   *  existed - those simply start without the ceremony. */
+  firstDraw?: FirstPlayerDraw;
 }
 
 export function MindiOnlineClient({ matchId }: { matchId: string }) {
@@ -62,6 +74,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const [retryKey, setRetryKey] = useState(0);
   const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
+  const [introSeen, setIntroSeen] = useState(false);
 
   useEffect(() => {
     setMatchLoadError(false);
@@ -119,7 +132,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
 
     await updateMatchState<MindiOnlineState>(matchId, (current) => {
       const s = current.state;
-      if (s.turnSeat !== mySeat || s.outcome) return null;
+      if (current.status!=="active" || s.turnSeat !== mySeat || s.outcome || current.players[mySeat]!==myUid || s.trick.some(play=>play.seat===mySeat)) return null;
       const n = s.numPlayers ?? 4;
       const liveHand = s.handsByUid[myUid] ?? [];
       const liveLedSuit = s.trick[0]?.card.suit ?? null;
@@ -127,6 +140,11 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
 
       const hand = s.handsByUid[myUid].filter((c) => cardId(c) !== cardId(card));
       const trick = [...s.trick, { seat: mySeat, card }];
+      // Playing off-suit *is* the renege, because getLegalPlays above already
+      // rejected this card unless the hand was void in the led suit. Commit
+      // the new trump in the same write as the card so every client's trump
+      // readout moves the moment the card lands, not a trick later.
+      const trumpSuit = establishTrump(s.trumpSuit, liveLedSuit, card);
 
       if (trick.length < n) {
         return {
@@ -134,13 +152,15 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
             ...s,
             handsByUid: { ...s.handsByUid, [myUid]: hand },
             trick,
+            trumpSuit,
             turnSeat: n === 2 ? nextSeatFFA1v1(mySeat as 0 | 1) : nextSeat(mySeat),
           },
         };
       }
 
-      // Trick complete - resolve immediately.
-      const winnerSeat = resolveTrick(trick, s.trumpSuit);
+      // Trick complete - resolve immediately. A trump established by this very
+      // card counts within this trick, which is why trumpSuit is used here.
+      const winnerSeat = resolveTrick(trick, trumpSuit);
       const winnerTeam = teamOf(winnerSeat);
       const tensInTrick = trick.filter((p) => isTen(p.card)).length;
       const tensCaptured = { ...s.tensCaptured, [winnerTeam]: s.tensCaptured[winnerTeam] + tensInTrick };
@@ -151,7 +171,9 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       const nextState: MindiOnlineState = {
         ...s,
         handsByUid: { ...s.handsByUid, [myUid]: hand },
+        trumpSuit,
         trick: [],
+        lastTrick: {plays:trick,winner:winnerSeat,number:tricksPlayed},
         tensCaptured,
         tricksWon,
         tricksPlayed,
@@ -273,7 +295,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
               </h1>
               {state.outcome.special && state.outcome.special !== "forfeit" && (
                 <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {state.outcome.special === "baga" ? t("mindi_baga") : t("mindi_hukunbunye")}
+                  {state.outcome.special === "haasbaga" ? t("mindi_haasbaga") : t("mindi_baga")}
                 </p>
               )}
             </div>
@@ -332,9 +354,30 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const myProfile = { name: t("mindi_you"), avatarPreset: playerStats?.avatarPreset };
   const activeTableTheme = tableThemeForUid(match.players[0]);
 
+  // Only at the very start of a hand: a player who reloads mid-match rejoins
+  // straight into play rather than re-watching the opening. Matches created
+  // before firstDraw existed have no draw to show, so they skip it too.
+  const showIntro =
+    !introSeen && !!state.firstDraw && state.tricksPlayed === 0 && state.trick.length === 0 && !state.outcome;
+  const introSeats: SeatIndex[] = isDuel ? [0, 1] : [0, 1, 2, 3];
+  const introNames = introSeats.reduce((acc, seat) => {
+    acc[seat] = seat === mySeat ? user?.displayName ?? t("mindi_you") : seatDataFor(seat).name;
+    return acc;
+  }, {} as Record<SeatIndex, string>);
+
+  // The ceremony replaces the table rather than sitting on top of it. Rendered
+  // together, the table paints first and the dialog only opens on the effect
+  // after it, so the player sees the table flash before the cut.
+  if (showIntro && state.firstDraw) {
+    return <MindiDealIntro draw={state.firstDraw} names={introNames}
+      seats={introSeats} viewer={mySeat} handSize={isDuel ? 26 : 13} tableSkin={activeTableTheme}
+      cardBacks={Object.fromEntries(introSeats.map(seat => [seat, seatDataFor(seat).cardBackId]))}
+      onDone={() => setIntroSeen(true)}/>;
+  }
+
   return <MindiTable hand={myHand} legal={legalForMe} viewer={mySeat} top={topSeat} left={leftSeat} right={rightSeat}
     name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} active={isMyTurn}
-    trump={state.trumpSuit} trick={state.trick} tens={state.tensCaptured} tricks={state.tricksWon}
+    trump={state.trumpSuit} trick={state.trick} lastTrick={state.lastTrick} tens={state.tensCaptured} tricks={state.tricksWon}
     mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
     tableSkin={activeTableTheme} online onPlay={handlePlayCard} onLeave={handleForfeit}/>;
 }

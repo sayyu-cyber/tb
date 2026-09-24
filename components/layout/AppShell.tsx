@@ -7,6 +7,7 @@ import { BackgroundMusicPlayer } from "@/components/audio/BackgroundMusicPlayer"
 import { CoinTopupWatcher } from "@/components/economy/CoinTopupWatcher";
 import { PresenceHeartbeat } from "@/components/system/PresenceHeartbeat";
 import { HomeSocialProvider } from "@/contexts/HomeSocialContext";
+import { ConnectionNotice } from "@/components/system/ConnectionNotice";
 
 /**
  * Routes that render with no app chrome and, crucially, OUTSIDE
@@ -37,6 +38,8 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           stay unsubscribed. */}
       <HomeSocialProvider enabled={!inMatch}>
       <div className={`app-shell ${inMatch ? "app-shell-match" : ""} ${premiumShell ? "app-shell-home" : ""}`}>
+        <a className="app-skip-link" href="#app-content">Skip to content</a>
+        <ConnectionNotice />
         <BackgroundMusicPlayer />
         <CoinTopupWatcher />
         <PresenceHeartbeat />
@@ -44,7 +47,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             every screen size, so a second navigation surface would just be
             a duplicate eating vertical space on phones. */}
         {!inMatch && <AppSidebar />}
-        <main className="app-shell-main">
+        <main className="app-shell-main" id="app-content" tabIndex={-1}>
           {!inMatch && <div className="app-shell-toolbar"><TopBar /></div>}
           {children}
         </main>

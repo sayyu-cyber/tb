@@ -134,6 +134,57 @@ service cloud.firestore {
         (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
     }
 
+    // ─── Moderation (lib/moderation.ts) ───────────────────────────────
+    //
+    // Block lists. Readable by any signed-in user and writable only by their
+    // owner. The open read looks surprising, but it is load-bearing: the DM
+    // rule below has to consult the RECIPIENT's list to reject a message
+    // from someone they blocked, and rules can only `get()` documents the
+    // request is allowed to read. The list contains uids and nothing else.
+    match /userBlocks/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Abuse reports are write-only for players: anyone signed in may file
+    // one against someone other than themselves, but only an admin may read
+    // or resolve them. A reporter cannot see whether a report was actioned,
+    // cannot edit it afterwards, and cannot read anyone else's.
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.reporterUid
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.status == 'open';
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    /** True when `blocker` has blocked `subject`. Missing document = nobody
+     *  blocked, which is the common case and must not fail closed. */
+    function hasBlocked(blocker, subject) {
+      return exists(/databases/$(database)/documents/userBlocks/$(blocker))
+        && subject in get(/databases/$(database)/documents/userBlocks/$(blocker)).data.blocked;
+    }
+
+    /**
+     * Whether `me` may post into this conversation.
+     *
+     * The other party is DERIVED from the conversation's own participants
+     * array rather than read from a field on the message. A sender-supplied
+     * "recipient" field would be trivially spoofable - name someone who has
+     * not blocked you and the check passes - and it would also have required
+     * changing lib/messages.ts, which writes no such field today.
+     *
+     * Blocking is symmetric on purpose: a one-way block would let the
+     * blocker keep messaging someone who cannot reply.
+     */
+    function canMessage(conversationId, me) {
+      let parts = get(/databases/$(database)/documents/dmConversations/$(conversationId)).data.participants;
+      let other = parts[0] == me ? parts[1] : parts[0];
+      return me in parts && !hasBlocked(other, me) && !hasBlocked(me, other);
+    }
+
     // Direct messages (lib/messages.ts). The conversation doc's id is
     // deterministic (sorted uids joined), and only its two participants may
     // ever read or write it or its messages subcollection. Messages are
@@ -147,9 +198,13 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if request.auth != null &&
           request.auth.uid in get(/databases/$(database)/documents/dmConversations/$(conversationId)).data.participants;
+        // Blocking is enforced HERE, in the database, not in the UI. A
+        // modified client that skips the in-app check still cannot deliver a
+        // message to someone who blocked it, because this rule rejects the
+        // write. canMessage() also subsumes the participants check.
         allow create: if request.auth != null &&
-          request.auth.uid in get(/databases/$(database)/documents/dmConversations/$(conversationId)).data.participants &&
-          request.auth.uid == request.resource.data.senderUid;
+          request.auth.uid == request.resource.data.senderUid &&
+          canMessage(conversationId, request.auth.uid);
         allow update, delete: if false;
       }
     }

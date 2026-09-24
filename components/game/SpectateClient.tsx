@@ -180,8 +180,10 @@ function MindiSpectateView({
           </span>
           <span className="text-[rgb(var(--c4))]">
             {t("mindi_trump")}:{" "}
-            <span className={SUIT_COLOR[state.trumpSuit] === "red" ? "text-[rgb(var(--suit-red))]" : "text-[rgb(var(--text-primary))]"}>
-              {SUIT_SYMBOLS[state.trumpSuit]}
+            {/* Trump stays null until somebody reneges, so this reads "not set
+                yet" for the opening tricks rather than showing a stale suit. */}
+            <span className={state.trumpSuit && SUIT_COLOR[state.trumpSuit] === "red" ? "text-[rgb(var(--suit-red))]" : "text-[rgb(var(--text-primary))]"}>
+              {state.trumpSuit ? SUIT_SYMBOLS[state.trumpSuit] : t("mindi_noTrump")}
             </span>
           </span>
           <span className="text-[rgb(var(--text-primary))]">
@@ -234,11 +236,13 @@ function GinSpectateView({
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center space-y-3">
         <p className="text-[rgb(var(--text-primary))] text-lg font-bold">
-          {state.result.winnerUid === "draw"
-            ? t("spectate_matchDraw")
-            : t("spectate_playerWon").replace("{name}", profiles[state.result.winnerUid]?.displayName ?? t("profile_player"))}
+          {t("spectate_playerWon").replace("{name}", profiles[state.result.winnerUid]?.displayName ?? t("profile_player"))}
         </p>
-        {state.result.gin && <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold">{t("spectate_gin")}</p>}
+        {/* Gin Rummy no longer has a "gin" flag - going out IS melding 4+3+3,
+            so the layout is what there is to say, not a bonus label. */}
+        {state.result.layout.length > 0 && (
+          <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold">Melded 4 · 3 · 3</p>
+        )}
       </div>
     );
   }

@@ -10,8 +10,9 @@ import { PrivateRoomSetup } from "./PrivateRoomSetup";
 import { RoomInviteDialog } from "./RoomInviteDialog";
 import { rememberRoom } from "@/lib/roomHistory";
 import { GameType } from "@/lib/matchmaking";
-import { dealMindiHand, dealMindiHandFFA1v1 } from "@/lib/mindiEngine";
+import { dealMindiHand, openMindiHand, openMindiHandFFA1v1 } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
+import { cutForFirstPlay } from "@/lib/openingCut";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import {
@@ -37,9 +38,11 @@ function buildInitialState(
 ): MindiOnlineState | GinOnlineState {
   if (gameType === "mindi") {
     if (mindiMode === "ffa1v1") {
-      const deal = dealMindiHandFFA1v1(1);
+      // Two-seat draw for the 1v1 variant, then deal - see openMindiHandFFA1v1.
+      const { deal, draw } = openMindiHandFFA1v1(1);
       return {
         handsByUid: { [players[0]]: deal.hands[0], [players[1]]: deal.hands[1] },
+        firstDraw: draw,
         trumpSuit: deal.trumpSuit,
         turnSeat: deal.leader,
         trick: [],
@@ -50,11 +53,12 @@ function buildInitialState(
         numPlayers: 2,
       };
     }
-    const deal = dealMindiHand(3);
+    const { deal, draw } = openMindiHand(3);
     const handsByUid: Record<string, ReturnType<typeof dealMindiHand>["hands"][0]> = {};
     for (let seat = 0; seat < 4; seat++) handsByUid[players[seat]] = deal.hands[seat as 0 | 1 | 2 | 3];
     return {
       handsByUid,
+      firstDraw: draw,
       trumpSuit: deal.trumpSuit,
       turnSeat: deal.leader,
       trick: [],
@@ -65,13 +69,19 @@ function buildInitialState(
       numPlayers: 4,
     };
   }
+  // Cut for first play before dealing, exactly as Mindi does. The cut is
+  // stored so both clients replay the same ceremony, and its winner takes the
+  // opening turn rather than it always falling to players[0].
+  const cut = cutForFirstPlay<string>([players[0], players[1]]);
   const deal = dealGinHand();
   return {
     hands: { [players[0]]: deal.playerHand, [players[1]]: deal.opponentHand },
     stock: deal.stock,
     discard: deal.discard,
-    turn: players[0],
+    turn: cut.winner,
     phase: "draw",
+    firstCut: cut,
+    turnDeadline: null,
     result: null,
   };
 }

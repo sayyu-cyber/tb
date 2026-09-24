@@ -1,0 +1,74 @@
+/* Gin Rummy table additions: the turn clock, the rule book, the hand
+   gestures, the last-card beat and the result screen.
+   Kept out of globals.css on purpose, matching styles/mindi.css - these
+   belong to one screen and the shared sheet is already large. */
+
+/* --- turn clock ---------------------------------------------------------
+   Set from --remaining rather than animated: the countdown is driven by an
+   absolute deadline (shared through the match document in online play), and
+   a CSS animation would drift from it and restart wrongly whenever the tab
+   is backgrounded and its timers are throttled. */
+.turn-clock { display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:56px;color:#8f9c98;font-size:12px;font-variant-numeric:tabular-nums; }
+.turn-clock[data-active=true] { color:#edf4f2; }
+.turn-clock[data-urgent=true] { color:#ff8a80;font-weight:700; }
+.turn-clock i { display:block;width:52px;height:4px;border-radius:2px;background:#2a3a38;overflow:hidden; }
+.turn-clock i::after { content:"";display:block;height:100%;width:calc(var(--remaining) * 100%);background:#70e6cf;transition:width 200ms linear; }
+.turn-clock[data-urgent=true] i::after { background:#ff8a80; }
+
+/* --- hand: drag to rearrange, ready-to-go-out readout ------------------- */
+/* pan-y keeps the page scrolling vertically while the horizontal drag
+   belongs to the reorder gesture. */
+.gin-fan-slot { touch-action:pan-y; }
+.gin-fan-slot.is-dragging { z-index:50;cursor:grabbing; }
+.gin-fan-slot.is-dragging>button { box-shadow:0 0 0 2px #f0d48c,0 12px 22px #000a;transform:translateY(-10px); }
+/* Slots are hit-tested by their live rects during a drag, so the shuffle
+   transition has to be off or the order oscillates under the pointer. */
+.gin-hand:has(.is-dragging) .gin-fan-slot { transition:none; }
+
+.gin-deadwood[data-ready=true] { border-color:#aa915d;background:#f0d48c1a;box-shadow:0 0 16px #f0d48c33; }
+.gin-deadwood[data-ready=true] strong,.gin-deadwood[data-ready=true] small { color:#f0d48c; }
+
+/* A hand has no fixed end under these rules, so a long one needs explaining
+   rather than ending. */
+.gin-stalemate { flex:1 1 100%;margin-top:4px;color:#c9bd8f;font-size:11px;text-align:center; }
+
+/* --- rule book ---------------------------------------------------------- */
+.rule-book-dialog { max-width:min(760px,94vw); }
+.rule-book-tabs { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px; }
+.rule-book-tabs button { min-height:36px;padding:7px 12px;border:1px solid #37524f;border-radius:999px;background:#0c1a20;color:#b8cbc9;font-size:12px;cursor:pointer; }
+.rule-book-tabs button[aria-current=true] { border-color:#aa915d;background:#f0d48c1f;color:#f0d48c;font-weight:600; }
+.rule-book h3 { margin-bottom:8px;color:#f0d48c;font-size:15px; }
+.rule-book ul { display:flex;flex-direction:column;gap:9px;padding-left:20px;list-style:disc; }
+.rule-book li { color:#d4e0de;font-size:13px;line-height:1.55; }
+
+/* --- the last card, held before the result takes over ------------------- */
+.gin-last-card { position:fixed;inset:0;z-index:70;display:grid;place-content:center;gap:14px;background:#03080ac2;backdrop-filter:blur(3px);text-align:center;pointer-events:none; }
+.gin-last-card>div>span { display:grid;place-items:center;width:112px;height:156px;border-radius:12px;background:#f7f4ec;color:#15201e;font-size:40px;font-weight:700;box-shadow:0 18px 44px #000b,0 0 0 2px #f0d48c; }
+.gin-last-card p { color:#f0d48c;font-size:15px;font-weight:600; }
+
+/* --- result screen ------------------------------------------------------ */
+.gin-result { min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:rgb(var(--c1)); }
+.gin-result-inner { display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:460px;text-align:center; }
+.gin-result-badge { display:grid;place-items:center;width:92px;height:92px;border:1px solid #37524f;border-radius:50%;background:#16241f;color:#8f9c98; }
+.gin-result-badge.is-win { border:0;background:linear-gradient(135deg,#d8b558,#f4dc9a);color:#18150c;box-shadow:0 0 40px #f0d48c4d; }
+.gin-result-inner h1 { color:#d4e0de;font-size:30px;font-weight:700; }
+.gin-result-sub { color:#8f9c98;font-size:13px; }
+.gin-result-layout { display:flex;flex-direction:column;gap:8px;width:100%;padding:0;list-style:none; }
+.gin-result-layout li { display:flex;justify-content:center;gap:6px; }
+.gin-result-layout span { min-width:44px;padding:7px 4px;border-radius:7px;background:#f7f4ec;color:#15201e;font-size:15px;font-weight:700; }
+.gin-result-layout span[data-suit=red] { color:#c0392b; }
+.gin-result-rewards { display:flex;flex-direction:column;gap:9px;width:100%;padding:16px 18px;border:1px solid #37524f;border-radius:16px;background:#0c1a20f2; }
+.gin-result-rewards>div { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+.gin-result-rewards dt { display:flex;align-items:center;gap:6px;color:#8f9c98;font-size:12px; }
+.gin-result-rewards dd { color:#edf4f2;font-size:15px;font-weight:700; }
+.gin-result-rewards>div:first-child dd { color:#f0d48c; }
+.gin-result-actions { display:flex;gap:10px;width:100%; }
+.gin-result-continue,.gin-result-exit { flex:1;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer; }
+.gin-result-continue { border:0;background:linear-gradient(90deg,#c9a544,#f0d48c);color:#18150c; }
+.gin-result-exit { border:1px solid #37524f;background:#16241f;color:#d4e0de; }
+
+@media(max-width:620px) {
+  .gin-result-inner h1 { font-size:24px; }
+  .gin-result-layout span { min-width:36px;font-size:13px; }
+  .gin-last-card>div>span { width:88px;height:124px;font-size:32px; }
+}

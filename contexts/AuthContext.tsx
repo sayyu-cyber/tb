@@ -12,7 +12,7 @@ import {
   updateProfile as updateFirebaseAuthProfile,
   User as FirebaseUser,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { User, PlayerStats } from "@/types";
 import { generatePlayerCode } from "@/lib/playerCode";
@@ -57,8 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let generation = 0;
+    let stopProfile: (() => void) | undefined;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       const current = ++generation;
+      stopProfile?.();
+      stopProfile = undefined;
       if (!firebaseUser) {
         setUser(null);
         setPlayerStats(null);
@@ -98,6 +101,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await setDoc(ref, { ...defaultStats, displayName, playerCode, createdAt: serverTimestamp() });
           if (current === generation) setPlayerStats({ ...defaultStats, playerCode });
         }
+        if (current !== generation) return;
+        // Match results and edits on another device should reach every HUD
+        // through the same player state, without a full-page reload.
+        stopProfile = onSnapshot(ref, snapshot => {
+          if (current !== generation) return;
+          if (!snapshot.exists()) { setProfileError(true); return; }
+          setPlayerStats(snapshot.data() as PlayerStats);
+          setProfileError(false);
+        }, () => {
+          if (current === generation) setProfileError(true);
+        });
       } catch (error) {
         console.error("Failed to load player profile:", error);
         if (current === generation) setProfileError(true);
@@ -105,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (current === generation) setProfileLoading(false);
       }
     });
-    return () => { generation++; unsubscribe(); };
+    return () => { generation++; stopProfile?.(); unsubscribe(); };
   }, [profileAttempt]);
 
   const signInWithGoogle = async () => {

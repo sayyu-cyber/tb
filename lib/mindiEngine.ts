@@ -1,18 +1,41 @@
 // lib/mindiEngine.ts
 //
-// Rules engine for Mindi (the Maldivian "Dihaeh" trick-taking game).
-// Documented source: pagat.com/national/maldives.html (research by Alex de
-// Voogt, The Playing-Card Vol. 37 No. 3, 2009) — "Dihaeh": 4 players, fixed
-// partnerships, 13 cards each from a standard 52-card pack, last card dealt
-// is trump and belongs to the dealer, tricks played following suit (trump if
-// unable), aim is to capture three Tens ("Mindi" cards) or seven tricks;
-// capturing all four Tens is "baga", capturing all thirteen tricks is
-// "hukunbunye". If neither team reaches 3 tens by the time all tricks are
-// played, whichever team holds more tricks (majority is always >= 7 of 13)
-// is the winner.
+// Rules engine for Mindi.
+//
+// These rules come from the game owner and are the authority for this app.
+// They differ from the published "Dihaeh" description on pagat.com, which an
+// earlier version of this file implemented — do not "correct" the engine back
+// toward that source.
+//
+// SETUP
+//   4 players, two fixed partnerships, partners sit opposite.
+//   13 cards each from a standard 52-card pack.
+//   Four cards are drawn face up, one per seat; highest card leads the first
+//   trick (drawForFirstPlayer).
+//   Ranking is standard: A high, then K Q J 10 9 ... 2.
+//
+// PLAY
+//   Follow the led suit if you hold it. Highest card of the led suit wins.
+//   The winner of a trick leads the next.
+//   Every hand is played out to all 13 tricks — there is no early finish.
+//
+// TRUMP
+//   There is NO trump at the start of a hand. The first time any player
+//   cannot follow the led suit, the suit they play instead becomes trump for
+//   the remainder of the hand. It takes effect immediately, so that card wins
+//   the trick it was played in unless a higher trump follows in the same
+//   trick. Trump beats any non-trump; only a higher trump beats a trump.
+//
+// WINNING — Tens ("Mindi" cards) decide it
+//   Most Tens wins. Trick count is ONLY consulted at 2-2, so three Tens beats
+//   one Ten even if the other team won every trick.
+//   All four Tens AND every trick  = "Haas Baga".
+//   All four Tens, not every trick = "Baga".
 //
 // This module is pure game logic — no React, no Firebase — so it can be
-// reused by AI matches, Pass & Play, and (later) real online matchmaking.
+// reused by AI matches, Pass & Play, and online matchmaking.
+
+import { cutForFirstPlay } from "./openingCut";
 
 export type Suit = "S" | "H" | "D" | "C";
 export type Rank = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
@@ -70,12 +93,74 @@ export interface TrickPlay {
   card: Card;
 }
 
+/** Public cards from the most recently completed trick, for table review. */
+export interface CompletedTrick {
+  plays: TrickPlay[];
+  winner: SeatIndex;
+  number: number;
+}
+
 export interface MindiDeal {
   hands: Record<SeatIndex, Card[]>;
-  trumpSuit: Suit;
-  trumpCard: Card;
+  /**
+   * NULL until trump is established during play.
+   *
+   * Trump is not dealt in this game. The first time any player cannot follow
+   * the led suit, whatever suit they play instead becomes trump for the rest
+   * of the hand. Until that happens there is no trump at all and the highest
+   * card of the led suit simply wins. See establishTrump().
+   */
+  trumpSuit: Suit | null;
   dealer: SeatIndex;
   leader: SeatIndex;
+}
+
+/**
+ * Four cards drawn face up, one per seat, to decide who leads the first
+ * trick — highest card starts. Returned as a full record so the UI can show
+ * the draw before the deal.
+ *
+ * Ties are broken by redrawing rather than by seat order, so the outcome
+ * never depends on where you happen to be sitting.
+ */
+export interface FirstPlayerDraw {
+  cards: Record<SeatIndex, Card>;
+  winner: SeatIndex;
+}
+
+/**
+ * Kept as Mindi's own name for the cut, but the implementation is shared with
+ * Gin Rummy in lib/openingCut.ts - both games open the same way, and neither
+ * engine should have to import the other. Mindi's card ranks are already
+ * 2..14 ace-high, so the shared cut card is the same shape as a Mindi card.
+ */
+export function drawForFirstPlayer(seats: SeatIndex[] = SEATS): FirstPlayerDraw {
+  const cut = cutForFirstPlay(seats);
+  return { cards: cut.cards as Record<SeatIndex, Card>, winner: cut.winner };
+}
+
+/**
+ * Draw for first play, then deal with that winner as the leader.
+ *
+ * Every mode should open a hand through here rather than calling
+ * dealMindiHand directly, so the draw can never be skipped and the leader can
+ * never silently fall back to "the dealer's left". Online callers store the
+ * returned `draw` in the match document so all clients replay one shared
+ * result instead of each generating their own.
+ */
+export interface MindiOpening {
+  draw: FirstPlayerDraw;
+  deal: MindiDeal;
+}
+
+export function openMindiHand(dealer: SeatIndex = 3): MindiOpening {
+  const draw = drawForFirstPlayer();
+  return { draw, deal: dealMindiHand(dealer, draw.winner) };
+}
+
+export function openMindiHandFFA1v1(dealer: 0 | 1 = 1): MindiOpening {
+  const draw = drawForFirstPlayer([0, 1]);
+  return { draw, deal: dealMindiHandFFA1v1(dealer, draw.winner as 0 | 1) };
 }
 
 function createShuffledDeck(): Card[] {
@@ -94,11 +179,14 @@ function createShuffledDeck(): Card[] {
 }
 
 /**
- * Deals a fresh hand. Dealing proceeds one card at a time, starting with the
- * seat to the dealer's left and going clockwise, for 13 rounds — so the
- * dealer receives the final (52nd) card of the deal, which sets trump.
+ * Deals a fresh hand: 13 cards each, one at a time, clockwise from the
+ * dealer's left.
+ *
+ * No trump is set here. `leader` is who plays the first card, and is decided
+ * by the four-card draw (drawForFirstPlayer) rather than by seat position,
+ * so pass the draw winner in.
  */
-export function dealMindiHand(dealer: SeatIndex): MindiDeal {
+export function dealMindiHand(dealer: SeatIndex, leader: SeatIndex = nextSeat(dealer)): MindiDeal {
   const deck = createShuffledDeck();
   const hands: Record<SeatIndex, Card[]> = { 0: [], 1: [], 2: [], 3: [] };
 
@@ -108,16 +196,7 @@ export function dealMindiHand(dealer: SeatIndex): MindiDeal {
     seat = nextSeat(seat);
   }
 
-  const dealerHand = hands[dealer];
-  const trumpCard = dealerHand[dealerHand.length - 1];
-
-  return {
-    hands,
-    trumpSuit: trumpCard.suit,
-    trumpCard,
-    dealer,
-    leader: nextSeat(dealer),
-  };
+  return { hands, trumpSuit: null, dealer, leader };
 }
 
 /**
@@ -128,10 +207,10 @@ export function dealMindiHand(dealer: SeatIndex): MindiDeal {
  * already are individual scoring for this mode. Seats 2 and 3 are simply
  * never dealt into or played from.
  *
- * 26 cards each (52 / 2), same one-at-a-time clockwise dealing rule as the
- * 4-player game, so the last card dealt (to the dealer) still sets trump.
+ * 26 cards each (52 / 2), same one-at-a-time dealing rule as the 4-player
+ * game. Trump is established in play here too, not dealt.
  */
-export function dealMindiHandFFA1v1(dealer: 0 | 1): MindiDeal {
+export function dealMindiHandFFA1v1(dealer: 0 | 1, leader: 0 | 1 = dealer === 0 ? 1 : 0): MindiDeal {
   const deck = createShuffledDeck();
   const hands: Record<SeatIndex, Card[]> = { 0: [], 1: [], 2: [], 3: [] };
 
@@ -142,16 +221,7 @@ export function dealMindiHandFFA1v1(dealer: 0 | 1): MindiDeal {
     seat = seat === 0 ? 1 : 0;
   }
 
-  const dealerHand = hands[dealer];
-  const trumpCard = dealerHand[dealerHand.length - 1];
-
-  return {
-    hands,
-    trumpSuit: trumpCard.suit,
-    trumpCard,
-    dealer,
-    leader: other,
-  };
+  return { hands, trumpSuit: null, dealer, leader };
 }
 
 /** Cards a seat may legally play, given the suit led (null if this seat is leading). */
@@ -161,16 +231,61 @@ export function getLegalPlays(hand: Card[], ledSuit: Suit | null): Card[] {
   return followers.length > 0 ? followers : hand;
 }
 
-/** Determines which seat wins a completed trick. */
-export function resolveTrick(plays: TrickPlay[], trumpSuit: Suit): SeatIndex {
+/**
+ * Trump after this card is played.
+ *
+ * Trump is established the first time anyone plays off-suit. No extra state
+ * is needed to detect "couldn't follow": getLegalPlays already forces you to
+ * follow the led suit whenever you hold it, so an off-suit card IS a renege
+ * by definition.
+ *
+ * Returns the existing trump unchanged once one is set — only the FIRST
+ * renege in a hand sets it, and it holds for the rest of the hand.
+ */
+export function establishTrump(
+  trumpSuit: Suit | null,
+  ledSuit: Suit | null,
+  card: Card
+): Suit | null {
+  if (trumpSuit) return trumpSuit;
+  if (!ledSuit) return null; // leading a trick can never set trump
+  return card.suit === ledSuit ? null : card.suit;
+}
+
+/**
+ * Which seat wins a completed trick.
+ *
+ * `trumpSuit` is null before any trump has been established, in which case
+ * the highest card of the led suit simply wins.
+ *
+ * Note the trump that was established BY this trick counts within it: the
+ * off-suit card that created the trump beats the led suit and takes the
+ * round, unless a later player in the same trick plays a higher trump. Pass
+ * the post-establishment trump in and this falls out naturally.
+ */
+export function resolveTrick(plays: TrickPlay[], trumpSuit: Suit | null): SeatIndex {
   const ledSuit = plays[0].card.suit;
-  const trumpPlays = plays.filter((p) => p.card.suit === trumpSuit);
+  const trumpPlays = trumpSuit ? plays.filter((p) => p.card.suit === trumpSuit) : [];
   const pool = trumpPlays.length > 0 ? trumpPlays : plays.filter((p) => p.card.suit === ledSuit);
   let best = pool[0];
   for (const p of pool) {
     if (p.card.rank > best.card.rank) best = p;
   }
   return best.seat;
+}
+
+/**
+ * Trump for a trick, derived from the trump before it plus any renege within
+ * it. Convenience for callers that resolve a whole trick at once.
+ */
+export function trumpAfterTrick(trumpSuit: Suit | null, plays: TrickPlay[]): Suit | null {
+  if (trumpSuit || plays.length === 0) return trumpSuit;
+  const ledSuit = plays[0].card.suit;
+  for (const play of plays) {
+    const next = establishTrump(null, ledSuit, play.card);
+    if (next) return next;
+  }
+  return null;
 }
 
 export function isTen(card: Card): boolean {
@@ -181,7 +296,12 @@ export interface HandOutcome {
   winner: Team;
   tensCaptured: Record<Team, number>;
   tricksWon: Record<Team, number>;
-  special: "baga" | "hukunbunye" | "forfeit" | null;
+  /**
+   * haasbaga — all four Tens AND every trick. The perfect hand.
+   * baga      — all four Tens, but not every trick.
+   * forfeit   — opponent left the match.
+   */
+  special: "haasbaga" | "baga" | "forfeit" | null;
 }
 
 /**
@@ -197,32 +317,33 @@ export function checkHandOutcome(
   tricksPlayed: number,
   totalTricks: number = 13
 ): HandOutcome | null {
-  const majority = Math.ceil((totalTricks + 1) / 2);
-  for (const team of ["A", "B"] as Team[]) {
-    if (tensCaptured[team] >= 3) {
-      return {
-        winner: team,
-        tensCaptured,
-        tricksWon,
-        special: tensCaptured[team] === 4 ? "baga" : null,
-      };
-    }
+  // Every hand runs to the last card. There is deliberately no early exit:
+  // a team three Tens up has all but won, but the fourth Ten and the trick
+  // count are still live, and those decide Baga, Haas Baga, and the 2-2
+  // tiebreak. Calling it early would erase results players care about.
+  if (tricksPlayed < totalTricks) return null;
+
+  const tensA = tensCaptured.A;
+  const tensB = tensCaptured.B;
+
+  // Tens decide it outright. Trick count is ONLY a tiebreak at 2-2, which is
+  // why three Tens beats one Ten even when the other team swept every trick.
+  let winner: Team;
+  if (tensA !== tensB) {
+    winner = tensA > tensB ? "A" : "B";
+  } else {
+    winner = tricksWon.A >= tricksWon.B ? "A" : "B";
   }
-  // No team has reached 3 tens yet. Once a team has an unassailable trick
-  // majority, or all tricks are played, decide by trick count.
-  for (const team of ["A", "B"] as Team[]) {
-    if (tricksWon[team] >= majority || tricksPlayed >= totalTricks) {
-      const other: Team = team === "A" ? "B" : "A";
-      const winner = tricksWon[team] >= tricksWon[other] ? team : other;
-      return {
-        winner,
-        tensCaptured,
-        tricksWon,
-        special: tricksWon[winner] === totalTricks ? "hukunbunye" : null,
-      };
-    }
-  }
-  return null;
+
+  const sweptTens = tensCaptured[winner] === 4;
+  const sweptTricks = tricksWon[winner] === totalTricks;
+
+  return {
+    winner,
+    tensCaptured,
+    tricksWon,
+    special: sweptTens ? (sweptTricks ? "haasbaga" : "baga") : null,
+  };
 }
 
 /**
@@ -233,7 +354,7 @@ export function checkHandOutcome(
 export function chooseBotPlay(
   hand: Card[],
   trickSoFar: TrickPlay[],
-  trumpSuit: Suit,
+  trumpSuit: Suit | null,
   botSeat: SeatIndex
 ): Card {
   const ledSuit = trickSoFar.length > 0 ? trickSoFar[0].card.suit : null;
@@ -241,14 +362,19 @@ export function chooseBotPlay(
   const sorted = [...legal].sort((a, b) => a.rank - b.rank);
 
   if (!ledSuit) {
-    // Leading: prefer a low non-trump card to conserve trumps.
+    // Leading: prefer a low non-trump card to conserve trumps. Before trump
+    // exists there is nothing to conserve, so this is just the lowest card.
     const nonTrump = sorted.filter((c) => c.suit !== trumpSuit);
     return nonTrump[0] || sorted[0];
   }
 
+  // A renege by this bot would SET trump, so evaluate the trick with the
+  // trump that would be in force rather than the one before the play.
+  const effectiveTrump = trumpAfterTrick(trumpSuit, trickSoFar);
+
   const partnerSeat = partnerOf(botSeat);
   const partnerCurrentlyWinning =
-    trickSoFar.length > 0 && resolveTrick(trickSoFar, trumpSuit) === partnerSeat;
+    trickSoFar.length > 0 && resolveTrick(trickSoFar, effectiveTrump) === partnerSeat;
   const tenInTrick = trickSoFar.some((p) => isTen(p.card));
 
   if (partnerCurrentlyWinning && !tenInTrick) {
@@ -256,11 +382,14 @@ export function chooseBotPlay(
     return sorted[0];
   }
 
-  // Find the cheapest legal card that would win the trick right now.
+  // Cheapest legal card that would win the trick right now. Each candidate
+  // is scored against the trump IT would create if it is a renege — playing
+  // off-suit while trump is unset both sets trump and wins the trick.
   let cheapestWinner: Card | null = null;
   for (const candidate of sorted) {
     const hypothetical = [...trickSoFar, { seat: botSeat, card: candidate }];
-    if (resolveTrick(hypothetical, trumpSuit) === botSeat) {
+    const candidateTrump = establishTrump(effectiveTrump, ledSuit, candidate) ?? effectiveTrump;
+    if (resolveTrick(hypothetical, candidateTrump) === botSeat) {
       cheapestWinner = candidate;
       break;
     }
@@ -269,6 +398,6 @@ export function chooseBotPlay(
   if (cheapestWinner) return cheapestWinner;
 
   // Can't win (or don't need to) — shed the lowest card, preferring to keep trumps.
-  const nonTrump = sorted.filter((c) => c.suit !== trumpSuit);
+  const nonTrump = sorted.filter((c) => c.suit !== effectiveTrump);
   return nonTrump[0] || sorted[0];
 }

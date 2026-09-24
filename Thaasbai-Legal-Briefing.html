@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thaasbai — Legal Briefing &amp; Question List</title>
+<style>
+  :root { --ink:#16181a; --soft:#4a5258; --rule:#d4d8db; --accent:#8a6a12; --flag:#8c2f28; }
+
+  * { box-sizing:border-box; }
+  body {
+    margin:0 auto; max-width:820px; padding:44px 40px 72px;
+    font-family:Georgia,"Times New Roman",serif; font-size:11.5pt; line-height:1.55;
+    color:var(--ink); background:#fff;
+  }
+
+  /* On-screen only helper */
+  .howto {
+    margin-bottom:34px; padding:14px 18px; border-left:4px solid var(--accent);
+    background:#fbf7ec; font-family:Arial,Helvetica,sans-serif; font-size:10pt; line-height:1.5;
+  }
+  .howto strong { color:var(--accent); }
+
+  header.doc { border-bottom:2px solid var(--ink); padding-bottom:14px; margin-bottom:26px; }
+  h1 { margin:0; font-size:23pt; line-height:1.15; letter-spacing:-0.2px; }
+  .sub { margin-top:7px; font-family:Arial,Helvetica,sans-serif; font-size:9.5pt; color:var(--soft); }
+
+  h2 {
+    margin:34px 0 12px; padding-bottom:5px; border-bottom:1px solid var(--rule);
+    font-size:14pt; line-height:1.25;
+  }
+  h3 { margin:20px 0 7px; font-size:11.5pt; }
+  p { margin:0 0 11px; }
+  .lead { color:var(--soft); }
+
+  .notice {
+    margin:0 0 26px; padding:14px 18px; border:1px solid var(--rule); background:#f7f8f8;
+    font-size:10.5pt;
+  }
+  .notice p:last-child { margin-bottom:0; }
+
+  .flag {
+    margin:16px 0; padding:12px 16px; border-left:4px solid var(--flag); background:#fdf4f3;
+    font-size:10.5pt;
+  }
+  .flag p:last-child { margin-bottom:0; }
+  .flag .label {
+    display:block; margin-bottom:5px; font-family:Arial,Helvetica,sans-serif;
+    font-size:8.5pt; font-weight:bold; letter-spacing:.9px; text-transform:uppercase; color:var(--flag);
+  }
+
+  .good {
+    margin:16px 0; padding:12px 16px; border-left:4px solid #2c6e49; background:#f2f8f4;
+    font-size:10.5pt;
+  }
+  .good p:last-child { margin-bottom:0; }
+  .good .label {
+    display:block; margin-bottom:5px; font-family:Arial,Helvetica,sans-serif;
+    font-size:8.5pt; font-weight:bold; letter-spacing:.9px; text-transform:uppercase; color:#2c6e49;
+  }
+
+  dl.facts { margin:0; }
+  dl.facts dt { margin-top:13px; font-weight:bold; font-size:10.5pt; }
+  dl.facts dd { margin:3px 0 0; padding-left:0; color:var(--soft); font-size:10.5pt; }
+
+  ul { margin:0 0 12px; padding-left:20px; }
+  li { margin-bottom:5px; }
+
+  /* Questions */
+  ol.q { margin:0; padding:0; list-style:none; counter-reset:qq; }
+  ol.q > li {
+    counter-increment:qq; position:relative;
+    margin:0 0 4px; padding:9px 0 9px 34px;
+    border-bottom:1px dotted var(--rule);
+    page-break-inside:avoid; break-inside:avoid;
+  }
+  ol.q > li::before {
+    content:counter(qq) "."; position:absolute; left:0; top:9px;
+    font-family:Arial,Helvetica,sans-serif; font-size:9.5pt; font-weight:bold; color:var(--accent);
+  }
+  ol.q > li .ans {
+    display:block; margin-top:16px; border-bottom:1px solid var(--rule); height:0;
+  }
+  ol.q > li.key { background:#fdf4f3; }
+  ol.q > li.key::before { color:var(--flag); }
+
+  table { width:100%; border-collapse:collapse; margin:14px 0 18px; font-size:10pt; }
+  th, td { border:1px solid var(--rule); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#f2f4f4; font-family:Arial,Helvetica,sans-serif; font-size:9pt; }
+
+  .src { font-size:9.5pt; color:var(--soft); }
+  .src li { margin-bottom:3px; }
+
+  footer.doc {
+    margin-top:38px; padding-top:14px; border-top:1px solid var(--rule);
+    font-family:Arial,Helvetica,sans-serif; font-size:8.5pt; color:var(--soft);
+  }
+
+  @media print {
+    body { max-width:none; padding:0; font-size:10.5pt; }
+    .howto { display:none; }
+    h2 { page-break-after:avoid; break-after:avoid; }
+    h3 { page-break-after:avoid; break-after:avoid; }
+    .pagebreak { page-break-before:always; break-before:page; }
+    a { color:inherit; text-decoration:none; }
+  }
+  @page { margin:18mm 16mm; }
+</style>
+</head>
+<body>
+
+<div class="howto">
+  <strong>To save as PDF:</strong> press Ctrl&nbsp;+&nbsp;P, then choose “Save as PDF” as the destination.
+  <strong>To edit in Word:</strong> open Word → File → Open → select this file; Word converts it, and you can then Save&nbsp;As <em>.docx</em>.
+  This box does not appear in print.
+</div>
+
+<header class="doc">
+  <h1>Thaasbai — Legal Briefing &amp; Question List</h1>
+  <p class="sub">Prepared September 2026 · For a first meeting with a Maldivian lawyer, before public launch</p>
+</header>
+
+<div class="notice">
+  <p><strong>What this is.</strong> A factual description of what the app actually does — verified against the source code rather than assumed — followed by the questions worth paying a lawyer to answer.</p>
+  <p><strong>What it is not.</strong> Legal advice. It was prepared by an AI assistant, not a lawyer. Statements below about Maldivian law come from public sources and should be treated as prompts for your lawyer to confirm or correct, not as settled fact.</p>
+  <p><strong>How to use it.</strong> Give your lawyer Section 1 first. Most of a first meeting is spent establishing facts; handing over an accurate product description up front turns the hour from discovery into advice. Space is left under each question to write the answer.</p>
+</div>
+
+<h2>1. What the app actually is</h2>
+<p class="lead"><em>Give this section to your lawyer before anything else.</em></p>
+
+<p><strong>Thaasbai</strong> is an online multiplayer card-game service offering <strong>Mindi</strong> (a traditional Maldivian card game) and <strong>Gin Rummy</strong>. It runs as a website today and is being prepared for release on the Google Play Store, and possibly later the Apple App Store.</p>
+
+<dl class="facts">
+  <dt>How play works</dt>
+  <dd>Players sign in with Google, with an email and password, or as an anonymous guest. They play against other real players online, against the computer, or locally pass-and-play. There are <em>casual</em> and <em>ranked</em> matches; ranked matches move a player’s trophy count and place them on a public leaderboard. There is a weekly tournament (“Weekend League”) and players can create private rooms to play with friends.</dd>
+
+  <dt>How money works</dt>
+  <dd>There is a virtual currency called <em>coins</em>, bought with real money in Maldivian Rufiyaa. In the current flow a player requests a top-up in the app, pays <strong>outside the app</strong>, and an administrator manually approves it, after which the coins appear. Coins buy cosmetic items (card and table designs, frames, emotes, banners), room cards, and VIP status. Coins are also earned free by playing — for wins, missions, achievements, and a weekly payout based on rank tier.</dd>
+
+  <dt>VIP</dt>
+  <dd>A paid tier granting a higher daily limit on ranked matches, exclusive cosmetics, a room card, and a profile badge.</dd>
+
+  <dt>Social features</dt>
+  <dd>Friends lists, <strong>private direct messages</strong> between players, and club chat rooms. Players choose their own display names. All of this is user-generated content that the operator stores.</dd>
+
+  <dt>Data collected</dt>
+  <dd>Email address, display name, profile photo, gameplay statistics, coin balance and transaction history, top-up requests including the Rufiyaa amount paid, direct messages, club chat messages, a “last seen” timestamp, and a short public player code.</dd>
+
+  <dt>Where data is stored</dt>
+  <dd>Google Firebase (accounts, database, server functions) and Netlify (website hosting) — both on servers <strong>outside the Maldives</strong>. Netlify keeps standard access logs including IP addresses.</dd>
+
+  <dt>Who operates it</dt>
+  <dd>Currently an individual. <strong>No registered business entity yet.</strong> Administrator access is controlled by a single email address hard-coded into the application.</dd>
+</dl>
+
+<div class="good">
+  <span class="label">Verified in the source code — the strongest facts in your favour</span>
+  <p><strong>Coins cannot be cashed out.</strong> There is no mechanism anywhere in the code to convert coins back into money or anything of monetary value.</p>
+  <p><strong>Coins cannot be transferred between players.</strong> No gifting, trading or sending.</p>
+  <p><strong>Players cannot wager coins against each other.</strong> No staking, no entry fee into a pot, no winner-takes-the-stakes mechanic.</p>
+  <p><strong>Winnings are funded by the operator, not by other players.</strong> One player winning does not reduce anyone else’s balance.</p>
+</div>
+
+<div class="flag">
+  <span class="label">The most urgent gap</span>
+  <p><strong>There is no age gate of any kind.</strong> The app never asks for a date of birth or age. Anyone — including a child — can create an account, including an anonymous guest account that identifies nobody. This sits alongside private messaging between unverified users.</p>
+</div>
+
+<h2 class="pagebreak">2. The central question</h2>
+
+<p style="font-size:12pt;"><strong>Does Thaasbai, as described in Section 1, constitute gambling under Maldivian law — and if not, what specifically must stay true for it to remain outside that definition?</strong></p>
+
+<h3>Why this is urgent right now</h3>
+<p>Public reporting indicates a bill was submitted to the People’s Majlis in 2026 proposing to amend the Penal Code to criminalise gambling — <strong>including online gambling</strong> — with penalties reported at up to <strong>four years’ imprisonment</strong>, and to criminalise operating a gambling establishment. Gambling is already prohibited under existing law.</p>
+<p>A product that is lawful today and unlawful in six months is a worse outcome than one adjusted before launch.</p>
+
+<h3>Facts that create risk — raise these yourself</h3>
+<ul>
+  <li>Real money does enter the system.</li>
+  <li><strong>Paying increases your opportunity to win rewards.</strong> VIP raises the daily cap on ranked matches, and ranked matches pay coins and trophies. Money therefore buys more <em>chances</em> at rewards, even though it does not buy the rewards directly.</li>
+  <li>The Weekend League is a competition with rewards attached.</li>
+  <li><strong>Mindi is culturally associated with money play in the Maldives.</strong> A regulator or member of the public may perceive an online Mindi service with a payment feature differently from a generic puzzle game — enforcement risk can diverge from the strict legal analysis.</li>
+</ul>
+
+<h3>Questions</h3>
+<ol class="q">
+  <li class="key">Under current Maldivian law, is this gambling? What is the actual legal test applied?<span class="ans"></span></li>
+  <li>Does the absence of cash-out settle the question, or is it only one factor?<span class="ans"></span></li>
+  <li class="key">Does the fact that paying buys <em>more chances</em> to earn rewards (via VIP match limits) change the analysis?<span class="ans"></span></li>
+  <li>Would a “winner takes the staked coins” mode — which does not exist today — cross the line? I want a clear red line to design around.<span class="ans"></span></li>
+  <li>Does player-to-player coin transfer cross the line? (Also not implemented.)<span class="ans"></span></li>
+  <li>Would a real-money prize tournament cross the line?<span class="ans"></span></li>
+  <li>Does the Weekend League, as a competition with coin prizes, raise any issue?<span class="ans"></span></li>
+  <li class="key">What is the status of the 2026 gambling bill, and how would it apply to this app?<span class="ans"></span></li>
+  <li>Is there any licensing, notification or approval regime for online games in the Maldives — and is there a regulator I should approach proactively?<span class="ans"></span></li>
+  <li>Does hosting on foreign servers change where the service is considered to operate?<span class="ans"></span></li>
+  <li class="key">If I am wrong about all of this, what is my personal criminal exposure as an individual operator, and does incorporating change that?<span class="ans"></span></li>
+</ol>
+
+<h2 class="pagebreak">3. Business structure, registration and tax</h2>
+<p class="lead">Public sources indicate a sole proprietorship can be registered online through the Ministry of Economic Development portal, is open only to Maldivian citizens aged 18 or over, costs around MVR 500 and runs for five years. Please confirm.</p>
+<ol class="q" start="12" style="counter-reset:qq 11;">
+  <li>Should I operate as a <strong>sole proprietorship</strong> or a <strong>limited liability company</strong>? Specifically: does a company meaningfully protect me personally if there is a dispute about the gambling question, or about a player’s money?<span class="ans"></span></li>
+  <li>Am I legally required to register a business before taking payment from the public at all, or only above a revenue threshold?<span class="ans"></span></li>
+  <li>Public sources mention registering with MIRA if average monthly gross revenue exceeds MVR 40,000, and a GST registration threshold of MVR 1 million in annual sales. Confirm both figures, which applies to me, and what I must do <em>before</em> crossing them.<span class="ans"></span></li>
+  <li>Is selling virtual in-game currency a <strong>taxable supply of services</strong> for GST? At what rate?<span class="ans"></span></li>
+  <li>From 1 July 2025 the Maldives reportedly applies destination-based GST to digital services. Does that affect me as a <em>domestic</em> supplier? Does it affect me if I later sell to players outside the Maldives?<span class="ans"></span></li>
+  <li>If players outside the Maldives buy coins, what changes — tax, licensing, or otherwise?<span class="ans"></span></li>
+  <li>Do I need a separate <strong>business bank account</strong>, and am I currently exposed by taking player payments into a personal account?<span class="ans"></span></li>
+  <li>What records must I keep of each top-up, and for how long?<span class="ans"></span></li>
+</ol>
+
+<h2>4. Taking money from players</h2>
+<ol class="q" style="counter-reset:qq 19;">
+  <li>Coins are a <strong>prepaid balance</strong>. Does holding prepaid customer value create any obligation — consumer protection, a duty to honour the balance, or anything resembling e-money regulation?<span class="ans"></span></li>
+  <li>What are my <strong>refund</strong> obligations? My drafted terms say coin purchases are final once credited. Is that enforceable here?<span class="ans"></span></li>
+  <li>If I shut the service down, what do I owe players holding unspent coins? Should the terms address this explicitly?<span class="ans"></span></li>
+  <li>VIP is a time-limited paid tier. Does it count as a <strong>subscription</strong>, bringing obligations such as renewal notices or cooling-off?<span class="ans"></span></li>
+  <li>The top-up flow settles <strong>outside the app</strong> and is approved manually by me. Is there any legal problem with that arrangement?<span class="ans"></span></li>
+  <li>Are there anti-money-laundering or know-your-customer obligations at any transaction volume? Is there a threshold at which I must start identifying customers?<span class="ans"></span></li>
+  <li>Am I required to issue a receipt or tax invoice for each purchase?<span class="ans"></span></li>
+</ol>
+
+<h2 class="pagebreak">5. Minors — the most urgent gap to close</h2>
+<div class="flag">
+  <p>The app currently collects <strong>no age information at all</strong>. Anyone can create an account, including anonymously. Concrete direction is needed here, not general guidance.</p>
+</div>
+<ol class="q" style="counter-reset:qq 26;">
+  <li>Is there a minimum age at which a person can enter a binding contract in the Maldives — and does accepting my terms constitute one?<span class="ans"></span></li>
+  <li class="key">Can a minor lawfully buy coins? If a 14-year-old’s parent demands a refund, what is my position?<span class="ans"></span></li>
+  <li class="key">Must I implement an age gate before launch? If so, what does a legally sufficient one look like — a self-declared date of birth, or something stronger?<span class="ans"></span></li>
+  <li>Does the answer change because this is a card game, given the cultural and religious sensitivity around card play and money?<span class="ans"></span></li>
+  <li>Do I need parental consent below a certain age, and what would satisfy that?<span class="ans"></span></li>
+  <li>What are my obligations regarding <strong>children’s personal data</strong> specifically?<span class="ans"></span></li>
+  <li class="key">The app has <strong>private direct messaging between users, with no age verification on either side</strong>. What is my liability exposure if an adult contacts a child through it, and what must I do to reduce it?<span class="ans"></span></li>
+</ol>
+
+<h2>6. Data protection and privacy</h2>
+<p class="lead">Public sources indicate a Privacy and Personal Data Protection Bill was released for consultation in 2023, proposing a Data Protection Authority and administrative fines, with an intended compliance date around January 2026. Current status needs confirming.</p>
+<ol class="q" style="counter-reset:qq 33;">
+  <li>Is there a data protection law <strong>in force</strong> in the Maldives today? If not, when — and what should I build for now?<span class="ans"></span></li>
+  <li>All player data sits on Google and Netlify servers <strong>outside the Maldives</strong>. Is that lawful now, and would it remain lawful under the proposed cross-border transfer rules?<span class="ans"></span></li>
+  <li>Do I need a written processing agreement with Google or Netlify, or does their standard contract suffice?<span class="ans"></span></li>
+  <li>Please review my drafted Privacy Policy. Is it adequate, and what is missing?<span class="ans"></span></li>
+  <li>Am I obliged to provide <strong>data export</strong> and <strong>account deletion</strong> on request? My policy promises both by email — is a manual process acceptable, or must it be automated?<span class="ans"></span></li>
+  <li>I store the <strong>content of private messages between users</strong>. Any special obligation attached to that?<span class="ans"></span></li>
+  <li>If there is a data breach, whom must I notify, how fast, and in what form?<span class="ans"></span></li>
+  <li>Do I need a written retention policy, and is there a maximum period I may keep inactive account data?<span class="ans"></span></li>
+</ol>
+
+<h2 class="pagebreak">7. User-generated content and moderation</h2>
+<p class="lead">The app carries private messages, club chat and self-chosen display names. There is <strong>no reporting or blocking mechanism built yet</strong>.</p>
+<ol class="q" style="counter-reset:qq 41;">
+  <li>Am I legally responsible for what users say to each other on my service?<span class="ans"></span></li>
+  <li>Does that change once I actively moderate — does moderating create a duty I do not currently have?<span class="ans"></span></li>
+  <li>What must I do on receiving a complaint about a user, and how quickly?<span class="ans"></span></li>
+  <li>Must I retain message records for law enforcement? For how long?<span class="ans"></span></li>
+  <li>If police request a user’s data or messages, what am I required to hand over, and what should I refuse without a court order?<span class="ans"></span></li>
+  <li>Is there any content-licensing or online-content registration requirement for an interactive service in the Maldives?<span class="ans"></span></li>
+</ol>
+
+<h2>8. App store distribution and foreign exposure</h2>
+<ol class="q" style="counter-reset:qq 47;">
+  <li>Publishing on Google Play means contracting with a foreign company under foreign law, and makes the app reachable worldwide. What exposure does that create?<span class="ans"></span></li>
+  <li>Both stores require digital goods to be sold through <em>their</em> billing systems, taking 15–30%. If I instead sell coins only on my website, am I exposed contractually, legally, or for tax?<span class="ans"></span></li>
+  <li>If a player abroad plays and pays, which country’s law governs a dispute? My terms specify Maldivian law — is that enforceable?<span class="ans"></span></li>
+  <li>Should I <strong>geo-restrict</strong> the app to the Maldives at launch to limit exposure, and is that advisable?<span class="ans"></span></li>
+</ol>
+
+<h2>9. Intellectual property and ownership</h2>
+<ol class="q" style="counter-reset:qq 51;">
+  <li><strong>Mindi</strong> is a traditional game. Can I use the name commercially? Can anyone claim rights over it?<span class="ans"></span></li>
+  <li>Should I register <strong>“Thaasbai”</strong> as a trademark in the Maldives? What does that cost and take?<span class="ans"></span></li>
+  <li>A substantial part of this codebase was <strong>written by AI assistants</strong> working from my direction. Does that affect who owns the code, or my ability to assert rights over it?<span class="ans"></span></li>
+  <li>The app uses third-party open-source libraries. Any licence obligations I must satisfy before commercial release?<span class="ans"></span></li>
+  <li>Player-uploaded profile photos and chosen display names: do I need a licence from users to display them, and does my terms wording cover it?<span class="ans"></span></li>
+</ol>
+
+<h2>10. Operational and contingency</h2>
+<ol class="q" style="counter-reset:qq 56;">
+  <li>Please review my drafted <strong>Terms of Service</strong>. Are the liability limits and the “coins have no cash value” clause enforceable here?<span class="ans"></span></li>
+  <li>My terms let me remove coins and items obtained through cheating. Is that enforceable, and how should it be worded?<span class="ans"></span></li>
+  <li>What insurance, if any, is worth carrying?<span class="ans"></span></li>
+  <li>If I later take on a partner or investor, what should I put in place <em>now</em> to avoid problems then?<span class="ans"></span></li>
+  <li class="key">What is the single biggest legal risk you see in this product, and what would you do about it first?<span class="ans"></span></li>
+</ol>
+
+<h2 class="pagebreak">11. Bring these to the meeting</h2>
+<ul>
+  <li>This document.</li>
+  <li>The drafted <strong>Privacy Policy</strong> and <strong>Terms of Service</strong> (printed, or open live at <em>/privacy</em> and <em>/terms</em>).</li>
+  <li>A live walkthrough of the app on a phone or laptop — particularly the <strong>shop</strong>, the <strong>coin top-up flow</strong>, and a <strong>ranked match</strong>.</li>
+  <li>The current coin pack price list in Rufiyaa.</li>
+  <li>A note of any revenue taken so far, if any.</li>
+</ul>
+
+<h2>12. Decisions to come back with</h2>
+<p class="lead">Engineering work currently waiting on these answers:</p>
+<table>
+  <thead><tr><th style="width:44%">Decision</th><th>What it blocks</th></tr></thead>
+  <tbody>
+    <tr><td>Is an age gate required, and what kind?</td><td>Must be built before store submission</td></tr>
+    <tr><td>Does VIP raising ranked-match limits create a problem?</td><td>May require redesigning the VIP benefit</td></tr>
+    <tr><td>Store billing, or web-only coin sales?</td><td>Monetisation implementation</td></tr>
+    <tr><td>Sole proprietorship or company?</td><td>Play Console registration — a business account also skips Play’s 12-tester requirement</td></tr>
+    <tr><td>Business bank account required?</td><td>Payment flow</td></tr>
+    <tr><td>Geo-restrict to the Maldives at launch?</td><td>Store listing configuration</td></tr>
+    <tr><td>Operator name and contact email</td><td>Placeholders in the privacy policy and terms <strong>must</strong> be filled before submission</td></tr>
+    <tr><td>Data export / deletion — manual or automated?</td><td>Feature work</td></tr>
+    <tr><td>Moderation and reporting obligations</td><td>Abuse reporting build</td></tr>
+  </tbody>
+</table>
+
+<h2>Sources consulted</h2>
+<p class="lead">These informed the questions above and are worth your lawyer correcting where wrong.</p>
+<ul class="src">
+  <li>Bill proposes criminalizing gambling with jail sentences — Edition.mv (edition.mv/news/47216)</li>
+  <li>Maldives Penal Code, Law No. 6/2014 — University of Pennsylvania Law archive</li>
+  <li>Privacy and Personal Data Protection Bill, Maldives — regulations.ai</li>
+  <li>Data Protection Bill introduced to regulate use of personal information — MV+ (plus.mv)</li>
+  <li>How to register a sole proprietorship in the Maldives — Achievia Consultancy (achievia.mv)</li>
+  <li>GST registration requirements — Maldives Inland Revenue Authority (mira.gov.mv)</li>
+  <li>Maldives GST guide for digital businesses — Quaderno</li>
+</ul>
+
+<footer class="doc">
+  Thaasbai — Legal Briefing &amp; Question List · Prepared September 2026 · Not legal advice · Prepared by an AI assistant from the application source code and public sources
+</footer>
+
+</body>
+</html>

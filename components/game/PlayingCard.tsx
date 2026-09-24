@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SPRING_SOFT } from "@/lib/motion";
 
@@ -78,7 +78,7 @@ export const CARD_BACK_STYLES: Record<string, { base: string; weave: string; rin
   cb_marble: { base: "#D9D9DC", weave: "#00000022", ring: "#00000033" },
 };
 
-const CARD_BACK_MARKS: Record<string, string> = {
+export const CARD_BACK_MARKS: Record<string, string> = {
   cb_default: "T",
   cb_maldives: "◇",
   cb_ocean: "≈",
@@ -117,6 +117,7 @@ export interface PlayingCardProps {
    *  board instead of the hand instance vanishing while an unrelated
    *  element fades in at the well. */
   layoutId?: string;
+  dimensional?: boolean;
 }
 
 export function PlayingCard({
@@ -131,7 +132,9 @@ export function PlayingCard({
   className,
   label,
   layoutId,
+  dimensional = false,
 }: PlayingCardProps) {
+  const reducedMotion = useReducedMotion();
   const s = SIZES[size];
   const red = isRedSuit(suit);
   const glyph = SUIT_GLYPH[suit];
@@ -179,8 +182,8 @@ export function PlayingCard({
         ? {
             onClick,
             type: "button" as const,
-            whileHover: interactive ? { y: -8 } : undefined,
-            whileTap: interactive ? { scale: 0.97 } : undefined,
+            whileHover: interactive && !reducedMotion ? (dimensional ? { y:-12, scale:1.03, rotateX:6 } : { y: -8 }) : undefined,
+            whileTap: interactive && !reducedMotion ? { scale: 0.97 } : undefined,
             "aria-label": label ?? `${rank} of ${suit}`,
           }
         : { "aria-label": label ?? `${rank} of ${suit}`, role: "img" })}
