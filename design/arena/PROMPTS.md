@@ -1,0 +1,137 @@
+# Prompts for the Arena app screens
+
+Use them in this order:
+
+1. **Claude, phase 0.** Paste prompt 1 into the Thaasbai project session in Claude. Wait until it reports that phase 0 is on `main`.
+2. **Both, in parallel.** Paste prompt 2 into ChatGPT (Codex), and reply `start phase 1` to Claude.
+3. **Reviews.** When both have finished, run prompt 3 in Claude and prompt 4 in ChatGPT. Send each list of problems back to the agent that owns the code.
+4. **Merge.** Run prompt 5 in Claude, then push `main` yourself.
+
+The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md`.
+
+## 1. Claude: phase 0, then phase 1
+
+```text
+Finish what you're doing first, then read this.
+
+We're moving the Arena look from the card tables to the rest of the app. Everything you need is in design/arena/ (it's untracked right now):
+- APP_SCREENS.md: the blue edition palette (#00BCC8 replaces violet on app screens; the tables stay violet), the shell spec, shared pieces, the board → route → files → screenshot table, and 11 code issues.
+- WORKSPLIT.md: who owns which files. You are "Claude". ChatGPT (Codex) builds the other half at the same time in its own worktree, C:\Users\Sayyu\thaasbai-codex, so stay strictly inside your own file list.
+- screens/app/*.jpg are the pixel references. boards/<Board>.dc.html hold the exact values. Their {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime: read them, don't copy them. app-reference.css is the shared CSS to port.
+Read both .md files in full, and look at every screenshot for your screens, before you write code.
+
+PHASE 0 (on main)
+1. Finish, check and commit the table-port work that's still uncommitted (about 52 files). Run npm run verify and the check scripts it touches (check-mindi-ui, check-gin-ui, check-gameplay-ui, check-arena-gameplay). Don't commit throwaway screenshots in artifacts/.
+2. Commit design/ on its own: "Add Arena design references".
+3. Build the shared layer exactly as WORKSPLIT.md "Phase 0" lists it, and commit it as "Arena foundation: …".
+4. Phase 0 is done when npm run verify and node scripts/check-shell-ui.cjs pass (dev server on 127.0.0.1:3000). Then STOP and tell me, listing the shared components and CSS classes you made, so I can start ChatGPT.
+
+PHASE 1 (when I say "start phase 1")
+- git switch -c arena/claude-screens
+- Build your screens: Home, Profile, Inventory (plus Collection and Room Cards), Shop (all four tabs, the buy dialog and the not-enough-coins state), VIP Pass + coin packs, Daily rewards and Missions.
+- Every screen must pass WORKSPLIT.md "How every screen is checked":
+  - It matches its reference at 1440×900 and still works at 1280, at 1920 and on the 844×390 phone.
+  - It passes npm run verify and its check-*-ui script.
+  - It meets the accessibility list.
+  - It uses real data and strings from the code, never the boards' sample names and numbers.
+- Commit each screen on its own as "Arena: <Screen>", naming the reference it matches.
+- Fix code issues 3, 4, 5, 6, 7 and 11 from APP_SCREENS.md. For 1 (VIP activates for free) and 2 (weekly rank rewards), write up what you'd change and ask me first.
+- If I pass on a "Needs from Claude" request from ChatGPT, do it on your branch and tell me when it's in.
+
+RULES
+- Never push to GitHub (pushing main deploys to Netlify) and never run firebase deploy. I push after the review.
+- Don't touch C:\Users\Sayyu\thaasbai-codex or the arena/codex-screens branch.
+- Stage files by path, not with git add -A.
+- When you finish phase 1, give me a summary: screens done, checks run and their results, code issues fixed, anything that doesn't match its reference and why, and your questions for me.
+```
+
+## 2. ChatGPT (Codex): phase 1, after Claude reports phase 0 is done
+
+```text
+You're working on Thaasbai, a Next.js 14 card-game web app (Mindi and Gin Rummy) in C:\Users\Sayyu\thaasbai. Claude works in that folder at the same time, so you'll work in your own git worktree and never edit files in C:\Users\Sayyu\thaasbai.
+
+SETUP
+1. In C:\Users\Sayyu\thaasbai, run git log main --oneline -5 and check it shows an "Arena foundation:" commit. If it doesn't, stop and tell me.
+2. Create your worktree, and from then on work only there:
+   cd C:\Users\Sayyu\thaasbai
+   git worktree add ..\thaasbai-codex -b arena/codex-screens main
+   cd ..\thaasbai-codex
+   copy ..\thaasbai\.env.local .env.local
+   npm ci
+3. Run your dev server on port 3001, because Claude uses 3000: npm run dev -- -p 3001
+
+READ FIRST
+- Read design/arena/WORKSPLIT.md (you are "ChatGPT") and design/arena/APP_SCREENS.md, in full.
+- The references for your screens are design/arena/screens/app/*.jpg. If you can't view images, work from design/arena/boards/<Board>.dc.html: its <style> block and markup are the design. Its {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime, so read them for structure and don't copy them.
+- Also read the shared layer Claude built on main: styles/arena-app.css, components/arena/*, and the restyled sidebar and TopBar.
+
+YOUR SCREENS
+Build Friends, Messages, Clubs, Leaderboard, Achievements, Weekend League (/tournament), Hall of Fame and Settings. Also fix code issues 8, 9 and 10 in APP_SCREENS.md.
+- Build on components/arena/* and the arena-app.css classes.
+- Put your CSS in the two stylesheets that are already imported: styles/arena-social.css (Friends, Messages, Clubs, Settings) and styles/arena-compete.css (Leaderboard, Achievements, Weekend League, Hall of Fame).
+- Every screen must pass WORKSPLIT.md "How every screen is checked":
+  - It matches its reference at 1440×900 and still works at 1280, at 1920 and on the 844×390 phone.
+  - It passes npm run verify.
+  - It meets the accessibility list.
+  - It uses real data and strings from the code, never the boards' sample names and numbers.
+- Make the check scripts you own (check-friends-ui, check-clubs-ui, check-settings-ui and any new ones) read the base URL from process.env.CHECK_BASE_URL, defaulting to http://127.0.0.1:3000. Run them in PowerShell:
+  $env:CHECK_BASE_URL='http://127.0.0.1:3001'; node scripts/check-friends-ui.cjs
+- Commit each screen on its own on arena/codex-screens as "Arena: <Screen>", naming the reference it matches.
+
+RULES
+- Edit only the files WORKSPLIT.md gives to ChatGPT.
+- Don't edit lib/i18n.ts, contexts/, data/, constants/, app/layout.tsx, the shell, components/arena/*, or the existing fields of shared hooks. If you need a change there, build a local version inside your own folders and list it under "Needs from Claude".
+- Never push or merge, never switch branches or commit in C:\Users\Sayyu\thaasbai, and never run firebase deploy.
+- When you finish, give me a summary:
+  - screens done
+  - checks run and their results
+  - code issues fixed
+  - "Needs from Claude"
+  - any new hard-coded English strings
+  - anything that doesn't match its reference, and why
+```
+
+## 3. Claude reviews ChatGPT's branch
+
+```text
+Phase 2 of design/arena/WORKSPLIT.md: review ChatGPT's branch arena/codex-screens, which is checked out in C:\Users\Sayyu\thaasbai-codex. This is a review only: don't edit or commit anything there.
+1. Run git diff main...arena/codex-screens --stat, and flag every changed file that isn't on ChatGPT's list in WORKSPLIT.md.
+2. In C:\Users\Sayyu\thaasbai-codex, with ChatGPT's dev server stopped:
+   - run npm run verify
+   - run npm run dev -- -p 3001
+   - run its check scripts with CHECK_BASE_URL=http://127.0.0.1:3001
+3. Compare each of its screens with design/arena/screens/app/*.jpg at 1440×900, 1280, 1920 and 844×390: layout, colours, type, states and copy. Check the contrast, the focus rings and reduced motion, and check that it uses real data rather than the boards' sample data.
+4. Check the fixes for code issues 8, 9 and 10, and go through its "Needs from Claude" list.
+Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
+```
+
+## 4. ChatGPT reviews Claude's branch
+
+```text
+Phase 2 of design/arena/WORKSPLIT.md: review Claude's branch arena/claude-screens. This is a review only: don't edit, commit or switch branches in any existing folder.
+1. From C:\Users\Sayyu\thaasbai-codex, run git diff main...arena/claude-screens --stat. Flag every changed file outside Claude's list, and any change to ChatGPT's files.
+2. Claude's folder has that branch checked out, so make a temporary review copy instead:
+   git worktree add --detach ..\thaasbai-review arena/claude-screens
+   cd ..\thaasbai-review
+   copy ..\thaasbai\.env.local .env.local
+   npm ci
+   Then run npm run verify, and npm run dev -- -p 3002. Claude's check scripts assume port 3000, so skip them; Claude has already run them.
+3. Compare each of Claude's screens (Home, Profile, Inventory, Collection, Room Cards, Shop, VIP, Rewards, Missions) with design/arena/screens/app/*.jpg at 1440×900, 1280, 1920 and 844×390. Check the contrast, the focus rings, reduced motion and real data.
+4. Check the fixes for code issues 3–7 and 11. Confirm that nothing changed how VIP is paid for and nothing was deployed.
+5. Stop the server and remove the copy: git worktree remove ..\thaasbai-review
+Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
+```
+
+## 5. Claude merges
+
+```text
+Both reviews are done and fixed. Merge as design/arena/WORKSPLIT.md phase 2 says, in C:\Users\Sayyu\thaasbai:
+1. git switch main
+   git merge --no-ff arena/claude-screens
+   npm run verify
+2. git merge --no-ff arena/codex-screens
+   Resolve any conflicts so that both sides keep their intent. Then run npm run verify and every check-*-ui script.
+3. If ChatGPT built local stand-ins for things on its "Needs from Claude" list, switch them to the shared pieces in a separate commit.
+4. Remove the worktree: git worktree remove ..\thaasbai-codex
+Don't push. Tell me when main is ready and I'll push.
+```

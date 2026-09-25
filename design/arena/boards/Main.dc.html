@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mindi table, trick 9</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400..900;1,400..900&amp;family=Noto+Sans+Thaana:wght@600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#000}
+a{color:#C6FF33}a:hover{color:#E4FF8C}
+.ar{font-family:'Inter Tight',system-ui,sans-serif;color:#fff;isolation:isolate}
+.ar button{font-family:inherit}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.disp{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;line-height:.92}
+.chrome{background:linear-gradient(100deg,#8C8C97 0%,#FFFFFF 34%,#CFCFD8 52%,#FFFFFF 68%,#9A9AA6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lbl{display:inline-flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:#BEBECA;white-space:nowrap}
+.lbl.dash::before{content:"";width:22px;height:1.5px;background:currentColor}
+.num{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+/* arena */
+.bg{position:absolute;inset:0;background:radial-gradient(760px 420px at 50% 50%,rgba(125,57,235,.42),rgba(125,57,235,0) 72%),radial-gradient(1200px 700px at 50% 30%,#12101A 0%,#07070A 55%,#000 100%)}
+.bigword{position:absolute;left:0;right:0;top:-8px;text-align:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:300px;line-height:1;letter-spacing:.02em;color:rgba(0,0,0,0);-webkit-text-stroke:1.5px rgba(255,255,255,.07);white-space:nowrap;pointer-events:none}
+.beam{position:absolute;top:-60px;width:520px;height:760px;background:linear-gradient(180deg,rgba(165,123,255,.22),rgba(165,123,255,0) 80%);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);filter:blur(18px);pointer-events:none}
+@keyframes drift{0%{transform:translateY(0);opacity:0}15%{opacity:.8}85%{opacity:.6}100%{transform:translateY(-160px);opacity:0}}
+.mote{position:absolute;width:3px;height:3px;border-radius:50%;background:#C6FF33;box-shadow:0 0 8px 2px rgba(198,255,51,.6);animation:drift 7s linear infinite}
+.mote.v{background:#B18CFF;box-shadow:0 0 8px 2px rgba(177,140,255,.6)}
+
+/* table */
+.stage{position:absolute;inset:0;perspective:2200px;perspective-origin:50% 20%}
+.floor{position:absolute;left:-1280px;top:-518px;width:4000px;height:1900px;transform:rotateX(52deg) scale(.86) translateZ(-420px);background-image:radial-gradient(640px 400px at 50% 50%,rgba(0,0,0,.95),rgba(0,0,0,0) 75%),radial-gradient(900px 560px at 50% 50%,rgba(125,57,235,.55),rgba(125,57,235,0) 72%),linear-gradient(rgba(125,57,235,.5) 2px,rgba(0,0,0,0) 2px),linear-gradient(90deg,rgba(125,57,235,.5) 2px,rgba(0,0,0,0) 2px);background-size:auto,auto,110px 110px,110px 110px;background-position:center;-webkit-mask-image:radial-gradient(closest-side,#000 30%,rgba(0,0,0,0) 96%);mask-image:radial-gradient(closest-side,#000 30%,rgba(0,0,0,0) 96%)}
+.table{position:absolute;left:120px;top:62px;width:1200px;height:740px;transform-style:preserve-3d;transform:rotateX(52deg) scale(.86)}
+.apron{position:absolute;inset:0;border-radius:50%}
+.felt{position:absolute;left:68px;top:68px;width:1064px;height:604px;border-radius:50%;transform:translateZ(-5px);background-image:radial-gradient(50% 58% at 50% 46%,rgba(255,255,255,.16),rgba(255,255,255,0) 72%),radial-gradient(closest-side,rgba(0,0,0,0) 56%,rgba(0,0,0,.55) 100%),radial-gradient(circle,rgba(255,255,255,.07) 0 3.2px,rgba(255,255,255,0) 3.8px);background-size:auto,auto,26px 26px;box-shadow:inset 0 26px 50px rgba(0,0,0,.6)}
+.emblem{position:absolute;top:302px;display:flex;align-items:center;gap:16px;color:rgba(255,255,255,.13);white-space:nowrap}
+.emblem.l{left:128px;transform:translate(-50%,-50%) rotate(-90deg)}
+.emblem.r{left:936px;transform:translate(-50%,-50%) rotate(90deg)}
+.emblem svg{width:34px;height:34px;color:rgba(198,255,51,.32)}
+.emblem span{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;letter-spacing:.36em;margin-right:-.36em}
+.rail{position:absolute;inset:0;border-radius:50%;background:radial-gradient(260px 60px at 50% 3%,rgba(255,255,255,.24),rgba(255,255,255,0) 100%),radial-gradient(540px 70px at 50% 98%,rgba(177,140,255,.16),rgba(177,140,255,0) 100%),radial-gradient(600px 370px at 50% 50%,#0B0B0F 0 80%,#141419 83%,#2B2B35 89.5%,#131318 95%,#040405 100%);-webkit-mask-image:radial-gradient(532px 302px at 50% 50%,rgba(0,0,0,0) 99.6%,#000 100%);mask-image:radial-gradient(532px 302px at 50% 50%,rgba(0,0,0,0) 99.6%,#000 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2),inset 0 0 0 4px #000}
+.leds{position:absolute;left:0;top:0;width:1200px;height:740px;transform:translateZ(.6px);overflow:visible}
+@keyframes chase{to{stroke-dashoffset:-48}}
+.chase{animation:chase 2.4s linear infinite}
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+.face{position:absolute;left:0;top:0;width:7.2em;height:10.08em;border-radius:.62em;background:linear-gradient(160deg,#FFFFFF 0%,#F5F5F8 55%,#E7E7EE 100%);color:#0B0B0F;overflow:hidden}
+.face.red{color:#E0213A}
+.face.ten::before{content:"";position:absolute;inset:.2em;border-radius:.46em;padding:.13em;background:conic-gradient(from 200deg,#C6FF33,#7D39EB,#FFFFFF,#C6FF33,#7D39EB,#FFFFFF,#C6FF33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.face.ten::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(198,255,51,.2) 42%,rgba(125,57,235,.16) 52%,rgba(255,255,255,0) 64%);background-size:260% 100%;animation:holo 3.4s ease-in-out infinite;pointer-events:none}
+@keyframes holo{0%{background-position:130% 0}100%{background-position:-30% 0}}
+.idx{position:absolute;display:flex;flex-direction:column;align-items:center;gap:.12em;width:1.4em}
+.idx.tl{left:.3em;top:.4em}
+.idx.br{right:.3em;bottom:.4em;transform:rotate(180deg)}
+.idx b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.32em;line-height:.9;letter-spacing:-.05em}
+.idx svg{width:.72em;height:.72em}
+.pips{position:absolute;left:2.38em;right:2.38em;top:1.66em;bottom:1.66em}
+.pip{position:absolute;width:1.12em;height:1.12em;margin:-.56em 0 0 -.56em}
+.pip.flip{transform:rotate(180deg)}
+.ace{position:absolute;left:50%;top:50%;width:3.3em;height:3.3em;margin:-1.65em 0 0 -1.65em}
+.court{position:absolute;left:1.8em;right:1.8em;top:1.4em;bottom:1.4em;border-radius:.4em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1em;background:currentColor}
+.court::before{content:"";position:absolute;inset:.18em;border-radius:.28em;border:.06em solid rgba(255,255,255,.55)}
+.court b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2.9em;line-height:1;letter-spacing:-.04em;color:#fff}
+.court svg{width:1.05em;height:1.05em;color:#fff}
+.back{position:absolute;left:0;top:0;width:7.2em;height:10.08em;border-radius:.62em;background:#7D39EB;overflow:hidden}
+.back::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 20% 0%,rgba(255,255,255,.24),rgba(255,255,255,0) 55%),repeating-linear-gradient(45deg,rgba(0,0,0,.26) 0 .1em,rgba(0,0,0,0) .1em .62em),repeating-linear-gradient(-45deg,rgba(0,0,0,.26) 0 .1em,rgba(0,0,0,0) .1em .62em)}
+.back::after{content:"";position:absolute;inset:.34em;border-radius:.4em;box-shadow:inset 0 0 0 .08em #fff,inset 0 0 0 .22em #7D39EB,inset 0 0 0 .3em #0B0B0F}
+.back i{position:absolute;left:50%;top:50%;width:3em;height:3em;margin:-1.5em 0 0 -1.5em;border-radius:.7em;transform:rotate(45deg);background:#0B0B0F;box-shadow:0 0 0 .08em #C6FF33;display:flex;align-items:center;justify-content:center;z-index:1}
+.back i svg{width:1.5em;height:1.5em;color:#C6FF33;transform:rotate(-45deg)}
+
+/* cards on the felt */
+.tc{position:absolute;width:108px;height:151px;font-size:15px;transform:translateZ(-4px) rotate(var(--rot));transform-style:preserve-3d}
+.tc .face{box-shadow:0 1px 0 #D5D5DE,0 2px 0 #B5B5C2,0 16px 20px -6px rgba(0,0,0,.7)}
+.tc.win .face{box-shadow:0 1px 0 #D5D5DE,0 2px 0 #B5B5C2,0 0 0 4px #C6FF33,0 0 40px 10px rgba(198,255,51,.45)}
+@keyframes landS{0%{transform:translate3d(0,330px,300px) rotateX(-48deg) rotate(-8deg);opacity:0}14%{opacity:1}100%{transform:translateZ(-4px) rotate(var(--rot));opacity:1}}
+@keyframes landW{0%{transform:translate3d(-400px,30px,240px) rotateX(-30deg) rotate(34deg);opacity:0}14%{opacity:1}100%{transform:translateZ(-4px) rotate(var(--rot));opacity:1}}
+@keyframes sweep{0%{transform:translateZ(-4px) rotate(var(--rot));opacity:1}100%{transform:translate3d(var(--sx),var(--sy),60px) rotate(0deg) scale(.72);opacity:0}}
+.tc.land-s{animation:landS .58s cubic-bezier(.2,.75,.25,1) both}
+.tc.land-w{animation:landW .58s cubic-bezier(.2,.75,.25,1) both}
+.tc.sweep{animation:sweep .62s cubic-bezier(.55,0,.35,1) both}
+.tc.sweep.d1{animation-delay:.05s}.tc.sweep.d2{animation-delay:.1s}.tc.sweep.d3{animation-delay:.15s}
+.tc.hide{opacity:0}
+@keyframes flyTen{0%{transform:translate(0px,0px) perspective(900px) rotateX(52deg) rotate(-2deg) scale(.86)}38%{transform:translate(calc(var(--dx) * .3),calc(var(--dy) * .3 - 110px)) perspective(900px) rotateX(8deg) rotate(-10deg) scale(.74)}100%{transform:translate(var(--dx),var(--dy)) perspective(900px) rotateX(0deg) rotate(0deg) scale(.278)}}
+.flyten{position:absolute;width:108px;height:151px;font-size:15px;z-index:60;animation:flyTen .95s cubic-bezier(.45,0,.2,1) both;pointer-events:none}
+.flyten .face{box-shadow:0 0 0 3px #C6FF33,0 0 36px 8px rgba(198,255,51,.5),0 20px 30px -10px rgba(0,0,0,.8)}
+.standee{position:absolute;left:0;top:0;height:30px;padding:0 12px 0 9px;display:flex;align-items:center;gap:6px;border-radius:8px;white-space:nowrap;background:#C6FF33;color:#0A0A0A;box-shadow:0 0 24px rgba(198,255,51,.55),0 10px 16px -8px rgba(0,0,0,.9);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;line-height:1;transform-origin:50% 100%;transform:translate3d(var(--x),var(--y),-4px) rotateX(-58deg)}
+.standee svg{width:15px;height:15px}
+@keyframes standUp{from{transform:translate3d(var(--x),var(--y),-4px) rotateX(0deg);opacity:0}to{transform:translate3d(var(--x),var(--y),-4px) rotateX(-58deg);opacity:1}}
+.standee{animation:standUp .5s cubic-bezier(.3,1.4,.5,1) both}
+
+/* player frames */
+.pf{position:absolute;display:flex;align-items:center;gap:12px;height:64px;padding:6px 18px 6px 6px;border-radius:14px;background:rgba(10,10,14,.92);border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 30px -16px rgba(0,0,0,.9)}
+.pf.turn{border-color:#C6FF33;box-shadow:0 0 0 4px rgba(198,255,51,.14),0 0 32px rgba(198,255,51,.22)}
+.av{position:relative;flex:none;width:52px;height:52px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#0A0A0A;background:linear-gradient(135deg,#E4FF8C 0%,#C6FF33 60%,#A5DD1A 100%)}
+.av.them{color:#fff;background:linear-gradient(135deg,#A873FF 0%,#7D39EB 60%,#5520B8 100%)}
+.ct{position:absolute;right:-8px;bottom:-8px;min-width:24px;height:24px;padding:0 6px;border-radius:7px;background:#fff;color:#000;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;line-height:24px;text-align:center;box-shadow:0 0 0 2px #000}
+.nm{display:flex;flex-direction:column;gap:5px}
+.nm > b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;line-height:1;text-transform:uppercase;letter-spacing:.04em}
+.nm > span{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;letter-spacing:.16em;text-transform:uppercase;color:#A4A4B2}
+.dot{width:7px;height:7px;border-radius:2px;background:#C6FF33;flex:none}
+.dot.them{background:#A57BFF}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(198,255,51,.6)}50%{box-shadow:0 0 0 6px rgba(198,255,51,0)}}
+.dot.live{animation:breathe 1.6s ease-in-out infinite}
+.fan{position:absolute;width:0;height:0}
+.fb{position:absolute;left:-25px;top:-74px;width:50.4px;height:70.6px;font-size:7px;transform-origin:50% 100%;transform:rotate(var(--a)) translateY(-6px);filter:drop-shadow(0 6px 6px rgba(0,0,0,.6))}
+
+/* HUD */
+.hud{position:absolute;border-radius:14px;background:linear-gradient(180deg,rgba(20,20,26,.94),rgba(9,9,12,.94));border:1px solid rgba(255,255,255,.1);box-shadow:0 22px 44px -20px rgba(0,0,0,.95)}
+.hud::before,.hud::after{content:"";position:absolute;width:16px;height:16px;border-style:solid;border-color:#C6FF33;pointer-events:none}
+.hud::before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-top-left-radius:14px}
+.hud::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-bottom-right-radius:14px}
+.mini{position:relative;flex:none;width:30px;height:42px;border-radius:6px;background:#fff;color:#0B0B0F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 2px 0 #9D9DAB,0 8px 12px -4px rgba(0,0,0,.8)}
+.mini::before{content:"";position:absolute;inset:0;border-radius:6px;padding:2px;background:conic-gradient(from 200deg,#C6FF33,#7D39EB,#FFFFFF,#C6FF33,#7D39EB,#FFFFFF,#C6FF33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.mini.red{color:#E0213A}
+.mini b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:-.06em}
+.mini svg{width:10px;height:10px}
+.mini.ghost{background:rgba(255,255,255,.04);color:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.mini.ghost::before{display:none}
+@keyframes pop{0%{transform:translateY(-26px) scale(1.5) rotate(-10deg);opacity:0}60%{transform:translateY(2px) scale(.96) rotate(1deg);opacity:1}100%{transform:none;opacity:1}}
+@keyframes shine{0%{background-position:160% 0}100%{background-position:-60% 0}}
+.mini.new{animation:pop .62s cubic-bezier(.3,1.5,.5,1) both}
+.mini.new::after{content:"";position:absolute;inset:0;border-radius:6px;background:linear-gradient(110deg,rgba(255,255,255,0) 35%,rgba(198,255,51,.9) 50%,rgba(255,255,255,0) 65%);background-size:250% 100%;animation:shine .9s .45s ease-out both}
+@keyframes tick{0%{transform:scale(1.6);color:#C6FF33}100%{transform:none}}
+.bump{display:inline-block;animation:tick .5s cubic-bezier(.3,1.5,.5,1) both}
+.hex{flex:none;width:66px;height:74px;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#A873FF 0%,#7D39EB 55%,#4A1CA3 100%)}
+.hex svg{width:32px;height:32px;color:#fff;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
+.hexwrap{position:relative;flex:none;width:66px;height:74px;filter:drop-shadow(0 0 16px rgba(125,57,235,.6))}
+
+/* controls */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:58px;padding:0 26px;border:0;border-radius:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;line-height:1;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;color:#0A0A0A;background:linear-gradient(180deg,#DDFF70 0%,#C6FF33 52%,#B4EE22 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(0,0,0,.14),0 6px 0 #6F9412,0 14px 30px -6px rgba(198,255,51,.4);transition:transform .18s cubic-bezier(.3,1.7,.5,1),box-shadow .18s ease-out}
+.btn::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(105deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 62%);background-size:260% 100%;background-position:130% 0;pointer-events:none;transition:background-position .7s ease}
+.btn:hover::after{background-position:-30% 0}
+.btn:active{transform:translateY(5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.14),0 1px 0 #6F9412,0 6px 14px -6px rgba(198,255,51,.4)}
+.btn:active,.ibtn:active{transition-duration:.09s;transition-timing-function:ease-out}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:6px}
+.btn:disabled{cursor:not-allowed;color:rgba(255,255,255,.45);background:#17171D;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 3px 0 #000;transform:translateY(3px)}
+.btn:disabled::after{display:none}
+.btn svg{width:19px;height:19px;flex:none}
+.btn.violet{color:#fff;background:linear-gradient(180deg,#965BFF 0%,#7D39EB 55%,#6A28D8 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.2),0 6px 0 #3E1685,0 14px 30px -6px rgba(125,57,235,.5)}
+.btn.violet:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 #3E1685,0 6px 14px -6px rgba(125,57,235,.5)}
+.btn.sm{height:48px;padding:0 18px;font-size:14px;border-radius:11px}
+.ibtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;padding:0;border:0;border-radius:12px;cursor:pointer;color:#fff;background:#121217;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 4px 0 #000;transition:transform .18s cubic-bezier(.3,1.7,.5,1),box-shadow .18s ease-out,color .15s}
+.ibtn:hover{color:#C6FF33;box-shadow:inset 0 0 0 1px rgba(198,255,51,.6),0 4px 0 #000}
+.ibtn:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 1px 0 #000}
+.ibtn:focus-visible{outline:2px solid #fff;outline-offset:5px}
+.ibtn svg{width:21px;height:21px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:#0B0B0E;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.seg button{height:44px;padding:0 16px;border:0;border-radius:10px;background:rgba(0,0,0,0);color:#A4A4B2;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.seg button[aria-pressed="true"]{color:#0A0A0A;background:#fff}
+.seg button:focus-visible{outline:2px solid #C6FF33;outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:7px;font-family:'Space Grotesk',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.chip.live{background:rgba(198,255,51,.12);color:#C6FF33;box-shadow:inset 0 0 0 1px rgba(198,255,51,.5)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.chip.live i{width:6px;height:6px;border-radius:50%;background:#C6FF33;animation:blink 1.4s ease-in-out infinite}
+
+/* hand */
+.hand{position:absolute;left:0;top:0;width:1440px;height:900px;perspective:1100px;perspective-origin:50% 20%;pointer-events:none}
+.hc{position:absolute;left:0;top:0;width:132px;height:185px;padding:0;border:0;background:none;border-radius:11px;font-size:18.333px;cursor:pointer;pointer-events:auto;transform-origin:50% 100%;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(9deg);transition:transform .45s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s}
+@keyframes handIn{from{translate:0 260px;opacity:0}to{translate:0 0;opacity:1}}
+.hc{animation:handIn .75s cubic-bezier(.2,.85,.25,1) backwards;animation-delay:calc(var(--i) * 70ms + 150ms)}
+.hc .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 4px 0 #8F8F9E,0 24px 30px -12px rgba(0,0,0,.85);transition:box-shadow .2s,filter .2s}
+.hc:hover:not(:disabled){translate:0 -16px}
+.hc.sel,.hc.sel:hover{translate:0 -36px}
+.hc.sel .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 4px 0 #8F8F9E,0 0 0 4px #C6FF33,0 0 36px 6px rgba(198,255,51,.5),0 30px 30px -12px rgba(0,0,0,.8)}
+.hc.no{cursor:not-allowed;translate:0 12px}
+.hc.no .face{filter:brightness(.5) saturate(.6)}
+.hc.wait{cursor:default}
+.hc.gone{opacity:0;translate:0 -90px;pointer-events:none}
+.hc:focus-visible{outline:none}
+.hc:focus-visible .face{box-shadow:0 0 0 3px #fff,0 24px 30px -12px rgba(0,0,0,.8)}
+.status{position:absolute;left:720px;top:590px;height:42px;padding:0 20px 0 14px;border-radius:10px;display:flex;align-items:center;gap:10px;transform:translateX(-50%);white-space:nowrap;background:rgba(8,8,11,.92);box-shadow:inset 3px 0 0 #C6FF33,inset 0 0 0 1px rgba(255,255,255,.12),0 12px 26px -12px rgba(0,0,0,.9);font-size:15px;font-weight:600;color:#fff}
+
+/* popovers */
+@keyframes rise{from{transform:translate(-50%,14px) scale(.97);opacity:0}to{transform:translate(-50%,0) scale(1);opacity:1}}
+.banner{left:720px;top:300px;width:560px;padding:30px 34px 32px;transform:translateX(-50%);animation:rise .45s cubic-bezier(.2,.9,.3,1.2) both;background:linear-gradient(180deg,rgba(22,22,28,.97),rgba(9,9,12,.97));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.last{right:36px;bottom:190px;width:376px;padding:20px 22px 22px;animation:fade .25s ease-out both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div class="ar" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #000">
+<svg class="sprite" aria-hidden="true">
+<defs>
+<symbol id="s-S" viewBox="0 0 100 100"><path fill="currentColor" d="M50 3C57 19 72 30 84 42C93 51 96 58 96 66C96 79 86 88 73 88C64 88 57 84 53.5 77C54.5 86 59 92 68 97H32C41 92 45.5 86 46.5 77C43 84 36 88 27 88C14 88 4 79 4 66C4 58 7 51 16 42C28 30 43 19 50 3Z"></path></symbol>
+<symbol id="s-H" viewBox="0 0 100 100"><path fill="currentColor" d="M50 95C41 83 25 70 14 57C7 48 4 41 4 32C4 17 15 7 29 7C38 7 45 12 50 20C55 12 62 7 71 7C85 7 96 17 96 32C96 41 93 48 86 57C75 70 59 83 50 95Z"></path></symbol>
+<symbol id="s-D" viewBox="0 0 100 100"><path fill="currentColor" d="M50 2C58 18 70 34 86 50C70 66 58 82 50 98C42 82 30 66 14 50C30 34 42 18 50 2Z"></path></symbol>
+<symbol id="s-C" viewBox="0 0 100 100"><path fill="currentColor" d="M50 5A20 20 0 0 1 67.5 34.6A20 20 0 1 1 55 67C56 80 60 89 68 97H32C40 89 44 80 45 67A20 20 0 1 1 32.5 34.6A20 20 0 0 1 50 5Z"></path></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7ZM5 21h14"></path></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7 7-7M19 12H5"></path></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"></path></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2V4ZM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7V4Z"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21 5h-7M10 5H3M21 12h-9M8 12H3M21 19h-5M12 19H3M14 3v4M8 10v4M16 17v4"></path></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5M12 7v5l3.5 2"></path></symbol>
+<symbol id="i-replay" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5"></path></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v11M7 9l5 5 5-5M5 20h14"></path></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path></symbol>
+</defs>
+</svg>
+
+<div class="bg"></div>
+<div class="bigword" aria-hidden="true">MINDI</div>
+<div class="beam" style="left: 60px; transform: rotate(-16deg)"></div>
+<div class="beam" style="left: 860px; transform: rotate(16deg)"></div>
+
+<div class="stage" aria-hidden="true">
+<div class="floor"></div>
+<div class="table">
+<div class="apron" style="transform: translateZ(-50px); background: #030305"></div>
+<div class="apron" style="transform: translateZ(-46px); background: #050508"></div>
+<div class="apron" style="transform: translateZ(-42px); background: #07070B"></div>
+<div class="apron" style="transform: translateZ(-38px); background: #09090E"></div>
+<div class="apron" style="transform: translateZ(-34px); background: #0B0B11"></div>
+<div class="apron" style="transform: translateZ(-30px); background: #0D0D14"></div>
+<div class="apron" style="transform: translateZ(-26px); background: #100F18"></div>
+<div class="apron" style="transform: translateZ(-22px); background: #13121C"></div>
+<div class="apron" style="transform: translateZ(-18px); background: #16151F"></div>
+<div class="apron" style="transform: translateZ(-14px); background: #1A1924"></div>
+<div class="apron" style="transform: translateZ(-11px); background: #3B1C78"></div>
+<div class="apron" style="transform: translateZ(-9px); background: #7D39EB"></div>
+<div class="apron" style="transform: translateZ(-7px); background: #1E1D28"></div>
+<div class="felt" style="background-color: {{felt}}">
+<div class="emblem l" aria-hidden="true"><svg><use href="#i-crown"></use></svg><span>THAASBAI</span></div><div class="emblem r" aria-hidden="true"><svg><use href="#i-crown"></use></svg><span>THAASBAI</span></div>
+</div>
+<div class="rail"></div>
+<svg class="leds" viewBox="0 0 1200 740">
+<defs><filter id="glow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="5"></feGaussianBlur></filter></defs>
+<ellipse cx="600" cy="370" rx="591" ry="361" fill="none" stroke="#FFFFFF" stroke-opacity=".16" stroke-width="1.5"></ellipse>
+<ellipse cx="600" cy="370" rx="565" ry="335" fill="none" stroke="#B18CFF" stroke-opacity=".75" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 22" class="chase"></ellipse>
+<ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#C6FF33" stroke-width="9" stroke-opacity=".7" filter="url(#glow)"></ellipse>
+<ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#DFFF85" stroke-width="3"></ellipse>
+</svg>
+<sc-for list="{{trick}}" as="t" hint-placeholder-count="2">
+<sc-if value="{{t.show}}" hint-placeholder-val="{{true}}">
+<div class="tc {{t.cls}}" style="left: {{t.x}}px; top: {{t.y}}px; --rot: {{t.rot}}deg; --sx: {{t.sx}}px; --sy: {{t.sy}}px">
+<div class="face {{t.c.tone}}">
+<div class="idx tl"><b>{{t.c.rank}}</b><svg><use href="#s-{{t.c.suit}}"></use></svg></div>
+<div class="idx br"><b>{{t.c.rank}}</b><svg><use href="#s-{{t.c.suit}}"></use></svg></div>
+<sc-if value="{{t.c.isPips}}" hint-placeholder-val="{{true}}"><div class="pips"><sc-for list="{{t.c.pips}}" as="p" hint-placeholder-count="4"><svg class="pip {{p.f}}" style="left: {{p.x}}%; top: {{p.y}}%"><use href="#s-{{t.c.suit}}"></use></svg></sc-for></div></sc-if>
+<sc-if value="{{t.c.isAce}}" hint-placeholder-val="{{false}}"><svg class="ace"><use href="#s-{{t.c.suit}}"></use></svg></sc-if>
+<sc-if value="{{t.c.isCourt}}" hint-placeholder-val="{{false}}"><div class="court"><b>{{t.c.rank}}</b><svg><use href="#s-{{t.c.suit}}"></use></svg></div></sc-if>
+</div>
+</div>
+</sc-if>
+</sc-for>
+<sc-if value="{{standee}}" hint-placeholder-val="{{true}}">
+<div class="standee" style="--x: 626px; --y: 120px"><svg aria-hidden="true"><use href="#i-crown"></use></svg>{{standeeText}}</div>
+</sc-if>
+</div>
+</div>
+
+<i class="mote" style="left: 230px; top: 640px; animation-delay: 0s"></i>
+<i class="mote v" style="left: 1180px; top: 600px; animation-delay: 1.4s"></i>
+<i class="mote" style="left: 1050px; top: 720px; animation-delay: 2.8s"></i>
+<i class="mote v" style="left: 330px; top: 760px; animation-delay: 4.1s"></i>
+<i class="mote" style="left: 1290px; top: 700px; animation-delay: 5.3s"></i>
+<i class="mote v" style="left: 150px; top: 560px; animation-delay: 3.4s"></i>
+
+<div class="fan" style="left: 720px; top: 178px">
+<div class="fb" style="--a: -12deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: -4deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 4deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 12deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+</div>
+<div class="pf" style="left: 720px; top: 176px; transform: translateX(-50%)">
+<div class="av">M<span class="ct">4</span></div>
+<div class="nm"><b>Mariyam</b><span><i class="dot"></i>Partner</span></div>
+</div>
+
+<div class="fan" style="left: 122px; top: 432px">
+<sc-for list="{{westFan}}" as="f" hint-placeholder-count="5"><div class="fb" style="--a: {{f.a}}deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div></sc-for>
+</div>
+<div class="pf" style="left: 36px; top: 430px">
+<div class="av them">I<span class="ct">{{westCount}}</span></div>
+<div class="nm"><b>Ibrahim</b><span><i class="dot them"></i>Opponent</span></div>
+</div>
+
+<div class="fan" style="left: 1310px; top: 432px">
+<div class="fb" style="--a: -12deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: -4deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 4deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 12deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+</div>
+<div class="pf" style="right: 36px; top: 430px">
+<div class="av them">S<span class="ct">4</span></div>
+<div class="nm"><b>Shifa</b><span><i class="dot them"></i>Opponent</span></div>
+</div>
+
+<header style="position: absolute; left: 36px; right: 36px; top: 26px; height: 56px; display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 18px">
+<button type="button" class="ibtn" aria-label="Leave game"><svg aria-hidden="true"><use href="#i-back"></use></svg></button>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 12px"><span class="disp chrome" style="font-size: 36px">Mindi</span><span lang="dv" dir="rtl" style="font-family: 'Noto Sans Thaana', sans-serif; font-size: 18px; font-weight: 700; color: #A57BFF">މިންޑި</span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span class="chip live"><i></i>Weekend League</span><span class="lbl">{{trickLabel}}</span></div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<button type="button" class="ibtn" aria-label="Mute sound"><svg aria-hidden="true"><use href="#i-sound"></use></svg></button>
+<button type="button" class="ibtn" aria-label="Rule book"><svg aria-hidden="true"><use href="#i-book"></use></svg></button>
+<button type="button" class="ibtn" aria-label="Game settings"><svg aria-hidden="true"><use href="#i-sliders"></use></svg></button>
+</div>
+</header>
+
+<section class="hud" aria-label="Score" style="left: 36px; top: 106px; width: 320px; padding: 16px 20px 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span class="lbl dash" style="color: #fff">Tens</span><span class="lbl">Tricks</span></div>
+<div style="display: flex; align-items: center; gap: 12px; height: 46px">
+<span style="width: 56px; display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .12em"><i class="dot"></i>US</span>
+<div style="flex-grow: 1; display: flex; gap: 6px">
+<sc-for list="{{usTens}}" as="m" hint-placeholder-count="2"><div class="mini {{m.cls}}"><b>10</b><svg><use href="#s-{{m.suit}}"></use></svg></div></sc-for>
+</div>
+<span class="num" style="width: 40px; text-align: right; font-size: 34px; line-height: 1; color: #C6FF33"><span class="{{usTrickCls}}">{{usTricks}}</span></span>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; height: 46px">
+<span style="width: 56px; display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .12em"><i class="dot them"></i>THEM</span>
+<div style="flex-grow: 1; display: flex; gap: 6px">
+<div class="mini red"><b>10</b><svg><use href="#s-H"></use></svg></div>
+</div>
+<span class="num" style="width: 40px; text-align: right; font-size: 34px; line-height: 1; color: #fff">3</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; height: 40px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.1)">
+<sc-if value="{{tenOut}}" hint-placeholder-val="{{true}}"><div class="mini ghost" style="width: 22px; height: 30px"><svg><use href="#s-S"></use></svg></div><span style="font-size: 13.5px; font-weight: 600; color: #BEBECA">One Ten still in play</span></sc-if>
+<sc-if value="{{allOut}}" hint-placeholder-val="{{false}}"><span style="font-size: 13.5px; font-weight: 700; color: #C6FF33">All four Tens taken · Us 3 to 1</span></sc-if>
+</div>
+</section>
+
+<section class="hud" aria-label="Trump" style="right: 36px; top: 106px; width: 320px; padding: 16px 20px; display: flex; align-items: center; gap: 18px">
+<div class="hexwrap"><div class="hex"><svg aria-hidden="true"><use href="#s-H"></use></svg></div></div>
+<div style="display: flex; flex-direction: column; gap: 7px">
+<span class="lbl dash">Trump</span>
+<span class="disp" style="font-size: 34px">Hearts</span>
+<span style="font-size: 13.5px; font-weight: 600; color: #BEBECA">Set by Ibrahim in trick 4</span>
+</div>
+</section>
+
+<div class="status" role="status"><sc-if value="{{turnNow}}" hint-placeholder-val="{{true}}"><i class="dot live"></i></sc-if>{{status}}</div>
+
+<section class="hand" aria-label="Your hand">
+<sc-for list="{{hand}}" as="h" hint-placeholder-count="5">
+<button type="button" class="hc {{h.cls}}" style="--x: {{h.x}}px; --y: {{h.y}}px; --r: {{h.r}}deg; --i: {{h.i}}; z-index: {{h.z}}" disabled="{{h.off}}" aria-pressed="{{h.sel}}" aria-label="{{h.c.label}}" onClick="{{h.pick}}">
+<span class="face {{h.c.tone}}">
+<span class="idx tl"><b>{{h.c.rank}}</b><svg aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></span>
+<span class="idx br"><b>{{h.c.rank}}</b><svg aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></span>
+<sc-if value="{{h.c.isPips}}" hint-placeholder-val="{{true}}"><span class="pips"><sc-for list="{{h.c.pips}}" as="p" hint-placeholder-count="4"><svg class="pip {{p.f}}" style="left: {{p.x}}%; top: {{p.y}}%" aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></sc-for></span></sc-if>
+<sc-if value="{{h.c.isAce}}" hint-placeholder-val="{{false}}"><svg class="ace" aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></sc-if>
+<sc-if value="{{h.c.isCourt}}" hint-placeholder-val="{{false}}"><span class="court"><b>{{h.c.rank}}</b><svg aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></span></sc-if>
+</span>
+</button>
+</sc-for>
+</section>
+
+<sc-if value="{{flyTen}}" hint-placeholder-val="{{false}}">
+<div class="flyten" style="left: 667px; top: 428px; --dx: -514px; --dy: -316px" aria-hidden="true">
+<div class="face blk ten">
+<div class="idx tl"><b>10</b><svg><use href="#s-S"></use></svg></div>
+<div class="idx br"><b>10</b><svg><use href="#s-S"></use></svg></div>
+<div class="pips">
+<svg class="pip" style="left: 0%; top: 0%"><use href="#s-S"></use></svg>
+<svg class="pip" style="left: 100%; top: 0%"><use href="#s-S"></use></svg>
+<svg class="pip" style="left: 50%; top: 16.7%"><use href="#s-S"></use></svg>
+<svg class="pip" style="left: 0%; top: 33.3%"><use href="#s-S"></use></svg>
+<svg class="pip" style="left: 100%; top: 33.3%"><use href="#s-S"></use></svg>
+<svg class="pip flip" style="left: 0%; top: 66.7%"><use href="#s-S"></use></svg>
+<svg class="pip flip" style="left: 100%; top: 66.7%"><use href="#s-S"></use></svg>
+<svg class="pip flip" style="left: 50%; top: 83.3%"><use href="#s-S"></use></svg>
+<svg class="pip flip" style="left: 0%; top: 100%"><use href="#s-S"></use></svg>
+<svg class="pip flip" style="left: 100%; top: 100%"><use href="#s-S"></use></svg>
+</div>
+</div>
+</div>
+</sc-if>
+
+<div class="pf {{youTurnCls}}" style="left: 36px; top: 800px">
+<div class="av">S<span class="ct">{{youCount}}</span></div>
+<div class="nm"><b>Sayyu</b><span><i class="dot"></i>{{youLine}}</span></div>
+</div>
+
+<div style="position: absolute; right: 36px; top: 722px; display: flex; align-items: center; gap: 14px">
+<button type="button" class="ibtn" aria-label="Last trick" aria-expanded="{{lastOpen}}" onClick="{{toggleLast}}"><svg aria-hidden="true"><use href="#i-history"></use></svg></button>
+<div class="seg" aria-label="Sort hand">
+<button type="button" aria-pressed="{{bySuit}}" onClick="{{sortSuit}}">Suit</button>
+<button type="button" aria-pressed="{{byRank}}" onClick="{{sortRank}}">Rank</button>
+</div>
+</div>
+<div style="position: absolute; right: 36px; top: 806px">
+<button type="button" class="btn" style="width: 250px" disabled="{{playOff}}" onClick="{{playSelected}}"><svg aria-hidden="true"><use href="#i-play"></use></svg>{{playLabel}}<sc-if value="{{playSuit}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" style="width: 17px; height: 17px"><use href="#s-{{playSuit}}"></use></svg></sc-if></button>
+</div>
+
+<sc-if value="{{lastOpen}}" hint-placeholder-val="{{false}}">
+<section class="hud last" aria-label="Last trick">
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="disp" style="font-size: 24px">Trick 8</span><span style="font-size: 13.5px; font-weight: 600; color: #BEBECA">Mariyam led and won it</span></div>
+<button type="button" class="ibtn" aria-label="Close last trick" onClick="{{toggleLast}}" style="width: 44px; height: 44px"><svg aria-hidden="true"><use href="#i-close"></use></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 9px"><div class="mini" style="width: 54px; height: 76px; box-shadow: 0 0 0 3px #C6FF33, 0 0 20px rgba(198,255,51,.4)"><b style="font-size: 21px">A</b><svg style="width: 16px; height: 16px"><use href="#s-S"></use></svg></div><span style="font-size: 12.5px; font-weight: 700; color: #C6FF33">Mariyam</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 9px"><div class="mini" style="width: 54px; height: 76px"><b style="font-size: 21px">8</b><svg style="width: 16px; height: 16px"><use href="#s-S"></use></svg></div><span style="font-size: 12.5px; font-weight: 600; color: #BEBECA">Shifa</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 9px"><div class="mini" style="width: 54px; height: 76px"><b style="font-size: 21px">2</b><svg style="width: 16px; height: 16px"><use href="#s-S"></use></svg></div><span style="font-size: 12.5px; font-weight: 600; color: #BEBECA">You</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 9px"><div class="mini" style="width: 54px; height: 76px"><b style="font-size: 21px">3</b><svg style="width: 16px; height: 16px"><use href="#s-S"></use></svg></div><span style="font-size: 12.5px; font-weight: 600; color: #BEBECA">Ibrahim</span></div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{done}}" hint-placeholder-val="{{false}}">
+<section class="hud banner" role="status">
+<span class="lbl dash" style="color: #C6FF33">{{doneKicker}}</span>
+<h2 class="disp chrome" style="margin: 14px 0 14px; font-size: 52px">{{doneTitle}}</h2>
+<p style="margin: 0 0 26px; font-size: 16px; line-height: 1.5; font-weight: 500; color: #D2D2DA; text-wrap: pretty">{{doneBody}}</p>
+<button type="button" class="btn violet sm" onClick="{{reset}}"><svg aria-hidden="true"><use href="#i-replay"></use></svg>Replay this trick</button>
+</section>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"skin":{"editor":"enum","options":["Neon Arena","Crimson Velvet","Sapphire Blue","Midnight Black"],"default":"Neon Arena"},"$preview":{"width":1440,"height":900}}'>
+const PIP = {2:[[50,0],[50,100,1]],3:[[50,0],[50,50],[50,100,1]],4:[[0,0],[100,0],[0,100,1],[100,100,1]],5:[[0,0],[100,0],[50,50],[0,100,1],[100,100,1]],6:[[0,0],[100,0],[0,50],[100,50],[0,100,1],[100,100,1]],7:[[0,0],[100,0],[50,25],[0,50],[100,50],[0,100,1],[100,100,1]],8:[[0,0],[100,0],[50,25],[0,50],[100,50],[50,75,1],[0,100,1],[100,100,1]],9:[[0,0],[100,0],[0,33.3],[100,33.3],[50,50],[0,66.7,1],[100,66.7,1],[0,100,1],[100,100,1]],10:[[0,0],[100,0],[50,16.7],[0,33.3],[100,33.3],[0,66.7,1],[100,66.7,1],[50,83.3,1],[0,100,1],[100,100,1]]};
+const VAL = {A:14,K:13,Q:12,J:11};
+const WORD = {A:'Ace',K:'King',Q:'Queen',J:'Jack'};
+const SUIT = {S:'spades',H:'hearts',D:'diamonds',C:'clubs'};
+const ORDER = {S:0,H:1,C:2,D:3};
+const FELT = {'Neon Arena':'#2E1468','Crimson Velvet':'#4A1119','Sapphire Blue':'#0E2C4E','Midnight Black':'#101214'};
+
+function card(rank, suit) {
+  const n = parseInt(rank, 10);
+  const red = suit === 'H' || suit === 'D';
+  return {
+    id: rank + suit, rank: rank, suit: suit, v: VAL[rank] || n,
+    tone: (red ? 'red' : 'blk') + (rank === '10' ? ' ten' : ''),
+    isAce: rank === 'A', isCourt: rank === 'J' || rank === 'Q' || rank === 'K', isPips: n >= 2 && n <= 10,
+    pips: (PIP[n] || []).map(function (p) { return { x: p[0], y: p[1], f: p[2] ? 'flip' : '' }; }),
+    label: (WORD[rank] || rank) + ' of ' + SUIT[suit]
+  };
+}
+
+// Trick 9 of 13. Trump is hearts (set by Ibrahim in trick 4).
+// Mariyam (North) won trick 8 with the A of spades, so she leads: K of spades.
+// Shifa (East) followed with the 4. Sayyu (South) must follow spades.
+const HAND = [card('6','S'), card('10','S'), card('Q','H'), card('3','C'), card('8','D')];
+const NORTH = card('K','S'), EAST = card('4','S'), WEST = card('9','S');
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { phase: 'turn', selected: null, played: null, sort: 'suit', last: false };
+    this.timers = [];
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  later(ms, fn) { this.timers.push(setTimeout(fn, ms)); }
+  play(id) {
+    if (this.state.phase !== 'turn') return;
+    this.setState({ phase: 'played', played: id, selected: null, last: false });
+    this.later(950, () => this.setState({ phase: 'west' }));
+    this.later(1900, () => this.setState({ phase: 'resolve' }));
+    this.later(3200, () => this.setState({ phase: 'sweep' }));
+    this.later(4250, () => this.setState({ phase: 'done' }));
+  }
+  reset() {
+    this.timers.forEach(clearTimeout);
+    this.timers = [];
+    this.setState({ phase: 'turn', selected: null, played: null, last: false });
+  }
+  renderVals() {
+    const s = this.state;
+    const ph = s.phase;
+    const yourTurn = ph === 'turn';
+    const tookTen = s.played === '10S';
+
+    // hand: fixed order for stable elements, slots from the chosen sort
+    const visible = HAND.filter(c => c.id !== s.played);
+    const sorted = visible.slice().sort((a, b) => s.sort === 'rank'
+      ? (a.v - b.v) || (ORDER[a.suit] - ORDER[b.suit])
+      : (ORDER[a.suit] - ORDER[b.suit]) || (a.v - b.v));
+    const n = sorted.length;
+    const hand = HAND.map(c => {
+      const gone = c.id === s.played;
+      const i = gone ? 2 : sorted.indexOf(c);
+      const o = i - (n - 1) / 2;
+      const legal = c.suit === 'S';
+      const sel = s.selected === c.id;
+      let cls = gone ? 'gone' : (!yourTurn ? 'wait' : (legal ? '' : 'no'));
+      if (sel) cls += ' sel';
+      return {
+        c: c, i: HAND.indexOf(c), sel: sel, off: gone || !yourTurn || !legal, z: 10 + i,
+        x: Math.round(654 + o * 104), y: Math.round(658 + o * o * 8), r: +(o * 6).toFixed(2), cls: cls,
+        pick: () => {
+          if (!yourTurn || !legal) return;
+          if (s.selected === c.id) this.play(c.id);
+          else this.setState({ selected: c.id });
+        }
+      };
+    });
+
+    // the trick on the felt: North, East, South (you), West
+    const south = s.played ? HAND.filter(c => c.id === s.played)[0] : null;
+    const showW = ph === 'west' || ph === 'resolve' || ph === 'sweep';
+    const sweeping = ph === 'sweep';
+    const trick = [
+      { c: NORTH, show: ph !== 'done', x: 546, y: 182, rot: 3, sx: 0, sy: -200, cls: sweeping ? 'sweep' : (ph === 'resolve' ? 'win' : '') },
+      { c: EAST, show: ph !== 'done', x: 702, y: 292, rot: -6, sx: -156, sy: -310, cls: sweeping ? 'sweep d1' : '' },
+      { c: south || NORTH, show: !!south && ph !== 'done', x: 546, y: 402, rot: -2, sx: 0, sy: -420, cls: sweeping ? (tookTen ? 'hide' : 'sweep d2') : 'land-s' },
+      { c: WEST, show: showW, x: 390, y: 290, rot: 7, sx: 156, sy: -308, cls: sweeping ? 'sweep d3' : 'land-w' }
+    ];
+
+    const statusMap = {
+      turn: 'Your turn. Spades were led, so follow suit.',
+      played: 'Ibrahim to play',
+      west: 'All four cards are down',
+      resolve: 'Mariyam’s King of spades takes the trick',
+      sweep: 'Mariyam’s King of spades takes the trick',
+      done: 'Trick 10. Mariyam leads.'
+    };
+    const sel = s.selected ? HAND.filter(c => c.id === s.selected)[0] : null;
+
+    const usTens = [{ suit: 'C', cls: '' }, { suit: 'D', cls: 'red' }];
+    if (tookTen && ph === 'done') usTens.push({ suit: 'S', cls: 'new' });
+
+    return {
+      felt: FELT[this.props.skin] || FELT['Neon Arena'],
+      trick: trick,
+      standee: ph === 'turn' || ph === 'played' || ph === 'west' || ph === 'resolve',
+      standeeText: ph === 'resolve' ? 'Takes it' : 'Winning',
+      westFan: (showW || ph === 'done' ? [-12, -4, 4, 12] : [-14, -7, 0, 7, 14]).map(a => ({ a: a })),
+      westCount: showW || ph === 'done' ? 4 : 5,
+      youCount: s.played ? 4 : 5,
+      youTurnCls: yourTurn ? 'turn' : '',
+      youLine: yourTurn ? 'Your turn' : 'Waiting',
+      turnNow: yourTurn,
+      trickLabel: ph === 'done' ? 'Trick 10 / 13' : 'Trick 9 / 13',
+      status: statusMap[ph],
+      hand: hand,
+      usTens: usTens,
+      usTricks: ph === 'done' ? 6 : 5,
+      usTrickCls: ph === 'done' ? 'bump' : '',
+      tenOut: !(tookTen && ph === 'done'),
+      allOut: tookTen && ph === 'done',
+      bySuit: s.sort === 'suit', byRank: s.sort === 'rank',
+      sortSuit: () => this.setState({ sort: 'suit' }),
+      sortRank: () => this.setState({ sort: 'rank' }),
+      lastOpen: s.last,
+      toggleLast: () => this.setState({ last: !s.last }),
+      playOff: !yourTurn || !sel,
+      playLabel: !yourTurn ? 'Waiting' : (sel ? 'Play ' + sel.rank : 'Pick a spade'),
+      playSuit: yourTurn && sel ? sel.suit : '',
+      playSelected: () => { if (sel) this.play(sel.id); },
+      flyTen: tookTen && ph === 'sweep',
+      done: ph === 'done',
+      doneKicker: tookTen ? 'Ten captured' : 'Trick to your team',
+      doneTitle: tookTen ? 'The hand is yours' : 'Mariyam takes it',
+      doneBody: tookTen
+        ? 'Your Ten rode on Mariyam’s King. All four Tens are now taken, three of them yours, so the hand is won. The last four tricks still play out.'
+        : 'The Ten of spades stays in your hand for later. Tens stand at Us 2, Them 1, with one still to win.',
+      reset: () => this.reset()
+    };
+  }
+}
+</script>
+</body>
+</html>

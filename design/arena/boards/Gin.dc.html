@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gin Rummy table, going out</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400..900;1,400..900&amp;family=Noto+Sans+Thaana:wght@600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#000}
+a{color:#C6FF33}a:hover{color:#E4FF8C}
+.ar{font-family:'Inter Tight',system-ui,sans-serif;color:#fff;isolation:isolate}
+.ar button{font-family:inherit}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.disp{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;line-height:.92}
+.chrome{background:linear-gradient(100deg,#8C8C97 0%,#FFFFFF 34%,#CFCFD8 52%,#FFFFFF 68%,#9A9AA6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lbl{display:inline-flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:#BEBECA;white-space:nowrap}
+.lbl.dash::before{content:"";width:22px;height:1.5px;background:currentColor}
+.num{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.body{font-size:15px;line-height:1.5;font-weight:500;color:#C9C9D3;text-wrap:pretty}
+.muted{font-size:13.5px;font-weight:600;color:#BEBECA}
+.thaana{font-family:'Noto Sans Thaana',sans-serif;font-weight:700;color:#A57BFF}
+
+/* arena backdrop */
+.bg{position:absolute;inset:0;background:radial-gradient(760px 420px at 50% 50%,rgba(125,57,235,.42),rgba(125,57,235,0) 72%),radial-gradient(1200px 700px at 50% 30%,#12101A 0%,#07070A 55%,#000 100%)}
+.bigword{position:absolute;left:0;right:0;top:-8px;text-align:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:300px;line-height:1;letter-spacing:.02em;color:rgba(0,0,0,0);-webkit-text-stroke:1.5px rgba(255,255,255,.07);white-space:nowrap;pointer-events:none}
+.beam{position:absolute;top:-60px;width:520px;height:760px;background:linear-gradient(180deg,rgba(165,123,255,.22),rgba(165,123,255,0) 80%);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);filter:blur(18px);pointer-events:none}
+@keyframes drift{0%{transform:translateY(0);opacity:0}15%{opacity:.8}85%{opacity:.6}100%{transform:translateY(-160px);opacity:0}}
+.mote{position:absolute;width:3px;height:3px;border-radius:50%;background:#C6FF33;box-shadow:0 0 8px 2px rgba(198,255,51,.6);animation:drift 7s linear infinite}
+.mote.v{background:#B18CFF;box-shadow:0 0 8px 2px rgba(177,140,255,.6)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(125,57,235,.16) 1px,rgba(0,0,0,0) 1px),linear-gradient(90deg,rgba(125,57,235,.16) 1px,rgba(0,0,0,0) 1px);background-size:60px 60px;-webkit-mask-image:radial-gradient(70% 60% at 50% 40%,#000,rgba(0,0,0,0));mask-image:radial-gradient(70% 60% at 50% 40%,#000,rgba(0,0,0,0))}
+
+/* table */
+.stage{position:absolute;inset:0;perspective:2200px;perspective-origin:50% 20%}
+.floor{position:absolute;left:-1280px;top:-518px;width:4000px;height:1900px;transform:rotateX(52deg) scale(.86) translateZ(-420px);background-image:radial-gradient(640px 400px at 50% 50%,rgba(0,0,0,.95),rgba(0,0,0,0) 75%),radial-gradient(900px 560px at 50% 50%,rgba(125,57,235,.55),rgba(125,57,235,0) 72%),linear-gradient(rgba(125,57,235,.5) 2px,rgba(0,0,0,0) 2px),linear-gradient(90deg,rgba(125,57,235,.5) 2px,rgba(0,0,0,0) 2px);background-size:auto,auto,110px 110px,110px 110px;background-position:center;-webkit-mask-image:radial-gradient(closest-side,#000 30%,rgba(0,0,0,0) 96%);mask-image:radial-gradient(closest-side,#000 30%,rgba(0,0,0,0) 96%)}
+.table{position:absolute;left:120px;top:62px;width:1200px;height:740px;transform-style:preserve-3d;transform:rotateX(52deg) scale(.86)}
+.apron{position:absolute;inset:0;border-radius:50%}
+.felt{position:absolute;left:68px;top:68px;width:1064px;height:604px;border-radius:50%;transform:translateZ(-5px);background-image:radial-gradient(50% 58% at 50% 46%,rgba(255,255,255,.16),rgba(255,255,255,0) 72%),radial-gradient(closest-side,rgba(0,0,0,0) 56%,rgba(0,0,0,.55) 100%),radial-gradient(circle,rgba(255,255,255,.07) 0 3.2px,rgba(255,255,255,0) 3.8px);background-size:auto,auto,26px 26px;box-shadow:inset 0 26px 50px rgba(0,0,0,.6)}
+.rail{position:absolute;inset:0;border-radius:50%;background:radial-gradient(260px 60px at 50% 3%,rgba(255,255,255,.24),rgba(255,255,255,0) 100%),radial-gradient(540px 70px at 50% 98%,rgba(177,140,255,.16),rgba(177,140,255,0) 100%),radial-gradient(600px 370px at 50% 50%,#0B0B0F 0 80%,#141419 83%,#2B2B35 89.5%,#131318 95%,#040405 100%);-webkit-mask-image:radial-gradient(532px 302px at 50% 50%,rgba(0,0,0,0) 99.6%,#000 100%);mask-image:radial-gradient(532px 302px at 50% 50%,rgba(0,0,0,0) 99.6%,#000 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2),inset 0 0 0 4px #000}
+.leds{position:absolute;left:0;top:0;width:1200px;height:740px;transform:translateZ(.6px);overflow:visible}
+@keyframes chase{to{stroke-dashoffset:-48}}
+.chase{animation:chase 2.4s linear infinite}
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+.face{position:absolute;left:0;top:0;width:7.2em;height:10.08em;border-radius:.62em;background:linear-gradient(160deg,#FFFFFF 0%,#F5F5F8 55%,#E7E7EE 100%);color:#0B0B0F;overflow:hidden}
+.face.red{color:#E0213A}
+.face.ten::before{content:"";position:absolute;inset:.2em;border-radius:.46em;padding:.13em;background:conic-gradient(from 200deg,#C6FF33,#7D39EB,#FFFFFF,#C6FF33,#7D39EB,#FFFFFF,#C6FF33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.face.ten::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(198,255,51,.2) 42%,rgba(125,57,235,.16) 52%,rgba(255,255,255,0) 64%);background-size:260% 100%;animation:holo 3.4s ease-in-out infinite;pointer-events:none}
+@keyframes holo{0%{background-position:130% 0}100%{background-position:-30% 0}}
+.idx{position:absolute;display:flex;flex-direction:column;align-items:center;gap:.12em;width:1.4em}
+.idx.tl{left:.3em;top:.4em}
+.idx.br{right:.3em;bottom:.4em;transform:rotate(180deg)}
+.idx b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.32em;line-height:.9;letter-spacing:-.05em}
+.idx svg{width:.72em;height:.72em}
+.pips{position:absolute;left:2.38em;right:2.38em;top:1.66em;bottom:1.66em}
+.pip{position:absolute;width:1.12em;height:1.12em;margin:-.56em 0 0 -.56em}
+.pip.flip{transform:rotate(180deg)}
+.ace{position:absolute;left:50%;top:50%;width:3.3em;height:3.3em;margin:-1.65em 0 0 -1.65em}
+.court{position:absolute;left:1.8em;right:1.8em;top:1.4em;bottom:1.4em;border-radius:.4em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1em;background:currentColor}
+.court::before{content:"";position:absolute;inset:.18em;border-radius:.28em;border:.06em solid rgba(255,255,255,.55)}
+.court b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2.9em;line-height:1;letter-spacing:-.04em;color:#fff}
+.court svg{width:1.05em;height:1.05em;color:#fff}
+.back{position:absolute;left:0;top:0;width:7.2em;height:10.08em;border-radius:.62em;background:#7D39EB;overflow:hidden}
+.back::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 20% 0%,rgba(255,255,255,.24),rgba(255,255,255,0) 55%),repeating-linear-gradient(45deg,rgba(0,0,0,.26) 0 .1em,rgba(0,0,0,0) .1em .62em),repeating-linear-gradient(-45deg,rgba(0,0,0,.26) 0 .1em,rgba(0,0,0,0) .1em .62em)}
+.back::after{content:"";position:absolute;inset:.34em;border-radius:.4em;box-shadow:inset 0 0 0 .08em #fff,inset 0 0 0 .22em #7D39EB,inset 0 0 0 .3em #0B0B0F}
+.back i{position:absolute;left:50%;top:50%;width:3em;height:3em;margin:-1.5em 0 0 -1.5em;border-radius:.7em;transform:rotate(45deg);background:#0B0B0F;box-shadow:0 0 0 .08em #C6FF33;display:flex;align-items:center;justify-content:center;z-index:1}
+.back i svg{width:1.5em;height:1.5em;color:#C6FF33;transform:rotate(-45deg)}
+
+/* player frames */
+.pf{position:absolute;display:flex;align-items:center;gap:12px;height:64px;padding:6px 18px 6px 6px;border-radius:14px;background:rgba(10,10,14,.92);border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 30px -16px rgba(0,0,0,.9)}
+.pf.turn{border-color:#C6FF33;box-shadow:0 0 0 4px rgba(198,255,51,.14),0 0 32px rgba(198,255,51,.22)}
+.av{position:relative;flex:none;width:52px;height:52px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#0A0A0A;background:linear-gradient(135deg,#E4FF8C 0%,#C6FF33 60%,#A5DD1A 100%)}
+.av.them{color:#fff;background:linear-gradient(135deg,#A873FF 0%,#7D39EB 60%,#5520B8 100%)}
+.ct{position:absolute;right:-8px;bottom:-8px;min-width:24px;height:24px;padding:0 6px;border-radius:7px;background:#fff;color:#000;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;line-height:24px;text-align:center;box-shadow:0 0 0 2px #000}
+.nm{display:flex;flex-direction:column;gap:5px}
+.nm > b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;line-height:1;text-transform:uppercase;letter-spacing:.04em}
+.nm > span{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;letter-spacing:.16em;text-transform:uppercase;color:#A4A4B2}
+.dot{width:7px;height:7px;border-radius:2px;background:#C6FF33;flex:none}
+.dot.them{background:#A57BFF}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(198,255,51,.6)}50%{box-shadow:0 0 0 6px rgba(198,255,51,0)}}
+.dot.live{animation:breathe 1.6s ease-in-out infinite}
+.fan{position:absolute;width:0;height:0}
+.fb{position:absolute;left:-25px;top:-74px;width:50.4px;height:70.6px;font-size:7px;transform-origin:50% 100%;transform:rotate(var(--a)) translateY(-6px);filter:drop-shadow(0 6px 6px rgba(0,0,0,.6))}
+
+/* HUD panels */
+.hud{position:absolute;border-radius:14px;background:linear-gradient(180deg,rgba(20,20,26,.94),rgba(9,9,12,.94));border:1px solid rgba(255,255,255,.1);box-shadow:0 22px 44px -20px rgba(0,0,0,.95)}
+.hud::before,.hud::after{content:"";position:absolute;width:16px;height:16px;border-style:solid;border-color:#C6FF33;pointer-events:none}
+.hud::before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-top-left-radius:14px}
+.hud::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-bottom-right-radius:14px}
+.hud.v::before,.hud.v::after{border-color:#A57BFF}
+.cell{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px}
+.mini{position:relative;flex:none;width:30px;height:42px;border-radius:6px;background:#fff;color:#0B0B0F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 2px 0 #9D9DAB,0 8px 12px -4px rgba(0,0,0,.8)}
+.mini.foil::before{content:"";position:absolute;inset:0;border-radius:6px;padding:2px;background:conic-gradient(from 200deg,#C6FF33,#7D39EB,#FFFFFF,#C6FF33,#7D39EB,#FFFFFF,#C6FF33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.mini.red{color:#E0213A}
+.mini b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:-.06em}
+.mini svg{width:10px;height:10px}
+.mini.ghost{background:rgba(255,255,255,.04);color:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.hex{flex:none;width:66px;height:74px;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#A873FF 0%,#7D39EB 55%,#4A1CA3 100%)}
+.hex svg{width:32px;height:32px;color:#fff;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
+.hexwrap{position:relative;flex:none;width:66px;height:74px;filter:drop-shadow(0 0 16px rgba(125,57,235,.6))}
+
+/* controls */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:58px;padding:0 26px;border:0;border-radius:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;line-height:1;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;color:#0A0A0A;background:linear-gradient(180deg,#DDFF70 0%,#C6FF33 52%,#B4EE22 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(0,0,0,.14),0 6px 0 #6F9412,0 14px 30px -6px rgba(198,255,51,.4);transition:transform .18s cubic-bezier(.3,1.7,.5,1),box-shadow .18s ease-out}
+.btn::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(105deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 62%);background-size:260% 100%;background-position:130% 0;pointer-events:none;transition:background-position .7s ease}
+.btn:hover::after,.btn.is-hover::after{background-position:-30% 0}
+.btn:active,.btn.is-press{transform:translateY(5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.14),0 1px 0 #6F9412,0 6px 14px -6px rgba(198,255,51,.4)}
+.btn:active,.ibtn:active{transition-duration:.09s;transition-timing-function:ease-out}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:6px}
+.btn:disabled{cursor:not-allowed;color:rgba(255,255,255,.45);background:#17171D;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 3px 0 #000;transform:translateY(3px)}
+.btn:disabled::after{display:none}
+.btn svg{width:19px;height:19px;flex:none}
+.btn.violet{color:#fff;background:linear-gradient(180deg,#965BFF 0%,#7D39EB 55%,#6A28D8 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.2),0 6px 0 #3E1685,0 14px 30px -6px rgba(125,57,235,.5)}
+.btn.violet:active,.btn.violet.is-press{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 #3E1685,0 6px 14px -6px rgba(125,57,235,.5)}
+.btn.ghost{color:#fff;background:#141419;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2),0 5px 0 #000}
+.btn.ghost::after{background-image:linear-gradient(105deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.12) 50%,rgba(255,255,255,0) 62%)}
+.btn.ghost:hover,.btn.ghost.is-hover{box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.7),0 5px 0 #000}
+.btn.ghost:active,.btn.ghost.is-press{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2),0 1px 0 #000;transform:translateY(4px)}
+.btn.ghost[aria-pressed="true"]{color:#C6FF33;background:#10130A;box-shadow:inset 0 0 0 1.5px #C6FF33,0 1px 0 #000;transform:translateY(4px)}
+.btn.sm{height:48px;padding:0 18px;font-size:14px;border-radius:11px}
+.btn.sm::after{border-radius:11px}
+.ibtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;padding:0;border:0;border-radius:12px;cursor:pointer;color:#fff;background:#121217;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 4px 0 #000;transition:transform .18s cubic-bezier(.3,1.7,.5,1),box-shadow .18s ease-out,color .15s}
+.ibtn:hover{color:#C6FF33;box-shadow:inset 0 0 0 1px rgba(198,255,51,.6),0 4px 0 #000}
+.ibtn:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 1px 0 #000}
+.ibtn:focus-visible{outline:2px solid #fff;outline-offset:5px}
+.ibtn svg{width:21px;height:21px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:#0B0B0E;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.seg button{height:44px;padding:0 16px;border:0;border-radius:10px;background:rgba(0,0,0,0);color:#A4A4B2;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.seg button[aria-pressed="true"]{color:#0A0A0A;background:#fff}
+.seg button:focus-visible{outline:2px solid #C6FF33;outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:7px;font-family:'Space Grotesk',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.chip.live{background:rgba(198,255,51,.12);color:#C6FF33;box-shadow:inset 0 0 0 1px rgba(198,255,51,.5)}
+.chip.vio{background:rgba(125,57,235,.2);color:#C9AEFF;box-shadow:inset 0 0 0 1px rgba(165,123,255,.6)}
+.chip.mono{background:rgba(255,255,255,.06);color:#E4E4EA;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.chip.live i{width:6px;height:6px;border-radius:50%;background:#C6FF33;animation:blink 1.4s ease-in-out infinite}
+.status{position:absolute;height:42px;padding:0 20px 0 14px;border-radius:10px;display:flex;align-items:center;gap:10px;transform:translateX(-50%);white-space:nowrap;background:rgba(8,8,11,.92);box-shadow:inset 3px 0 0 #C6FF33,inset 0 0 0 1px rgba(255,255,255,.12),0 12px 26px -12px rgba(0,0,0,.9);font-size:15px;font-weight:600;color:#fff}
+
+/* hand */
+.hand{position:absolute;left:0;top:0;width:1440px;height:900px;perspective:1100px;perspective-origin:50% 20%;pointer-events:none}
+.hc{position:absolute;left:0;top:0;width:132px;height:185px;padding:0;border:0;background:none;border-radius:11px;font-size:18.333px;cursor:pointer;pointer-events:auto;transform-origin:50% 100%;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(9deg);transition:transform .45s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s}
+@keyframes handIn{from{translate:0 260px;opacity:0}to{translate:0 0;opacity:1}}
+.hc{animation:handIn .75s cubic-bezier(.2,.85,.25,1) backwards;animation-delay:calc(var(--i) * 70ms + 150ms)}
+.hc .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 4px 0 #8F8F9E,0 24px 30px -12px rgba(0,0,0,.85);transition:box-shadow .2s,filter .2s}
+.hc:hover:not(:disabled){translate:0 -16px}
+.hc.sel,.hc.sel:hover{translate:0 -36px}
+.hc.sel .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 4px 0 #8F8F9E,0 0 0 4px #C6FF33,0 0 36px 6px rgba(198,255,51,.5),0 30px 30px -12px rgba(0,0,0,.8)}
+.hc.no{cursor:not-allowed;translate:0 12px}
+.hc.no .face{filter:brightness(.5) saturate(.6)}
+.hc.wait{cursor:default}
+.hc.gone{opacity:0;translate:0 -90px;pointer-events:none}
+.hc:focus-visible{outline:none}
+.hc:focus-visible .face{box-shadow:0 0 0 3px #fff,0 24px 30px -12px rgba(0,0,0,.8)}
+
+/* popovers */
+@keyframes rise{from{transform:translate(-50%,14px) scale(.97);opacity:0}to{transform:translate(-50%,0) scale(1);opacity:1}}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* gin table pieces */
+.felt.gin{background-color:#17122A}
+.spot{position:absolute;width:124px;height:167px;border-radius:14px;border:2px dashed rgba(255,255,255,.26);transform:translateZ(-4.6px)}
+.printed{position:absolute;width:200px;text-align:center;transform:translateZ(-4.6px);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;line-height:1;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.42)}
+.tc{position:absolute;width:108px;height:151px;font-size:15px;transform:translateZ(var(--z)) rotate(var(--rot));transform-style:preserve-3d}
+.tc .face{box-shadow:0 1px 0 #D5D5DE,0 2px 0 #B5B5C2,0 16px 20px -6px rgba(0,0,0,.7)}
+.tc .blank{position:absolute;inset:0;border-radius:9px;background:#E9E9EF;box-shadow:0 1px 0 #BDBDC8,0 8px 12px -6px rgba(0,0,0,.6)}
+.layer{position:absolute;width:108px;height:151px;border-radius:9px;background:#3E1685;box-shadow:inset 0 0 0 1px rgba(177,140,255,.7)}
+@keyframes toss{0%{transform:translate3d(20px,360px,320px) rotateX(-46deg) rotate(12deg);opacity:0}14%{opacity:1}100%{transform:translateZ(var(--z)) rotate(var(--rot));opacity:1}}
+.tc.toss{animation:toss .6s cubic-bezier(.2,.75,.25,1) both}
+.tc.top .face{box-shadow:0 1px 0 #D5D5DE,0 2px 0 #B5B5C2,0 0 0 4px #C6FF33,0 0 40px 8px rgba(198,255,51,.4)}
+
+/* gin hand: eleven smaller cards */
+.hc{width:108px;height:151px;border-radius:9px;font-size:15px;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(8deg);transition:transform .5s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s;animation-delay:calc(var(--i) * 45ms + 150ms)}
+.hc:hover:not(:disabled){translate:0 -14px}
+.hc.sel,.hc.sel:hover{translate:0 -34px}
+.hc.lift{translate:0 -22px}
+.newtag{position:absolute;left:50%;top:-13px;z-index:2;transform:translateX(-50%);height:24px;padding:0 10px;border-radius:7px;display:flex;align-items:center;background:#C6FF33;color:#0A0A0A;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 0 18px rgba(198,255,51,.5),0 4px 10px -3px rgba(0,0,0,.6)}
+.bracket{position:absolute;top:846px;height:22px;display:flex;align-items:center;justify-content:center;transition:left .5s cubic-bezier(.2,.8,.2,1),width .5s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.bracket::before{content:"";position:absolute;left:0;right:0;top:0;height:9px;border:2px solid #C6FF33;border-top:0;border-radius:0 0 6px 6px}
+.bracket > span{position:relative;margin-top:14px;padding:0 9px;height:21px;border-radius:6px;display:flex;align-items:center;background:#0B0B0F;box-shadow:inset 0 0 0 1px rgba(198,255,51,.6);font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#C6FF33;white-space:nowrap}
+.bracket.dw::before{border-color:rgba(255,255,255,.4);border-style:dashed}
+.bracket.dw > span{color:#D4D4DC;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+.bracket.hot::before{border-color:#C6FF33;filter:drop-shadow(0 0 6px rgba(198,255,51,.8))}
+.bracket.hot > span{background:#C6FF33;color:#0A0A0A;box-shadow:0 0 18px 2px rgba(198,255,51,.45)}
+
+/* reveal, clock, results */
+@keyframes flipIn{0%{transform:rotateY(90deg) translateY(-8px);opacity:0}100%{transform:none;opacity:1}}
+.reveal .mini{animation:flipIn .42s cubic-bezier(.3,1.3,.5,1) both}
+.mini.dead{filter:brightness(.5) saturate(.6)}
+.clock{position:relative;flex:none;width:72px;height:72px}
+.clock svg{position:absolute;inset:0;width:72px;height:72px;transform:rotate(-90deg)}
+.clock b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:27px;letter-spacing:-.03em;color:#fff;font-variant-numeric:tabular-nums}
+@keyframes ring{0%,100%{filter:drop-shadow(0 0 0 rgba(198,255,51,0))}50%{filter:drop-shadow(0 0 6px rgba(198,255,51,.8))}}
+.clock .arc{animation:ring 2s ease-in-out infinite}
+@keyframes ready{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(0,0,0,.14),0 6px 0 #6F9412,0 14px 30px -6px rgba(198,255,51,.4),0 0 0 0 rgba(198,255,51,0)}50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(0,0,0,.14),0 6px 0 #6F9412,0 14px 30px -6px rgba(198,255,51,.4),0 0 0 8px rgba(198,255,51,.22)}}
+.btn.go{animation:ready 1.4s ease-in-out infinite}
+.btn.go:active{animation:none}
+.banner{position:absolute;left:720px;top:236px;width:560px;padding:30px 34px 32px;transform:translateX(-50%);animation:rise .45s cubic-bezier(.2,.9,.3,1.2) both;background:linear-gradient(180deg,rgba(22,22,28,.97),rgba(9,9,12,.97));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+@keyframes stamp{0%{transform:scale(2.2) rotate(-8deg);opacity:0}55%{transform:scale(.94) rotate(1deg);opacity:1}100%{transform:none;opacity:1}}
+.stamp{display:inline-block;animation:stamp .7s cubic-bezier(.2,1.2,.4,1) both}
+</style>
+</helmet>
+<div class="ar" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #000">
+<svg class="sprite" aria-hidden="true">
+<defs>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"></path></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 19l-7-7 7-7M19 12H5"></path></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2V4ZM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7V4Z"></path></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"></path><rect x="4" y="8" width="16" height="12" rx="2"></rect><path d="M2 14h2M20 14h2M15 13v2M9 13v2"></path></g></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6"></circle><path d="M18.1 10.4A6 6 0 1 1 10.3 18M8 7h1.5v4"></path></g></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7ZM5 21h14"></path></symbol>
+<symbol id="i-discard" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v11M7 9l5 5 5-5M5 20h14"></path></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 2.5a14 14 0 0 0 0 19a14 14 0 0 0 0-19M2.5 12h19"></path></g></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5M12 7v5l3.5 2"></path></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z"></path></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"></path></g></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3 2 8l10 5 10-5-10-5ZM2 13l10 5 10-5M2 17.5l10 5 10-5"></path></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"></path></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"></rect><path d="M12 18h.01"></path></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v11M7 9l5 5 5-5M5 20h14"></path></symbol>
+<symbol id="i-replay" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21 5h-7M10 5H3M21 12h-9M8 12H3M21 19h-5M12 19H3M14 3v4M8 10v4M16 17v4"></path></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"></path></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1 1.2C7.8 18.8 7 20.2 7 22M14 14.7V17c0 .6.5 1 1 1.2 1.2.6 2 2 2 3.8"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></g></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></g></symbol>
+<symbol id="s-C" viewBox="0 0 100 100"><path fill="currentColor" d="M50 5A20 20 0 0 1 67.5 34.6A20 20 0 1 1 55 67C56 80 60 89 68 97H32C40 89 44 80 45 67A20 20 0 1 1 32.5 34.6A20 20 0 0 1 50 5Z"></path></symbol>
+<symbol id="s-D" viewBox="0 0 100 100"><path fill="currentColor" d="M50 2C58 18 70 34 86 50C70 66 58 82 50 98C42 82 30 66 14 50C30 34 42 18 50 2Z"></path></symbol>
+<symbol id="s-H" viewBox="0 0 100 100"><path fill="currentColor" d="M50 95C41 83 25 70 14 57C7 48 4 41 4 32C4 17 15 7 29 7C38 7 45 12 50 20C55 12 62 7 71 7C85 7 96 17 96 32C96 41 93 48 86 57C75 70 59 83 50 95Z"></path></symbol>
+<symbol id="s-S" viewBox="0 0 100 100"><path fill="currentColor" d="M50 3C57 19 72 30 84 42C93 51 96 58 96 66C96 79 86 88 73 88C64 88 57 84 53.5 77C54.5 86 59 92 68 97H32C41 92 45.5 86 46.5 77C43 84 36 88 27 88C14 88 4 79 4 66C4 58 7 51 16 42C28 30 43 19 50 3Z"></path></symbol>
+</defs>
+</svg>
+
+<div class="bg"></div>
+<div class="bigword" aria-hidden="true">GIN</div>
+<div class="beam" style="left: 60px; transform: rotate(-16deg)"></div>
+<div class="beam" style="left: 860px; transform: rotate(16deg)"></div>
+
+<div class="stage" aria-hidden="true">
+<div class="floor"></div>
+<div class="table">
+<div class="apron" style="transform: translateZ(-50px); background: #030305"></div>
+<div class="apron" style="transform: translateZ(-46px); background: #050508"></div>
+<div class="apron" style="transform: translateZ(-42px); background: #07070B"></div>
+<div class="apron" style="transform: translateZ(-38px); background: #09090E"></div>
+<div class="apron" style="transform: translateZ(-34px); background: #0B0B11"></div>
+<div class="apron" style="transform: translateZ(-30px); background: #0D0D14"></div>
+<div class="apron" style="transform: translateZ(-26px); background: #100F18"></div>
+<div class="apron" style="transform: translateZ(-22px); background: #13121C"></div>
+<div class="apron" style="transform: translateZ(-18px); background: #16151F"></div>
+<div class="apron" style="transform: translateZ(-14px); background: #1A1924"></div>
+<div class="apron" style="transform: translateZ(-11px); background: #3B1C78"></div>
+<div class="apron" style="transform: translateZ(-9px); background: #7D39EB"></div>
+<div class="apron" style="transform: translateZ(-7px); background: #1E1D28"></div>
+<div class="felt gin"></div>
+<div class="spot" style="left: 430px; top: 286px"></div>
+<div class="spot" style="left: 646px; top: 286px"></div>
+<div class="printed" style="left: 392px; top: 470px">Stock · 24</div>
+<div class="printed" style="left: 608px; top: 470px">Discard</div>
+<div class="rail"></div>
+<svg class="leds" viewBox="0 0 1200 740">
+<defs><filter id="glow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="5"></feGaussianBlur></filter></defs>
+<ellipse cx="600" cy="370" rx="591" ry="361" fill="none" stroke="#FFFFFF" stroke-opacity=".16" stroke-width="1.5"></ellipse>
+<ellipse cx="600" cy="370" rx="565" ry="335" fill="none" stroke="#C6FF33" stroke-opacity=".6" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 22" class="chase"></ellipse>
+<ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#9B66FF" stroke-width="9" stroke-opacity=".8" filter="url(#glow)"></ellipse>
+<ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#C9AEFF" stroke-width="3"></ellipse>
+</svg>
+
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(-4.4px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(-3.2px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(-2px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(-.8px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(.4px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(1.6px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(2.8px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(4px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(5.2px)"></div>
+<div class="layer" style="left: 438px; top: 294px; transform: translateZ(6.4px)"></div>
+<div class="tc" style="left: 438px; top: 294px; --z: 7.6px; --rot: 0deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+
+<div class="tc" style="left: 654px; top: 294px; --z: -4.2px; --rot: -9deg"><div class="blank"></div></div>
+<div class="tc" style="left: 654px; top: 294px; --z: -3.6px; --rot: 6deg"><div class="blank"></div></div>
+<div class="tc" style="left: 654px; top: 294px; --z: -3px; --rot: -2deg">
+<div class="face blk">
+<div class="idx tl"><b>J</b><svg><use href="#s-C"></use></svg></div>
+<div class="idx br"><b>J</b><svg><use href="#s-C"></use></svg></div>
+<div class="court"><b>J</b><svg><use href="#s-C"></use></svg></div>
+</div>
+</div>
+<sc-if value="{{tossed}}" hint-placeholder-val="{{false}}">
+<div class="tc toss top" style="left: 654px; top: 294px; --z: -2.2px; --rot: 5deg">
+<div class="face {{tossed.tone}}">
+<div class="idx tl"><b>{{tossed.rank}}</b><svg><use href="#s-{{tossed.suit}}"></use></svg></div>
+<div class="idx br"><b>{{tossed.rank}}</b><svg><use href="#s-{{tossed.suit}}"></use></svg></div>
+<sc-if value="{{tossed.isPips}}" hint-placeholder-val="{{false}}"><div class="pips"><sc-for list="{{tossed.pips}}" as="p" hint-placeholder-count="4"><svg class="pip {{p.f}}" style="left: {{p.x}}%; top: {{p.y}}%"><use href="#s-{{tossed.suit}}"></use></svg></sc-for></div></sc-if>
+<sc-if value="{{tossed.isAce}}" hint-placeholder-val="{{false}}"><svg class="ace"><use href="#s-{{tossed.suit}}"></use></svg></sc-if>
+<sc-if value="{{tossed.isCourt}}" hint-placeholder-val="{{true}}"><div class="court"><b>{{tossed.rank}}</b><svg><use href="#s-{{tossed.suit}}"></use></svg></div></sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<i class="mote" style="left: 230px; top: 640px; animation-delay: 0s"></i>
+<i class="mote v" style="left: 1180px; top: 600px; animation-delay: 1.4s"></i>
+<i class="mote" style="left: 1050px; top: 720px; animation-delay: 2.8s"></i>
+<i class="mote v" style="left: 330px; top: 760px; animation-delay: 4.1s"></i>
+<i class="mote v" style="left: 150px; top: 560px; animation-delay: 3.4s"></i>
+
+<sc-if value="{{hidden}}" hint-placeholder-val="{{true}}">
+<div class="fan" style="left: 720px; top: 178px">
+<div class="fb" style="--a: -22.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: -17.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: -12.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: -7.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: -2.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 2.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 7.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 12.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 17.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+<div class="fb" style="--a: 22.5deg"><div class="back"><i><svg><use href="#i-crown"></use></svg></i></div></div>
+</div>
+</sc-if>
+<sc-if value="{{revealed}}" hint-placeholder-val="{{false}}">
+<div class="reveal hud v" style="left: 720px; top: 88px; transform: translateX(-50%); padding: 12px 18px 12px 20px; display: flex; align-items: center; gap: 14px">
+<span class="lbl" style="width: 84px; white-space: normal; line-height: 1.35; color: #fff">Hussain’s hand</span>
+<div style="display: flex; gap: 4px">
+<div class="mini" style="animation-delay: 0s"><b>4</b><svg><use href="#s-C"></use></svg></div>
+<div class="mini" style="animation-delay: .05s"><b>5</b><svg><use href="#s-C"></use></svg></div>
+<div class="mini" style="animation-delay: .1s"><b>6</b><svg><use href="#s-C"></use></svg></div>
+<div class="mini" style="animation-delay: .15s"><b>7</b><svg><use href="#s-C"></use></svg></div>
+</div>
+<div style="display: flex; gap: 4px">
+<div class="mini" style="animation-delay: .2s"><b>9</b><svg><use href="#s-C"></use></svg></div>
+<div class="mini red" style="animation-delay: .25s"><b>9</b><svg><use href="#s-D"></use></svg></div>
+<div class="mini red" style="animation-delay: .3s"><b>9</b><svg><use href="#s-H"></use></svg></div>
+</div>
+<div style="display: flex; gap: 4px">
+<div class="mini red dead" style="animation-delay: .35s"><b>J</b><svg><use href="#s-H"></use></svg></div>
+<div class="mini red dead" style="animation-delay: .4s"><b>2</b><svg><use href="#s-D"></use></svg></div>
+<div class="mini dead" style="animation-delay: .45s"><b>10</b><svg><use href="#s-S"></use></svg></div>
+</div>
+</div>
+</sc-if>
+<div class="pf" style="left: 720px; top: 176px; transform: translateX(-50%)">
+<div class="av them">H<span class="ct">10</span></div>
+<div class="nm"><b>Hussain</b><span><i class="dot them"></i>{{oppLine}}</span></div>
+</div>
+
+<header style="position: absolute; left: 36px; right: 36px; top: 26px; height: 56px; display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 18px">
+<button type="button" class="ibtn" aria-label="Leave game"><svg aria-hidden="true"><use href="#i-back"></use></svg></button>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 12px"><span class="disp chrome" style="font-size: 36px">Gin Rummy</span><span class="thaana" lang="dv" dir="rtl" style="font-size: 17px">ޖިން ރަމީ</span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span class="chip vio">Casual Online</span><span class="lbl">Melds of 4, 3 and 3 win · No knocking</span></div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<button type="button" class="ibtn" aria-label="Mute sound"><svg aria-hidden="true"><use href="#i-sound"></use></svg></button>
+<button type="button" class="ibtn" aria-label="Rule book"><svg aria-hidden="true"><use href="#i-book"></use></svg></button>
+<button type="button" class="ibtn" aria-label="Game settings"><svg aria-hidden="true"><use href="#i-sliders"></use></svg></button>
+</div>
+</header>
+
+<section class="hud" aria-label="Your melds" style="left: 36px; top: 106px; width: 320px; padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span class="lbl dash" style="color: #fff">{{readTitle}}</span><span class="lbl">Deadwood</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span class="disp" style="font-size: 40px; letter-spacing: -.01em; color: {{readColor}}">{{readBig}}</span>
+<span class="num" style="font-size: 34px; line-height: 1">{{deadwood}}</span>
+</div>
+<p class="muted" style="margin: 0; line-height: 1.45; text-wrap: pretty">{{readLine}}</p>
+</section>
+
+<section class="hud" aria-label="Turn" style="right: 36px; top: 106px; width: 320px; padding: 16px 20px; display: flex; align-items: center; gap: 18px">
+<div class="clock">
+<svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="31" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="5"></circle><circle class="arc" cx="36" cy="36" r="31" fill="none" stroke="#C6FF33" stroke-width="5" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="{{clockOff}}"></circle></svg>
+<b>{{clockText}}</b>
+</div>
+<div style="display: flex; flex-direction: column; gap: 7px">
+<span class="lbl dash">{{turnCap}}</span>
+<span class="disp" style="font-size: 23px; white-space: nowrap">{{turnTitle}}</span>
+<span class="muted">15 seconds a turn</span>
+</div>
+</section>
+
+<div class="status" role="status" style="left: 720px; top: 600px"><sc-if value="{{yourTurn}}" hint-placeholder-val="{{true}}"><i class="dot live"></i></sc-if>{{status}}</div>
+
+<section class="hand" aria-label="Your hand">
+<sc-for list="{{hand}}" as="h" hint-placeholder-count="11">
+<button type="button" class="hc {{h.cls}}" style="--x: {{h.x}}px; --y: {{h.y}}px; --r: {{h.r}}deg; --i: {{h.i}}; z-index: {{h.z}}" disabled="{{h.off}}" aria-pressed="{{h.sel}}" aria-label="{{h.c.label}}" onClick="{{h.pick}}">
+<sc-if value="{{h.isNew}}" hint-placeholder-val="{{false}}"><span class="newtag">New</span></sc-if>
+<span class="face {{h.c.tone}}">
+<span class="idx tl"><b>{{h.c.rank}}</b><svg aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></span>
+<span class="idx br"><b>{{h.c.rank}}</b><svg aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></span>
+<sc-if value="{{h.c.isPips}}" hint-placeholder-val="{{true}}"><span class="pips"><sc-for list="{{h.c.pips}}" as="p" hint-placeholder-count="4"><svg class="pip {{p.f}}" style="left: {{p.x}}%; top: {{p.y}}%" aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></sc-for></span></sc-if>
+<sc-if value="{{h.c.isAce}}" hint-placeholder-val="{{false}}"><svg class="ace" aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></sc-if>
+<sc-if value="{{h.c.isCourt}}" hint-placeholder-val="{{false}}"><span class="court"><b>{{h.c.rank}}</b><svg aria-hidden="true"><use href="#s-{{h.c.suit}}"></use></svg></span></sc-if>
+</span>
+</button>
+</sc-for>
+</section>
+<sc-if value="{{showMelds}}" hint-placeholder-val="{{true}}">
+<sc-for list="{{brackets}}" as="b" hint-placeholder-count="4">
+<div class="bracket {{b.cls}}" style="left: {{b.x}}px; width: {{b.w}}px"><span>{{b.label}}</span></div>
+</sc-for>
+</sc-if>
+
+<div class="pf turn" style="left: 36px; top: 800px">
+<div class="av">S<span class="ct">{{youCount}}</span></div>
+<div class="nm"><b>Sayyu</b><span><i class="dot"></i>{{youLine}}</span></div>
+</div>
+
+<div style="position: absolute; right: 36px; top: 722px">
+<button type="button" class="btn ghost sm" aria-pressed="{{showMelds}}" onClick="{{toggleMelds}}"><svg aria-hidden="true"><use href="#i-layers"></use></svg>View melds</button>
+</div>
+<div style="position: absolute; right: 36px; top: 806px">
+<button type="button" class="btn {{discardCls}}" style="width: 250px" disabled="{{discardOff}}" onClick="{{discardSelected}}"><svg aria-hidden="true"><use href="#i-discard"></use></svg>{{discardLabel}}<sc-if value="{{discardSuit}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" style="width: 17px; height: 17px"><use href="#s-{{discardSuit}}"></use></svg></sc-if></button>
+</div>
+
+<sc-if value="{{won}}" hint-placeholder-val="{{false}}">
+<section class="hud banner" role="status">
+<span class="lbl dash" style="color: #C6FF33">You won</span>
+<h2 class="disp" style="margin: 12px 0 8px; font-size: 96px"><span class="stamp chrome">Gin</span></h2>
+<p class="body" style="margin: 0 0 22px; font-size: 16px">Three melds: 4, 3 and 3, all ten cards.</p>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 26px">
+<div class="cell"><span class="lbl">Points</span><span class="num" style="font-size: 32px; line-height: 1">47</span><span class="muted" style="font-size: 12.5px">25 for going out + 22</span></div>
+<div class="cell"><span class="lbl">Deadwood</span><span class="num" style="font-size: 32px; line-height: 1">22</span><span class="muted" style="font-size: 12.5px">Hussain’s J, 10 and 2</span></div>
+<div class="cell"><span class="lbl">Coins</span><span class="num" style="font-size: 32px; line-height: 1; color: #C6FF33">+10</span><span class="muted" style="font-size: 12.5px">Balance 1,250</span></div>
+</div>
+<button type="button" class="btn sm" onClick="{{reset}}"><svg aria-hidden="true"><use href="#i-replay"></use></svg>Replay this hand</button>
+</section>
+</sc-if>
+<sc-if value="{{missed}}" hint-placeholder-val="{{false}}">
+<section class="hud v banner" role="status" style="top: 300px">
+<span class="lbl dash" style="color: #C9AEFF">Hussain’s turn</span>
+<h2 class="disp" style="margin: 12px 0 12px; font-size: 44px">Not quite Gin</h2>
+<p class="body" style="margin: 0 0 24px; font-size: 16px">{{missedBody}}</p>
+<button type="button" class="btn ghost sm" onClick="{{reset}}"><svg aria-hidden="true"><use href="#i-replay"></use></svg>Rewind the turn</button>
+</section>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const PIP = {2:[[50,0],[50,100,1]],3:[[50,0],[50,50],[50,100,1]],4:[[0,0],[100,0],[0,100,1],[100,100,1]],5:[[0,0],[100,0],[50,50],[0,100,1],[100,100,1]],6:[[0,0],[100,0],[0,50],[100,50],[0,100,1],[100,100,1]],7:[[0,0],[100,0],[50,25],[0,50],[100,50],[0,100,1],[100,100,1]],8:[[0,0],[100,0],[50,25],[0,50],[100,50],[50,75,1],[0,100,1],[100,100,1]],9:[[0,0],[100,0],[0,33.3],[100,33.3],[50,50],[0,66.7,1],[100,66.7,1],[0,100,1],[100,100,1]],10:[[0,0],[100,0],[50,16.7],[0,33.3],[100,33.3],[0,66.7,1],[100,66.7,1],[50,83.3,1],[0,100,1],[100,100,1]]};
+const WORD = {A:'Ace',K:'King',Q:'Queen',J:'Jack'};
+const SUIT = {S:'spades',H:'hearts',D:'diamonds',C:'clubs'};
+
+function card(rank, suit) {
+  const n = parseInt(rank, 10);
+  const red = suit === 'H' || suit === 'D';
+  return {
+    id: rank + suit, rank: rank, suit: suit,
+    tone: (red ? 'red' : 'blk') + (rank === '10' ? ' ten' : ''),
+    isAce: rank === 'A', isCourt: rank === 'J' || rank === 'Q' || rank === 'K', isPips: n >= 2 && n <= 10,
+    pips: (PIP[n] || []).map(function (p) { return { x: p[0], y: p[1], f: p[2] ? 'flip' : '' }; }),
+    label: (WORD[rank] || rank) + ' of ' + SUIT[suit]
+  };
+}
+
+// Sayyu drew the 3 of spades from the stock and must discard. Aces are low.
+// Only the King of diamonds goes out: A-2-3 of spades, 5-6-7-8 of hearts and
+// three Queens make 3 + 4 + 3. AFTER holds the engine's best arrangement and
+// deadwood for every possible discard (worked out ahead of time).
+const HAND = [card('A','S'), card('2','S'), card('3','S'), card('5','H'), card('6','H'), card('7','H'), card('8','H'), card('Q','S'), card('Q','D'), card('Q','C'), card('K','D')];
+const NOW = [{ids:['AS','2S','3S'],label:'Run of 3'},{ids:['5H','6H','7H','8H'],label:'Run of 4'},{ids:['QS','QD','QC'],label:'Set of 3'},{ids:['KD'],label:'Deadwood 10',dw:true}];
+const AFTER = {
+  'AS':{dv:15,melds:'4 · 3',groups:[{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['2S', '3S', 'KD'],label:'Deadwood 15',dw:true}]},
+  '2S':{dv:14,melds:'4 · 3',groups:[{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['AS', '3S', 'KD'],label:'Deadwood 14',dw:true}]},
+  '3S':{dv:13,melds:'4 · 3',groups:[{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['AS', '2S', 'KD'],label:'Deadwood 13',dw:true}]},
+  '5H':{dv:10,melds:'3 · 3 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['6H', '7H', '8H'],label:'Run of 3'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['KD'],label:'Deadwood 10',dw:true}]},
+  '6H':{dv:30,melds:'3 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['5H', '7H', '8H', 'KD'],label:'Deadwood 30',dw:true}]},
+  '7H':{dv:29,melds:'3 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['5H', '6H', '8H', 'KD'],label:'Deadwood 29',dw:true}]},
+  '8H':{dv:10,melds:'3 · 3 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['5H', '6H', '7H'],label:'Run of 3'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'},{ids:['KD'],label:'Deadwood 10',dw:true}]},
+  'QS':{dv:30,melds:'4 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QD', 'QC', 'KD'],label:'Deadwood 30',dw:true}]},
+  'QD':{dv:30,melds:'4 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QS', 'QC', 'KD'],label:'Deadwood 30',dw:true}]},
+  'QC':{dv:30,melds:'4 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QS', 'QD', 'KD'],label:'Deadwood 30',dw:true}]},
+  'KD':{dv:0,melds:'4 · 3 · 3',groups:[{ids:['AS', '2S', '3S'],label:'Run of 3'},{ids:['5H', '6H', '7H', '8H'],label:'Run of 4'},{ids:['QS', 'QD', 'QC'],label:'Set of 3'}]}
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { phase: 'turn', selected: null, tossed: null, melds: true };
+    this.timers = [];
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  later(ms, fn) { this.timers.push(setTimeout(fn, ms)); }
+  discard(id) {
+    if (this.state.phase !== 'turn') return;
+    this.setState({ phase: 'toss', tossed: id, selected: null });
+    if (id === 'KD') {
+      this.later(750, () => this.setState({ phase: 'reveal' }));
+      this.later(2100, () => this.setState({ phase: 'won' }));
+    } else {
+      this.later(900, () => this.setState({ phase: 'missed' }));
+    }
+  }
+  reset() {
+    this.timers.forEach(clearTimeout);
+    this.timers = [];
+    this.setState({ phase: 'turn', selected: null, tossed: null });
+  }
+  renderVals() {
+    const s = this.state;
+    const ph = s.phase;
+    const yourTurn = ph === 'turn';
+    const winPath = s.tossed === 'KD';
+    const showReveal = winPath && (ph === 'reveal' || ph === 'won');
+    const after = s.tossed ? AFTER[s.tossed] : null;
+    const groups = after ? after.groups : NOW;
+
+    // lay the groups out left to right, with a wider gap between groups
+    const step = 58, gap = showReveal ? 62 : 34, w = 108;
+    const pos = {}, spans = [];
+    let x = -step - gap, n = 0;
+    groups.forEach(g => {
+      x += gap;
+      const a = x + step;
+      g.ids.forEach(id => { x += step; pos[id] = { x: x, k: n++ }; });
+      spans.push({ a: a, b: x + w, g: g });
+    });
+    const total = x + w;
+    const left0 = 720 - total / 2;
+    const hand = HAND.map(c => {
+      const gone = c.id === s.tossed;
+      const p = pos[c.id] || { x: total / 2 - w / 2, k: 5 };
+      const o = p.k - (n - 1) / 2;
+      const sel = s.selected === c.id;
+      let cls = gone ? 'gone' : (yourTurn ? '' : 'wait');
+      if (sel) cls += ' sel';
+      if (showReveal && !gone) cls += ' lift';
+      return {
+        c: c, i: HAND.indexOf(c), sel: sel, off: gone || !yourTurn, z: 10 + p.k, isNew: c.id === '3S' && yourTurn,
+        x: Math.round(left0 + p.x), y: Math.round(676 + o * o * 1.1), r: +(o * 1.2).toFixed(2), cls: cls,
+        pick: () => {
+          if (!yourTurn) return;
+          if (s.selected === c.id) this.discard(c.id);
+          else this.setState({ selected: c.id });
+        }
+      };
+    });
+    const brackets = spans.map(sp => ({
+      x: Math.round(left0 + sp.a + 6), w: Math.round(sp.b - sp.a - 12), label: sp.g.label,
+      cls: (sp.g.dw ? 'dw' : '') + (showReveal ? ' hot' : '')
+    }));
+
+    const sel = s.selected ? HAND.filter(c => c.id === s.selected)[0] : null;
+    const selWins = !!sel && sel.id === 'KD';
+    const tossed = s.tossed ? HAND.filter(c => c.id === s.tossed)[0] : null;
+
+    let readTitle = 'Ready', readBig = '4 · 3 · 3', readColor = '#C6FF33', readLine = 'One discard takes you out.', deadwood = 10;
+    if (sel && selWins) readLine = 'Throw the King of diamonds and all ten cards are melded. That is Gin.';
+    else if (sel) readLine = 'Throwing the ' + sel.label + ' leaves melds of ' + AFTER[sel.id].melds + ' and ' + AFTER[sel.id].dv + ' deadwood.';
+    if (showReveal) { readTitle = 'Gin'; readLine = 'All ten cards melded after the discard.'; deadwood = 0; }
+    if (ph === 'missed') { readTitle = 'Not out'; readBig = after.melds; readColor = '#FFFFFF'; readLine = 'Deadwood never wins a hand here. Hussain is drawing.'; deadwood = after.dv; }
+
+    return {
+      hand: hand,
+      brackets: brackets,
+      showMelds: s.melds,
+      toggleMelds: () => this.setState({ melds: !s.melds }),
+      tossed: tossed,
+      hidden: !showReveal,
+      revealed: showReveal,
+      oppLine: showReveal ? '22 deadwood' : (ph === 'missed' ? 'Drawing' : 'Waiting'),
+      readTitle: readTitle, readBig: readBig, readColor: readColor, readLine: readLine, deadwood: deadwood,
+      clockOff: yourTurn ? 38.96 : 194.8,
+      clockText: yourTurn ? '12' : '–',
+      turnCap: yourTurn ? 'Your turn' : (ph === 'missed' ? 'Hussain' : 'Your turn is over'),
+      turnTitle: yourTurn ? 'Discard a card' : (ph === 'missed' ? 'Drawing' : (showReveal ? 'Hand won' : (winPath ? 'Going out' : 'Discarded'))),
+      yourTurn: yourTurn,
+      status: yourTurn ? 'You drew the 3 of spades from the stock. Now discard.' : (ph === 'toss' ? 'Discarding' : (showReveal ? 'Gin. Three melds: 4, 3 and 3.' : 'Hussain to draw')),
+      youCount: yourTurn ? 11 : 10,
+      youLine: yourTurn ? 'Your turn' : 'Discarded',
+      discardOff: !yourTurn || !sel,
+      discardCls: selWins ? 'go' : '',
+      discardLabel: !yourTurn ? 'Discarded' : (sel ? (selWins ? 'Discard & win' : 'Discard ' + sel.rank) : 'Pick a card'),
+      discardSuit: yourTurn && sel && !selWins ? sel.suit : '',
+      discardSelected: () => { if (sel) this.discard(sel.id); },
+      won: ph === 'won',
+      missed: ph === 'missed',
+      missedBody: after && !winPath ? 'That discard leaves melds of ' + after.melds + ' and ' + after.dv + ' deadwood, and deadwood never wins here. In this hand only the King of diamonds goes out.' : '',
+      reset: () => this.reset()
+    };
+  }
+}
+</script>
+</body>
+</html>
