@@ -20,17 +20,34 @@
        Stored as RGB triplets so Tailwind's arbitrary-value opacity
        modifiers work: bg-[rgb(var(--lagoon)/20%)].
        ------------------------------------------------------------------ */
-    --gold: 250 204 21;         /* #FACC15 - VIP, trophies, premium, achievement */
-    --gold-bright: 253 224 71;  /* #FDE047 - highlight / gradient top */
-    --gold-deep: 202 138 4;     /* #CA8A04 - gradient bottom, pressed */
+    /* ------------------------------------------------------------------
+       ARENA RETINT
 
-    --lagoon: 45 212 191;       /* #2DD4BF - Mindi, casual play, success  */
-    --lagoon-deep: 13 148 136;  /* #0D9488 - pressed / dark lagoon        */
-    --coral: 251 113 87;        /* #FB7157 - live, weekend league, streak */
-    --coral-deep: 219 68 55;    /* #DB4437 - destructive                  */
-    --deep: 96 165 250;         /* #60A5FA - Gin Rummy, ranked/info, cyan-blue */
-    --deep-dark: 20 32 58;      /* #14203A - deep ocean surface (gradients) */
-    --orchid: 167 139 250;      /* #A78BFA - electric violet: season, VIP, premium */
+       These names are unchanged on purpose. Roughly 315 colour usages
+       across the app already read them (see the note below about
+       recolouring here re-theming everything), so pointing the existing
+       tokens at the Arena palette moves every screen at once - Home,
+       Shop, Profile, Friends, Clubs, Admin included - without editing a
+       single component or touching any game logic.
+
+       The Arena has only two accents: LIME is you and the next thing to
+       press; BLUE is the table and the other side. So the old five-hue
+       domain system collapses onto those two, plus a red for urgency.
+       `gold` is now lime and `orchid` - the old electric violet - is now
+       the blue, which is also where the owner's #00BCC8 replaces the
+       design pack's violet.
+       ------------------------------------------------------------------ */
+    --gold: 198 255 51;         /* #C6FF33 - lime: you, the main action, trophies */
+    --gold-bright: 221 255 112; /* #DDFF70 - highlight / gradient top */
+    --gold-deep: 111 148 18;    /* #6F9412 - gradient bottom, the button lip */
+
+    --lagoon: 0 188 200;        /* #00BCC8 - Mindi, casual play, success  */
+    --lagoon-deep: 0 114 122;   /* #00727A - pressed                      */
+    --coral: 255 59 85;         /* #FF3B55 - live, weekend league, urgent */
+    --coral-deep: 196 30 51;    /* #C41E33 - destructive                  */
+    --deep: 0 188 200;          /* #00BCC8 - Gin Rummy, ranked/info       */
+    --deep-dark: 6 50 58;       /* #06323A - the felt under a gradient    */
+    --orchid: 0 188 200;        /* #00BCC8 - was violet; season, VIP, premium */
 
     /* ------------------------------------------------------------------
        INK vs FILL
@@ -41,15 +58,16 @@
        so every existing `text-[rgb(var(--gold-ink))]` etc. across the app
        keeps working unchanged.
        ------------------------------------------------------------------ */
-    --gold-ink: 250 204 21;
-    --lagoon-ink: 45 212 191;
-    --coral-ink: 251 113 87;
-    --deep-ink: 96 165 250;
-    --orchid-ink: 167 139 250;
+    --gold-ink: 198 255 51;
+    --lagoon-ink: 0 188 200;
+    --coral-ink: 255 91 112;   /* lifted off --coral so it clears AA as text */
+    --deep-ink: 0 188 200;
+    --orchid-ink: 0 188 200;
 
-    /* Card suits — real playing-card red/black, not theme colours. */
-    --suit-red: 220 38 38;
-    --suit-black: 24 24 27;
+    /* Card suits — real playing-card red/black, not theme colours.
+       Red is the Arena card red (#E0213A). */
+    --suit-red: 224 33 58;
+    --suit-black: 11 11 15;
 
     /* ------------------------------------------------------------------
        SURFACE / TEXT SCALE
@@ -61,12 +79,15 @@
        so recolouring them here re-themes the whole app without touching
        component code.
        ------------------------------------------------------------------ */
-    --c1: 12 15 17;
-    --c2: 22 27 30;
-    --c3: 46 55 58;
-    --c4: 154 169 172;
-    --c5: 206 218 218;
-    --text-primary: 240 242 250;
+    /* Arena surfaces: a black stage, graphite panels, and the two text
+       greys from the design pack (--ar-text-2 / --ar-text-3), both of
+       which clear 4.5:1 on those panels. */
+    --c1: 0 0 0;         /* #000000 - the stage */
+    --c2: 18 18 23;      /* #121217 - panels, icon buttons */
+    --c3: 42 42 52;      /* #2A2A34 - borders */
+    --c4: 164 164 178;   /* #A4A4B2 - tracked labels, muted text */
+    --c5: 190 190 202;   /* #BEBECA - secondary text */
+    --text-primary: 255 255 255;
 
     /* Elevation. On a dark stage, real shadows read mostly as depth from
        black; the colourful lift comes from --shadow-glow-* (used on
@@ -77,7 +98,7 @@
     --shadow-glow-gold: 0 0 24px -4px rgb(var(--gold) / 0.45);
     --shadow-glow-lagoon: 0 0 24px -4px rgb(var(--lagoon) / 0.45);
 
-    --background: #08090F;
+    --background: #000000;
     --foreground: #F0F2FA;
   }
 
@@ -85,7 +106,23 @@
     box-sizing: border-box;
     padding: 0;
     margin: 0;
-    letter-spacing: 0 !important;
+  }
+
+  /*
+   * This was `* { letter-spacing: 0 !important }`. An !important on the
+   * universal selector cannot be overridden by anything, so it silently
+   * killed EVERY piece of tracking in the app - not just Tailwind's
+   * `tracking-*` utilities but the letter-spacing the components already
+   * declared for their own eyebrow and label text.
+   *
+   * The Arena look is built on tracked uppercase (0.22em on small labels,
+   * 0.06em on buttons, -0.02em on headlines), so it cannot survive that
+   * rule at all. Narrowed here to a ZERO-SPECIFICITY default: untracked
+   * text still resolves to 0 rather than the font's own `normal`, and any
+   * explicit tracking now applies.
+   */
+  :where(*) {
+    letter-spacing: 0;
   }
 
   html,

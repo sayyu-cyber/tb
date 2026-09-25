@@ -1,0 +1,671 @@
+/* ===========================================================================
+   Thaasbai · Arena — design tokens
+   ---------------------------------------------------------------------------
+   Ported from design/arena/tokens.css (which stays as untouched reference).
+   This file IS imported, by app/layout.tsx.
+
+   ONE DELIBERATE DIFFERENCE FROM THE DESIGN PACK
+   The pack's violet (#7D39EB) is replaced throughout by #00BCC8, at the
+   owner's request. Its ROLE is unchanged - still the table felt, the
+   opponents, trump and secondary actions - so wherever design/arena/README.md
+   or the boards say "violet", read `--ar-blue`. The lighter and darker steps
+   are derived from #00BCC8 rather than all being flattened to it, because a
+   button lip has to be darker than its face and the felt darker still, or
+   the depth collapses.
+
+   STEP 1 OF THE PORT (design/arena/README.md "Suggested order"). This file
+   only declares values. Nothing consumes them yet, and no component has
+   moved onto the Arena look - that starts at step 2.
+   =========================================================================== */
+
+:root {
+  /* ---- brand palette (Black / Blue / Lime / White) ---- */
+  --ar-black: #000000;       /* stage, rails */
+  --ar-blue: #00BCC8;        /* felt, opponents, trump, secondary action */
+  --ar-lime: #C6FF33;        /* you, your team, the main action */
+  --ar-white: #FFFFFF;       /* card stock, type */
+
+  /* ---- supporting shades ---- */
+  --ar-blue-hi: #4FE3EC;     /* top of blue gradients */
+  --ar-blue-soft: #6FE9F0;   /* opponent dots, Thaana, small blue text */
+  --ar-blue-lo: #00727A;     /* blue button base / lip */
+  --ar-blue-deep: #005A61;
+  --ar-lime-hi: #DDFF70;     /* top of lime gradients */
+  --ar-lime-lo: #6F9412;     /* lime button base / lip */
+  --ar-graphite: #121217;    /* icon buttons, panels */
+  --ar-panel-top: rgba(20, 20, 26, .94);
+  --ar-panel-bottom: rgba(9, 9, 12, .94);
+  --ar-line: rgba(255, 255, 255, .10);
+  --ar-text: #FFFFFF;
+  --ar-text-2: #BEBECA;      /* secondary text, >= 4.5:1 on panels */
+  --ar-text-3: #A4A4B2;      /* tracked labels under names */
+  --ar-card-red: #E0213A;    /* hearts and diamonds */
+  --ar-urgent: #FF3B55;      /* turn clock under 5 s */
+
+  /* ---- felt skins (Mindi table theme picker; names from data/cosmetics.ts) */
+  --ar-felt-neon-arena: #06323A;   /* default "Neon Arena" - was #2E1468 violet */
+  --ar-felt-crimson: #4A1119;      /* "Crimson Velvet" */
+  --ar-felt-sapphire: #0E2C4E;     /* "Sapphire Blue" */
+  --ar-felt-midnight: #101214;     /* "Midnight Black" */
+  --ar-felt-gin: #0A2429;          /* Gin Rummy table - was #17122A violet */
+
+  /* ---- type ---- */
+  --ar-font-display: var(--font-display), system-ui, sans-serif;
+  --ar-font-ui: var(--font-ui), system-ui, sans-serif;
+  --ar-font-thaana: var(--font-thaana), sans-serif;
+  --ar-track-label: .22em;   /* tracked caps labels */
+  --ar-track-button: .06em;
+  --ar-track-headline: -.02em;
+
+  /* ---- shape ---- */
+  --ar-radius-card: .62em;   /* cards are sized by font-size: 7.2em x 10.08em */
+  --ar-radius-btn: 12px;
+  --ar-radius-hud: 14px;
+  --ar-radius-chip: 7px;
+
+  /* ---- depth ---- */
+  --ar-btn-lime:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    inset 0 -2px 0 rgba(0, 0, 0, .14),
+    0 6px 0 var(--ar-lime-lo),
+    0 14px 30px -6px rgba(198, 255, 51, .4);
+  --ar-btn-lime-press:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    inset 0 -1px 0 rgba(0, 0, 0, .14),
+    0 1px 0 var(--ar-lime-lo),
+    0 6px 14px -6px rgba(198, 255, 51, .4);
+  --ar-btn-blue:
+    inset 0 1px 0 rgba(255, 255, 255, .35),
+    inset 0 -2px 0 rgba(0, 0, 0, .2),
+    0 6px 0 var(--ar-blue-lo),
+    0 14px 30px -6px rgba(0, 188, 200, .5);
+  --ar-btn-blue-press:
+    inset 0 1px 0 rgba(255, 255, 255, .3),
+    0 1px 0 var(--ar-blue-lo),
+    0 6px 14px -6px rgba(0, 188, 200, .5);
+  --ar-card-stack: 0 1px 0 #DCDCE4, 0 2px 0 #C6C6D0, 0 3px 0 #ABABB8, 0 4px 0 #8F8F9E;
+  --ar-glow-lime: 0 0 0 4px var(--ar-lime), 0 0 36px 6px rgba(198, 255, 51, .5);
+  /* Tens only. Lime -> blue -> white, the blue standing in for the pack's violet. */
+  --ar-foil: conic-gradient(from 200deg, #C6FF33, #00BCC8, #FFFFFF, #C6FF33, #00BCC8, #FFFFFF, #C6FF33);
+
+  /* ---- motion (design/arena/screens/motion.jpg) ---- */
+  --ar-press-down: 90ms;     /* ease-out */
+  --ar-press-back: 180ms;    /* spring */
+  --ar-spring: cubic-bezier(.3, 1.7, .5, 1);
+  --ar-settle: cubic-bezier(.2, .8, .2, 1);
+  --ar-play-card: 580ms;     /* cubic-bezier(.2, .75, .25, 1) */
+  --ar-trick-sweep: 620ms;   /* cubic-bezier(.55, 0, .35, 1), 50 ms stagger */
+  --ar-ten-flight: 950ms;    /* cubic-bezier(.45, 0, .2, 1) */
+}
+
+/* ---- type recipes ------------------------------------------------------
+   Headings across the app take the display face and its tight tracking, so
+   the screens that have not been redesigned yet still read as Arena rather
+   than merely recoloured. Uppercasing is NOT applied here - it is opt-in via
+   .ar-h1 / .ar-h2, because plenty of existing headings carry names and other
+   copy that should not be shouted. */
+h1, h2, h3 {
+  font-family: var(--ar-font-display);
+  letter-spacing: var(--ar-track-headline);
+}
+
+.ar-disp {
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--ar-track-headline);
+  line-height: .92;
+}
+
+/* Silver headline. Put .ar-chrome on the element that ANIMATES, never on its
+   parent: a transformed child of a background-clip:text parent paints blank. */
+.ar-chrome {
+  background: linear-gradient(100deg, #8C8C97 0%, #FFFFFF 34%, #CFCFD8 52%, #FFFFFF 68%, #9A9AA6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ar-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: var(--ar-track-label);
+  text-transform: uppercase;
+  color: var(--ar-text-2);
+  white-space: nowrap;
+}
+.ar-lbl.dash::before { content: ""; width: 22px; height: 1.5px; background: currentColor; }
+
+.ar-thaana { font-family: var(--ar-font-thaana); font-weight: 600; }
+
+/* ---- HUD panel with lime corner ticks ----------------------------------- */
+.ar-hud {
+  position: relative;
+  border-radius: var(--ar-radius-hud);
+  background: linear-gradient(180deg, var(--ar-panel-top), var(--ar-panel-bottom));
+  border: 1px solid var(--ar-line);
+  box-shadow: 0 22px 44px -20px rgba(0, 0, 0, .95);
+}
+.ar-hud::before, .ar-hud::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-style: solid;
+  border-color: var(--ar-lime);
+  pointer-events: none;
+}
+.ar-hud::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; border-top-left-radius: var(--ar-radius-hud); }
+.ar-hud::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: var(--ar-radius-hud); }
+/* "Their" panels tick blue instead of lime. */
+.ar-hud.them::before, .ar-hud.them::after { border-color: var(--ar-blue-soft); }
+
+/* ---- buttons ------------------------------------------------------------
+   The face sinks 5px onto its own lip: 90ms down (ease-out), 180ms back on a
+   spring. Heights live here rather than in styles/buttons.css, because that
+   file is contractually depth-only and check-button-3d.mjs enforces it. The
+   generic bevel there is a bare `button` rule, so these classes win. */
+.ar-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: var(--ar-radius-btn);
+  cursor: pointer;
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: var(--ar-track-button);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #0A0A0A;
+  background: linear-gradient(180deg, var(--ar-lime-hi) 0%, var(--ar-lime) 52%, #B4EE22 100%);
+  box-shadow: var(--ar-btn-lime);
+  transition: transform var(--ar-press-back) var(--ar-spring), box-shadow var(--ar-press-back) ease-out;
+}
+/* A sheen that crosses the face on hover. */
+.ar-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, .5) 50%, rgba(255, 255, 255, 0) 62%);
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  pointer-events: none;
+  transition: background-position .7s ease;
+}
+.ar-btn:hover:not(:disabled)::after { background-position: -30% 0; }
+/* Re-asserted at :hover specificity. The generic bevel in styles/buttons.css
+   hovers at `button:hover:not(:disabled)` — higher than a lone class — so
+   without this the lime lip would vanish the moment the pointer arrived. */
+.ar-btn:hover:not(:disabled) { box-shadow: var(--ar-btn-lime); }
+.ar-btn.blue:hover:not(:disabled) { box-shadow: var(--ar-btn-blue); }
+.ar-btn.danger:hover:not(:disabled) { box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 6px 0 #8A1524, 0 16px 34px -6px rgba(255, 59, 85, .5); }
+.ar-btn:active:not(:disabled) {
+  transform: translateY(5px);
+  box-shadow: var(--ar-btn-lime-press);
+  transition-duration: var(--ar-press-down);
+  transition-timing-function: ease-out;
+}
+.ar-btn:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+.ar-btn:disabled {
+  cursor: not-allowed;
+  color: rgba(255, 255, 255, .45);
+  background: #17171D;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), 0 3px 0 #000;
+  transform: translateY(3px);
+}
+.ar-btn:disabled::after { display: none; }
+
+.ar-btn.blue {
+  color: #04262A;
+  background: linear-gradient(180deg, var(--ar-blue-hi) 0%, var(--ar-blue) 55%, #009AA4 100%);
+  box-shadow: var(--ar-btn-blue);
+}
+.ar-btn.blue:active:not(:disabled) { box-shadow: var(--ar-btn-blue-press); }
+
+.ar-btn.ghost { color: #fff; background: #141419; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .2), 0 5px 0 #000; }
+.ar-btn.ghost:hover:not(:disabled) { box-shadow: inset 0 0 0 1.5px rgba(198, 255, 51, .7), 0 5px 0 #000; }
+.ar-btn.ghost:active:not(:disabled) { transform: translateY(4px); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .2), 0 1px 0 #000; }
+.ar-btn.ghost[aria-pressed="true"] { color: var(--ar-lime); background: #10130A; box-shadow: inset 0 0 0 1.5px var(--ar-lime), 0 1px 0 #000; transform: translateY(4px); }
+
+.ar-btn.danger { color: #fff; background: linear-gradient(180deg, #FF6B7F 0%, var(--ar-urgent) 55%, #C41E33 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 6px 0 #8A1524, 0 14px 30px -6px rgba(255, 59, 85, .45); }
+.ar-btn.danger:active:not(:disabled) { box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 1px 0 #8A1524, 0 6px 14px -6px rgba(255, 59, 85, .45); }
+
+.ar-btn.sm { height: 48px; padding: 0 18px; font-size: 14px; border-radius: 11px; }
+.ar-btn.md { height: 52px; padding: 0 22px; font-size: 15px; }
+.ar-btn.block { width: 100%; }
+
+/* ---- icon button: 48px square, graphite, turns lime on hover ------------- */
+.ar-ibtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  background: var(--ar-graphite);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), 0 4px 0 #000;
+  transition: transform var(--ar-press-back) var(--ar-spring), box-shadow var(--ar-press-back) ease-out, color .15s;
+}
+.ar-ibtn:hover:not(:disabled) { color: var(--ar-lime); box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .6), 0 4px 0 #000; }
+.ar-ibtn:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), 0 1px 0 #000; transition-duration: var(--ar-press-down); }
+.ar-ibtn:focus-visible { outline: 2px solid #fff; outline-offset: 5px; }
+.ar-ibtn:disabled { cursor: not-allowed; color: rgba(255,255,255,.3); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 2px 0 #000; }
+.ar-ibtn.sm { width: 40px; height: 40px; border-radius: 10px; }
+
+/* ---- segmented control: the active option is white with black text ------- */
+.ar-seg {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 12px;
+  background: #0E0E13;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+}
+.ar-seg button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ar-text-3);
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: var(--ar-track-label);
+  text-transform: uppercase;
+  box-shadow: none;
+  transition: background .16s, color .16s;
+}
+.ar-seg button:hover:not([aria-pressed="true"]) { color: var(--ar-text); }
+.ar-seg button[aria-pressed="true"] { background: #fff; color: #0A0A0A; }
+.ar-seg button:focus-visible { outline: 2px solid var(--ar-lime); outline-offset: 2px; }
+
+/* ---- quiet inline action ------------------------------------------------- */
+.ar-quiet {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  color: var(--ar-lime);
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: var(--ar-track-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.ar-quiet:hover { color: var(--ar-lime-hi); }
+.ar-quiet:disabled { cursor: not-allowed; color: #6E7A4A; }
+
+/* ---- chips -------------------------------------------------------------- */
+.ar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--ar-radius-chip);
+  font-family: var(--ar-font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ar-chip.live { background: rgba(198, 255, 51, .12); color: var(--ar-lime); box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .5); }
+.ar-chip.blue { background: rgba(0, 188, 200, .2); color: #9FF2F7; box-shadow: inset 0 0 0 1px rgba(111, 233, 240, .6); }
+.ar-chip.mono { background: rgba(255, 255, 255, .06); color: #E4E4EA; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+.ar-chip.white { background: #fff; color: #0A0A0A; }
+
+.ar-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: ar-blink 1.6s steps(1, end) infinite; }
+@keyframes ar-blink { 0%, 60% { opacity: 1; } 61%, 100% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .ar-chip-dot { animation: none; } }
+
+/* ---- board frame --------------------------------------------------------
+   The wrapper for a scaled artboard (see components/game/ArenaStage.tsx).
+   The canvas keeps its true pixel size and is scaled as a whole, so the
+   composition is identical at every viewport instead of reflowing. */
+.arena-frame { position: fixed; inset: 0; display: grid; grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr); place-items: center; overflow: hidden; background: #000; }
+.arena-canvas { position: relative; flex: none; transform-origin: 50% 50%; }
+
+/* ---- the stage ----------------------------------------------------------
+   A night arena: a black floor with a receding grid, lit by two soft beams.
+   Everything is painted by pseudo-elements on a fixed layer behind the page,
+   so adding it to a screen costs no DOM and cannot affect that screen's
+   layout. */
+.ar-stage { position: relative; min-height: 100vh; background: var(--ar-black); color: var(--ar-text); }
+.ar-stage::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    /* two spotlight beams */
+    conic-gradient(from 210deg at 32% -10%, transparent 0deg, rgba(0, 188, 200, .16) 14deg, transparent 30deg),
+    conic-gradient(from 110deg at 70% -10%, transparent 0deg, rgba(198, 255, 51, .10) 12deg, transparent 26deg),
+    radial-gradient(120% 70% at 50% 0%, rgba(0, 188, 200, .16), transparent 60%);
+}
+/* The floor grid, in perspective, fading out before the horizon. */
+.ar-stage::after {
+  content: "";
+  position: fixed;
+  left: -50%;
+  right: -50%;
+  bottom: -10%;
+  height: 62%;
+  z-index: 0;
+  pointer-events: none;
+  transform: perspective(60vh) rotateX(62deg);
+  transform-origin: 50% 100%;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 188, 200, .30) 0 1px, transparent 1px 84px),
+    repeating-linear-gradient(0deg, rgba(0, 188, 200, .22) 0 1px, transparent 1px 84px);
+  -webkit-mask-image: linear-gradient(to top, #000 8%, transparent 78%);
+  mask-image: linear-gradient(to top, #000 8%, transparent 78%);
+}
+/* Page content sits above both layers. */
+.ar-stage > * { position: relative; z-index: 1; }
+
+.ar-page { width: min(1280px, 100%); margin: 0 auto; padding: 28px 20px 64px; }
+.ar-h1 { font-family: var(--ar-font-display); font-weight: 700; font-size: clamp(30px, 5vw, 54px); text-transform: uppercase; letter-spacing: var(--ar-track-headline); line-height: .94; }
+.ar-h2 { font-family: var(--ar-font-display); font-weight: 700; font-size: clamp(19px, 2.4vw, 26px); text-transform: uppercase; letter-spacing: var(--ar-track-headline); }
+.ar-sub { color: var(--ar-text-2); font-size: 14px; line-height: 1.55; max-width: 62ch; }
+.ar-grid { display: grid; gap: 16px; }
+.ar-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.ar-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.ar-grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+/* A HUD panel used as a page card: same chrome, comfortable padding. */
+.ar-card { padding: 18px; }
+.ar-card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.ar-stat { font-family: var(--ar-font-display); font-weight: 700; font-size: clamp(26px, 3.4vw, 40px); line-height: 1; letter-spacing: -.02em; }
+.ar-stat.lime { color: var(--ar-lime); }
+.ar-stat.blue { color: var(--ar-blue); }
+.ar-meta { color: var(--ar-text-3); font-size: 12px; }
+
+/* A row in a list of people, rooms, items. */
+.ar-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .035); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.ar-row + .ar-row { margin-top: 8px; }
+.ar-row strong { font-family: var(--ar-font-display); font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+.ar-row .ar-meta { margin-left: auto; text-align: right; }
+
+/* ---- player frame ------------------------------------------------------- */
+.ar-pf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 6px 18px 6px 6px;
+  border-radius: 14px;
+  background: rgba(10, 10, 14, .92);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 18px 30px -16px rgba(0, 0, 0, .9);
+}
+.ar-pf.turn { border-color: var(--ar-lime); box-shadow: 0 0 0 4px rgba(198, 255, 51, .14), 0 0 32px rgba(198, 255, 51, .22); }
+.ar-av {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: #0A0A0A;
+  background: linear-gradient(135deg, #E4FF8C 0%, var(--ar-lime) 60%, #A5DD1A 100%);   /* you and partner */
+}
+.ar-av.them { color: #04262A; background: linear-gradient(135deg, var(--ar-blue-hi) 0%, var(--ar-blue) 60%, #00858F 100%); }
+.ar-av .count {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  box-sizing: border-box;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: #fff;
+  color: #000;
+  font: 700 13px/24px var(--ar-font-display);
+  text-align: center;
+  box-shadow: 0 0 0 2px #000;
+}
+
+/* ---- cards: sized by font-size, 7.2em x 10.08em -------------------------- */
+.ar-face {
+  position: relative;
+  width: 7.2em;
+  height: 10.08em;
+  border-radius: var(--ar-radius-card);
+  background: linear-gradient(160deg, #FFFFFF 0%, #F5F5F8 55%, #E7E7EE 100%);
+  color: #0B0B0F;
+  overflow: hidden;
+  box-shadow: var(--ar-card-stack), 0 24px 30px -12px rgba(0, 0, 0, .85);
+}
+.ar-face.red { color: var(--ar-card-red); }
+/* Every Ten carries a foil ring, because Tens decide Mindi. */
+.ar-face.ten::before {
+  content: "";
+  position: absolute;
+  inset: .2em;
+  border-radius: .46em;
+  padding: .13em;
+  background: var(--ar-foil);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.ar-face.ten::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(198, 255, 51, .2) 42%, rgba(0, 188, 200, .16) 52%, rgba(255, 255, 255, 0) 64%);
+  background-size: 260% 100%;
+  animation: ar-holo 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ar-holo { 0% { background-position: 130% 0; } 100% { background-position: -30% 0; } }
+
+/* Court cards: a solid suit-colour panel with a white letter. */
+.ar-court {
+  position: absolute;
+  left: 1.8em; right: 1.8em; top: 1.4em; bottom: 1.4em;
+  border-radius: .4em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: currentColor;
+}
+.ar-court::before { content: ""; position: absolute; inset: .18em; border-radius: .28em; border: .06em solid rgba(255, 255, 255, .55); }
+.ar-court b { font: 700 2.9em/1 var(--ar-font-display); letter-spacing: -.04em; color: #fff; }
+
+/* Default back: blue lattice, lime crown in a black diamond. */
+.ar-back {
+  position: relative;
+  width: 7.2em;
+  height: 10.08em;
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-blue);
+  overflow: hidden;
+}
+.ar-back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(255, 255, 255, .24), rgba(255, 255, 255, 0) 55%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, .26) 0 .1em, rgba(0, 0, 0, 0) .1em .62em),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, .26) 0 .1em, rgba(0, 0, 0, 0) .1em .62em);
+}
+.ar-back::after {
+  content: "";
+  position: absolute;
+  inset: .34em;
+  border-radius: .4em;
+  box-shadow: inset 0 0 0 .08em #fff, inset 0 0 0 .22em var(--ar-blue), inset 0 0 0 .3em #0B0B0F;
+}
+
+/* ---- the PlayingCard component -----------------------------------------
+   The kit sizes a card by font-size (7.2em wide), but this component's box
+   is frequently resized by the table stylesheets - .mindi-card-slot>button
+   sets its own width and height, for instance. So the card establishes an
+   inline-size container and derives its own em from its REAL rendered width:
+   width = 7.2em, so 1em = 13.889cqw. Every part below is in em, which means
+   indices and pips stay in proportion at any size the table asks for,
+   instead of only at the sizes the component knows about. */
+.pc {
+  container-type: inline-size;
+  /* The stack of thin light edges is what makes a card read as printed
+     stock with thickness rather than a white rectangle. */
+  box-shadow: var(--ar-card-stack), 0 18px 26px -12px rgba(0, 0, 0, .8);
+}
+/* Picked: the lime ring from the kit, not just a border. */
+.pc.is-picked { box-shadow: var(--ar-card-stack), var(--ar-glow-lime), 0 30px 30px -12px rgba(0, 0, 0, .8); }
+/* Can't play: dimmed to 50%, never hidden, so you can still read the card. */
+.pc.is-dim { filter: brightness(.5) saturate(.6); }
+.pc-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  font-size: 13.889cqw;
+  background: linear-gradient(160deg, #FFFFFF 0%, #F5F5F8 55%, #E7E7EE 100%);
+}
+
+/* Corner index: rank over suit, as printed. The rotated copy makes the card
+   readable either way up. */
+.pc-index {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .02em;
+  line-height: .86;
+  font-family: var(--ar-font-display);
+  font-weight: 700;
+  letter-spacing: -.04em;
+}
+.pc-index.tl { left: .42em; top: .38em; }
+.pc-index.br { right: .42em; bottom: .38em; rotate: 180deg; }
+.pc-index b { font-size: 1.5em; }
+.pc-index i { font-size: 1.05em; font-style: normal; }
+
+/* Pips are placed at the classic coordinates rather than in a grid, because
+   the 7, 8 and 10 layouts put pips BETWEEN rows and a grid cannot express
+   that without inventing half-rows. */
+.pc-pip {
+  position: absolute;
+  translate: -50% -50%;
+  font-size: 1.45em;
+  line-height: 1;
+}
+.pc-pip[data-flip="true"] { rotate: 180deg; }
+.pc-pip.big { font-size: 3.1em; }
+
+/* Court cards: a solid suit-colour panel with a white letter. */
+.pc-court {
+  position: absolute;
+  left: 1.5em; right: 1.5em; top: 1.25em; bottom: 1.25em;
+  border-radius: .4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: currentColor;
+}
+.pc-court::before { content: ""; position: absolute; inset: .18em; border-radius: .28em; border: .06em solid rgba(255, 255, 255, .55); }
+.pc-court b { font-family: var(--ar-font-display); font-weight: 700; font-size: 2.9em; line-height: 1; letter-spacing: -.04em; color: #fff; }
+
+/* Every Ten carries a foil ring, because Tens decide Mindi. */
+.pc-ten::before {
+  content: "";
+  position: absolute;
+  inset: .2em;
+  border-radius: .46em;
+  padding: .13em;
+  background: var(--ar-foil);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.pc-ten::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(198, 255, 51, .2) 42%, rgba(0, 188, 200, .16) 52%, rgba(255, 255, 255, 0) 64%);
+  background-size: 260% 100%;
+  animation: ar-holo 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* The Arena back: a blue lattice with a lime crown in a black diamond. */
+.pc-back-arena { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: var(--ar-blue); font-size: 13.889cqw; }
+.pc-back-arena::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(255, 255, 255, .24), rgba(255, 255, 255, 0) 55%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, .26) 0 .1em, rgba(0, 0, 0, 0) .1em .62em),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, .26) 0 .1em, rgba(0, 0, 0, 0) .1em .62em);
+}
+.pc-back-arena::after {
+  content: "";
+  position: absolute;
+  inset: .34em;
+  border-radius: .4em;
+  box-shadow: inset 0 0 0 .08em #fff, inset 0 0 0 .22em var(--ar-blue), inset 0 0 0 .3em #0B0B0F;
+}
+.pc-back-crown {
+  position: absolute;
+  left: 50%; top: 50%;
+  translate: -50% -50%;
+  width: 2.5em; height: 2.5em;
+  rotate: 45deg;
+  border-radius: .3em;
+  background: #0B0B0F;
+  box-shadow: 0 0 0 .1em var(--ar-lime);
+  display: grid;
+  place-items: center;
+}
+.pc-back-crown span { rotate: -45deg; color: var(--ar-lime); font-size: 1.1em; line-height: 1; }
+
+@media (prefers-reduced-motion: reduce) { .pc-ten::after { display: none; } }
+
+/* ---- cards in the hand -------------------------------------------------- */
+/* hover lifts 16 px, picked lifts 36 px with a lime ring,
+   can't-play sinks 12 px and dims to 50% brightness (never hidden) */
+.ar-hand-card { transition: translate .22s var(--ar-settle); }
+.ar-hand-card:hover:not(:disabled) { translate: 0 -16px; }
+.ar-hand-card[aria-pressed="true"] { translate: 0 -36px; }
+.ar-hand-card[aria-pressed="true"] .ar-face { box-shadow: var(--ar-card-stack), var(--ar-glow-lime), 0 30px 30px -12px rgba(0, 0, 0, .8); }
+.ar-hand-card.cant-play { translate: 0 12px; cursor: not-allowed; }
+.ar-hand-card.cant-play .ar-face { filter: brightness(.5) saturate(.6); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ar-hand-card { transition: none; }
+  .ar-face.ten::after { display: none; }
+}

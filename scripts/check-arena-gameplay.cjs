@@ -1,0 +1,94 @@
+const path=require('node:path'),fs=require('node:fs'),assert=require('node:assert/strict');
+const compiler=require('next/dist/compiled/webpack/webpack');compiler.init();
+const {chromium}=require('C:/Users/Sayyu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const root=path.resolve(__dirname,'..'),output=path.join(root,'artifacts/gameplay-test/arena-gin');
+const mocks=path.join(__dirname,'gin-test-services.tsx');
+const alias=Object.fromEntries(['@/contexts/SettingsContext','next/navigation'].map(name=>[name+'$',mocks]));alias['@']=root;
+async function main(){
+  await new Promise((resolve,reject)=>compiler.webpack({mode:'development',devtool:false,entry:path.join(__dirname,'arena-game-test-entry.tsx'),output:{path:output,filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.join(__dirname,'friends-test-loader.cjs')}]},plugins:[new compiler.webpack.optimize.LimitChunkCountPlugin({maxChunks:1}),new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})]},(e,s)=>e||s.hasErrors()?reject(e||s.toString()):resolve()));
+  const browser=await chromium.launch({headless:true,channel:'msedge'});
+  try{
+    const page=await browser.newPage({viewport:{width:1440,height:900},hasTouch:true});
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.goto('http://127.0.0.1:3000/login/');
+    const urls=await page.locator('link[rel=stylesheet]').evaluateAll(nodes=>nodes.map(n=>n.href));
+    const css=[];for(const url of urls){const r=await page.request.get(url);assert.ok(r.ok());css.push(await r.text());}
+    const body=await page.locator('body').getAttribute('class'),script=fs.readFileSync(path.join(output,'component.js'),'utf8');
+    await page.route('**/arena-check/**',r=>r.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(s=>`<style>${s}</style>`).join('')}</head><body class="${body}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+    const load=async(query='')=>{await page.goto('http://127.0.0.1:3000/arena-check/'+query);await page.waitForTimeout(900);};
+    const point=async(locator)=>locator.evaluate(el=>{const r=el.getBoundingClientRect();return{x:r.left+r.width*.3,y:r.top+r.height*.48};});
+    const clickCard=async(locator)=>{const p=await point(locator);await page.mouse.move(p.x,p.y);await page.waitForTimeout(250);await page.mouse.down();await page.mouse.up();};
+    await load('?mindi');await page.waitForTimeout(1200);
+    const legal=page.getByRole('button',{name:'9 of Hearts',exact:true});
+    const before=await legal.boundingBox();await clickCard(legal);
+    await page.screenshot({path:path.join(output,'mindi-input.png')});
+    const after=await legal.boundingBox();assert.ok(Math.abs(after.x-before.x)<4&&Math.abs(after.y-before.y)<60,'Card jumped away from pointer');
+    assert.equal(await legal.getAttribute('aria-pressed'),'true','Mindi pointer selection failed');
+    await page.getByRole('button',{name:/Play.*9/i}).click();
+    assert.ok(await page.locator('body').getAttribute('data-played'),'Mindi card was not played');
+    await load();
+    await page.locator('.gin-arena-scene[data-renderer=webgl]').waitFor();
+    const pixels=async(x)=>page.evaluate(x=>new Promise(resolve=>{
+      const canvas=document.querySelector('.gin-arena-scene canvas'),r=canvas.getBoundingClientRect();
+      canvas.parentElement.parentElement.dispatchEvent(new PointerEvent('pointermove',{pointerType:'mouse',clientX:r.left+r.width*x,bubbles:true}));
+      requestAnimationFrame(()=>{const gl=canvas.getContext('webgl2'),a=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,a);let filled=0,checksum=0;for(let i=0;i<a.length;i+=64){if(a[i+3]){filled++;checksum+=a[i]*3+a[i+1]*5+a[i+2]*7;}}resolve({filled,checksum});});
+    }),x);
+    const p1=await pixels(.05),p2=await pixels(.95);assert.ok(p1.filled>100,'Blank WebGL scene');assert.notEqual(p1.checksum,p2.checksum,'Table lighting did not respond');
+    assert.equal(await page.locator('.gin-hand button:enabled').count(),0,'Selection enabled during draw phase');
+    await page.getByRole('button',{name:/Draw from stock/}).click();
+    assert.equal(await page.locator('.gin-hand button').count(),11);
+    assert.equal(await page.locator('.gin-new-card').count(),1);
+    await page.waitForTimeout(350);
+    for(const card of await page.locator('.gin-hand button').all()){
+      await clickCard(card);assert.equal(await card.getAttribute('aria-pressed'),'true','A card is not pointer selectable');
+      await page.mouse.move(20,20);await page.waitForTimeout(200);
+    }
+    const first=page.locator('.gin-hand button').first();await first.focus();
+    await page.keyboard.press('ArrowRight');
+    assert.ok(await page.locator('.gin-hand button').nth(1).evaluate(el=>el===document.activeElement),'Arrow navigation failed');
+    await page.keyboard.press('Enter');
+    const moved=await page.locator('.gin-hand button:focus').getAttribute('aria-label');
+    await page.keyboard.press('Alt+ArrowRight');
+    assert.equal(await page.locator('.gin-hand button').nth(2).getAttribute('aria-label'),moved,'Keyboard reorder failed');
+    await page.getByRole('combobox',{name:'Sort hand'}).selectOption('melds');
+    const discard=page.getByRole('button',{name:'K of diamonds',exact:true});
+    await clickCard(discard);assert.equal(await discard.getAttribute('aria-pressed'),'true');
+    assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true);
+    if(await page.getByRole('button',{name:'View Melds',exact:true}).getAttribute('aria-pressed')!=='true')await page.getByRole('button',{name:'View Melds',exact:true}).click();
+    assert.equal(await page.locator('.gin-arena-melds>span').count(),4);
+    for(const [width,height] of [[1920,1080],[1440,900],[844,390],[390,844],[320,700]]){
+      await page.setViewportSize({width,height});await page.waitForTimeout(150);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Horizontal overflow '+width);
+      assert.ok(await page.locator('.gin-hand button').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})),'Clipped cards '+width);
+      assert.ok((await pixels(.4)).filled>100,'Blank canvas '+width);
+      await page.screenshot({path:path.join(output,`gin-selected-${width}.png`)});
+    }
+    await page.setViewportSize({width:1440,height:900});
+    await page.getByRole('button',{name:'Discard & win',exact:true}).click();
+    await page.getByRole('heading',{name:/You won|Gin!/i}).waitFor();
+    await page.screenshot({path:path.join(output,'gin-result.png')});
+    await load('?error');await page.getByRole('button',{name:/Draw from stock/}).click();
+    await clickCard(page.getByRole('button',{name:'K of diamonds',exact:true}));
+    await page.getByRole('button',{name:'Discard & win',exact:true}).click();
+    await page.getByRole('alert').waitFor();assert.equal(await page.locator('.gin-hand button').count(),11);
+    assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true,'Failed action cannot be retried');
+    await load('?red');
+    assert.equal(await page.locator('.gin-arena-scene').getAttribute('data-skin'),'tt_red');
+    assert.equal(await page.locator('.gin-rival-hand>div>div').first().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(58, 14, 14)','Opponent skin lost');
+    await page.setViewportSize({width:844,height:390});
+    await page.getByRole('button',{name:/Draw from discard pile/}).tap();
+    await page.getByRole('button',{name:'K of diamonds',exact:true}).tap();
+    assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true,'Touch selection failed');
+    // Force a context loss: controls and card data must survive independently.
+    await page.evaluate(()=>document.querySelector('.gin-arena-scene canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext());
+    await page.locator('.gin-arena-scene[data-renderer=fallback]').waitFor();
+    assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true);
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.screenshot({path:path.join(output,'gin-fallback-phone.png')});
+    await page.getByRole('button',{name:'Discard & win',exact:true}).tap();
+    await page.getByRole('heading',{name:/You won|Gin!/i}).waitFor();
+    assert.deepEqual(errors,[]);
+    console.log('Arena passed: Mindi mouse select/play, Gin phase guards, mouse/touch discard, actual winning layout, skins, five viewports, nonblank interactive WebGL, context-loss fallback, failure retry.');
+  }finally{await browser.close();}
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

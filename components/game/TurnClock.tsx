@@ -28,6 +28,9 @@ export function TurnClock({ deadline, seconds, active }: { deadline: number | nu
   const left = Math.ceil(remaining / 1000);
   const fraction = Math.max(0, Math.min(1, remaining / (seconds * 1000)));
 
+  // A ring rather than a bar (design/arena/screens/kit.jpg → Turn clock):
+  // the stroke is drawn with a conic gradient sized by --remaining, so it
+  // empties anticlockwise and needs no SVG.
   return (
     <p
       className="turn-clock"
@@ -35,10 +38,10 @@ export function TurnClock({ deadline, seconds, active }: { deadline: number | nu
       data-active={active ? "true" : undefined}
       style={{ "--remaining": fraction } as React.CSSProperties}
     >
+      <i aria-hidden="true" />
       {/* Only the player on the clock gets a live announcement; announcing the
           opponent's countdown every second would flood a screen reader. */}
-      <span aria-live={active && left <= 5 ? "assertive" : "off"}>{left}s</span>
-      <i aria-hidden="true" />
+      <span aria-live={active && left <= 5 ? "assertive" : "off"}>{left}</span>
     </p>
   );
 }

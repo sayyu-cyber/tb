@@ -212,7 +212,7 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
     const youWon = result.winner === "player";
     return <GinResultScreen result={result} youWon={youWon}
       coins={youWon ? 10 : 2} balance={economyState.economy.coins}
-      onContinue={onReplay} />;
+      onContinue={onReplay} revealedHand={opponentHand} tableSkin={economyState.profile.equipped.tableTheme}/>;
   }
 
   if (needsPassScreen) {

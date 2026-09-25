@@ -1,6 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Space_Grotesk, Inter_Tight, Noto_Sans_Thaana } from "next/font/google";
 import "@/styles/globals.css";
+// buttons.css carries the generic depth-only bevel for every plain <button>.
+// It loads BEFORE the Arena sheets on purpose: its hover rule is
+// `button:hover:not(:disabled)`, which outranks a single class, so anything
+// that ties with it on specificity has to come later to win.
+import "@/styles/buttons.css";
+import "@/styles/arena.css";
+// Generated from the design boards by scripts/port-board.mjs — the board's
+// own CSS, namespaced and recoloured. Do not edit these by hand.
+import "@/styles/arena-mindi.css";
+import "@/styles/arena-gin-board.css";
+import "@/styles/arena-lobby.css";
+import "@/styles/arena-result.css";
+import "@/styles/arena-phone.css";
 import "@/styles/mindi.css";
 import "@/styles/gin.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -13,7 +26,32 @@ import { RotateDeviceGate } from "@/components/layout/RotateDeviceGate";
 import { DESKTOP_VIEWPORT_SCRIPT } from "@/lib/desktopViewport";
 import { ViewportManager } from "@/components/system/ViewportManager";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
+/**
+ * Arena typefaces (design/arena/README.md "Type").
+ *
+ * Exposed as CSS variables rather than class names because three families
+ * have to coexist: --font-ui is the body default, --font-display drives the
+ * tracked uppercase headlines and buttons, and --font-thaana carries Dhivehi
+ * (މިންޑި, ޖިން ރަމީ) which the Latin faces cannot render at all.
+ */
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
+  display: "swap",
+});
+const ui = Inter_Tight({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-ui",
+  display: "swap",
+});
+const thaana = Noto_Sans_Thaana({
+  subsets: ["thaana"],
+  weight: ["600", "700"],
+  variable: "--font-thaana",
+  display: "swap",
+});
 
 /**
  * Canonical origin. Used by metadataBase so the relative OG/Twitter image
@@ -77,7 +115,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head />
-      <body className={inter.className}>
+      {/* The three families ride as variables; the body font itself comes
+          from Tailwind's `sans`, which now maps to var(--font-ui). */}
+      <body className={`${display.variable} ${ui.variable} ${thaana.variable} font-sans`}>
         {/* First thing in <body>: the whole <head> (including Next's own
             viewport tag) is parsed by now, and nothing has painted yet, so
             a landscape phone gets the desktop layout on its very first

@@ -20,38 +20,35 @@ import { cn } from "@/lib/utils";
 type Variant = "primary" | "accent" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
-const BASE =
-  "relative inline-flex items-center justify-center gap-2 font-semibold rounded-xl " +
-  "transition-colors duration-200 select-none " +
-  "disabled:opacity-45 disabled:pointer-events-none " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2";
+/**
+ * The Arena button (design/arena/README.md "Components"), driven by the
+ * `.ar-btn` recipe in styles/arena.css: uppercase Space Grotesk on a lit
+ * face, a 6px colour lip under it, and a press that sinks the face 5px onto
+ * that lip.
+ *
+ * Sizes are set here rather than in styles/buttons.css, which is
+ * contractually depth-only and guarded by scripts/check-button-3d.mjs. That
+ * file's generic bevel is a bare `button` rule, so these classes win.
+ */
+const BASE = "ar-btn select-none";
 
 const SIZES: Record<Size, string> = {
-  sm: "text-xs px-3 py-2 min-h-[36px]",
-  // 44px is the minimum comfortable touch target; the old ad-hoc buttons
-  // were frequently smaller than that.
-  md: "text-sm px-4 py-2.5 min-h-[44px]",
-  lg: "text-base px-6 py-3.5 min-h-[52px]",
+  sm: "sm",   // 48px
+  md: "md",   // 52px
+  lg: "",     // 58px, the default in .ar-btn
 };
 
+/**
+ * Arena variants. Lime is you and the one action a screen wants you to take;
+ * blue is the table and the other side, so it carries secondary actions.
+ * (The design pack calls that blue "violet" — see styles/arena.css.)
+ */
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "text-[#0C0E12] bg-gradient-to-b from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] " +
-    "shadow-[0_2px_12px_-2px_rgb(var(--gold)/45%)] hover:brightness-110 active:brightness-95",
-  // Both gradient stops were the same colour, so this rendered as a flat
-  // fill while `primary` next to it had depth. Darkening the bottom stop
-  // gives it the same lit-from-above read.
-  accent:
-    "text-[#0C0E12] bg-gradient-to-b from-[rgb(var(--accent))] to-[rgb(var(--accent)/72%)] " +
-    "shadow-[0_2px_12px_-2px_rgb(var(--accent)/45%)] hover:brightness-110 active:brightness-95",
-  secondary:
-    "text-[rgb(var(--text-primary))] bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] " +
-    "hover:border-[rgb(var(--gold)/45%)] hover:bg-[rgb(var(--c3)/60%)]",
-  ghost:
-    "text-[rgb(var(--c5))] hover:text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c2))]",
-  danger:
-    "text-[rgb(var(--coral-ink))] bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] " +
-    "hover:bg-[rgb(var(--coral)/18%)]",
+  primary: "",            // lime, the default face in .ar-btn
+  accent: "blue",
+  secondary: "blue",
+  ghost: "ghost",
+  danger: "danger",
 };
 
 export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
@@ -83,10 +80,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <motion.button
       ref={ref}
-      // A small, quick press is more convincing than a large slow one -
-      // the old buttons used scale 0.9-0.95, which reads as rubbery.
-      whileTap={disabled || loading ? undefined : { scale: 0.975 }}
-      transition={{ type: "spring", stiffness: 600, damping: 30 }}
+      // No whileTap/whileHover: the Arena press is a CSS transition on
+      // .ar-btn (5px down in 90ms, back in 180ms on a spring). Framer writes
+      // transform inline, which would override that rule and leave the lip
+      // collapsing while the face moved a different distance.
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(BASE, SIZES[size], VARIANTS[variant], fullWidth && "w-full", className)}

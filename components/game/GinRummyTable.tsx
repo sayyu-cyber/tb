@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Settings, CircleHelp, Info, Spade, X, Layers, ArrowDownToLine, Music, BookOpen } from "lucide-react";
+import { ArrowLeft, Settings, Info, X, Layers, ArrowDownToLine, Music, BookOpen, Volume2, VolumeX, Check } from "lucide-react";
 import { Card, cardId, rankLabel, bestMeldArrangement, winningDiscard, findGinLayout, TURN_SECONDS } from "@/lib/ginRummyEngine";
 import { PlayingCard, suitFromLetter } from "./PlayingCard";
-import { Avatar, ArenaSeatData, TABLE_THEME_STYLES } from "./GameArena";
+import { Avatar, ArenaSeatData } from "./GameArena";
 import { Button } from "@/components/ui/Button";
 import { SettingToggle } from "@/components/settings/SettingToggle";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -12,6 +12,11 @@ import { sortHand } from "@/lib/cardSort";
 import { HandTools, HandOrder, navigateHand } from "./HandTools";
 import { RuleBook } from "./RuleBook";
 import { TurnClock } from "./TurnClock";
+import { ArenaStage } from "./ArenaStage";
+import { ArenaFace } from "./ArenaCard";
+import { ArenaSprite } from "./ArenaSprite";
+import { GinArenaScene } from "./GinArenaScene";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface Props {
   hand:Card[]; selected:Card|null; opponent:ArenaSeatData; name:string; avatar?:string;
@@ -41,6 +46,15 @@ export function GinRummyTable(p:Props) {
   const drag=useRef<{id:string;x:number;active:boolean}|null>(null);
   const suppressClick=useRef(false);
   const lastTap=useRef<{id:string;at:number}|null>(null);
+  const previousHand=useRef(p.hand.map(cardId));
+  const [drawnId,setDrawnId]=useState<string|null>(null);
+  const [compact,setCompact]=useState(false);
+  useEffect(()=>{
+    const query=window.matchMedia("(max-height:600px) and (min-aspect-ratio:3/2)");
+    const update=()=>setCompact(query.matches);
+    update();query.addEventListener("change",update);
+    return()=>query.removeEventListener("change",update);
+  },[]);
 
   const arrangement=useMemo(()=>bestMeldArrangement(p.hand),[p.hand]);
   const selectedCard=p.hand.find(card=>p.selected&&cardId(card)===cardId(p.selected));
@@ -64,7 +78,6 @@ export function GinRummyTable(p:Props) {
   },[p.hand,order,arrangement,manual]);
 
   const meldIds=new Set(arrangement.melds.flat().map(cardId));
-  const theme=TABLE_THEME_STYLES[p.tableSkin ?? ""] ?? TABLE_THEME_STYLES.tt_default;
   const canDraw=p.myTurn && p.phase==="draw" && !busy;
   const canDiscard=p.myTurn && p.phase==="discard" && !!selectedCard && !busy;
 
@@ -72,6 +85,13 @@ export function GinRummyTable(p:Props) {
   // The arrangement belongs to the cards that were in the hand when it was
   // made; a fresh deal is a different set entirely.
   useEffect(()=>{if(p.hand.length===0)setManual(null);},[p.hand.length]);
+  useEffect(()=>{
+    const ids=p.hand.map(cardId);
+    const added=ids.filter(id=>!previousHand.current.includes(id));
+    if(ids.length===11&&previousHand.current.length===10&&added.length===1)setDrawnId(added[0]);
+    else if(ids.length!==11)setDrawnId(null);
+    previousHand.current=ids;
+  },[p.hand]);
 
   async function run(fn:()=>void|Promise<void>) {
     if(pending.current)return;
@@ -102,7 +122,8 @@ export function GinRummyTable(p:Props) {
   }
 
   function dragStart(event:React.PointerEvent<HTMLDivElement>,id:string) {
-    if(event.pointerType==="mouse"&&event.button!==0)return;
+    if(!p.myTurn||p.phase!=="discard"||busy||(event.pointerType==="mouse"&&event.button!==0))return;
+    suppressClick.current=false;
     drag.current={id,x:event.clientX,active:false};
   }
   function dragMove(event:React.PointerEvent<HTMLDivElement>) {
@@ -134,6 +155,7 @@ export function GinRummyTable(p:Props) {
 
   /** First tap highlights the card, second tap discards it. */
   function activateCard(card:Card) {
+    if(!p.myTurn||p.phase!=="discard"||busy)return;
     if(suppressClick.current){suppressClick.current=false;return;}
     const id=cardId(card);
     const now=Date.now();
@@ -159,34 +181,51 @@ export function GinRummyTable(p:Props) {
     <div><dt>Opponent</dt><dd>{p.opponent.cardCount} cards</dd></div>
     {!!p.reshuffles&&<div><dt>Reshuffles</dt><dd>{p.reshuffles}</dd></div>}</dl>;
 
-  return <div className="gin-room">
-    <header className="gin-header">
-      <button className="gin-exit" aria-label="Exit Game" onClick={()=>setModal("leave")}><ArrowLeft size={22}/><span>Exit Game<small>Return to lobby</small></span></button>
-      <div className="gin-title"><Spade/><div><h1>Gin Rummy</h1><span>{p.mode}</span></div><Spade/></div>
-      <div className="gin-utilities"><button aria-label="Game settings" title="Game settings" onClick={()=>setModal("settings")}><Settings size={20}/></button>
-        <button aria-label="Rule book" title="Rule book" onClick={()=>setModal("rules")}><BookOpen size={20}/></button>
-        <button aria-label="Game Info" title="Game Info" onClick={()=>setModal("info")}><Info size={20}/></button></div>
-    </header>
-    <div className="gin-stage">
-      <div className="gin-oval" style={{backgroundColor:theme.base,backgroundImage:theme.pattern,borderColor:theme.glow}} aria-hidden="true"/>
-      <div className="gin-rival"><Avatar name={p.opponent.name} presetId={p.opponent.avatarPreset} count={p.opponent.cardCount}/>
-        <strong>{p.opponent.name}</strong><span>{p.myTurn?"Waiting":p.phase==="draw"?"Drawing":"Discarding"}</span>
-        <div className="gin-rival-hand" aria-label={p.opponent.cardCount+" face-down cards"} style={{"--count":Math.max(1,p.opponent.cardCount)} as React.CSSProperties}>
-          {Array.from({length:p.opponent.cardCount},(_,i)=><div key={i}><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={p.opponent.cardBackId}/></div>)}
+  return <>
+    <ArenaStage height={compact?660:900} className={"arena-gin-board gin-arena"+(compact?" gin-compact":"")}>
+      <div className="ar gin-arena-board">
+        <ArenaSprite/>
+        <div className="bg" aria-hidden="true"/><div className="bigword" aria-hidden="true">GIN</div>
+        <div className="beam gin-beam-left" aria-hidden="true"/><div className="beam gin-beam-right" aria-hidden="true"/>
+        <div className="stage" aria-hidden="true"><div className="floor"/></div>
+        <GinArenaScene skin={p.tableSkin}/>
+        <header className="gin-arena-header">
+          <IconButton aria-label="Exit Game" title="Exit Game" onClick={()=>setModal("leave")}><ArrowLeft/></IconButton>
+          <div className="gin-arena-heading"><h1 className="disp chrome">Gin Rummy</h1><p><span>{p.mode}</span>4 + 3 + 3 / No knocking</p></div>
+          <div className="gin-arena-utilities">
+            <IconButton aria-label={settings.music?"Mute music":"Enable music"} title={settings.music?"Mute music":"Enable music"} aria-pressed={settings.music} onClick={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}>{settings.music?<Volume2/>:<VolumeX/>}</IconButton>
+            <IconButton aria-label="Rule book" title="Rule book" onClick={()=>setModal("rules")}><BookOpen/></IconButton>
+            <IconButton aria-label="Game Info" title="Game Info" onClick={()=>setModal("info")}><Info/></IconButton>
+            <IconButton aria-label="Game settings" title="Game settings" onClick={()=>setModal("settings")}><Settings/></IconButton>
+          </div>
+        </header>
+        <section className="hud gin-arena-meld-hud" aria-label="Hand assessment">
+          <div className="gin-assessment-title"><span className="lbl">Your hand</span><strong data-ready={goingOut?"true":undefined}>{goingOut?"READY":"NOT OUT"}</strong></div>
+          <div className="gin-assessment-sizes">{[4,3,3].map((n,i)=><span key={i}>{n}</span>)}<small>Cards per meld</small></div>
+          <div className="gin-assessment-deadwood"><strong>{preview?.deadwoodValue??arrangement.deadwoodValue}</strong><span>Deadwood<small>{preview?"After selected discard":"Unmatched card points"}</small></span></div>
+          <p>{goingOut?"A winning discard is available.":"Three complete melds to go out."}</p>
+        </section>
+        <section className="hud gin-arena-turn-hud" aria-label="Turn status">
+          <TurnClock deadline={p.deadline??null} seconds={TURN_SECONDS} active={p.myTurn}/>
+          <div><span className="lbl">{p.myTurn?"Your turn":"Opponent's turn"}</span><strong>{busy?"Working...":p.myTurn?(p.phase==="draw"?"Draw a card":"Discard a card"):"Waiting"}</strong><small>{p.myTurn?"Draw one. Discard one.":p.opponent.name}</small></div>
+        </section>
+        <div className="gin-arena-rival">
+          <div className={"gin-player"+(!p.myTurn?" active":"")}><Avatar name={p.opponent.name} presetId={p.opponent.avatarPreset} count={p.opponent.cardCount}/><div><strong>{p.opponent.name}</strong><small>{p.myTurn?"Waiting":p.phase==="draw"?"Drawing":"Discarding"}</small></div></div>
+          <div className="gin-rival-hand" aria-label={p.opponent.cardCount+" face-down cards"}>
+            {Array.from({length:p.opponent.cardCount},(_,i)=><div key={i} style={{"--fan":(i-(p.opponent.cardCount-1)/2)} as React.CSSProperties}><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={p.opponent.cardBackId}/></div>)}
+          </div>
         </div>
-      </div>
-      <div className="gin-piles">
-        <button aria-label={"Draw from stock, "+p.stock+" cards"} disabled={!canDraw} onClick={()=>run(()=>p.onDraw("stock"))}>
-          <PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={p.cardBack}/>
-          <span>Stock ({p.stock})</span></button>
-        <button aria-label="Draw from discard pile" disabled={!canDraw || !p.discard} onClick={()=>run(()=>p.onDraw("discard"))}>
-          {p.discard?<PlayingCard rank={rankLabel(p.discard.rank)} suit={suitFromLetter(p.discard.suit)} size="lg"/>:<div className="gin-empty-pile"/>}<span>Discard pile</span></button>
-      </div>
-      {/* Math.max(2, …): the fan slot width is calc(100% / (--count - 1)), so
-          a one-card hand divides by zero and the fan collapses. */}
+        <div className="gin-arena-piles">
+          <button type="button" data-flat aria-label={"Draw from stock, "+p.stock+" cards"} disabled={!canDraw} onClick={()=>run(()=>p.onDraw("stock"))}>
+            <div className="gin-pile-card gin-stock-card"><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={p.cardBack}/></div><span>Stock <b>{p.stock}</b></span>
+          </button>
+          <button type="button" data-flat aria-label="Draw from discard pile" disabled={!canDraw||!p.discard} onClick={()=>run(()=>p.onDraw("discard"))}>
+            <div className="gin-pile-card">{p.discard&&<ArenaFace key={cardId(p.discard)} rank={rankLabel(p.discard.rank)} suit={p.discard.suit}/>}</div><span>Discard pile</span>
+          </button>
+        </div>
+        <p className="gin-arena-status" role="status">{p.myTurn?(p.phase==="draw"?"Draw from stock or discard":selectedCard?`${rankLabel(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)} selected${selectedWins?" / Ready to win":""}`:"Choose a card to discard"):`${p.opponent.name}'s turn`}</p>
       <div ref={handRef} className="gin-hand" role="group"
-        aria-label="Your cards — tap to highlight, tap again to discard, drag or Alt+Arrow to rearrange"
-        onKeyDown={handleHandKeys} style={{"--count":Math.max(2,p.hand.length)} as React.CSSProperties}>
+        aria-label="Your cards" onKeyDown={handleHandKeys}>
         {displayedHand.map((card,i)=>{
           const offset=i-(p.hand.length-1)/2;
           const id=cardId(card);
@@ -194,27 +233,24 @@ export function GinRummyTable(p:Props) {
           return <div key={id} data-card-id={id}
             className={"gin-fan-slot"+(selected?" is-selected":"")+(melds&&meldIds.has(id)?" is-meld":"")+(dragId===id?" is-dragging":"")}
             onPointerDown={event=>dragStart(event,id)} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd}
-            style={{"--angle":offset*1.5+"deg","--curve":offset*offset*.8+"px","--order":i} as React.CSSProperties}>
-            <PlayingCard rank={rankLabel(card.rank)} suit={suitFromLetter(card.suit)} size="lg" selected={selected}
-              disabled={!p.myTurn||p.phase!=="discard"||busy} onClick={()=>activateCard(card)}/>
+            style={{"--angle":offset*2+"deg","--curve":offset*offset*.9+"px","--offset":offset*Math.min(80,850/Math.max(1,p.hand.length-1))+"px",zIndex:selected?30:i} as React.CSSProperties}>
+            <button type="button" data-flat aria-label={`${rankLabel(card.rank)} of ${suitFromLetter(card.suit)}`} aria-pressed={selected}
+              disabled={!p.myTurn||p.phase!=="discard"||busy} onClick={()=>activateCard(card)}>
+              <ArenaFace rank={rankLabel(card.rank)} suit={card.suit}/>
+              {drawnId===id&&<span className="gin-new-card">New</span>}
+              {melds&&meldIds.has(id)&&<span className="gin-meld-marker"><Check size={14}/></span>}
+            </button>
           </div>;
         })}
       </div>
-    </div>
-    <footer className="gin-controls">
-      <div className={"gin-self"+(p.myTurn?" is-active":"")}><Avatar name={p.name} presetId={p.avatar}/>
-        <div><strong>{p.name}</strong><p role="status">{p.myTurn?(p.phase==="draw"?"Your turn — draw a card":"Your turn — discard a card"):"Opponent's turn"}</p></div></div>
-      <TurnClock deadline={p.deadline??null} seconds={TURN_SECONDS} active={p.myTurn}/>
-      <p className="gin-deadwood" data-ready={goingOut?"true":undefined}>
-        <span>{goingOut?"Ready":"Deadwood"}</span>
-        <strong aria-live="polite">{goingOut?"3·3·4":String(preview?.deadwoodValue??arrangement.deadwoodValue)}</strong>
-        <small>{goingOut?"Discard to go out":"Meld 3 · 3 · 4 to win"}</small>
-      </p>
+      {melds&&<div className="gin-arena-melds" aria-label="Meld breakdown">{arrangement.melds.map((meld,i)=><span key={i}><Check size={13}/>{meld.every(card=>card.rank===meld[0].rank)?"Set":"Run"} of {meld.length}</span>)}<span className="gin-meld-deadwood">Deadwood {arrangement.deadwoodValue}</span></div>}
+    <footer className="gin-arena-controls">
+      <div className={"gin-player gin-player-self"+(p.myTurn?" active":"")}><Avatar name={p.name} presetId={p.avatar}/><div><strong>{p.name}</strong><small>{p.hand.length} cards / {p.myTurn?"Your turn":"Waiting"}</small></div></div>
       <HandTools order={manual?"custom":order} custom={!!manual} melds rank
         onChange={value=>{if(value==="custom")return;setManual(null);setOrder(value);if(value==="melds")setMelds(true);}} />
       <div className="gin-actions">
         <Button variant="secondary" aria-pressed={melds} onClick={()=>setMelds(v=>!v)}><Layers size={18}/>View Melds</Button>
-        <Button variant={selectedWins?"primary":"secondary"} disabled={!canDiscard} loading={busy} onClick={()=>run(p.onDiscard)}>
+        <Button variant="primary" disabled={!canDiscard} loading={busy} onClick={()=>run(p.onDiscard)}>
           <ArrowDownToLine size={18}/>{selectedWins?"Discard & win":"Discard"}</Button>
       </div>
       {/* Under these rules a hand has no fixed end: if the cards each player
@@ -224,7 +260,9 @@ export function GinRummyTable(p:Props) {
         The deck has been recycled {p.reshuffles} times — neither hand may be completable. You can keep playing or exit.
       </p>}
     </footer>
-    {error&&<p className="gin-action-error" role="alert">{error}</p>}
+    {error&&<p className="gin-arena-error" role="alert">{error}</p>}
+      </div>
+    </ArenaStage>
     {modal&&<dialog ref={dialog} className={"gin-dialog"+(modal==="rules"?" rule-book-dialog":"")} aria-labelledby="gin-dialog-title" onCancel={e=>{if(busy)e.preventDefault();else setModal(null);}}>
       <header><h2 id="gin-dialog-title">{modal==="leave"?"Leave game?":modal==="rules"?"Gin Rummy rule book":modal==="info"?"Game Info":"Game Settings"}</h2>
         <Button variant="ghost" aria-label="Close dialog" disabled={busy} onClick={()=>setModal(null)}><X size={20}/></Button></header>
@@ -235,5 +273,5 @@ export function GinRummyTable(p:Props) {
           <footer><Button variant="secondary" disabled={busy} onClick={()=>setModal(null)}>Cancel</Button><Button variant="danger" loading={busy} onClick={()=>run(async()=>{await p.onLeave?.();router.push("/play");})}>Leave Game</Button></footer></>}
       {error&&<p role="alert">{error}</p>}
     </dialog>}
-  </div>;
+  </>;
 }

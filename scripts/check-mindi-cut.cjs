@@ -61,9 +61,25 @@ async function run(){
     assert.equal(await duel.locator('.mindi-intro-draw li').count(),2);
     assert.equal(await duel.locator('.mindi-cut-scene').getAttribute('data-skin'),'tt_lava');
     await duel.screenshot({path:path.join(output,'duel-skin.png')});
-    await duel.keyboard.press('Escape');assert.equal(await duel.locator('#done').innerText(),'1');await duel.close();
-    const skip=await fixture();await skip.getByRole('button',{name:'Skip',exact:true}).evaluate(el=>el.click());
-    assert.equal(await skip.locator('#done').innerText(),'1');await skip.close();
+    // Escape and Skip hurry past the CUT; neither can skip the DEAL, which
+    // always plays out. Both therefore land on the dealing phase, and the
+    // ceremony only finishes once that has run.
+    // Read straight after the event rather than waitForFunction: this page
+    // runs on a paused fake clock, so rAF-based polling would never tick.
+    await duel.keyboard.press('Escape');await duel.clock.runFor(100);
+    assert.equal(await duel.locator('.mindi-intro').getAttribute('data-phase'),'dealing','Escape did not jump to the deal');
+    assert.equal(await duel.locator('#done').innerText(),'0','Escape skipped the deal');
+    await duel.clock.runFor(1500);assert.equal(await duel.locator('#done').innerText(),'1','Deal never finished');await duel.close();
+
+    const skip=await fixture();await skip.getByRole('button',{name:/Skip to deal/}).evaluate(el=>el.click());
+    await skip.clock.runFor(100);
+    assert.equal(await skip.locator('.mindi-intro').getAttribute('data-phase'),'dealing','Skip did not jump to the deal');
+    assert.equal(await skip.locator('#done').innerText(),'0','Skip skipped the deal');
+    // The control is still there (so the footer does not reflow) but is dead.
+    assert.equal(await skip.getByRole('button',{name:/Dealing/}).isDisabled(),true);
+    await skip.keyboard.press('Escape');
+    assert.equal(await skip.locator('#done').innerText(),'0','Escape dismissed the deal');
+    await skip.clock.runFor(1500);assert.equal(await skip.locator('#done').innerText(),'1');await skip.close();
     const lost=await fixture({width:390,height:844});await lost.clock.runFor(5600);
     await lost.locator('canvas').evaluate(canvas=>canvas.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
     assert.equal(await lost.locator('.mindi-cut').getAttribute('data-three'),'false');

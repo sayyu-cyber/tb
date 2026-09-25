@@ -300,7 +300,8 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     const youWon = result.winnerUid === myUid;
     return <GinResultScreen result={{ winner: youWon ? "player" : "opponent", layout: result.layout, loserDeadwood: result.loserDeadwood, score: result.score }}
       youWon={youWon} forfeited={!!result.forfeitedBy} coins={youWon ? 10 : 2}
-      balance={economyState.economy.coins} onContinue={() => router.push("/play")} continueLabel="Find a new match" />;
+      balance={economyState.economy.coins} onContinue={() => router.push("/play")} continueLabel="Find a new match"
+      revealedHand={state.hands[opponentUid]} tableSkin={match.players[0]===myUid?economyState.profile.equipped.tableTheme:opponentProfile?.tableTheme}/>;
   }
 
 

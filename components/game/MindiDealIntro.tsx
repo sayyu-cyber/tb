@@ -47,6 +47,20 @@ export function MindiDealIntro({ draw, names, seats, viewer, handSize, cardBacks
   }, []);
   const start = useCallback(() => { if (started.current === null) started.current = performance.now(); }, []);
   const elapsed = useCallback(() => started.current === null ? 0 : performance.now() - started.current, []);
+
+  /**
+   * Jumps the ceremony forward to the first frame of the deal.
+   *
+   * The deal itself is not skippable - skipping only hurries past the cut.
+   * This works by moving the clock's ORIGIN back rather than by setting a
+   * phase directly, because the 3D scene reads the same clock through
+   * elapsed(); shifting the origin fast-forwards the animation and the phase
+   * together, instead of leaving the scene mid-cut under a "Dealing" caption.
+   */
+  const skipToDeal = useCallback(() => {
+    started.current = performance.now() - CUT_TIMELINE.dealing;
+    setPhase("dealing");
+  }, []);
   const ordered = [...seats].sort((a, b) => ((a - viewer + 4) % 4) - ((b - viewer + 4) % 4));
 
   // Opened in a LAYOUT effect, not a passive one: a <dialog> is display:none
@@ -62,9 +76,12 @@ export function MindiDealIntro({ draw, names, seats, viewer, handSize, cardBacks
 
   useEffect(() => {
     if (reduced) {
+      // Still passes through the deal, so the hand is never dealt off screen
+      // even when the animation itself is suppressed.
       setPhase("winner");
-      const timer = setTimeout(finish, 1400);
-      return () => clearTimeout(timer);
+      const toDeal = setTimeout(() => setPhase("dealing"), 900);
+      const timer = setTimeout(finish, 1900);
+      return () => { clearTimeout(toDeal); clearTimeout(timer); };
     }
     // A renderer import or unavailable GPU must never hold the game hostage.
     const fallback = setTimeout(start, 1200);
@@ -77,13 +94,18 @@ export function MindiDealIntro({ draw, names, seats, viewer, handSize, cardBacks
     return () => { clearTimeout(fallback); clearInterval(timer); };
   }, [reduced, elapsed, finish, start]);
 
-  const winning = phase === "winner" || phase === "dealing";
+  const dealing = phase === "dealing";
+  const winning = phase === "winner" || dealing;
   const revealed = phase === "reveal" || winning;
   const sceneVisible = webgl && !reduced;
   const phaseIndex = phase === "preparing" || phase === "cut" || phase === "fan" ? 0 : phase === "draw" || phase === "reveal" ? 1 : phase === "winner" ? 2 : 3;
 
   return <dialog ref={dialog} className="mindi-intro mindi-cut" aria-labelledby="mindi-intro-title" aria-describedby="mindi-intro-description"
-    data-phase={phase} data-three={sceneVisible} onCancel={event => { event.preventDefault(); finish(); }}>
+    data-phase={phase} data-three={sceneVisible}
+    /* Escape hurries past the cut but cannot dismiss the deal. preventDefault
+       always fires, so the dialog never closes itself out from under the
+       ceremony. */
+    onCancel={event => { event.preventDefault(); if (!dealing) skipToDeal(); }}>
     <header className="mindi-cut-heading">
       <span className="mindi-cut-emblem" aria-hidden="true"><Spade /></span>
       <div><p className="mindi-cut-eyebrow">{GAME_LABEL[game]} <span>/</span> THE OPENING DRAW</p>
@@ -123,7 +145,11 @@ export function MindiDealIntro({ draw, names, seats, viewer, handSize, cardBacks
       <ol className="mindi-cut-steps" aria-label="Opening sequence">
         {["Cut", "Reveal", "First player", "Deal"].map((text, index) => <li key={text} aria-current={index === phaseIndex ? "step" : undefined} data-complete={index < phaseIndex}><span>{index + 1}</span>{text}</li>)}
       </ol>
-      <GameButton onClick={finish}><Layers3 size={18} aria-hidden="true" />{phase === "dealing" ? "Start now" : "Skip"}</GameButton>
+      {/* Kept mounted and disabled rather than removed, so the footer does not
+          reflow the moment the deal starts. */}
+      <GameButton onClick={skipToDeal} disabled={dealing}>
+        <Layers3 size={18} aria-hidden="true" />{dealing ? "Dealing…" : "Skip to deal"}
+      </GameButton>
     </footer>
   </dialog>;
 }

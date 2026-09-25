@@ -6,17 +6,19 @@ const mocks = path.join(__dirname, 'gin-test-services.tsx');
 const alias = Object.fromEntries(['@/contexts/AuthContext','@/contexts/EconomyContext','@/contexts/SettingsContext','@/components/rewards/MatchRewardPopup','next/navigation'].map(name => [name+'$',mocks]));
 alias['@'] = root;
 async function run() {
-  await new Promise((resolve,reject) => compiler.webpack({mode:'development',plugins:[new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})],devtool:false,entry:path.join(__dirname,'gin-test-entry.tsx'),output:{path:output,filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.join(__dirname,'friends-test-loader.cjs')}]},optimization:{minimize:false}},(error,stats) => error || stats.hasErrors() ? reject(error || stats.toString()) : resolve()));
+  await new Promise((resolve,reject) => compiler.webpack({mode:'development',plugins:[new compiler.webpack.optimize.LimitChunkCountPlugin({maxChunks:1}),new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})],devtool:false,entry:path.join(__dirname,'gin-test-entry.tsx'),output:{path:output,filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.join(__dirname,'friends-test-loader.cjs')}]},optimization:{minimize:false}},(error,stats) => error || stats.hasErrors() ? reject(error || stats.toString()) : resolve()));
   const browser = await chromium.launch({headless:true,channel:'msedge'});
   try {
     const page = await browser.newPage();
     const errors = []; page.on('pageerror',e => { errors.push(e.message); console.error(e.message); });
     await page.goto('http://127.0.0.1:3000/login/');
     const styles = await page.locator('link[rel=stylesheet]').evaluateAll(nodes=>nodes.map(n=>n.href));
+    const css=[];
+    for(const url of styles){const response=await page.request.get(url);assert.ok(response.ok());css.push(await response.text());}
     const bodyClass = await page.locator('body').getAttribute('class');
     const script = fs.readFileSync(path.join(output,'component.js'),'utf8');
 
-    await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${styles.map(url=>`<link rel="stylesheet" href="${url}">`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+    await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await page.goto('http://127.0.0.1:3000/gin-test/');
 
     // Gin now opens with the same cut-and-deal ceremony as Mindi. It is a
@@ -26,8 +28,11 @@ async function run() {
       const intro = page.locator('.mindi-intro');
       await intro.waitFor({timeout:8000}).catch(()=>{});
       if(await intro.count()===0) return;
-      await page.getByRole('button',{name:/Skip|Start now/}).click();
-      await intro.waitFor({state:'detached'});
+      // Skipping hurries past the cut but NOT the deal, which always plays in
+      // full - so this waits the ceremony out rather than dismissing it.
+      const skip = page.getByRole('button',{name:/Skip to deal/});
+      if(await skip.isEnabled().catch(()=>false)) await skip.click();
+      await intro.waitFor({state:'detached',timeout:15000});
     };
     await page.locator('.mindi-intro').waitFor({timeout:8000});
     assert.equal(await page.locator('.mindi-intro-draw li').count(),2,'Two players cut, one card each');
@@ -46,7 +51,7 @@ async function run() {
       const button=[...document.querySelectorAll('button')].find(n=>/Draw from stock/.test(n.getAttribute('aria-label')||''));
       return button && !button.disabled;
     },{},{timeout:20000});
-    for(const [width,height] of [[1920,1080],[1440,900],[1280,900],[768,1024],[390,844],[320,700]]) {
+    for(const [width,height] of [[1920,1080],[1440,900],[1280,900],[844,390],[390,844],[320,700]]) {
       await page.setViewportSize({width,height});await page.waitForTimeout(200);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Overflow '+width);
       assert.equal(await page.locator('.gin-hand button').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})),true,'Cards clipped '+width);
@@ -80,7 +85,8 @@ async function run() {
     assert.equal(await page.locator('.gin-hand').count(),0);
     await page.getByRole('button',{name:/ready/}).click();
     assert.equal(await page.locator('.gin-hand button').count(),10);
-    assert.equal(await page.locator('.gin-oval').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(58, 14, 20)');
+    assert.equal(await page.locator('.gin-arena-scene').getAttribute('data-skin'),'tt_red');
+    assert.equal(await page.locator('.gin-arena-fallback').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(58, 14, 20)');
     assert.deepEqual(errors,[]);
     console.log('Gin passed: six sizes, real local engine draw/discard, selected cards, hidden opponent hands, pass-device privacy, skin, rules and leave cancel.');
   } finally { await browser.close(); }

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
-interface Surface {base:string;skin:string;accent:string}
+interface Surface {base:string;skin:string;accent:string;arena?:boolean}
 export interface TableSequence {
   update:()=>boolean;
   resize?:(width:number,height:number)=>void;
@@ -32,9 +32,10 @@ export function mountTable(host:HTMLElement,surface:Surface,onReady:()=>void,onL
   let environment=makeEnvironment();
   scene.environment=environment.texture;
   const group=new THREE.Group();scene.add(group);
-  const gold=new THREE.MeshStandardMaterial({color:"#c68e32",metalness:.85,roughness:.23,envMapIntensity:1.1});
-  const edgeGold=new THREE.MeshStandardMaterial({color:"#e6b65e",metalness:.85,roughness:.19,envMapIntensity:1.2});
-  const bronze=new THREE.MeshStandardMaterial({color:"#75512d",metalness:.75,roughness:.34});
+  const gold=new THREE.MeshStandardMaterial({color:surface.arena?"#13181c":"#c68e32",metalness:surface.arena?.4:.85,roughness:surface.arena?.3:.23,envMapIntensity:1.1});
+  const edgeGold=new THREE.MeshStandardMaterial({color:surface.arena?surface.accent:"#e6b65e",metalness:surface.arena?.1:.85,roughness:.19,envMapIntensity:surface.arena?.3:1.2,
+    emissive:surface.arena?surface.accent:"#000000",emissiveIntensity:surface.arena?.65:0});
+  const bronze=new THREE.MeshStandardMaterial({color:surface.arena?"#1a3d40":"#75512d",metalness:.75,roughness:.34});
   const leather=new THREE.MeshStandardMaterial({color:"#080c12",metalness:0,roughness:.65});
   const structure=new THREE.MeshStandardMaterial({color:"#0c1017",metalness:.45,roughness:.32});
 
@@ -42,12 +43,12 @@ export function mountTable(host:HTMLElement,surface:Surface,onReady:()=>void,onL
   const textile=document.createElement("canvas");textile.width=textile.height=512;
   const ctx=textile.getContext("2d")!;
   ctx.fillStyle=surface.base;ctx.fillRect(0,0,512,512);
-  for(let y=0;y<512;y+=3)for(let x=0;x<512;x+=3){
+  if(!surface.arena)for(let y=0;y<512;y+=3)for(let x=0;x<512;x+=3){
     ctx.fillStyle=`rgba(255,255,255,${((x*17+y*31)%11)/200})`;
     ctx.fillRect(x,y,1,2);
   }
   ctx.strokeStyle="#d0d9e40b";ctx.lineWidth=.75;
-  for(let y=-12;y<524;y+=12){
+  if(!surface.arena)for(let y=-12;y<524;y+=12){
     ctx.beginPath();
     for(let x=0;x<=512;x+=8)ctx.lineTo(x,y+(x%16===0?0:3));
     ctx.stroke();
@@ -58,8 +59,14 @@ export function mountTable(host:HTMLElement,surface:Surface,onReady:()=>void,onL
     ctx.globalAlpha=1;
   }
   if(surface.skin==="tt_space")for(let i=0;i<70;i++){ctx.fillStyle="#c6c4e580";ctx.fillRect((i*137)%512,(i*97)%512,1.5,1.5);}
+  if(surface.arena){
+    ctx.fillStyle="#ffffff12";
+    for(let y=12;y<512;y+=24)for(let x=12;x<512;x+=24){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle="#ffffff25";ctx.font="700 26px sans-serif";ctx.textAlign="center";
+    ctx.fillText("THAASBAI",256,70);ctx.save();ctx.translate(256,442);ctx.rotate(Math.PI);ctx.fillText("THAASBAI",0,0);ctx.restore();
+  }
   const texture=new THREE.CanvasTexture(textile);texture.colorSpace=THREE.SRGBColorSpace;
-  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(3,3);
+  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(surface.arena?1:3,surface.arena?1:3);
   texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   const felt=new THREE.MeshPhysicalMaterial({map:texture,roughness:1,metalness:0,specularIntensity:.05,bumpMap:texture,bumpScale:.07,envMapIntensity:0});
   function layer(radius:number,height:number,y:number,material:THREE.Material){
@@ -79,6 +86,12 @@ export function mountTable(host:HTMLElement,surface:Surface,onReady:()=>void,onL
   layer(4.04,.085,.135,felt);
   ring(3.89,.008,.182,bronze);
   ring(3.77,.005,.181,bronze);
+  if(surface.arena){
+    const leds=new THREE.InstancedMesh(new THREE.SphereGeometry(.025,6,4),new THREE.MeshBasicMaterial({color:"#c6ff33"}),64);
+    const matrix=new THREE.Matrix4();
+    for(let i=0;i<64;i++){const angle=i/64*Math.PI*2;matrix.makeTranslation(Math.cos(angle)*4.3*1.53,.39,Math.sin(angle)*4.3);leds.setMatrixAt(i,matrix);}
+    group.add(leds);
+  }
   // Engraved segments and stitching follow the same ellipse as the padded rail.
   for(let i=0;i<64;i++){
     const angle=i/64*Math.PI*2;
@@ -91,7 +104,7 @@ export function mountTable(host:HTMLElement,surface:Surface,onReady:()=>void,onL
     seam.position.set(Math.cos(angle)*4.53*1.53,.23,Math.sin(angle)*4.53);seam.rotation.y=-angle;group.add(seam);
   }
   scene.add(new THREE.HemisphereLight("#b9d4ee","#21130b",.95));
-  const key=new THREE.DirectionalLight("#ffe0a3",2);key.position.set(-5,8,3);scene.add(key);
+  const key=new THREE.DirectionalLight(surface.arena?"#ddfaff":"#ffe0a3",2);key.position.set(-5,8,3);scene.add(key);
   const fill=new THREE.DirectionalLight("#a9d9f4",.6);fill.position.set(4,5,-6);scene.add(fill);
   const sequence=decorate?.(scene,camera,renderer);
   let frame=0, lost=false, dead=false;

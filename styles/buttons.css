@@ -1,0 +1,173 @@
+/* ---------------------------------------------------------------------------
+   App-wide 3D buttons.
+
+   The game tables already had an extruded button (.game-button in mindi.css):
+   a lit top bevel, a hard colour "lip" below the face, and a press that drops
+   the button onto that lip. This file extends that same language to every
+   other button in the app rather than inventing a second one.
+
+   TWO RULES GOVERN EVERYTHING HERE.
+
+   1. DEPTH ONLY, NEVER SIZE. Every declaration below is box-shadow, transform,
+      filter, text-shadow or transition. None of those take part in layout, so
+      no button changes its footprint and nothing on any screen moves. In
+      particular there are no padding, border-width, min-height or font-size
+      changes, and `position` is never set - adding position:relative would
+      re-parent an absolutely positioned child and quietly move it.
+      scripts/check-button-3d.mjs enforces this, and runs in `npm run verify`.
+
+   2. COLOUR IS LEFT ALONE. A bare `button` selector has lower specificity
+      than a Tailwind utility class, so every button keeps the palette it
+      already had and only gains the bevel. That is deliberate: it makes this
+      safe to apply everywhere at once, and it keeps each screen's existing
+      colour hierarchy intact.
+
+   HOW OPTING OUT WORKS. The treatment is applied through inherited custom
+   properties, not through a repeated :not() list. Anything that sets
+   --btn3d-rest:none turns the effect off for itself AND every button inside
+   it, which is what makes a container like .mindi-card-slot enough to protect
+   the card button within it. Add `data-flat` to any single button that should
+   stay flat.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* The lip is what makes a button read as a solid object rather than a
+     rectangle with a drop shadow. Kept shallow so it works over the light
+     panels as well as the dark table felt. */
+  --btn3d-rest:
+    inset 0 1px 0 #ffffff33,
+    inset 0 -2px 0 #00000052,
+    0 3px 0 #00000073,
+    0 6px 12px -3px #00000059;
+  --btn3d-hover:
+    inset 0 1px 0 #ffffff33,
+    inset 0 -2px 0 #00000052,
+    0 4px 0 #00000073,
+    0 9px 16px -3px #0000005e;
+  /* The press: the face travels down onto its own lip, which disappears.
+     That collapse is the whole illusion - without it the button reads as
+     sliding rather than being pushed. */
+  --btn3d-active:
+    inset 0 2px 5px #00000070,
+    0 1px 3px #00000052;
+  --btn3d-disabled: inset 0 1px 0 #ffffff14, 0 2px 0 #00000038;
+  --btn3d-lift: translateY(-1px);
+  --btn3d-press: translateY(3px);
+  /* A token rather than a literal so the opt-out block can switch it off
+     too. Left as a literal, a playing card would still brighten on hover
+     after losing the rest of the treatment. */
+  --btn3d-glow: brightness(1.07);
+  --btn3d-dim: brightness(0.97);
+}
+
+/* Things that are <button> elements but are not "buttons" to a player. Each
+   entry switches the effect off for itself and everything inside it. */
+.game-button,            /* already extruded, in mindi.css */
+.settings-switch,        /* a switch, not a button */
+.app-sidebar-item,
+.app-sidebar-toggle,
+.rule-book-tabs,         /* pills that read as tabs */
+.game-sort-menu,
+.hand-sort,
+.mindi-card-slot,        /* a playing card is not a button - it has its own lift */
+.gin-fan-slot,
+.gin-rival-hand,
+.mindi-hidden-hand,
+.gin-piles,              /* the stock and discard piles are cards too */
+[data-flat] {
+  --btn3d-rest: none;
+  --btn3d-hover: none;
+  --btn3d-active: none;
+  --btn3d-disabled: none;
+  --btn3d-lift: none;
+  --btn3d-press: none;
+  --btn3d-glow: none;
+  --btn3d-dim: none;
+}
+
+button {
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+  box-shadow: var(--btn3d-rest);
+}
+button:hover:not(:disabled) {
+  transform: var(--btn3d-lift);
+  filter: var(--btn3d-glow);
+  box-shadow: var(--btn3d-hover);
+}
+button:active:not(:disabled) {
+  transform: var(--btn3d-press);
+  filter: var(--btn3d-dim);
+  box-shadow: var(--btn3d-active);
+}
+button:disabled {
+  box-shadow: var(--btn3d-disabled);
+}
+
+/* Links styled as buttons don't match the element rule, so they opt in by
+   class. Keep this list short - genuine calls to action, not navigation. */
+.btn3d, .gin-result-exit, .game-play-again {
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+  box-shadow: var(--btn3d-rest);
+}
+.btn3d:hover, .gin-result-exit:hover, .game-play-again:hover {
+  transform: var(--btn3d-lift);
+  filter: var(--btn3d-glow);
+  box-shadow: var(--btn3d-hover);
+}
+.btn3d:active, .gin-result-exit:active, .game-play-again:active {
+  transform: var(--btn3d-press);
+  box-shadow: var(--btn3d-active);
+}
+
+/* Tone-matched lips for the Button primitive. A gold button needs a warm
+   brown lip, not a black one, or it looks like it is floating above a hole.
+   These are classes, so they beat the element rule without !important. */
+.btn3d-gold {
+  box-shadow:
+    inset 0 2px 0 #fff2c2a8, inset 0 -3px 0 #8a5b1f8c,
+    0 3px 0 #6d4a1d, 0 6px 0 #241806, 0 10px 18px -4px #000000a3;
+  text-shadow: 0 1px 0 #ffe9ae73;
+}
+.btn3d-gold:hover:not(:disabled) {
+  box-shadow: inset 0 2px 0 #fff2c2a8, inset 0 -3px 0 #8a5b1f8c, 0 4px 0 #6d4a1d, 0 7px 0 #241806, 0 13px 22px -4px #000000ad;
+}
+.btn3d-gold:active:not(:disabled) {
+  box-shadow: inset 0 3px 6px #00000075, 0 1px 0 #6d4a1d, 0 2px 4px #0000007a;
+}
+
+.btn3d-accent {
+  box-shadow:
+    inset 0 2px 0 #ffffff59, inset 0 -3px 0 #0000004d,
+    0 3px 0 #00000082, 0 6px 0 #0000003d, 0 10px 18px -4px #0000008f;
+}
+.btn3d-accent:hover:not(:disabled) {
+  box-shadow: inset 0 2px 0 #ffffff59, inset 0 -3px 0 #0000004d, 0 4px 0 #00000082, 0 7px 0 #0000003d, 0 13px 22px -4px #00000099;
+}
+.btn3d-accent:active:not(:disabled) {
+  box-shadow: inset 0 3px 6px #00000075, 0 1px 0 #00000082, 0 2px 4px #0000007a;
+}
+
+.btn3d-solid {
+  box-shadow:
+    inset 0 1px 0 #ffffff2b, inset 0 -2px 0 #00000059,
+    0 3px 0 #00000082, 0 6px 12px -3px #00000066;
+}
+.btn3d-solid:hover:not(:disabled) {
+  box-shadow: inset 0 1px 0 #ffffff2b, inset 0 -2px 0 #00000059, 0 4px 0 #00000082, 0 9px 16px -3px #00000070;
+}
+.btn3d-solid:active:not(:disabled) {
+  box-shadow: inset 0 2px 5px #00000070, 0 1px 3px #00000059;
+}
+
+/* Ghost buttons have no face to extrude until hovered, so they stay flat at
+   rest and rise only on interaction. */
+.btn3d-ghost { box-shadow: none; }
+.btn3d-ghost:hover:not(:disabled) {
+  box-shadow: inset 0 1px 0 #ffffff1f, 0 2px 0 #00000052, 0 5px 10px -3px #00000047;
+}
+.btn3d-ghost:active:not(:disabled) { box-shadow: inset 0 2px 4px #0000005e; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --btn3d-lift: none; --btn3d-press: none; }
+  button, .btn3d, .gin-result-exit, .game-play-again { transition: none; }
+}

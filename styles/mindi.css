@@ -11,24 +11,33 @@
 }
 .mindi-room button { -webkit-tap-highlight-color:transparent; }
 .mindi-room h1,.mindi-room h2,.mindi-room p { margin:0;letter-spacing:0; }
+/* Arena tones (design/arena/README.md). The dark default is graphite with a
+   white inset, gold becomes the lime primary, and danger keeps its red. The
+   shape - 52px min-height, 8px radius - is unchanged so no table reflows. */
 .game-button {
   position:relative;display:inline-flex;align-items:center;justify-content:center;gap:12px;
-  min-height:52px;padding:12px 20px;border:1px solid #e5ba6d;border-radius:8px;
-  color:#fff6dc;font-weight:700;font-size:15px;line-height:1.25;
-  background:linear-gradient(155deg,#384650 0%,#14232e 30%,#070d14 65%,#26313b 100%);
-  box-shadow:inset 0 2px 1px #ffffff75,inset 2px 0 2px #ddac6760,inset 0 -3px 1px #020608,0 3px 0 #72502b,0 5px 0 #22180e,0 8px 14px #0008;
+  min-height:52px;padding:12px 20px;border:0;border-radius:8px;
+  color:#fff;font-family:var(--ar-font-display);font-weight:700;font-size:15px;line-height:1.25;
+  letter-spacing:var(--ar-track-button);text-transform:uppercase;
+  background:var(--ar-graphite);
+  box-shadow:inset 0 0 0 1.5px #ffffff33,0 5px 0 #000,0 10px 18px -6px #000a;
   transition:transform 140ms,box-shadow 140ms,filter 140ms;
   isolation:isolate;
 }
-.game-button::after { content:'';position:absolute;inset:3px;border:1px solid #ffffff12;border-radius:5px;pointer-events:none; }
+.game-button::after { content:'';position:absolute;inset:3px;border:1px solid #ffffff0f;border-radius:5px;pointer-events:none; }
 .game-button svg { flex-shrink:0;filter:drop-shadow(0 1px 1px #0008); }
-.game-button:not(:disabled):hover { transform:translateY(-2px);filter:brightness(1.15); }
-.game-button:not(:disabled):active { transform:translateY(3px);box-shadow:inset 0 2px 5px #0007,0 1px 0 #604421,0 3px 6px #0009; }
-.game-button:focus-visible,.game-sort-menu button:focus-visible { outline:3px solid #8ee7e0;outline-offset:5px; }
-.game-button:disabled { cursor:not-allowed;filter:saturate(.35);color:#a3a9ad;border-color:#796f58;box-shadow:inset 0 1px 1px #ffffff35,inset 0 -3px #05080b,0 3px #292722,0 6px 10px #0006; }
-.game-button-gold { color:#251906;border-color:#ffdf8c;background:linear-gradient(125deg,#fff0b8,#edc76b 22%,#f0c263 50%,#c18a32 78%,#efc873);text-shadow:0 1px #fff1b580;box-shadow:inset 0 3px 1px #fff2c3,inset 2px 0 2px #fff1af,inset 0 -4px 1px #966123,0 4px 0 #583b1a,0 6px 0 #191108,0 10px 20px #0009; }
-.game-button-gold:disabled { background:linear-gradient(#b6a375,#7a6945);color:#342b1c; }
-.game-button-danger { color:#ff8b84;border-color:#bf5144; }
+.game-button:not(:disabled):hover { box-shadow:inset 0 0 0 1.5px #c6ff33b3,0 5px 0 #000,0 10px 18px -6px #000a;color:var(--ar-lime); }
+.game-button:not(:disabled):active { transform:translateY(4px);box-shadow:inset 0 0 0 1.5px #ffffff33,0 1px 0 #000; }
+.game-button:focus-visible,.game-sort-menu button:focus-visible { outline:2px solid #fff;outline-offset:5px; }
+.game-button:disabled { cursor:not-allowed;color:#ffffff73;background:#17171d;box-shadow:inset 0 0 0 1px #ffffff1a,0 3px 0 #000;transform:translateY(3px); }
+/* The one action a table wants you to take. Named `gold` still, because the
+   prop is `tone="gold"` across the game components. */
+.game-button-gold { color:#0a0a0a;background:linear-gradient(180deg,var(--ar-lime-hi) 0%,var(--ar-lime) 52%,#b4ee22 100%);box-shadow:var(--ar-btn-lime); }
+.game-button-gold:not(:disabled):hover { color:#0a0a0a;box-shadow:var(--ar-btn-lime); }
+.game-button-gold:not(:disabled):active { transform:translateY(5px);box-shadow:var(--ar-btn-lime-press); }
+.game-button-gold:disabled { background:#17171d;color:#ffffff73; }
+.game-button-danger { color:#fff;background:linear-gradient(180deg,#ff6b7f 0%,var(--ar-urgent) 55%,#c41e33 100%);box-shadow:inset 0 1px 0 #ffffff4d,0 5px 0 #8a1524,0 12px 24px -8px #ff3b5573; }
+.game-button-danger:not(:disabled):hover { color:#fff;box-shadow:inset 0 1px 0 #ffffff4d,0 5px 0 #8a1524,0 14px 28px -8px #ff3b5599; }
 .game-button-icon { width:52px;height:52px;min-height:52px;padding:0; }
 .game-button-spinner { animation:mindi-spinner 800ms linear infinite; }
 @keyframes mindi-spinner { to { transform:rotate(360deg); } }
@@ -52,24 +61,38 @@
 .mindi-scene[data-renderer=webgl] .mindi-table-fallback { opacity:0; }
 .mindi-scene[data-renderer=fallback] .mindi-table-canvas { visibility:hidden; }
 .mindi-scores { position:relative;display:flex;justify-content:space-between;align-items:flex-start;z-index:2;padding-top:8px;pointer-events:none; }
-.mindi-score { width:212px;padding:12px;border:1px solid #d9b36a;border-radius:8px;background:linear-gradient(140deg,#1c2930ed,#080e15f7 55%);box-shadow:inset 0 2px 1px #ffe0a050,inset 0 -2px #01070c,0 4px #6a4a26,0 9px 20px #0009; }
-.mindi-score h2 { display:flex;align-items:center;gap:9px;color:#f4d690;font-size:15px;font-weight:750;margin-bottom:10px; }
+/* Arena HUD panel: near-black, a 1px 10% white border and two 16px corner
+   ticks - lime on your panel, blue on theirs. */
+.mindi-score { position:relative;width:224px;padding:14px;border:1px solid var(--ar-line);border-radius:var(--ar-radius-hud);background:linear-gradient(180deg,var(--ar-panel-top),var(--ar-panel-bottom));box-shadow:0 22px 44px -20px #000000f2; }
+.mindi-score::before,.mindi-score::after { content:"";position:absolute;width:16px;height:16px;border-style:solid;border-color:var(--ar-lime);pointer-events:none; }
+.mindi-score::before { left:-1px;top:-1px;border-width:2px 0 0 2px;border-top-left-radius:var(--ar-radius-hud); }
+.mindi-score::after { right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-bottom-right-radius:var(--ar-radius-hud); }
+.mindi-score.opponents::before,.mindi-score.opponents::after { border-color:var(--ar-blue-soft); }
+.mindi-score h2 { display:flex;align-items:center;gap:10px;margin-bottom:12px;color:var(--ar-text-2);font-family:var(--ar-font-display);font-size:11.5px;font-weight:700;letter-spacing:var(--ar-track-label);text-transform:uppercase; }
+.mindi-score h2 svg { color:var(--ar-lime); }
+.mindi-score.opponents h2 svg { color:var(--ar-blue-soft); }
 .mindi-score dl { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
-.mindi-score dl>div { padding:7px;text-align:center;border:1px solid #306d8c;border-radius:5px;background:linear-gradient(#0f2d41,#0c1b2a);box-shadow:inset 0 2px 7px #0008,0 1px #ffffff12; }
-.mindi-score dt { font-size:11px;color:#b7d6e8; }
-.mindi-score dd { font-size:28px;font-weight:750;line-height:1.3;text-shadow:0 2px 2px #000; }
-.mindi-score.opponents dl>div { border-color:#854343;background:linear-gradient(#3b131b,#230e17); }
-.mindi-score.opponents dt { color:#f3b9bb; }
+.mindi-score dl>div { padding:8px 7px;text-align:center;border:0;border-radius:9px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+.mindi-score dt { font-family:var(--ar-font-display);font-size:10px;font-weight:700;letter-spacing:var(--ar-track-label);text-transform:uppercase;color:var(--ar-text-3); }
+.mindi-score dd { margin-top:2px;font-family:var(--ar-font-display);font-size:30px;font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--ar-lime); }
+.mindi-score.opponents dd { color:var(--ar-blue); }
+.mindi-score.opponents dl>div { background:rgba(0,188,200,.08);box-shadow:inset 0 0 0 1px rgba(0,188,200,.22); }
+.mindi-score.opponents dt { color:var(--ar-text-3); }
 .mindi-seat { position:absolute;z-index:3;display:flex;align-items:center;flex-direction:column;pointer-events:none; }
 .mindi-identity { display:flex;align-items:center;flex-direction:column;z-index:2; }
-.mindi-avatar { padding:3px;border:1px solid #e0ae54;border-radius:50%;background:linear-gradient(135deg,#fff4c5,#ae7128 40%,#714413 65%,#ffe0a0);box-shadow:inset 0 1px 1px #fff3b1,0 4px 8px #0009; }
-.mindi-avatar>div>div:first-child { border-radius:50%;border:2px solid #1b2630;box-shadow:inset 0 2px 4px #fff3,inset 0 -4px 6px #0003; }
-.mindi-avatar>div>span { background:#071018;border:2px solid #edc16d;box-shadow:0 2px 3px #0009;right:-6px;bottom:-4px;font-size:12px;min-width:25px;min-height:25px;display:grid;place-items:center;color:#fff4d6; }
-.mindi-seat.is-active .mindi-avatar { outline:2px solid #f5d891;outline-offset:3px;box-shadow:0 0 16px #e0ba5260,0 4px 10px #000; }
-.mindi-nameplate { display:flex;align-items:center;flex-direction:column;min-width:106px;max-width:150px;margin-top:5px;padding:4px 14px;border:1px solid #bd914b;border-radius:8px;background:linear-gradient(#24313c,#080e15);box-shadow:inset 0 1px #e6d2a33d,0 3px #54381c,0 6px 9px #0008; }
-.mindi-nameplate strong { font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.mindi-nameplate span { font-size:9px;color:#b4c8d8;line-height:1.4; }
-.mindi-seat.is-active .mindi-nameplate span { color:#f4d891; }
+/* The Arena avatar is a square with an 11px radius - lime for you and your
+   partner, blue for the opposition - not a gold medallion. */
+.mindi-avatar { padding:0;border:0;border-radius:11px;background:linear-gradient(135deg,#E4FF8C 0%,var(--ar-lime) 60%,#A5DD1A 100%);box-shadow:0 6px 14px -6px #000c; }
+.mindi-avatar>div>div:first-child { border-radius:11px;border:0;box-shadow:inset 0 1px 0 #ffffff59; }
+.mindi-avatar>div>span { right:-8px;bottom:-8px;min-width:24px;min-height:24px;display:grid;place-items:center;padding:0 6px;border:0;border-radius:7px;background:#fff;color:#000;font-family:var(--ar-font-display);font-size:13px;font-weight:700;box-shadow:0 0 0 2px #000; }
+.mindi-seat.is-active .mindi-avatar { box-shadow:0 0 0 3px var(--ar-lime),0 0 28px #c6ff3359; }
+.mindi-nameplate { display:flex;align-items:center;flex-direction:column;min-width:106px;max-width:150px;margin-top:8px;padding:6px 14px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(10,10,14,.92);box-shadow:0 18px 30px -16px #000e; }
+.mindi-nameplate strong { max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--ar-font-display);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase; }
+.mindi-nameplate span { font-family:var(--ar-font-display);font-size:9px;font-weight:700;letter-spacing:var(--ar-track-label);text-transform:uppercase;color:var(--ar-text-3);line-height:1.5; }
+.mindi-seat.is-active .mindi-nameplate { border-color:var(--ar-lime);box-shadow:0 0 0 4px #c6ff3324,0 0 32px #c6ff3338; }
+.mindi-seat.is-active .mindi-nameplate span { color:var(--ar-lime); }
+/* Opponents are the other side, so their avatars are blue. */
+.mindi-seat[data-team=other] .mindi-avatar { background:linear-gradient(135deg,var(--ar-blue-hi) 0%,var(--ar-blue) 60%,#00858F 100%); }
 .mindi-seat-top { top:0;left:50%;transform:translateX(-50%);width:34%;max-width:420px; }
 .mindi-hidden-hand { --back-width:var(--card-width);--back-height:var(--card-height);display:flex;width:100%;height:var(--back-height);padding-right:var(--back-width);margin-top:14px;perspective:850px; }
 .mindi-hidden-hand>div { position:relative;min-width:0;flex:0 0 calc(100% / max(1,var(--count) - 1));z-index:var(--index);transform:translateY(var(--fan-curve)) rotate(var(--fan-angle));transform-origin:center 100%; }
@@ -93,7 +116,8 @@
 .mindi-trick-zone .trick-slot span { font-size:15px; }
 .mindi-trick-zone .trick-slot span:nth-child(2) { font-size:26px; }
 .mindi-trick-zone .trick-slot-winner { border:2px solid #f4d17d;box-shadow:0 0 16px #f4d17d65; }
-.mindi-trick-result { position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);white-space:nowrap;padding:4px 12px!important;border-radius:5px;background:#09121ddd;color:#f8dfa2;font-size:12px; }
+.mindi-trick-result { position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;white-space:nowrap;padding:8px 16px!important;border-radius:10px;background:#0a0a0ef2;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:#fff;font-size:13px;font-weight:600; }
+.mindi-trick-result::before { content:"";width:7px;height:7px;border-radius:50%;background:var(--ar-lime);box-shadow:0 0 8px #c6ff3399; }
 .mindi-hand { position:absolute;z-index:4;bottom:36px;left:50%;transform:translateX(-50%);display:flex;width:min(1000px,70%);max-width:none;height:var(--card-height);min-height:0;margin:0;padding:0 var(--card-width) 0 0;perspective:950px; }
 .mindi-card-slot { position:relative;min-width:0;flex:0 0 calc(100% / (var(--count) - 1));z-index:var(--order);transform:translateY(var(--curve)) rotate(var(--angle));transform-origin:center bottom;transition:transform 180ms;touch-action:pan-y; }
 .mindi-card-slot>button { width:var(--card-width);height:var(--card-height);opacity:1;filter:none;border-radius:7px;border-color:#dad4c9;background:linear-gradient(140deg,#fff 25%,#f8f7f4 70%,#e7e1d7);box-shadow:inset 1px 1px #fff,1px 2px #d8d1c5,2px 3px #b3aa9a,3px 5px #6f685b,0 9px 15px #0008; }
@@ -110,27 +134,29 @@
 .mindi-long-hand { width:84%; }
 .mindi-quick-actions { position:absolute;left:12px;bottom:48px;z-index:5; }
 .mindi-quick-actions .game-button { border-radius:50%; }
-.mindi-hud { position:relative;z-index:5;display:grid;grid-template-columns:minmax(170px,1fr) minmax(135px,.7fr) minmax(180px,1fr) minmax(190px,1fr);align-items:center;gap:24px;max-width:1450px;margin:0 auto;padding:14px 24px;border:2px solid #d3a65d;border-radius:8px;background:linear-gradient(145deg,#26303b,#070d15 24%,#0a121d 82%,#2b3540);box-shadow:inset 0 2px #fff0b096,inset 0 -3px #543719,0 5px #3d2915,0 12px 20px #000c; }
+.mindi-hud { position:relative;z-index:5;display:grid;grid-template-columns:minmax(170px,1fr) minmax(135px,.7fr) minmax(180px,1fr) minmax(190px,1fr);align-items:center;gap:24px;max-width:1450px;margin:0 auto;padding:14px 24px;border:1px solid var(--ar-line);border-radius:var(--ar-radius-hud);background:linear-gradient(180deg,var(--ar-panel-top),var(--ar-panel-bottom));box-shadow:0 22px 44px -20px #000000f2; }
 .mindi-self { display:flex;align-items:center;gap:14px;min-width:0; }
 .mindi-self>.mindi-avatar { flex-shrink:0; }
 .mindi-self>div:last-child { min-width:0; }
-.mindi-self strong { display:block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px; }
-.mindi-self p { display:flex;align-items:center;gap:7px;font-size:11px;color:#aebdca;line-height:1.4;margin-top:4px; }
+.mindi-self strong { display:block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--ar-font-display);font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase; }
+.mindi-self p { display:flex;align-items:center;gap:7px;margin-top:5px;font-family:var(--ar-font-display);font-size:10px;font-weight:700;letter-spacing:var(--ar-track-label);text-transform:uppercase;color:var(--ar-text-3);line-height:1.4; }
 .mindi-self p i { width:7px;height:7px;border-radius:50%;background:#778691;flex-shrink:0; }
-.mindi-self.is-active p { color:#6af1d5; }.mindi-self.is-active p i { background:#24dab3;box-shadow:0 0 6px #25d5a966; }
+.mindi-self.is-active p { color:var(--ar-lime); }.mindi-self.is-active p i { background:var(--ar-lime);box-shadow:0 0 8px #c6ff33a6; }
 .mindi-hud .game-button { width:100%;min-height:58px; }
 .mindi-play { font-size:18px; }
-.mindi-trump { display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:8px 18px;border:1px solid #8c734a;border-radius:8px;background:linear-gradient(#1d2a35,#0b1420);box-shadow:inset 0 2px 1px #ffffff24,inset 0 -2px #030910,0 3px #403322;font-size:14px;font-weight:600; }
-.mindi-trump b { font-size:30px;line-height:1;color:#e0c27f;text-shadow:0 2px #4d3319; }
-.mindi-trump small { font-size:11px;font-weight:400;color:#b7c5d2;text-transform:capitalize; }
-.mindi-trump[data-set=true] { border-color:#dfb568;box-shadow:inset 0 1px #fff3,0 3px #594021,0 0 12px #dbab4025; }
-.mindi-trump[data-suit=red] b { color:#ff8a7d; }
+/* Trump reads as a hexagonal badge - dark until a renege sets it, blue
+   after. The hex is the `b` element, clipped. */
+.mindi-trump { display:flex;align-items:center;gap:14px;min-height:58px;padding:8px 16px;border:1px solid var(--ar-line);border-radius:var(--ar-radius-hud);background:linear-gradient(180deg,var(--ar-panel-top),var(--ar-panel-bottom));font-family:var(--ar-font-display);font-size:11.5px;font-weight:700;letter-spacing:var(--ar-track-label);text-transform:uppercase;color:var(--ar-text-3); }
+.mindi-trump b { display:grid;place-items:center;width:44px;height:50px;flex-shrink:0;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:#1a1a20;color:var(--ar-text-3);font-size:24px;line-height:1; }
+.mindi-trump small { display:block;margin-top:3px;font-size:15px;font-weight:700;letter-spacing:-.01em;text-transform:uppercase;color:#fff; }
+.mindi-trump[data-set=true] b { background:linear-gradient(160deg,var(--ar-blue-hi),var(--ar-blue) 55%,#00858F);color:#fff;box-shadow:0 0 22px #00bcc866; }
+.mindi-trump[data-suit=red] b { color:#fff; }
 .game-sort { position:relative; }
 .game-sort>.game-button { justify-content:space-between;font-size:14px;gap:8px; }
-.game-sort-menu { position:absolute;z-index:20;left:0;bottom:calc(100% + 15px);min-width:100%;padding:6px;border:1px solid #b49150;border-radius:8px;background:#0b1521;box-shadow:inset 0 1px #fff2,0 10px 24px #000b; }
+.game-sort-menu { position:absolute;z-index:20;left:0;bottom:calc(100% + 15px);min-width:100%;padding:6px;border:1px solid #ffffff1f;border-radius:12px;background:#0e0e13;box-shadow:inset 0 1px #ffffff14,0 14px 30px #000c; }
 .game-sort-menu button { display:flex;align-items:center;gap:10px;width:100%;white-space:nowrap;padding:13px 12px;color:#ccd9e3;font-size:13px;border-radius:5px; }
-.game-sort-menu button[aria-checked=true] { background:#3a3020;color:#fce2a0; }
-.game-sort-menu button:hover { background:#263443; }
+.game-sort-menu button[aria-checked=true] { background:#fff;color:#0a0a0a; }
+.game-sort-menu button:hover { background:#ffffff14;color:#fff; }
 .game-sort-menu button svg:last-child { margin-left:auto; }
 .mindi-room .gin-dialog { border-color:#b2935a;box-shadow:inset 0 1px #ffdf9440,0 18px 60px #000c; }
 /* Full-bleed opening ceremony, with DOM results when WebGL is unavailable. */
@@ -257,4 +283,11 @@
 }
 @media(prefers-reduced-motion:reduce) {
   .mindi-room .game-button,.mindi-card-slot { transition:none; }.mindi-room .game-button:hover { transform:none; }.game-button-spinner { animation:none; }
+}
+/* Card position must survive the shared button hover/press transform. */
+.arena-mindi button.hc { width:108px;height:151px;font-size:15px; }
+.arena-mindi .status { top:560px; }
+.arena-mindi button.hc:hover:not(:disabled),
+.arena-mindi button.hc:active:not(:disabled) {
+  transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(9deg);
 }

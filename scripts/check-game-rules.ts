@@ -16,6 +16,7 @@ import {
   type TrickPlay, type Card as MindiCard, type Suit as MindiSuit,
 } from "../lib/mindiEngine";
 import { cutForFirstPlay } from "../lib/openingCut";
+import { PIPS, COURTS } from "../lib/cardPips";
 
 let failures = 0;
 function eq(label: string, actual: unknown, expected: unknown) {
@@ -166,6 +167,46 @@ for (let i = 0; i < 200; i++) {
   if (Object.keys(duel.draw.cards).length !== 2) { eq("a duel draws two cards", Object.keys(duel.draw.cards).length, 2); break; }
   if (duel.deal.hands[0].length !== 26 || duel.deal.hands[1].length !== 26) { eq("twenty-six cards each in a duel", false, true); break; }
 }
+
+// ------------------------------------------------------------- card faces
+
+console.log("Card faces — real pip layouts");
+
+// A card showing nine pips for a 9 is the whole point; a layout table is easy
+// to get subtly wrong and impossible to spot in a screenshot.
+for (const rank of ["2","3","4","5","6","7","8","9","10"]) {
+  eq(`a ${rank} shows ${rank} pips`, PIPS[rank].length, Number(rank));
+}
+// The side columns are laid out symmetrically about the centre, which is
+// what stops a card looking lopsided. Centre-column pips are exempt: a real
+// 7 carries a single odd pip above the middle and is genuinely NOT
+// symmetric, and the 3, 5 and 9 each have one unpaired pip dead centre.
+//
+// Rotations are checked separately, below. Two earlier versions of this
+// check were wrong, not the layout: the first demanded full 180° symmetry
+// (which fails the 5, 6, 7, 8 and 9 that real decks draw this way), the
+// second still failed the 7.
+for (const [rank, pips] of Object.entries(PIPS)) {
+  const sides = pips.filter(pip => pip.x !== 50);
+  const mirrored = sides.every(pip =>
+    sides.some(other =>
+      Math.abs(other.x - (100 - pip.x)) < 0.01 &&
+      Math.abs(other.y - (100 - pip.y)) < 0.01));
+  ok(`the ${rank}'s side columns mirror through the centre`, mirrored);
+  ok(`the ${rank}'s columns are balanced`, sides.filter(p => p.x < 50).length === sides.filter(p => p.x > 50).length);
+}
+// The rotation rule itself: everything below the centre line is turned over,
+// everything on or above it stands up.
+for (const [rank, pips] of Object.entries(PIPS)) {
+  ok(`the ${rank} turns over exactly the pips below the centre`, pips.every(pip => !!pip.flip === pip.y > 50));
+}
+// Pips must stay on the card, clear of the corner indices.
+for (const [rank, pips] of Object.entries(PIPS)) {
+  ok(`the ${rank}'s pips stay inside the face`, pips.every(p => p.x >= 20 && p.x <= 80 && p.y >= 10 && p.y <= 90));
+}
+eq("courts are J, Q and K", Array.from(COURTS).sort(), ["J","K","Q"]);
+ok("courts carry no pip layout", Array.from(COURTS).every(rank => !PIPS[rank]));
+ok("the ace carries no pip layout (it gets the big centre pip)", !PIPS["A"]);
 
 // ---------------------------------------------------------- the opening cut
 

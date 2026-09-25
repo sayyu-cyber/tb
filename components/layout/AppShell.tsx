@@ -37,7 +37,12 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           subscriptions follow them. In-match screens have no sidebar and
           stay unsubscribed. */}
       <HomeSocialProvider enabled={!inMatch}>
-      <div className={`app-shell ${inMatch ? "app-shell-match" : ""} ${premiumShell ? "app-shell-home" : ""}`}>
+      {/* ar-stage paints the arena behind everything: black, a receding
+          violet-blue floor grid and two spotlight beams. It is drawn by
+          pseudo-elements on a fixed layer, so it costs no DOM and cannot
+          shift any page's layout. In-match screens draw their own table and
+          opt out. */}
+      <div className={`app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
         <ConnectionNotice />
         <BackgroundMusicPlayer />

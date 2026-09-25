@@ -6,8 +6,8 @@ async function run(){
   const browser=await chromium.launch({channel:'msedge',headless:true});
   try{
     const page=await browser.newPage();
-    for(const name of ['a','b']){
-      const file=`C:/Users/Sayyu/Downloads/${name}_Create_an_8-second_c.mp4`;
+    for(const name of process.argv[2]?['recording']:['a','b']){
+      const file=process.argv[2]||`C:/Users/Sayyu/Downloads/${name}_Create_an_8-second_c.mp4`;
       const result=await page.evaluate(async data=>{
         const video=document.createElement('video');video.muted=true;video.preload='auto';
         const ready=new Promise((resolve,reject)=>{video.onloadeddata=resolve;video.onerror=()=>reject(Error('Video could not be decoded'));});

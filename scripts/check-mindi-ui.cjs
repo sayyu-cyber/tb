@@ -32,8 +32,11 @@ async function run() {
       // rather than sampling count() immediately and racing the first paint.
       await intro.waitFor({timeout:6000}).catch(()=>{});
       if(await intro.count()===0) return;
-      await page.getByRole('button',{name:/Skip|Start now/}).click();
-      await intro.waitFor({state:'detached'});
+      // Skipping hurries past the cut but NOT the deal, which always plays in
+      // full - so this waits the ceremony out rather than dismissing it.
+      const skip = page.getByRole('button',{name:/Skip to deal/});
+      if(await skip.isEnabled().catch(()=>false)) await skip.click();
+      await intro.waitFor({state:'detached',timeout:15000});
     };
     await page.locator('.mindi-intro').waitFor({timeout:8000});
     assert.equal(await page.locator('.mindi-intro-draw li').count(),4,'Four cards drawn, one per seat');
@@ -46,6 +49,12 @@ async function run() {
     // slow machine could let the draw row disappear between the two calls.
     await page.waitForFunction(()=>document.querySelectorAll('.mindi-intro-draw li[data-winner=true]').length===1
       && /plays first/.test(document.querySelector('.mindi-intro-sub')?.textContent||''),{},{timeout:8000});
+    // The deal is unskippable: once it starts there is no way out of it.
+    await page.getByRole('button',{name:/Skip to deal/}).click();
+    await page.waitForFunction(()=>document.querySelector('.mindi-intro')?.getAttribute('data-phase')==='dealing',{},{timeout:8000});
+    assert.equal(await page.getByRole('button',{name:/Dealing/}).isDisabled(),true,'Deal can still be skipped');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.mindi-intro').count(),1,'Escape dismissed the deal');
     await dismissIntro();
 
     await page.getByRole('heading',{name:'Mindi',exact:true}).waitFor();

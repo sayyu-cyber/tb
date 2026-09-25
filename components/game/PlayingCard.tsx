@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SPRING_SOFT } from "@/lib/motion";
+import { PIPS, COURTS } from "@/lib/cardPips";
 
 /**
  * A playing card.
@@ -54,6 +55,8 @@ const SIZES = {
   md: { box: "w-12 h-[4.2rem] rounded-lg", index: "text-[11px]", pip: "text-xl", corner: "p-1" },
   lg: { box: "w-16 h-[5.6rem] rounded-xl", index: "text-sm", pip: "text-3xl", corner: "p-1.5" },
 } as const;
+
+
 
 /**
  * Card-back skins. Cosmetic card backs (data/cosmetics.ts `CARD_BACKS`) are
@@ -141,6 +144,18 @@ export function PlayingCard({
   const interactive = Boolean(onClick) && !disabled;
 
   if (faceDown) {
+    // The Arena back is drawn from its own recipe rather than the two-colour
+    // weave the other skins share, because it is the proposed default and
+    // carries the crown mark. The existing skins stay as alternatives.
+    if ((cardBackId ?? "cb_arena") === "cb_arena") {
+      return (
+        <div aria-hidden="true" className={cn(s.box, "pc relative overflow-hidden", className)}>
+          <span className="pc-back-arena">
+            <span className="pc-back-crown"><span>♛</span></span>
+          </span>
+        </div>
+      );
+    }
     const skin = CARD_BACK_STYLES[cardBackId ?? ""] ?? CARD_BACK_STYLES.cb_default;
     const mark = CARD_BACK_MARKS[cardBackId ?? ""] ?? CARD_BACK_MARKS.cb_default;
     return (
@@ -198,39 +213,32 @@ export function PlayingCard({
       aria-pressed={onClick ? selected : undefined}
       className={cn(
         s.box,
-        "relative select-none border bg-white transition-shadow duration-200",
-        // Card faces stay white in both themes — a playing card is white.
-        // Selection reads as a genuine lift off the table (a soft violet
-        // glow underneath, not just a coloured ring) - the tactile, premium
-        // feel the hand is meant to have.
-        selected
-          ? "border-[rgb(var(--gold))] ring-2 ring-[rgb(var(--gold)/55%)] -translate-y-2 shadow-[0_14px_28px_-8px_rgba(139,92,246,0.55),0_0_0_1px_rgb(var(--gold)/35%)]"
-          : "border-black/15 shadow-[var(--shadow-md)]",
-        interactive && !disabled && !selected && "hover:shadow-[0_10px_22px_-6px_rgba(139,92,246,0.35)]",
-        disabled && "opacity-40 saturate-50",
+        // Card stock stays white whatever the theme - a playing card is
+        // white. Depth, the picked lime ring and the can't-play dim all live
+        // in styles/arena.css so they can be expressed in the card's own em.
+        "pc relative select-none transition-shadow duration-200",
+        selected && "is-picked",
+        disabled && "is-dim",
         interactive && "cursor-pointer",
         className
       )}
       style={{ color: red ? "rgb(var(--suit-red))" : "rgb(var(--suit-black))" }}
     >
-      {/* Top-left index: rank over suit, as printed on a real card. */}
-      <span className={cn("absolute left-0 top-0 flex flex-col items-center leading-none", s.corner)}>
-        <span className={cn(s.index, "font-bold")}>{rank}</span>
-        <span className={cn(s.index, "leading-none")}>{glyph}</span>
-      </span>
+      {/* Everything inside scales off the face's own width - see .pc-face. */}
+      <span className={cn("pc-face", rank === "10" && "pc-ten")} aria-hidden="true">
+        <span className="pc-index tl"><b>{rank}</b><i>{glyph}</i></span>
+        <span className="pc-index br"><b>{rank}</b><i>{glyph}</i></span>
 
-      {/* Centre pip. */}
-      <span className={cn("absolute inset-0 flex items-center justify-center font-serif leading-none", s.pip)}>
-        {glyph}
-      </span>
-
-      {/* Bottom-right index, rotated — so the card is readable either way up. */}
-      <span
-        className={cn("absolute bottom-0 right-0 flex flex-col items-center leading-none rotate-180", s.corner)}
-        aria-hidden="true"
-      >
-        <span className={cn(s.index, "font-bold")}>{rank}</span>
-        <span className={cn(s.index, "leading-none")}>{glyph}</span>
+        {COURTS.has(rank) ? (
+          <span className="pc-court"><b>{rank}</b></span>
+        ) : rank === "A" || !PIPS[rank] ? (
+          <span className="pc-pip big" style={{ left: "50%", top: "50%" }}>{glyph}</span>
+        ) : (
+          PIPS[rank].map((pip, i) => (
+            <span key={i} className="pc-pip" data-flip={pip.flip ? "true" : undefined}
+              style={{ left: `${pip.x}%`, top: `${pip.y}%` }}>{glyph}</span>
+          ))
+        )}
       </span>
     </Wrapper>
   );

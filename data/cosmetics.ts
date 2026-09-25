@@ -17,6 +17,11 @@ export const RARITY_GLOW: Record<Rarity, string> = {
 };
 
 export const CARD_BACKS: CosmeticItem[] = [
+  // The Arena back (design/arena — a blue lattice with a lime crown in a
+  // black diamond) is the default for anyone who has not equipped one.
+  // Classic Gold and the rest stay as alternatives, and a player who owns
+  // and equips one still gets it.
+  { id: 'cb_arena', name: 'Arena', category: 'cardBack', rarity: 'Common', price: 0, previewImage: '/cosmetics/cardbacks/arena.png', description: 'The house deck: blue lattice, lime crown.' },
   { id: 'cb_default', name: 'Classic Gold', category: 'cardBack', rarity: 'Common', price: 0, previewImage: '/cosmetics/cardbacks/classic-gold.png', description: 'The timeless golden standard.' },
   { id: 'cb_maldives', name: 'Maldives Sunset', category: 'cardBack', rarity: 'Common', price: 200, previewImage: '/cosmetics/cardbacks/maldives.png', description: 'Tropical vibes for every hand.' },
   { id: 'cb_ocean', name: 'Deep Ocean', category: 'cardBack', rarity: 'Rare', price: 500, previewImage: '/cosmetics/cardbacks/ocean.png', description: 'Dive into the depths.' },
