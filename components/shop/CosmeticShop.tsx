@@ -15,6 +15,8 @@ import { Pill, CoinGem, Meter } from '@/components/arena';
 import { ShopItemCard } from './ShopItemCard';
 import { ShopItemDialog } from './ShopItemDialog';
 import { CoinPackCard } from './StoreCoinPacks';
+import { CoinPackRow } from './CoinPackRow';
+import { VipPanel } from '@/components/vip/VipPanel';
 import { categoryLabel } from './categoryLabel';
 
 /**
@@ -172,14 +174,18 @@ export default function CosmeticShop() {
   }
 
   return (
-    <div className="arena-shop ar-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="arena-shop arena-shopvip ar-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div className="phead">
         <div>
-          <span className="lbl dash" style={{ color: '#C6FF33' }}>Premium cosmetics and coin packs</span>
-          <h1 className="disp chrome ar-h1">{t('page_shop')}</h1>
-          <p className="sub">Customize your table, cards, and experience. Stand out in every game.</p>
+          <span className="lbl dash" style={{ color: '#C6FF33' }}>
+            {activeTab === 'vip' ? t('page_shop') : 'Premium cosmetics and coin packs'}
+          </span>
+          <h1 className="disp chrome ar-h1">{activeTab === 'vip' ? t('vip_pass') : t('page_shop')}</h1>
+          {activeTab !== 'vip' && (
+            <p className="sub">Customize your table, cards, and experience. Stand out in every game.</p>
+          )}
         </div>
-        <div className="bal">
+        {activeTab !== 'vip' && <div className="bal">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <span className="lbl">Your Balance</span>
             <b><CoinGem />{state.economy.coins.toLocaleString()}</b>
@@ -193,7 +199,7 @@ export default function CosmeticShop() {
           >
             <Plus aria-hidden="true" />
           </button>
-        </div>
+        </div>}
       </div>
 
       <div className="tabs" style={{ alignSelf: 'flex-start' }} role="group" aria-label={t('page_shop')}>
@@ -282,86 +288,84 @@ export default function CosmeticShop() {
       )}
 
       {activeTab === 'vip' && (
-        <section className="panel tick b vip-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <div className="ph">
-            <h2>{t('vip_pass')}</h2>
-            <span className="lbl">{plan.sub}</span>
-          </div>
-          <div className="vip-plans">
-            {VIP_PLANS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`pack ${selectedVipPlan === option.id ? 'pop' : ''}`.trim()}
-                aria-pressed={selectedVipPlan === option.id}
-                onClick={() => setSelectedVipPlan(option.id)}
-                data-flat
-              >
-                {option.savingsNote && <Pill tone="lime" className="flag">Save</Pill>}
-                <span className="lbl">{option.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')}</span>
-                <b className="amt">MVR {option.priceMVR}</b>
-                {option.savingsNote && <span className="muted2">{option.savingsNote}</span>}
-              </button>
-            ))}
-          </div>
-          <ul className="vip-benefits">
-            {[t('vip_benefit1'), t('vip_benefit2'), t('vip_benefit3'), t('vip_benefit4'), t('vip_benefit5'), t('vip_benefit6')]
-              .map((benefit, index) => <li key={index} className="muted">{benefit}</li>)}
-          </ul>
-          <button
-            type="button"
-            className="ar-btn block"
-            disabled={vipActive}
-            onClick={() => {
-              if (vipActive) return;
-              activateVip(plan.days);
-              showToast(
-                t('toast_vipActivated').replace('{plan}', plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')),
-                'success'
-              );
-            }}
-          >
-            {vipActive
-              ? 'VIP Active'
-              : t('vip_activateBtn').replace('{plan}', selectedVipPlan === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel'))}
-          </button>
-          {vipActive && (
-            <p role="status" className="muted">
-              {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
-            </p>
-          )}
-        </section>
+        <VipPanel
+          plans={VIP_PLANS}
+          selected={selectedVipPlan}
+          onSelect={setSelectedVipPlan}
+          active={vipActive}
+          remainingDays={state.profile.vip.remainingDays}
+          onActivate={() => {
+            if (vipActive) return;
+            // CODE ISSUE 1: nothing charges for this. Left exactly as it
+            // was, deliberately - how VIP is paid for is a decision for
+            // Sayyu, not a redesign.
+            activateVip(plan.days);
+            showToast(
+              t('toast_vipActivated').replace('{plan}', plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')),
+              'success'
+            );
+          }}
+        />
       )}
 
-      {(activeTab === 'featured' || activeTab === 'coins') && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* The Featured tab shows four packs as cards; the Coin Packs and VIP
+          tabs show the whole catalogue as rows, because five cards do not
+          fit the board's width. Both are the board's own treatments. */}
+      {(activeTab === 'featured' || activeTab === 'coins' || activeTab === 'vip') && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: activeTab === 'featured' ? '14px' : '12px' }}>
           <div className="ph">
             <div>
               <h2 style={{ fontSize: '24px' }}>Coin Packs</h2>
               <p className="muted2" style={{ margin: '6px 0 0' }}>Get coins to buy exclusive cosmetics</p>
             </div>
-            {activeTab === 'featured' && (
+            {activeTab === 'featured' ? (
               <button type="button" className="link" onClick={() => setActiveTab('coins')} data-flat>
                 View All<ChevronRight aria-hidden="true" />
               </button>
+            ) : (
+              <span className="coins" style={{ height: '40px' }}>
+                <CoinGem />{state.economy.coins.toLocaleString()}
+              </span>
             )}
           </div>
-          <div className="pack-grid">
-            {(activeTab === 'featured' ? COIN_PACKS.slice(0, 4) : COIN_PACKS).map((pack, index) => (
-              <CoinPackCard
+
+          {/* A request already waiting on an admin. The board puts this
+              above the list, with a spinner, because it is the reason every
+              button below is disabled. */}
+          {pendingTopup && (
+            <div className="pending" role="status">
+              <i className="spin" aria-hidden="true" />
+              <span style={{ flexGrow: 1, fontSize: '15px', fontWeight: 600 }}>
+                Your {pendingTopup.packName} request is pending admin approval.
+              </span>
+              <span className="lbl" style={{ color: '#8AF0F5' }}>Coins arrive once approved</span>
+            </div>
+          )}
+
+          {activeTab === 'featured' ? (
+            <div className="pack-grid">
+              {COIN_PACKS.slice(0, 4).map((pack, index) => (
+                <CoinPackCard
+                  key={pack.id}
+                  pack={pack}
+                  index={index}
+                  disabled={topupBusy || !!pendingTopup}
+                  onPurchase={() => handlePurchaseCoinPack(pack)}
+                />
+              ))}
+            </div>
+          ) : (
+            COIN_PACKS.map((pack, index) => (
+              <CoinPackRow
                 key={pack.id}
                 pack={pack}
                 index={index}
                 disabled={topupBusy || !!pendingTopup}
                 onPurchase={() => handlePurchaseCoinPack(pack)}
               />
-            ))}
-          </div>
-          {pendingTopup && (
-            <p role="status" className="muted2" style={{ margin: 0 }}>
-              Your {pendingTopup.packName} request is pending admin approval.
-            </p>
+            ))
           )}
+
           <p className="muted2" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Info aria-hidden="true" style={{ width: '16px', height: '16px' }} />
             Prices in MVR. Top-ups require admin approval before coins are credited.

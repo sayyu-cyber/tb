@@ -295,3 +295,30 @@
 .arena-shop .vip-benefits { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .arena-shop .vip-benefits li { display: flex; align-items: flex-start; gap: 10px; }
 .arena-shop .vip-benefits li::before { content: "✓"; color: #C6FF33; font-weight: 700; }
+
+/* ── VIP Pass (app-12) ────────────────────────────────────────────────
+   The VIP tab lives on /shop, so the page carries both namespaces. */
+.arena-shopvip .vip-title { font-size: clamp(28px, 4vw, 40px); }
+.arena-shopvip .vip-perks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+.arena-shopvip .vip-taste { display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
+/* The hero is the perks beside a 560px plan column at 1440. */
+@media (max-width: 1180px) {
+  .arena-shopvip .viphero { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .arena-shopvip .vip-perks { grid-template-columns: minmax(0, 1fr); }
+}
+/* The pack rows: gems, name, amount, button. Below the width where the
+   amount and the button stop fitting, the row becomes two lines. */
+@media (max-width: 820px) {
+  .arena-shopvip .prow {
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-auto-rows: auto;
+    height: auto;
+    padding: 14px 16px;
+    gap: 6px 16px;
+  }
+  .arena-shopvip .prow > :nth-child(3),
+  .arena-shopvip .prow > :nth-child(4) { grid-column: 2; }
+}
+.arena-shopvip .prow .ar-btn:disabled { opacity: .55; }

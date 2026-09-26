@@ -8,7 +8,8 @@ import { useSyncExternalStore } from "react";
  * Fireworks at 1,000 can be afforded, Crown Jewel at 2,500 cannot - the two
  * states app-11b and app-11c draw.
  *
- * Query flags: ?poor (no coins), ?vip, ?owned (Fireworks already owned).
+ * Query flags: ?poor (no coins), ?vip, ?owned (Fireworks already owned),
+ * ?pending (a top-up waiting on an admin).
  */
 
 const flag = (name: string) => typeof location !== "undefined" && location.search.includes(name);
@@ -49,5 +50,11 @@ export function useEconomy() {
 export function useAuth() { return { user: { uid: "shop-test", displayName: "Sayyu" }, isGuest: false }; }
 export function useSettings() { return { settings: { language: "en" } }; }
 export function useToast() { return { showToast: (message: string) => { document.body.dataset.toast = message; } }; }
-export function watchMyTopups(uid: string, callback: (items: unknown[]) => void) { callback([]); return () => {}; }
+/** ?pending puts a Standard Pack request in flight, as the VIP board shows. */
+export function watchMyTopups(uid: string, callback: (items: unknown[]) => void) {
+  callback(flag("pending")
+    ? [{ id: "tp-1", status: "pending", packName: "Standard Pack", coins: 1500, priceMVR: 100 }]
+    : []);
+  return () => {};
+}
 export async function requestCoinTopup() { throw new Error("Test prevents real purchases"); }

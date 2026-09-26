@@ -130,6 +130,38 @@ async function run() {
     assert.equal(await page.getByRole('button', { name: 'View VIP Plans' }).count(), 0, 'No upsell for a VIP account');
     assert.equal(await page.locator('.item').count(), 7, 'VIP gets a seventh featured slot');
 
+    // ── VIP tab (app-12) ────────────────────────────────────────────────
+    await page.goto(BASE + '/shop-test/');
+    await page.getByRole('heading', { name: 'Shop', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'VIP Pass', exact: true }).click();
+    await page.waitForTimeout(250);
+    assert.equal(await page.locator('.viphero').count(), 1, 'The VIP hero');
+    assert.equal(await page.locator('.perk').count(), 6, 'Six perks');
+    assert.equal(await page.locator('.plan').count(), 2, 'Two plans');
+    assert.equal(await page.locator('.plan[aria-pressed="true"]').count(), 1, 'One selected at a time');
+    assert.equal(await page.locator('.prow').count(), 5, 'The whole pack catalogue, as rows');
+    assert.equal(await page.locator('.prow.pop').count(), 1, 'Popular');
+    assert.equal(await page.locator('.prow.best').count(), 1, 'Best Value');
+    assert.equal(await page.locator('h1').innerText(), 'VIP Pass', 'The heading follows the tab');
+    // Picking a plan changes the selection and the activate label.
+    await page.locator('.plan').first().click();
+    assert.equal(await page.locator('.plan').first().getAttribute('aria-pressed'), 'true');
+    await page.getByRole('button', { name: /Activate Weekly VIP/ }).waitFor();
+    await page.locator('.plan').nth(1).click();
+    await page.getByRole('button', { name: /Activate Monthly VIP/ }).click();
+    assert.equal(await page.locator('body').getAttribute('data-vip'), '30', 'Activating uses the selected plan');
+
+    // A pending top-up disables every request and says why.
+    await page.goto(BASE + '/shop-test/?pending');
+    await page.getByRole('heading', { name: 'Shop', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Coin Packs', exact: true }).click();
+    await page.waitForTimeout(250);
+    await page.getByText('Your Standard Pack request is pending admin approval.').waitFor();
+    assert.equal(await page.locator('.pending .spin').count(), 1, 'with the board\'s spinner');
+    const rows = await page.locator('.prow button').count();
+    const off = await page.locator('.prow button:disabled').count();
+    assert.equal(off, rows, 'and every request button is disabled');
+
     // ── Widths ──────────────────────────────────────────────────────────
     await page.goto(BASE + '/shop-test/');
     await page.getByRole('heading', { name: 'Shop', exact: true }).waitFor();
@@ -154,7 +186,7 @@ async function run() {
     assert.equal(await page.locator('input[aria-label="Search cosmetics"]').count(), 0, 'Search is on the Permanent tab');
 
     assert.deepEqual(errors, []);
-    console.log('Shop: board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP slot, seven widths and accessibility passed.');
+    console.log('Shop: board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero and plan pick, pending top-up, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
