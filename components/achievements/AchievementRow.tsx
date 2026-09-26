@@ -1,86 +1,78 @@
 "use client";
 
-import { Check, Lock } from "lucide-react";
-import { CoinIcon } from "@/components/ui/icons";
-import { AchievementIcon } from "./AchievementIcon";
-import { useTranslation } from "@/hooks/useTranslation";
+import { Trophy, Crown, Layers, Sparkles, CheckCircle2, Lock, Gem, Flame, Swords } from "lucide-react";
 import type { ResolvedAchievement } from "@/lib/achievements";
+import { Meter, CoinGem } from "@/components/arena";
 
 /**
- * One achievement.
+ * One achievement — the Achievements board's `.arow`
+ * (design/arena/screens/app/app-08-achievements.jpg).
  *
- * There is deliberately NO claim button. Rewards in this game are granted
- * automatically the moment an achievement unlocks (EconomyContext dispatches
- * UNLOCK_ACHIEVEMENT, which credits the coins in the same reducer pass), so
- * a "Claim Reward" CTA would be a dead control that implies a step which
- * does not exist. Unlocked achievements read "Unlocked" instead.
- *
- * State is never conveyed by colour alone - the lock and check icons carry
- * visible text labels alongside them.
+ * A hexagon in the category's metal, the title and description, a progress
+ * meter with its count, and the reward with Unlocked or Locked beneath it.
+ * An achievement not yet earned has its hexagon greyed, which is the
+ * board's `.aic.off`.
  */
+
+/** The board's four metals, one per category. */
+const TONE: Record<string, string> = {
+  wins: "gp",        // lime
+  rank: "rk",        // silver
+  collection: "co",  // blue
+  special: "sp",     // gold
+};
+
+/** The icon inside the hexagon, from the achievement's own id. */
+function iconFor(achievement: ResolvedAchievement) {
+  const id = achievement.id;
+  if (id.includes("platinum")) return Gem;
+  if (id.includes("gold") || achievement.category === "rank") return Crown;
+  if (id.includes("cardbacks") || id.includes("tables")) return Layers;
+  if (id.includes("collection")) return Sparkles;
+  if (id.includes("weekend")) return Flame;
+  if (id.includes("wins")) return Trophy;
+  return Swords;
+}
+
 export function AchievementRow({ achievement }: { achievement: ResolvedAchievement }) {
-  const t = useTranslation();
   const target = Math.max(1, achievement.target);
-  const pct = Math.round((achievement.displayProgress / target) * 100);
-  const earned = achievement.unlocked;
+  const progress = Math.max(0, Math.min(target, achievement.displayProgress));
+  const done = achievement.complete;
+  const Icon = iconFor(achievement);
+  const tone = TONE[achievement.category] ?? "gp";
+  // An achievement with no coin reward pays Prestige - the board's word for
+  // "this one is for the badge". It is not written as "0 coins", which
+  // would read as a reward that failed to load.
+  const coins = achievement.reward > 0;
 
   return (
-    <li className="ach-row" data-complete={achievement.complete ? "true" : undefined}>
-      <AchievementIcon
-        id={achievement.id}
-        category={achievement.category}
-        complete={achievement.complete}
-      />
-
-      <div className="ach-body">
+    <article className={`arow ${done ? "done" : ""}`.trim()}>
+      <span className={`aic ${tone} ${done ? "" : "off"}`.replace(/\s+/g, " ").trim()} aria-hidden="true">
+        <Icon />
+      </span>
+      <div style={{ minWidth: 0 }}>
         <h3>{achievement.title}</h3>
         <p>{achievement.description}</p>
-      </div>
-
-      <div className="ach-progress">
-        <div
-          className="ach-bar"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={target}
-          aria-valuenow={achievement.displayProgress}
-          aria-label={`${achievement.title} ${t("ach_progressLabel")}`}
-        >
-          <span style={{ width: `${pct}%` }} />
+        <div className="prog">
+          <Meter
+            value={progress / target}
+            tone={done ? "lime" : "blue"}
+            thin
+            label={achievement.title}
+            valueText={`${progress} of ${target}`}
+          />
+          <span>{progress} / {target}</span>
         </div>
-        <span className="ach-count">
-          {achievement.displayProgress.toLocaleString()} / {target.toLocaleString()}
+      </div>
+      <div className="rwd">
+        <span className="amt">
+          {coins ? <><CoinGem small />{achievement.reward.toLocaleString()}</> : "Prestige"}
+        </span>
+        <span className={`state ${done ? "on" : ""}`.trim()}>
+          {done ? <CheckCircle2 aria-hidden="true" /> : <Lock aria-hidden="true" />}
+          {done ? "Unlocked" : "Locked"}
         </span>
       </div>
-
-      {/* A genuine 0-reward achievement (Table Master, Master Collector) is
-          labelled as prestige rather than rendered as a coin chip reading 0,
-          which reads as a bug. */}
-      {achievement.reward > 0 ? (
-        <div className="ach-reward" title={t("ach_rewardTooltip")}>
-          <CoinIcon size={15} />
-          <strong>{achievement.reward.toLocaleString()}</strong>
-          <small>{t("ach_rewardCoins")}</small>
-        </div>
-      ) : (
-        <div className="ach-reward ach-reward-none">
-          <small>{t("ach_prestige")}</small>
-        </div>
-      )}
-
-      <div className="ach-state" data-earned={earned ? "true" : undefined}>
-        {earned ? (
-          <>
-            <Check size={14} aria-hidden="true" />
-            {t("ach_unlocked")}
-          </>
-        ) : (
-          <>
-            <Lock size={13} aria-hidden="true" />
-            {t("ach_locked")}
-          </>
-        )}
-      </div>
-    </li>
+    </article>
   );
 }
