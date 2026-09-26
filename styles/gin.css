@@ -91,21 +91,24 @@
 .gin-arena-scene[data-renderer=webgl] .gin-arena-fallback { visibility:hidden; }
 .gin-arena-header { position:absolute;left:36px;right:36px;top:26px;display:flex;align-items:center;gap:18px; }
 .gin-arena-heading h1 { font-size:36px; }
+.gin-arena-heading h1 .thaana { margin-left:12px;font-size:17px;vertical-align:baseline; }
+.gin-discard-suit { width:17px;height:17px; }
 .gin-arena-heading p { display:flex;gap:14px;align-items:center;margin-top:10px;color:#bebeca;font-size:13px; }
 .gin-arena-heading p>span { padding:3px 9px;border:1px solid #ffffff30;border-radius:5px;color:#fff;font-weight:700;text-transform:uppercase; }
 .gin-arena-utilities { margin-left:auto;display:flex;gap:12px; }
 .gin-arena .gin-arena-meld-hud { left:36px;top:120px;width:280px;padding:20px; }
+/* The board's left panel (design/arena/boards/Gin.dc.html, "Your melds"):
+   a READY / NOT OUT kicker against a DEADWOOD one, the melds the hand
+   actually holds at 40px beside the deadwood total at 34px, and one line
+   of why underneath. */
 .gin-assessment-title { display:flex;align-items:center;justify-content:space-between;gap:10px; }
-.gin-assessment-title strong { font-size:11px;background:#ffffff12;border:1px solid #ffffff24;border-radius:5px;padding:4px 8px;color:#c9c9d3; }
-.gin-assessment-title strong[data-ready=true] { color:var(--ar-lime);border-color:var(--ar-lime); }
-.gin-assessment-sizes { display:flex;align-items:center;gap:8px;margin:18px 0; }
-.gin-assessment-sizes>span { display:grid;place-items:center;width:35px;height:39px;border:1px solid #4fe3ec55;border-radius:6px;background:#00bcc81a;font-size:23px;font-weight:700; }
-.gin-assessment-sizes small { max-width:60px;margin-left:6px;color:#bebeca;line-height:1.4;font-size:12px; }
-.gin-assessment-deadwood { display:flex;align-items:center;gap:14px;padding-top:14px;border-top:1px solid #ffffff20; }
-.gin-assessment-deadwood>strong { font-family:var(--ar-font-display);font-size:44px;line-height:1;color:var(--ar-lime); }
-.gin-assessment-deadwood span { font-size:14px;font-weight:600; }
-.gin-assessment-deadwood small { display:block;margin-top:4px;font-size:11px;color:#bebeca;font-weight:400; }
-.gin-arena-meld-hud>p { margin-top:14px;font-size:12px;color:#bebeca; }
+.gin-assessment-title .lbl[data-ready=true] { color:#fff; }
+.gin-assessment-sizes { display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 0; }
+.gin-assessment-sizes>strong { font-size:40px;line-height:1;letter-spacing:-.01em;color:#fff; }
+/* The melds go lime the moment the hand can go out - the board's readColor. */
+.gin-arena-meld-hud:has(.lbl[data-ready=true]) .gin-assessment-sizes>strong { color:var(--ar-lime); }
+.gin-assessment-sizes>span { font-size:34px;line-height:1; }
+.gin-arena-meld-hud>p { margin-top:10px;font-size:13px;line-height:1.45;color:#bebeca;text-wrap:pretty; }
 .gin-arena .gin-arena-turn-hud { right:36px;top:120px;width:280px;display:flex;gap:16px;align-items:center;padding:20px; }
 .gin-arena-turn-hud .turn-clock { flex:none;width:64px;height:64px;font-size:24px; }
 .gin-arena-turn-hud strong { display:block;margin:9px 0 5px;font-size:19px;text-transform:uppercase; }
@@ -129,9 +132,10 @@
 .gin-pile-card { position:relative;width:108px;height:151px;font-size:15px;border-radius:9px;box-shadow:0 7px 10px #0008; }
 .gin-pile-card>div { width:100%;height:100%;border-radius:9px; }
 .gin-stock-card { box-shadow:2px 3px 0 #57767b,4px 6px 0 #071a22,6px 8px 0 #33545a,7px 12px 12px #000a; }
-.gin-arena-piles>button>span { font-size:14px;font-weight:600; }
-.gin-arena-piles>button>span b { margin-left:5px;color:var(--ar-lime); }
-.gin-arena-status { position:absolute;top:557px;left:50%;transform:translateX(-50%);border:1px solid #ffffff24;border-left:3px solid var(--ar-lime);border-radius:7px;background:#08090dee;padding:10px 17px;color:#fff;font-size:15px;white-space:nowrap; }
+/* "Stock · 24" / "Discard" - the board prints these on the felt, so they
+   are its `.printed` caps, laid out in the button rather than absolute. */
+.gin-arena-piles>button>.printed { position:static;width:auto;transform:none;font-size:15px;letter-spacing:.22em; }
+.gin-arena-status { position:absolute;top:557px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;border:1px solid #ffffff24;border-left:3px solid var(--ar-lime);border-radius:7px;background:#08090dee;padding:10px 17px;color:#fff;font-size:15px;white-space:nowrap; }
 .gin-arena .gin-hand { position:absolute;display:block;left:50%;right:auto;top:610px;bottom:auto;transform:translateX(-50%);width:1000px;max-width:none;height:178px;min-height:0;margin:0;padding:0;overflow:visible;perspective:1100px;pointer-events:none; }
 .gin-arena .gin-fan-slot { position:absolute;left:calc(50% - 54px);top:0;width:108px;height:151px;flex:none;margin:0;padding:0;transform:translate(var(--offset),var(--curve)) rotate(var(--angle));transform-origin:50% 100%;transition:transform .25s ease-out;pointer-events:auto;touch-action:none;animation:gin-arena-deal .3s ease-out; }
 @keyframes gin-arena-deal { from { translate:0 24px;opacity:0; } to { translate:0 0;opacity:1; } }
@@ -143,12 +147,14 @@
 .gin-arena .gin-fan-slot.is-selected>button,.gin-arena .gin-fan-slot.is-selected>button:hover:not(:disabled),.gin-arena .gin-fan-slot.is-selected>button:active:not(:disabled) { translate:0 -30px;box-shadow:0 0 0 3px var(--ar-lime),0 5px 0 #6f9412,0 18px 22px #000a; }
 .gin-arena .gin-fan-slot>button:disabled { opacity:1;cursor:default; }
 .gin-arena .gin-fan-slot>button:focus-visible { outline:3px solid var(--ar-lime);outline-offset:6px; }
-.gin-arena .gin-fan-slot.is-meld>button { outline:2px solid #00bcc8;outline-offset:0; }
 .gin-arena .gin-fan-slot>button>.gin-new-card { position:absolute;top:-15px;right:4px;background:var(--ar-lime);color:#0a0a0a;padding:3px 7px;border-radius:5px;font-size:11px;font-weight:700;text-transform:uppercase; }
-.gin-meld-marker { position:absolute;bottom:6px;left:6px;background:#00363c;color:#b6faff;border-radius:4px;padding:3px; }
-.gin-arena-melds { position:absolute;top:790px;left:320px;right:320px;display:flex;justify-content:center;gap:14px;font-size:12px;font-weight:700;text-transform:uppercase; }
-.gin-arena-melds>span { display:flex;align-items:center;gap:5px;border-top:2px solid var(--ar-blue);padding-top:6px;color:#9ff2f7; }
-.gin-arena-melds .gin-meld-deadwood { color:#bebeca;border-color:#bebeca50; }
+/* The brackets under the fan. The box is the fan's own - same centre, same
+   1000px - so a bracket's `calc(50% - 54px + <offset>)` lands on the slot
+   it belongs to without measuring anything. `.bracket` itself is the
+   board's, from styles/arena-gin-board.css; only its `top` moves, because
+   the app's fan does not sit at the board's 846px. */
+.gin-arena-melds { position:absolute;top:782px;left:50%;transform:translateX(-50%);width:1000px;height:22px;pointer-events:none; }
+.gin-arena .gin-arena-melds .bracket { top:0; }
 .gin-arena-controls { position:absolute;left:36px;right:36px;top:827px;display:flex;align-items:center;gap:16px; }
 .gin-arena-controls .gin-player { margin-right:auto; }
 .gin-arena-controls .hand-sort { width:160px;height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid #ffffff30;border-radius:8px;background:#111419;color:#fff; }
@@ -181,9 +187,9 @@
 .gin-compact .gin-arena-heading h1 { font-size:32px; }
 .gin-compact .gin-arena-heading p { margin-top:6px; }
 .gin-compact .gin-arena-meld-hud { left:60px;top:104px;width:250px;padding:14px; }
-.gin-compact .gin-assessment-sizes { margin:10px 0; }
-.gin-compact .gin-assessment-sizes>span { height:28px;font-size:19px; }
-.gin-compact .gin-assessment-deadwood>strong { font-size:32px; }
+.gin-compact .gin-assessment-sizes { margin:6px 0 0; }
+.gin-compact .gin-assessment-sizes>strong { font-size:30px; }
+.gin-compact .gin-assessment-sizes>span { font-size:26px; }
 .gin-compact .gin-arena-meld-hud>p { display:none; }
 .gin-compact .gin-arena-turn-hud { right:60px;top:104px;width:260px;padding:14px; }
 .gin-compact .gin-arena-rival { top:90px; }
@@ -197,7 +203,7 @@
 .gin-compact .gin-hand { top:450px;height:138px; }
 .gin-compact .gin-fan-slot { width:92px;height:129px;left:calc(50% - 46px); }
 .gin-compact .gin-fan-slot>button { width:92px;height:129px;font-size:12.777px; }
-.gin-compact .gin-arena-melds { top:595px;left:290px;right:auto;gap:10px;font-size:11px; }
+.gin-compact .gin-arena-melds { top:588px;width:860px; }
 .gin-compact .gin-arena-controls { top:598px;left:60px;right:60px;gap:12px; }
 .gin-compact .gin-arena-controls .gin-player { min-width:175px;padding:5px; }
 .gin-compact .gin-arena-controls .gin-actions { width:auto; }

@@ -60,8 +60,36 @@ async function run() {
     assert.equal(await page.locator('.gin-hand button').count(),10);
     assert.equal(await page.locator('.gin-rival-hand button').count(),0);
     assert.equal(await page.getByRole('button',{name:'Discard',exact:true}).isEnabled(),false);
+
+    // ---- the Gin board (design/arena/screens/gin-01-discard-selected.jpg) --
+    const heading=await page.locator('.gin-arena-heading').innerText();
+    assert.ok(heading.includes('ޖިން ރަމީ'),'The title carries its Thaana');
+    assert.ok(heading.includes('Melds of 4, 3 and 3 win'),'and the board\'s line under it');
+    assert.equal(await page.locator('.gin-arena-utilities button').count(),3,
+      'Sound, rule book and settings - the board\'s three');
+    // The panel prints the melds the hand HOLDS, not the 4/3/3 it aims at.
+    const sizes=(await page.locator('.gin-assessment-sizes strong').innerText()).trim();
+    assert.ok(/^(—|\d( · \d)*)$/.test(sizes),`Real meld sizes, got "${sizes}"`);
+    assert.ok((await page.locator('.gin-arena-turn-hud').innerText()).includes('15 seconds a turn'));
+    assert.ok((await page.locator('.gin-arena-piles').innerText()).includes('Stock · '),'The felt names the stock and its count');
+    assert.ok((await page.locator('.gin-arena-piles').innerText()).includes('Discard'));
+    // Brackets are on by default, as the board draws them, and every hand
+    // has at least one group under it.
+    assert.ok(await page.locator('.gin-arena-melds .bracket').count()>=1,'The fan is bracketed');
+    const bracketLeft=await page.locator('.gin-arena-melds .bracket').first().evaluate(n=>n.getBoundingClientRect().left);
+    const firstCard=await page.locator('.gin-fan-slot').first().evaluate(n=>n.getBoundingClientRect().left);
+    assert.ok(Math.abs(bracketLeft-firstCard)<2,
+      `A bracket lines up with the card it covers (${Math.round(bracketLeft)} vs ${Math.round(firstCard)})`);
+    await page.getByRole('button',{name:/View Melds/i}).click();
+    assert.equal(await page.locator('.gin-arena-melds .bracket').count(),0,'View Melds puts them away');
+    await page.getByRole('button',{name:/View Melds/i}).click();
+
     await page.getByRole('button',{name:/Draw from stock/}).click();
     assert.equal(await page.locator('.gin-hand button').count(),11);
+    // The board narrates the draw rather than labelling the phase.
+    const status=await page.locator('.gin-arena-status').innerText();
+    assert.ok(/You drew the .+ from the stock\. Now discard\./.test(status),`Status narrates the draw, got "${status}"`);
+    assert.equal(await page.locator('.gin-arena-status .dot.live').count(),1,'with the live dot while the turn is yours');
     await page.locator('.gin-hand button').first().focus();
     await page.keyboard.press('Enter');
     assert.equal(await page.locator('.gin-hand button[aria-pressed=true]').count(),1);
