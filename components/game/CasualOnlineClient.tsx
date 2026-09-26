@@ -11,129 +11,31 @@
 // MindiOnlineClient/GinRummyOnlineClient's `pool === "casual"` guard around
 // updateMatchResult) - just a real opponent (and, for Mindi, a real
 // teammate) when you want to play online without organizing a group.
+//
+// The queue itself now lives in hooks/useCasualQueue, because the Play
+// lobby queues from its own CTA (the board's "Finding a table" state) and
+// the two must not drift into two different queues. This screen is the
+// same queue with its own full-screen UI, and is where the lobby's older
+// direct link still lands.
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, X, Users2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { joinQueue, leaveQueue, tryFormMatch, watchForMatch, GameType } from "@/lib/matchmaking";
-import { dealMindiHand, openMindiHand } from "@/lib/mindiEngine";
-import { dealGinHand } from "@/lib/ginRummyEngine";
-import { cutForFirstPlay } from "@/lib/openingCut";
-import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
-import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
+import { useCasualQueue, gameConfig } from "@/hooks/useCasualQueue";
 import { useTranslation } from "@/hooks/useTranslation";
 
-function gameConfig(gameId: string): { gameType: GameType; neededPlayers: number; label: string } {
-  if (gameId === "mindi") return { gameType: "mindi", neededPlayers: 4, label: "Mindi" };
-  return { gameType: "gin_rummy", neededPlayers: 2, label: "Gin Rummy" };
-}
-
-function buildInitialState(gameType: GameType, players: string[]): MindiOnlineState | GinOnlineState {
-  if (gameType === "mindi") {
-    // openMindiHand draws for first play before dealing, so the leader is the
-    // draw winner rather than whoever sits left of the dealer.
-    const { deal, draw } = openMindiHand(3);
-    const handsByUid: Record<string, ReturnType<typeof dealMindiHand>["hands"][0]> = {};
-    for (let seat = 0; seat < 4; seat++) handsByUid[players[seat]] = deal.hands[seat as 0 | 1 | 2 | 3];
-    const state: MindiOnlineState = {
-      handsByUid,
-      firstDraw: draw,
-      trumpSuit: deal.trumpSuit,
-      turnSeat: deal.leader,
-      trick: [],
-      tensCaptured: { A: 0, B: 0 },
-      tricksWon: { A: 0, B: 0 },
-      tricksPlayed: 0,
-      outcome: null,
-    };
-    return state;
-  }
-
-  // Cut for first play before dealing, exactly as Mindi does. The cut is
-  // stored so both clients replay the same ceremony, and its winner takes the
-  // opening turn rather than it always falling to players[0].
-  const cut = cutForFirstPlay<string>([players[0], players[1]]);
-  const deal = dealGinHand();
-  const state: GinOnlineState = {
-    hands: { [players[0]]: deal.playerHand, [players[1]]: deal.opponentHand },
-    stock: deal.stock,
-    discard: deal.discard,
-    turn: cut.winner,
-    phase: "draw",
-    firstCut: cut,
-    turnDeadline: null,
-    result: null,
-  };
-  return state;
-}
-
 export function CasualOnlineClient({ gameId }: { gameId: string }) {
-  const router = useRouter();
-  const { user } = useAuth();
   const [dots, setDots] = useState("");
-  const [matchFound, setMatchFound] = useState(false);
-  const [debugError, setDebugError] = useState<string | null>(null);
-  const navigatedRef = useRef(false);
   const t = useTranslation();
 
-  const { gameType, neededPlayers, label } = gameConfig(gameId);
+  const { gameType } = gameConfig(gameId);
+  const { matchFound, error: debugError, label } = useCasualQueue(gameId, true);
 
   useEffect(() => {
     const interval = setInterval(() => setDots((prev) => (prev.length >= 3 ? "" : prev + ".")), 500);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (!user?.uid) return;
-
-    const uid = user.uid;
-    let cancelled = false;
-
-    function goToMatch(matchId: string) {
-      if (navigatedRef.current || cancelled) return;
-      navigatedRef.current = true;
-      setMatchFound(true);
-      setTimeout(() => {
-        router.push(`/play/${gameId}/casual/online/live?m=${matchId}`);
-      }, 900);
-    }
-
-    joinQueue(uid, gameType, "casual").catch((err) => setDebugError(`Couldn't join queue: ${String(err)}`));
-
-    const unwatch = watchForMatch(
-      uid,
-      gameType,
-      (matchId) => {
-        leaveQueue(uid);
-        goToMatch(matchId);
-      },
-      (err) => setDebugError(`Match lookup error: ${String(err)}`),
-      "casual"
-    );
-
-    const attempt = async () => {
-      if (navigatedRef.current || cancelled) return;
-      try {
-        const matchId = await tryFormMatch(uid, gameType, neededPlayers, (players) => buildInitialState(gameType, players), "casual");
-        if (matchId) goToMatch(matchId);
-      } catch (err) {
-        setDebugError(`Matchmaking error: ${String(err)}`);
-      }
-    };
-    attempt();
-    const interval = setInterval(attempt, 2500);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      unwatch();
-      if (!navigatedRef.current) leaveQueue(uid);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, gameType, neededPlayers, gameId]);
 
   if (matchFound) {
     return (

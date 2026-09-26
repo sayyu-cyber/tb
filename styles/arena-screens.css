@@ -390,3 +390,101 @@
   font-size: 28px;
   color: #C6FF33;
 }
+
+/* ── Play lobby (lobby-01, lobby-02) ──────────────────────────────────
+   The board is the one screen here that is a 3D scene rather than a
+   layout: the floor, the podium, the LED ring and the two deck boxes are
+   a single perspective built from one rotateX/scale and a stack of
+   translateZ'd aprons. Those numbers only mean anything together, so the
+   scene keeps its 1440x900 canvas and is scaled by one factor
+   (components/game/lobby/LobbyPodium), while the three HUD panels around
+   it are ordinary flow layout and stay readable at any width.
+
+   At 1440 the grid below resolves to the board's own columns: a 330px
+   panel at x=48, the podium between, and a 330px panel ending at x=1392. */
+.arena-lobby .lob-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Tall enough that the rank panel sits where the board puts it (y=700 of
+     900) rather than riding up under the league panel. */
+  min-height: calc(100vh - 128px);
+  padding: 40px 48px 32px;
+}
+@media (max-width: 900px) {
+  .arena-lobby .lob-page { padding: 20px 14px 28px; }
+}
+
+/* The scene fills the page behind the panels. The board's own .bg sits on
+   this layer, so the room stays the right size while the table scales. */
+.arena-lobby .lob-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.arena-lobby .lob-canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1440px;
+  height: 900px;
+  transform-origin: 50% 50%;
+}
+/* Everything in the scene is decoration except the two decks. */
+.arena-lobby .lob-canvas .deck { pointer-events: auto; }
+
+.arena-lobby .lob-grid {
+  position: relative;
+  z-index: 1;
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr) 330px;
+  align-items: start;
+  gap: 0 20px;
+}
+/* The board's panels are absolutely placed; in the grid they are not. */
+.arena-lobby .lob-grid .hud { position: relative; }
+
+/* Left: the league panel at the top, your rank at the foot, as the board
+   places them (y=122 and y=700). */
+.arena-lobby .lob-left { align-self: stretch; display: flex; flex-direction: column; gap: 20px; }
+.arena-lobby .lob-rank { margin-top: auto; }
+
+/* Centre: the heading only. The cell spans the full height of the row, so
+   it has to let clicks through to the podium behind it - but the heading
+   itself stays selectable, and it sits above the decks anyway. */
+.arena-lobby .lob-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+.arena-lobby .lob-mid > * { pointer-events: auto; }
+.arena-lobby .lob-title { margin: 0; font-size: clamp(30px, 4.4vw, 60px); }
+
+/* The right panel's height is its content's, as on the board, so the CTA
+   sits under the last mode rather than at the foot of the page. */
+.arena-lobby .lob-modes { align-self: start; }
+
+/* Below the width where two 330px panels and a podium stop fitting, the
+   columns stack: heading, modes, league, rank. The scene stays behind
+   them - it is the background, not a row. */
+@media (max-width: 1080px) {
+  .arena-lobby .lob-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .arena-lobby .lob-mid { order: -1; }
+  .arena-lobby .lob-modes { order: 0; }
+  .arena-lobby .lob-left { order: 1; }
+  .arena-lobby .lob-rank { margin-top: 0; }
+  /* With the panels stacked the podium would sit under a column of text,
+     so it drops to a band behind the heading instead of the whole page. */
+  .arena-lobby .lob-scene { bottom: auto; height: 420px; }
+}
+
+/* The three figures under the rank bar are one tracked line on the board.
+   Below the width where they collide, the outer two drop away rather than
+   overlapping the middle one, which is the one that matters. */
+@media (max-width: 360px) {
+  .arena-lobby .lob-scale > span:first-child,
+  .arena-lobby .lob-scale > span:last-child { display: none; }
+}
