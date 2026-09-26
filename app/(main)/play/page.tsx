@@ -64,9 +64,12 @@ export default function PlayPage() {
   // on different elements - exactly as the Mindi and Gin table screens do it.
   return (
     <div className="arena-lobby">
-      <div className="ar lob-page">
-        <LobbyPodium game={game} onPick={pickGame} />
+      {/* The room bleeds to the edges of whatever the shell leaves; the
+          composition inside it keeps the artboard's 1440. So the podium is
+          a sibling of the page, not a child of it. */}
+      <LobbyPodium game={game} onPick={pickGame} />
 
+      <div className="ar lob-page">
         <div className="lob-grid">
           <div className="lob-left">
             <LobbyLeagueCard window={leagueWindow} />

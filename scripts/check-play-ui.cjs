@@ -157,6 +157,25 @@ async function run() {
     assert.equal(await page.locator('.mote[data-ar-loop], .deck[data-ar-loop], .chase[data-ar-loop]').count(), loops,
       'Every loop carries data-ar-loop for prefers-reduced-motion');
 
+    // ── The composition keeps the artboard's width ──────────────────────
+    // The board is a picture, not a dashboard: its panels are at x=48 and
+    // x=1062 of 1440 with the podium between them. Stretched to a 2,400px
+    // monitor that flings them to opposite walls, so the page caps at the
+    // artboard and starts where the sidebar ends. The room behind it still
+    // reaches both edges, and the podium stays centred on the composition
+    // rather than on the room.
+    await page.setViewportSize({ width: 2200, height: 1000 });
+    await page.waitForTimeout(300);
+    const box = await page.locator('.lob-page').boundingBox();
+    const room = await page.locator('.lob-scene').boundingBox();
+    const main = await page.locator('.app-shell-main').boundingBox();
+    assert.ok(box.width <= 1441, `The composition stops at the artboard (got ${Math.round(box.width)}px)`);
+    assert.ok(Math.abs(box.x - main.x) < 2, 'and starts where the content area does, not centred');
+    assert.ok(room.width > box.width + 200, 'while the room bleeds past it');
+    const podium = await page.locator('.lob-canvas').boundingBox();
+    assert.ok(Math.abs((podium.x + podium.width / 2) - (box.x + 720)) < 3,
+      'The podium is centred on the composition, not on the room');
+
     // ── Widths ──────────────────────────────────────────────────────────
     for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [1024, 800], [844, 390], [390, 844]]) {
       await page.setViewportSize({ width, height });

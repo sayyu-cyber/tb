@@ -409,8 +409,18 @@
    open. The container is the wrapper rather than the padded page, so a
    query can change that padding without feeding back into its own
    measurement. */
-.arena-lobby { container-type: inline-size; container-name: lobby; }
+.arena-lobby { position: relative; container-type: inline-size; container-name: lobby; }
 
+/* The composition never grows past the artboard. The board places its
+   panels at x=48 and x=1062 of 1440 with the podium between them, and
+   stretching that to a 2,400px monitor flings the panels to opposite walls
+   with a lake of felt in the middle - it stops being the picture that was
+   drawn. So the page keeps 1440 and, per the rest of the shell, starts
+   where the sidebar ends rather than floating in the middle.
+
+   The room behind it is NOT capped: `.lob-scene` hangs off the wrapper, so
+   the backdrop still reaches both edges and there is no seam where the
+   composition stops. */
 .arena-lobby .lob-page {
   position: relative;
   display: flex;
@@ -418,18 +428,23 @@
   /* Tall enough that the rank panel sits where the board puts it (y=700 of
      900) rather than riding up under the league panel. */
   min-height: calc(100vh - 128px);
+  max-width: 1440px;
   padding: 40px 48px 32px;
 }
 @container lobby (max-width: 900px) {
   .arena-lobby .lob-page { padding: 20px 14px 28px; }
 }
 
-/* The scene fills the page behind the panels. The board's own .bg sits on
-   this layer, so the room stays the right size while the table scales. */
+/* The scene fills the whole area the shell leaves, behind the capped
+   composition. The board's own .bg sits on this layer, so the room stays
+   the right size while the table scales. */
 .arena-lobby .lob-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .arena-lobby .lob-canvas {
   position: absolute;
-  left: 50%;
+  /* Centred on the composition, not on the room: once the page is wider
+     than the artboard the podium stays under the 1440 the panels live in,
+     which is where the board draws it. */
+  left: min(50%, 720px);
   top: 50%;
   width: 1440px;
   height: 900px;
@@ -484,7 +499,9 @@
 /* Two 330px panels, two 20px gaps, a centre column with room for the
    headline, and the page's own 96px of padding:
    330 + 20 + 440 + 20 + 330 + 96 = 1236. Below that the columns stack
-   rather than squeezing the middle to nothing. */
+   rather than squeezing the middle to nothing. The query measures the
+   wrapper while the grid lives inside the 1440 cap, which changes nothing:
+   above 1236 the grid is at least 1140 either way. */
 @container lobby (max-width: 1236px) {
   .arena-lobby .lob-grid {
     grid-template-columns: minmax(0, 1fr);
