@@ -149,3 +149,68 @@
   .arena-achievements .arow { grid-template-columns: 60px minmax(0, 1fr); }
   .arena-achievements .rwd { grid-column: 2; flex-direction: row; align-items: center; gap: 12px; }
 }
+
+/* ── Weekend League (app-09) ──────────────────────────────────────────
+   The hero column beside a 420px standings panel. */
+.arena-league .league-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 20px;
+  align-content: start;
+}
+@media (max-width: 1160px) {
+  .arena-league .league-page { grid-template-columns: minmax(0, 1fr); }
+}
+
+.arena-league .league-title { margin: 0; font-size: clamp(30px, 4.6vw, 50px); }
+.arena-league .league-lede { position: relative; max-width: 560px; margin: 16px 0 22px; font-size: 16px; }
+.arena-league .league-qual { height: 32px; padding: 0 12px; }
+
+.arena-league .league-games { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) {
+  .arena-league .league-games { grid-template-columns: minmax(0, 1fr); }
+}
+/* A game button the player cannot use yet reads unavailable rather than
+   vanishing - the board only ever draws the live state. */
+.arena-league .gbtn:disabled { opacity: .5; cursor: not-allowed; }
+.arena-league .gbtn span { flex-grow: 1; min-width: 0; }
+
+.arena-league .league-rules {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 760px) {
+  .arena-league .league-rules { grid-template-columns: minmax(0, 1fr); }
+}
+
+.arena-league .league-champ { padding: 18px 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.arena-league .league-champ-hex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 54px;
+  height: 60px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #FFE58A, #E0B52E 55%, #9A7512);
+  color: #2A1F04;
+}
+.arena-league .league-champ-hex svg { width: 24px; height: 24px; }
+
+.arena-league .league-standings { padding: 18px; display: flex; flex-direction: column; gap: 4px; }
+.arena-league .srow-you { height: 18px; padding: 0 6px; font-size: 9.5px; }
+.arena-league .league-note { margin: 10px 0 0; line-height: 1.45; }
+.arena-league .league-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 20px;
+  text-align: center;
+}
+.arena-league .league-empty > svg { width: 34px; height: 34px; color: #3A3A46; }
+@media (min-width: 1161px) {
+  .arena-league .league-standings { max-height: calc(100vh - 200px); overflow-y: auto; overscroll-behavior: contain; }
+}

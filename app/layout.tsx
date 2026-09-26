@@ -33,6 +33,7 @@ import "@/styles/arena-messages.css";
 import "@/styles/arena-clubs.css";
 import "@/styles/arena-leaderboard.css";
 import "@/styles/arena-achievements.css";
+import "@/styles/arena-league.css";
 import "@/styles/arena-screens.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
 // screens (design/arena/WORKSPLIT.md). Imported here, empty, so that agent

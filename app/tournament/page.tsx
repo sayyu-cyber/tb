@@ -1,147 +1,231 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { Trophy, Flame, Clock, Swords, RefreshCw } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { useRouter } from "next/navigation";
+import {
+  Flame, Swords, ArrowRight, TrendingUp, TrendingDown, Shield, Calendar,
+  BadgeCheck, Crown, Clock, RefreshCw, Trophy,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRankLock } from "@/hooks/useRankLock";
-import { getRankFromTrophies } from "@/constants/ranks";
-import { isQualified, getWeeklyStandings, WeeklyStanding } from "@/lib/weekendLeague";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getRankFromTrophies } from "@/constants/ranks";
+import {
+  isQualified, getWeeklyStandings, getLeagueWindow, formatLeagueBoundary,
+  type WeeklyStanding,
+} from "@/lib/weekendLeague";
+import { Pill, Avatar, RankLabel, CoinGem } from "@/components/arena";
+
+/**
+ * Weekend League — design/arena/screens/app/app-09-weekend-league.jpg,
+ * from the League board.
+ *
+ * The board draws the window live. Outside it, the same hero says when it
+ * opens instead, with the countdown running down to that moment rather than
+ * to the end of a league that is not on.
+ *
+ * CODE ISSUE 9 is fixed here. The screen used `nextUnlockTime` from
+ * useRankLock for both halves of that sentence, but that hook only fills
+ * the field while ranked play is locked - so through the week, exactly when
+ * a player wants to know when the league starts, the line read "Opens " and
+ * stopped. getLeagueWindow (lib/weekendLeague.ts) works both boundaries out
+ * directly, from the same Thursday-23:59 to Sunday-00:05 window the lock
+ * uses, so the copy and the countdown always have a real time in them.
+ */
+
+const RULES = [
+  { Icon: TrendingUp, tone: "", title: "Win +10", body: "Double trophies every match." },
+  { Icon: TrendingDown, tone: "b", title: "Loss −4", body: "Losses double too." },
+  { Icon: Shield, tone: "b", title: "Silver and up", body: "Reach Silver during the week to qualify." },
+  { Icon: Calendar, tone: "", title: "Friday–Saturday", body: "Ranked pauses; it resumes Sunday." },
+];
+
+/** The board's two-cell countdown, to the sensible pair of units. */
+function countdownCells(ms: number) {
+  const totalMinutes = Math.max(0, Math.floor(ms / 60_000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return [{ value: days, label: days === 1 ? "Day" : "Days" }, { value: hours, label: "Hours" }];
+  return [{ value: hours, label: "Hours" }, { value: minutes, label: "Minutes" }];
+}
 
 export default function TournamentPage() {
   const { playerStats, user } = useAuth();
+  const router = useRouter();
   const t = useTranslation();
-  const { isWeekendLeague, nextUnlockTime } = useRankLock();
   const [standings, setStandings] = useState<WeeklyStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const [window_, setWindow] = useState(() => getLeagueWindow());
 
   const trophies = playerStats?.trophies || 0;
   const rank = getRankFromTrophies(trophies);
   const qualified = isQualified(rank);
+
+  // The countdown has to age, and the window itself flips at the boundary.
+  useEffect(() => {
+    const timer = setInterval(() => setWindow(getLeagueWindow()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     getWeeklyStandings()
-      .then((s) => !cancelled && setStandings(s))
+      .then((rows) => !cancelled && setStandings(rows))
       .catch((err) => !cancelled && setError(String(err)))
       .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [retryKey]);
 
+  const live = window_.live;
+  const cells = countdownCells(window_.msRemaining);
+  const boundary = formatLeagueBoundary(window_.boundary);
+
   return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_weekendLeague")} />
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-2xl p-5 mb-4 relative overflow-hidden"
-      >
-        <div className="absolute -top-8 -right-8 w-24 h-24 bg-[rgb(var(--coral)/10%)] rounded-full blur-xl" />
-        <div className="flex items-center gap-2 mb-2">
-          <Flame size={18} className="text-[rgb(var(--coral-ink))]" />
-          <h2 className="text-[rgb(var(--text-primary))] font-semibold">
-            {isWeekendLeague ? t("tournament_isLive") : t("page_weekendLeague")}
-          </h2>
-        </div>
-        {isWeekendLeague ? (
-          <p className="text-[rgb(var(--c4))] text-sm">
-            {t("tournament_liveDesc").replace("{time}", String(nextUnlockTime))}
-          </p>
-        ) : (
-          <p className="text-[rgb(var(--c4))] text-sm">
-            {t("tournament_defaultDesc").replace("{time}", String(nextUnlockTime))}
-          </p>
-        )}
-
-        {!qualified && (
-          <p className="text-[rgb(var(--c4))] text-xs mt-3">
-            {t("tournament_notQualified").replace("{rank}", String(rank)).replace("{trophies}", String(trophies))}
-          </p>
-        )}
-
-        {isWeekendLeague && qualified && (
-          <div className="flex gap-2 mt-4">
-            <Link href="/play/mindi/ranked" className="flex-1">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-[#0F0F0F] font-semibold rounded-xl py-3"
-              >
-                <Swords size={16} /> Mindi
-              </motion.button>
-            </Link>
-            <Link href="/play/gin-rummy/ranked" className="flex-1">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[rgb(var(--gold-deep))] via-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] text-[#0F0F0F] font-semibold rounded-xl py-3"
-              >
-                <Swords size={16} /> Gin Rummy
-              </motion.button>
-            </Link>
+    <div className="arena-league ar-page league-page">
+      <div style={{ display: "flex", flexDirection: "column", gap: "18px", minWidth: 0 }}>
+        <section className="leaguehero" aria-label="Weekend League status">
+          <div className="word" aria-hidden="true">LEAGUE</div>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "18px", flexWrap: "wrap" }}>
+            <span className="flame" aria-hidden="true"><Flame /></span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: 0 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span className="lbl" style={{ color: "#8AF0F5" }}>{t("page_weekendLeague")}</span>
+                {live ? <Pill tone="lime" live>Live</Pill> : <Pill tone="line">Fri – Sat</Pill>}
+              </span>
+              <h1 className="disp chrome ar-h1 league-title">
+                {live ? "Weekend League is live" : "Weekend League"}
+              </h1>
+            </div>
           </div>
-        )}
-      </motion.div>
 
-      <div className="flex items-center gap-2 mb-3">
-        <Trophy size={16} className="text-[rgb(var(--gold-ink))]" />
-        <h3 className="text-[rgb(var(--text-primary))] font-semibold text-sm">{t("tournament_standings")}</h3>
-      </div>
+          <p className="body league-lede">
+            {live
+              ? `Silver rank and up, double trophies every match. Ends ${boundary}.`
+              : `Silver rank and up, double trophies every match. Opens ${boundary}.`}
+          </p>
 
-      {loading ? (
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <Trophy size={24} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{error}</p>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "26px", flexWrap: "wrap" }}>
+            <div className="cd" aria-label={live ? "Time left" : "Time until it opens"}>
+              {cells.map(({ value, label }) => (
+                <div key={label}>
+                  <b>{String(value).padStart(2, "0")}</b>
+                  <span className="lbl" style={{ fontSize: "10px" }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            {qualified ? (
+              <Pill tone="lime" className="league-qual">
+                <BadgeCheck aria-hidden="true" />You qualify · {rank}
+              </Pill>
+            ) : (
+              <Pill tone="line" className="league-qual">
+                <Shield aria-hidden="true" />
+                {t("tournament_notQualified").replace("{rank}", rank).replace("{trophies}", String(trophies))}
+              </Pill>
+            )}
+          </div>
+        </section>
+
+        <div className="league-games">
+          {/* The board draws both buttons live. Outside the window, or
+              unqualified, they are disabled rather than hidden - the player
+              can still see what is coming. */}
           <button
-            onClick={() => setRetryKey((k) => k + 1)}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
+            type="button"
+            className="gbtn"
+            disabled={!live || !qualified}
+            onClick={() => router.push("/play/mindi/ranked")}
+            data-flat
           >
-            <RefreshCw size={13} aria-hidden="true" />
-            {t("error_tryAgain")}
+            <Swords aria-hidden="true" />
+            <span><b>Mindi</b><small>Double trophies · 4 players</small></span>
+            <ArrowRight aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="gbtn b"
+            disabled={!live || !qualified}
+            onClick={() => router.push("/play/gin-rummy/ranked")}
+            data-flat
+          >
+            <Swords aria-hidden="true" />
+            <span><b>Gin Rummy</b><small>Double trophies · 2 players</small></span>
+            <ArrowRight aria-hidden="true" />
           </button>
         </div>
-      ) : standings.length === 0 ? (
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <Clock size={24} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{t("tournament_noQualified")}</p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {standings.map((s, i) => (
-            <Link key={s.uid} href={`/player?uid=${s.uid}`}>
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className={`flex items-center gap-3 p-3 rounded-xl ${
-                  s.uid === user?.uid ? "bg-[rgb(var(--gold)/5%)] border border-[rgb(var(--gold)/20%)]" : "hover:bg-[rgb(var(--c2)/50%)]"
-                }`}
-              >
-                <span className="text-[rgb(var(--c4))] font-bold text-sm w-6 text-center">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[rgb(var(--text-primary))] text-sm font-medium truncate">{s.displayName}</p>
-                  <p className="text-[rgb(var(--c4))] text-[10px]">{s.currentRank}</p>
-                </div>
-                <span className="text-[rgb(var(--gold-ink))] font-semibold text-sm">{s.weeklyTrophies.toLocaleString()}</span>
-              </motion.div>
-            </Link>
+
+        <div className="panel league-rules">
+          {RULES.map(({ Icon, tone, title, body }) => (
+            <div className="rule" key={title}>
+              <span className={`ri ${tone}`.trim()} aria-hidden="true"><Icon /></span>
+              <div><b>{title}</b><span>{body}</span></div>
+            </div>
           ))}
         </div>
-      )}
+
+        <div className="panel tick b league-champ">
+          <span className="aic league-champ-hex" aria-hidden="true"><Crown /></span>
+          <div style={{ flexGrow: 1, minWidth: 0 }}>
+            <span className="lbl">Weekend Champion</span>
+            <div className="disp" style={{ fontSize: "20px", marginTop: "6px" }}>Become Weekend Champion</div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "7px", fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: "18px" }}>
+              <CoinGem small />3,000
+            </span>
+            <span className="muted2">Achievement reward</span>
+          </div>
+        </div>
+      </div>
+
+      <section className="panel tick league-standings" aria-label="This week's standings">
+        <div className="ph" style={{ marginBottom: "8px" }}>
+          <h2>This Week&apos;s Standings</h2>
+          <span className="lbl">Weekly trophies</span>
+        </div>
+
+        {loading ? (
+          <p className="muted2">Loading standings...</p>
+        ) : error ? (
+          <p className="muted2">
+            Standings could not be loaded.{" "}
+            <button type="button" className="link" onClick={() => setRetryKey(k => k + 1)} data-flat>
+              <RefreshCw aria-hidden="true" />{t("error_tryAgain")}
+            </button>
+          </p>
+        ) : standings.length === 0 ? (
+          <div className="league-empty">
+            <Trophy aria-hidden="true" />
+            <p className="muted">{t("tournament_noQualified")}</p>
+          </div>
+        ) : (
+          standings.map((standing, index) => {
+            const mine = standing.uid === user?.uid;
+            const medal = index === 0 ? "#FFC940" : index === 1 ? "#D2D6DA" : index === 2 ? "#E09A62" : undefined;
+            return (
+              <div className={`srow ${mine ? "me" : ""}`.trim()} key={standing.uid}>
+                <span className="pos" style={{ color: mine ? "#C6FF33" : medal }}>{index + 1}</span>
+                <span className="nm3">
+                  <Avatar name={standing.displayName} seed={standing.uid} size={32} radius={8} />
+                  <b>{standing.displayName}</b>
+                  {mine
+                    ? <span className="pill lime srow-you">You</span>
+                    : <RankLabel tier={standing.currentRank}>{""}</RankLabel>}
+                </span>
+                <span className="wt">{standing.weeklyTrophies.toLocaleString()}</span>
+              </div>
+            );
+          })
+        )}
+
+        <p className="muted2 league-note">
+          Silver rank and up only. Standings follow weekly trophies.
+        </p>
+      </section>
     </div>
   );
 }
