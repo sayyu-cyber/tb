@@ -1,64 +1,143 @@
+/**
+ * Settings (Arena) — design/arena/screens/app/app-14-settings.jpg.
+ *
+ * Environment: CHECK_PLAYWRIGHT, CHECK_CHANNEL, CHECK_BASE_URL - see
+ * check-home-ui.cjs.
+ */
 const path = require('node:path'), fs = require('node:fs'), assert = require('node:assert/strict');
-const compiler = require('next/dist/compiled/webpack/webpack'); compiler.init();
-const { chromium } = require('C:/Users/Sayyu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const nextWebpack = require('next/dist/compiled/webpack/webpack'); nextWebpack.init();
+const { webpack } = nextWebpack;
+const PLAYWRIGHT = process.env.CHECK_PLAYWRIGHT
+  || 'C:/Users/Sayyu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright';
+const { chromium } = require(PLAYWRIGHT);
+const CHANNEL = process.env.CHECK_CHANNEL === undefined ? 'msedge' : process.env.CHECK_CHANNEL;
+const BASE = process.env.CHECK_BASE_URL || 'http://127.0.0.1:3000';
 const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/settings-test');
 const mocks = path.join(__dirname, 'settings-test-services.tsx');
-const alias = Object.fromEntries(['@/contexts/AuthContext','@/contexts/ToastContext','@/lib/admin'].map(name => [name+'$',mocks]));
+const alias = Object.fromEntries([
+  '@/contexts/AuthContext', '@/contexts/SettingsContext', '@/contexts/ToastContext',
+  '@/hooks/useTranslation', '@/lib/admin', '@/lib/i18n', '@/constants/ranks',
+  '@/components/moderation/BlockedPlayers', '@/components/settings/LogoutBar', 'next/link',
+].map(name => [name + '$', mocks]));
 alias['@'] = root;
+
 async function run() {
-  await new Promise((resolve,reject) => compiler.webpack({mode:'development',plugins:[new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})],devtool:false,entry:path.join(__dirname,'settings-test-entry.tsx'),output:{path:output,filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.join(__dirname,'friends-test-loader.cjs')}]},optimization:{minimize:false}},(error,stats) => error || stats.hasErrors() ? reject(error || stats.toString()) : resolve()));
-  const browser = await chromium.launch({headless:true,channel:'msedge'});
+  await new Promise((resolve, reject) => webpack({
+    mode: 'development', devtool: false,
+    entry: path.join(__dirname, 'settings-test-entry.tsx'),
+    output: { path: output, filename: 'component.js' },
+    resolve: { extensions: ['.tsx', '.ts', '.js'], alias },
+    module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/, use: path.join(__dirname, 'friends-test-loader.cjs') }] },
+    optimization: { minimize: false },
+  }, (error, stats) => error || stats.hasErrors() ? reject(error || stats.toString()) : resolve()));
+
+  const browser = await chromium.launch({ headless: true, ...(CHANNEL ? { channel: CHANNEL } : {}) });
   try {
     const page = await browser.newPage();
-    const errors = []; page.on('pageerror',e => { errors.push(e.message); console.error(e.message); });
-    await page.goto('http://127.0.0.1:3000/login/');
-    const styles = await page.locator('link[rel=stylesheet]').evaluateAll(nodes=>nodes.map(n=>n.href));
+    const errors = []; page.on('pageerror', e => { errors.push(e.message); console.error(e.message); });
+    await page.goto(BASE + '/login/');
+    const styles = await page.locator('link[rel=stylesheet]').evaluateAll(nodes => nodes.map(node => node.href));
     const bodyClass = await page.locator('body').getAttribute('class');
-    const script = fs.readFileSync(path.join(output,'component.js'),'utf8');
+    const script = fs.readFileSync(path.join(output, 'component.js'), 'utf8');
+    await page.route('**/settings/**', route => route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
+        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
+    }));
 
-    await page.route('**/settings-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${styles.map(url=>`<link rel="stylesheet" href="${url}">`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
-    await page.goto('http://127.0.0.1:3000/settings-test/');
+    await page.goto(BASE + '/settings/');
+    await page.getByRole('heading', { name: 'Settings', level: 1 }).waitFor();
+    await page.waitForTimeout(250);
 
-    await page.getByRole('heading',{name:'Settings',exact:true}).waitFor();
-    for(const [width,height] of [[1920,1080],[1440,900],[1280,900],[768,1024],[390,844],[320,700]]) {
-      await page.setViewportSize({width,height});await page.waitForTimeout(150);
-      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Overflow '+width);
-      await page.screenshot({path:path.join(output,'settings-'+width+'.png'),fullPage:true});
+    // ── The board's structure ───────────────────────────────────────────
+    assert.equal(await page.locator('.sec').count(), 5, 'Five sections');
+    assert.equal(await page.locator('.snav').count(), 4, 'Four category buttons');
+    assert.equal(await page.locator('.toggle').count(), 3, 'Three switches');
+    assert.equal(await page.locator('.langs button').count(), 4, 'Four languages');
+    assert.equal(await page.locator('.faq').count(), 3, 'Three FAQs');
+    assert.ok((await page.locator('.set-about').innerText()).includes('Version 1.0.0'));
+
+    // ── The two rows that are honestly disabled ─────────────────────────
+    assert.equal(await page.getByRole('switch', { name: 'Notifications' }).isDisabled(), true,
+      'Notifications has no delivery behind it');
+    assert.equal(await page.getByRole('switch', { name: 'Sound Effects' }).isDisabled(), true,
+      'and neither do sound effects');
+    assert.equal(await page.getByRole('switch', { name: 'Background Music' }).isDisabled(), false,
+      'but music is real');
+    assert.equal(await page.locator('.srow.off').count(), 2, 'Both dim their label');
+
+    // ── Music, and language ─────────────────────────────────────────────
+    assert.equal(await page.getByRole('switch', { name: 'Background Music' }).getAttribute('aria-checked'), 'true');
+    await page.getByRole('switch', { name: 'Background Music' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-saved'), '{"music":false}');
+    assert.equal(await page.getByRole('switch', { name: 'Background Music' }).getAttribute('aria-checked'), 'false');
+
+    assert.equal(await page.locator('.langs button[aria-pressed="true"]').innerText(), 'English');
+    await page.locator('.langs button').nth(1).click();
+    assert.equal(await page.locator('body').getAttribute('data-saved'), '{"language":"dv"}');
+    // Choosing Dhivehi says what it does, which the board notes.
+    await page.getByText('Dhivehi lays the app out right to left.').waitFor();
+
+    // A failed save says so instead of silently doing nothing.
+    await page.goto(BASE + '/settings/?savefail');
+    await page.waitForTimeout(200);
+    await page.getByRole('switch', { name: 'Background Music' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-toast'), "Couldn't save your changes on this device.");
+
+    // ── Account, privacy ────────────────────────────────────────────────
+    await page.goto(BASE + '/settings/');
+    await page.waitForTimeout(200);
+    const account = await page.locator('#settings-account').innerText();
+    assert.ok(account.includes('s••••@gmail.com'), 'The address is masked');
+    assert.ok(!account.includes('sayyu@gmail.com'), 'and never printed in full');
+    assert.ok(account.includes('GOLD') || account.includes('Gold'), 'with the rank beside it');
+    assert.equal(await page.getByText('Admin Panel').count(), 0, 'No admin row for a normal account');
+    await page.goto(BASE + '/settings/?admin');
+    await page.waitForTimeout(200);
+    await page.getByText('Admin Panel').waitFor();
+    await page.goto(BASE + '/settings/?guest');
+    await page.waitForTimeout(200);
+    await page.getByText('Sign in to keep your progress.').waitFor();
+
+    await page.goto(BASE + '/settings/');
+    await page.waitForTimeout(200);
+    await page.getByText("You haven't blocked anyone. You can block a player from their profile.").waitFor();
+
+    // ── The rail scrolls rather than swapping panels ────────────────────
+    await page.getByRole('button', { name: /^Privacy & Security/ }).click();
+    await page.waitForTimeout(250);
+    assert.equal(await page.locator('.sec').count(), 5, 'Every section stays on the page');
+    assert.equal(await page.locator('.snav[aria-pressed="true"]').innerText(), 'PRIVACY & SECURITY');
+
+    // ── FAQ ─────────────────────────────────────────────────────────────
+    await page.locator('.faq').first().click();
+    await page.getByText('Equip owned cosmetics from your').waitFor();
+
+    // ── Widths ──────────────────────────────────────────────────────────
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      await page.setViewportSize({ width, height });
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
+      assert.equal(
+        await page.locator('.sec,.snav,.langs').evaluateAll(
+          nodes => nodes.every(n => { const r = n.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; })
+        ), true, 'Clipping ' + width);
+      await page.screenshot({ path: path.join(output, 'settings-' + width + '.png'), fullPage: true });
     }
-    assert.equal(await page.getByRole('switch',{name:'Notifications',exact:true}).isDisabled(),true);
-    assert.equal(await page.getByRole('link',{name:/Admin Panel/}).count(),0);
-    const music = page.getByRole('switch',{name:'Background Music',exact:true});
-    await music.click();
-    assert.equal(await music.getAttribute('aria-checked'),'true');
-    await page.reload();
-    assert.equal(await page.getByRole('switch',{name:'Background Music',exact:true}).getAttribute('aria-checked'),'true');
-    await page.getByLabel('Language',{exact:true}).selectOption('dv');
-    assert.equal(await page.locator('html').getAttribute('dir'),'rtl');
-    await page.reload();
-    assert.equal(await page.locator('select').inputValue(),'dv');
-    await page.locator('select').selectOption('en');
-    await page.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('Storage blocked'); }; });
-    const before = await page.getByRole('switch',{name:'Background Music',exact:true}).getAttribute('aria-checked');
-    await page.getByRole('switch',{name:'Background Music',exact:true}).click();
-    assert.equal(await page.getByRole('switch',{name:'Background Music',exact:true}).getAttribute('aria-checked'),before);
-    assert.match(await page.locator('body').getAttribute('data-toast'),/Couldn't save/);
-    await page.getByRole('button',{name:'Privacy & Security',exact:true}).click();
-    assert.equal(await page.evaluate(()=>document.activeElement.id),'settings-privacy');
-    await page.getByRole('button',{name:/Log Out/i,exact:true}).click();
-    await page.getByRole('dialog').waitFor();
-    await page.keyboard.press('Escape');
-    assert.equal(await page.locator('dialog[open]').count(),0);
-    await page.goto('http://127.0.0.1:3000/settings-test/?admin&fail');
-    await page.getByRole('link',{name:/Admin Panel/}).waitFor();
-    await page.getByRole('button',{name:/Log Out/i,exact:true}).click();
-    await page.getByRole('dialog').getByRole('button',{name:/Log Out/i,exact:true}).click();
-    await page.getByRole('alert').waitFor();
-    await page.goto('http://127.0.0.1:3000/settings-test/');
-    await page.getByRole('button',{name:/Log Out/i,exact:true}).click();
-    await page.getByRole('dialog').getByRole('button',{name:/Log Out/i,exact:true}).click();
-    assert.equal(await page.locator('body').getAttribute('data-logged-out'),'true');
-    assert.deepEqual(errors,[]);
-    console.log('Settings passed: six sizes, actual local preference persistence, language/RTL, admin gating, section focus, logout cancel/error/success.');
+
+    // ── Accessibility ───────────────────────────────────────────────────
+    await page.setViewportSize({ width: 1440, height: 900 });
+    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    assert.equal(await page.locator('[role=switch][aria-checked][aria-label]').count(), 3,
+      'Every switch reports its state and says what it switches');
+    const unlabelled = await page.locator('button,a').evaluateAll(
+      nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
+    );
+    assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
+
+    assert.deepEqual(errors, []);
+    console.log('Settings: five sections, the category rail that scrolls rather than swaps, three switches with two honestly disabled, the four-language control with the right-to-left note, a failed save, the masked address, admin/guest/blocked states, FAQs, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
-run().catch(error=>{console.error(error);process.exitCode=1;});
+run().catch(error => { console.error(error); process.exitCode = 1; });

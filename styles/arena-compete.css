@@ -259,3 +259,58 @@
 }
 .arena-halloffame .hof-empty > svg { width: 38px; height: 38px; color: #3A3A46; }
 .arena-halloffame .hof-empty p { margin: 0; max-width: 44ch; }
+
+/* ── Settings (app-14) ────────────────────────────────────────────────
+   A 300px rail beside the sections. */
+.arena-settings .set-page {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 22px;
+  align-content: start;
+}
+.arena-settings .set-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.arena-settings .set-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.arena-settings .set-title { margin: 10px 0 0; font-size: clamp(30px, 4.5vw, 48px); }
+@media (max-width: 1020px) {
+  .arena-settings .set-page { grid-template-columns: minmax(0, 1fr); }
+}
+
+.arena-settings .set-nav { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.arena-settings .set-about { padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.arena-settings .set-about-title { font-size: 21px; line-height: 1.15; }
+.arena-settings .set-about p { margin: 0; }
+
+/* The first row in a section has no rule above it - the header is there. */
+.arena-settings .sec .srow:first-of-type { border-top: 0; }
+.arena-settings a.srow { text-decoration: none; color: inherit; }
+.arena-settings a.srow:hover .tx b { color: #C6FF33; }
+.arena-settings .set-note { margin: 10px 0 0; line-height: 1.5; }
+/* The blocked-players list sits inside the row's text column. */
+.arena-settings .set-blocked .tx { gap: 8px; }
+
+/* A switch that cannot be used says so rather than just looking flat. */
+.arena-settings .toggle:disabled { opacity: .45; cursor: not-allowed; }
+.arena-settings .toggle:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* The FAQ rows are <details>; the board draws them closed. */
+.arena-settings .set-faq summary { cursor: pointer; list-style: none; }
+.arena-settings .set-faq summary::-webkit-details-marker { display: none; }
+.arena-settings .set-faq[open] summary svg { transform: rotate(180deg); }
+.arena-settings .set-faq summary svg { transition: transform .2s ease; }
+.arena-settings .set-faq p { margin: 0 0 14px; padding: 0 4px; line-height: 1.5; }
+.arena-settings .set-faq a { color: #C6FF33; }
+
+/* The language row's four buttons wrap before the row does. */
+@media (max-width: 620px) {
+  .arena-settings .srow { flex-wrap: wrap; }
+  .arena-settings .langs { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+}
+/* The log-out bar at the foot of Settings, as the board draws it. */
+.arena-settings .set-logout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  flex-wrap: wrap;
+}
+.arena-settings .set-logout > button { margin-left: auto; }
