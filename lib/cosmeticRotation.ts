@@ -16,7 +16,7 @@
 // the current date, with no Firestore write or backend job required.
 
 import { CosmeticItem } from "@/types/economy";
-import { ALL_COSMETICS } from "@/data/cosmetics";
+import { ALL_COSMETICS, isPurchasable } from "@/data/cosmetics";
 
 /** Weeks since a fixed epoch (a Monday), used as the rotation seed. */
 export function getRotationWeekNumber(date: Date = new Date()): number {
@@ -53,7 +53,11 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
  * the same calendar week; it changes automatically the following week.
  */
 export function getWeeklyFeaturedRotation(count = 6, date: Date = new Date()): CosmeticItem[] {
-  const pool = ALL_COSMETICS.filter((c) => !c.isVipExclusive);
+  // Only what can actually be sold. A VIP exclusive is not for sale, and
+  // neither is a reward or a starter item - all three have no price, so
+  // featuring one would put a "0 coins" buy button on the Shop's front
+  // page (code issue 5 in design/arena/APP_SCREENS.md).
+  const pool = ALL_COSMETICS.filter((c) => isPurchasable(c));
   const week = getRotationWeekNumber(date);
   return seededShuffle(pool, week).slice(0, count);
 }

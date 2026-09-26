@@ -2,21 +2,33 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEconomy } from '../../contexts/EconomyContext';
-import { CosmeticItem } from '../../types/economy';
-import { ALL_COSMETICS, COIN_PACKS } from '../../data/cosmetics';
-import { getWeeklyFeaturedRotation, getRotationWeekNumber } from '../../lib/cosmeticRotation';
-import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '../../lib/coinTopups';
-import { useAuth } from '../../contexts/AuthContext';
-import CoinBalance from '../economy/CoinBalance';
-import { useTranslation } from '../../hooks/useTranslation';
-import { useToast } from '../../contexts/ToastContext';
-import { CategoryIcon, Crown } from '../ui/icons';
-import { ShopItemCard as CosmeticCard } from './ShopItemCard';
+import { Plus, ArrowRight, Search, Clock, Sparkles, Layers, Coins, Crown, ChevronRight, Info } from 'lucide-react';
+import { useEconomy } from '@/contexts/EconomyContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
+import { useTranslation } from '@/hooks/useTranslation';
+import { CosmeticItem } from '@/types/economy';
+import { ALL_COSMETICS, COIN_PACKS, isPurchasable } from '@/data/cosmetics';
+import { getWeeklyFeaturedRotation, getRotationWeekNumber } from '@/lib/cosmeticRotation';
+import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '@/lib/coinTopups';
+import { Pill, CoinGem, Meter } from '@/components/arena';
+import { ShopItemCard } from './ShopItemCard';
 import { ShopItemDialog } from './ShopItemDialog';
 import { CoinPackCard } from './StoreCoinPacks';
-import { Plus, ArrowRight, Search, Timer, Sparkles, ShoppingBag, Coins, ShieldCheck } from 'lucide-react';
+import { categoryLabel } from './categoryLabel';
+
+/**
+ * Shop — design/arena/screens/app/app-11-shop.jpg, with the purchase
+ * dialog's two states from app-11b and app-11c.
+ *
+ * The data flow is unchanged: the same deterministic weekly rotation, the
+ * same admin price/visibility overrides, the same top-up request that waits
+ * on admin approval. What changed is the markup, which is now the board's.
+ *
+ * The VIP tab is the Shop's fourth tab but its own board (app-12). It is
+ * built on the shared Arena panels here and gets its full treatment with
+ * that screen.
+ */
 
 const VIP_PLANS = [
   { id: 'weekly' as const, days: 7, priceMVR: 100, label: 'Weekly', sub: '7 Days of Premium Benefits' },
@@ -43,6 +55,7 @@ export default function CosmeticShop() {
   const shopOverrides = state.shopOverrides;
   const t = useTranslation();
   const { showToast } = useToast();
+  const initial = (user?.displayName ?? 'S').charAt(0).toUpperCase();
 
   useEffect(() => {
     if (!user?.uid || isGuest) return;
@@ -55,10 +68,19 @@ export default function CosmeticShop() {
   function isHidden(item: CosmeticItem): boolean {
     return shopOverrides?.hiddenItemIds.includes(item.id) ?? false;
   }
+  const isItemOwned = (itemId: string) => Object.values(state.profile.collection).flat().includes(itemId);
+  const isItemEquipped = (item: CosmeticItem) => {
+    const map: Record<string, string> = {
+      cardBack: state.profile.equipped.cardBack,
+      tableTheme: state.profile.equipped.tableTheme,
+      profileFrame: state.profile.equipped.profileFrame,
+      victoryAnimation: state.profile.equipped.victoryAnimation,
+      banner: state.profile.equipped.banner,
+    };
+    return map[item.category] === item.id;
+  };
 
-  function handlePurchase(item: CosmeticItem) {
-    setIntent('buy'); setSelectedItem(item);
-  }
+  function handlePurchase(item: CosmeticItem) { setIntent('buy'); setSelectedItem(item); }
   function confirmPurchase(item: CosmeticItem) {
     if (purchasePending.current) return;
     if (isItemOwned(item.id)) { showToast("You already own this item.", "info"); return; }
@@ -77,10 +99,7 @@ export default function CosmeticShop() {
   const pendingTopup = myTopups.find((topup) => topup.status === 'pending');
 
   async function handlePurchaseCoinPack(pack: typeof COIN_PACKS[0]) {
-    if (!user?.uid || isGuest) {
-      showToast(t('toast_signInToTopUp'), 'info');
-      return;
-    }
+    if (!user?.uid || isGuest) { showToast(t('toast_signInToTopUp'), 'info'); return; }
     if (topupPending.current || pendingTopup) return;
     topupPending.current = true; setTopupBusy(true);
     // This used to fire-and-forget: a rejected write (offline, rules
@@ -99,11 +118,9 @@ export default function CosmeticShop() {
       const now = new Date();
       const nextRotation = Date.UTC(2024, 0, 1) + (getRotationWeekNumber(now) + 1) * 7 * 86400000;
       const diff = nextRotation - now.getTime();
-      
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
       setTimeLeft(`${days}d ${hours}h ${minutes}m`);
     };
     updateTimer();
@@ -124,260 +141,248 @@ export default function CosmeticShop() {
 
   // Deterministic rotation: same featured set for everyone during a given
   // calendar week, automatically swapping out the following week. VIP
-  // members get one extra featured slot, matching the perk called out
-  // in the banner below.
+  // members get one extra featured slot, matching the perk in the strip.
   const featuredItems = getWeeklyFeaturedRotation(state.profile.vip.active ? 7 : 6).filter((c) => !isHidden(c));
-  const permanentItems = (selectedCategory === 'all'
-    ? ALL_COSMETICS.filter(c => !c.isVipExclusive)
-    : ALL_COSMETICS.filter(c => c.category === selectedCategory && !c.isVipExclusive)
-  ).filter((c) => !isHidden(c) && [c.name, c.rarity, c.category].join(' ').toLowerCase().includes(queryText.trim().toLowerCase()))
+  const permanentItems = ALL_COSMETICS
+    // isPurchasable keeps rewards, starter items and VIP exclusives out of
+    // the catalogue - none of them has a price (code issue 5).
+    .filter((c) => isPurchasable(c) && !isHidden(c))
+    .filter((c) => selectedCategory === 'all' || c.category === selectedCategory)
+    .filter((c) => [c.name, c.rarity, categoryLabel(c.category)].join(' ').toLowerCase().includes(queryText.trim().toLowerCase()))
     .sort((a, b) => sort === 'price' ? priceFor(a) - priceFor(b) : sort === 'name' ? a.name.localeCompare(b.name) : 0);
 
-  const isItemEquipped = (item: CosmeticItem) => {
-    const map: Record<string, string> = {
-      cardBack: state.profile.equipped.cardBack,
-      tableTheme: state.profile.equipped.tableTheme,
-      profileFrame: state.profile.equipped.profileFrame,
-      victoryAnimation: state.profile.equipped.victoryAnimation,
-      banner: state.profile.equipped.banner,
-    };
-    return map[item.category] === item.id;
-  };
+  const vipActive = state.profile.vip.active;
+  const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
 
-  const isItemOwned = (itemId: string) => {
-    return Object.values(state.profile.collection).flat().includes(itemId);
-  };
+  function itemCard(item: CosmeticItem, featured?: boolean) {
+    return (
+      <ShopItemCard
+        key={item.id}
+        item={item}
+        price={priceFor(item)}
+        isOwned={isItemOwned(item.id)}
+        isEquipped={isItemEquipped(item)}
+        isFeatured={featured}
+        initial={initial}
+        onPurchase={() => handlePurchase(item)}
+        onEquip={() => handleEquip(item)}
+        onPreview={() => { setIntent('preview'); setSelectedItem(item); }}
+      />
+    );
+  }
 
   return (
-    <div className="storefront">
-      <header className="store-hero">
-        <div><p className="store-eyebrow">THAASBAI</p><h1><ShoppingBag size={34} />Shop</h1><h2>Premium cosmetics and coin packs</h2><p>Customize your table, cards, and experience. Stand out in every game.</p></div>
-        <div className="store-balance"><span>Your Balance</span><div><CoinBalance size="lg" /><button aria-label="Get coins" title="Get coins" onClick={() => setActiveTab('coins')}><Plus size={20} /></button></div></div>
-      </header>
-      <div className="hub-tabs" aria-label={t('page_shop')}>
-        {[
-          { id: 'featured', label: t('shop_tabFeatured') },
-          { id: 'permanent', label: t('shop_tabPermanent') },
-          { id: 'coins', label: t('shop_tabCoins') },
-          { id: 'vip', label: t('shop_tabVip') },
-        ].map((tab) => (
-          <motion.button
-            key={tab.id}
-            aria-pressed={activeTab === tab.id}
-            className={`
-              px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all
-              ${activeTab === tab.id
-                ? 'bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))] shadow-lg shadow-[rgb(var(--gold)/20%)]'
-                : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-[rgb(var(--gold)/20%)]'
-              }
-            `}
-            onClick={() => setActiveTab(tab.id as any)}
-            whileTap={{ scale: 0.95 }}
+    <div className="arena-shop ar-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="phead">
+        <div>
+          <span className="lbl dash" style={{ color: '#C6FF33' }}>Premium cosmetics and coin packs</span>
+          <h1 className="disp chrome ar-h1">{t('page_shop')}</h1>
+          <p className="sub">Customize your table, cards, and experience. Stand out in every game.</p>
+        </div>
+        <div className="bal">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span className="lbl">Your Balance</span>
+            <b><CoinGem />{state.economy.coins.toLocaleString()}</b>
+          </div>
+          <button
+            type="button"
+            className="ar-btn sm"
+            aria-label="Get coins"
+            style={{ width: '48px', padding: 0 }}
+            onClick={() => setActiveTab('coins')}
           >
-            {tab.id === 'featured' ? <Sparkles size={16} /> : tab.id === 'permanent' ? <ShoppingBag size={16} /> : tab.id === 'coins' ? <Coins size={16} /> : <ShieldCheck size={16} />}{tab.label}
-          </motion.button>
+            <Plus aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <div className="tabs" style={{ alignSelf: 'flex-start' }} role="group" aria-label={t('page_shop')}>
+        {([
+          { id: 'featured', label: t('shop_tabFeatured'), Icon: Sparkles },
+          { id: 'permanent', label: t('shop_tabPermanent'), Icon: Layers },
+          { id: 'coins', label: t('shop_tabCoins'), Icon: Coins },
+          { id: 'vip', label: t('shop_tabVip'), Icon: Crown },
+        ] as const).map(({ id, label, Icon }) => (
+          <button key={id} type="button" aria-pressed={activeTab === id} onClick={() => setActiveTab(id)} data-flat>
+            <Icon aria-hidden="true" />{label}
+          </button>
         ))}
       </div>
 
-      <section className="store-vip-strip"><Crown size={32} /><div><strong>{state.profile.vip.active ? "VIP Active" : "VIP Exclusive: +1 Featured cosmetic available"}</strong><p>{state.profile.vip.active ? "Your extra weekly cosmetic slot is unlocked." : "Upgrade to VIP Pass to unlock an extra featured item every week."}</p></div>{!state.profile.vip.active && <button onClick={() => setActiveTab('vip')}>View VIP Plans<ArrowRight size={17} /></button>}</section>
-
-      <AnimatePresence initial={false} mode="popLayout">
-        {activeTab === 'featured' && (
-          <motion.div
-            key="featured"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-[rgb(var(--gold-ink))]">{t('shop_weeklyFeatured')}</h2>
-              <div className="flex items-center gap-2 bg-[rgb(var(--c2)/60%)] rounded-full px-4 py-1.5 border border-[rgb(var(--gold)/20%)]">
-                <span className="text-xs text-[rgb(var(--c4))]">Refreshes in</span><Timer size={16} className="text-[rgb(var(--gold))]" aria-label="Featured items rotate weekly" />
-                <span className="text-[rgb(var(--gold-ink))] text-sm font-mono">{timeLeft}</span>
-              </div>
-            </div>
-
-            <div className="store-item-grid">
-              {featuredItems.length === 0 && <p>No featured items right now. Check back after the next rotation.</p>}
-              {featuredItems.map((item) => (
-                <CosmeticCard
-                  key={item.id}
-                  item={item}
-                  isOwned={isItemOwned(item.id)}
-                  isFeatured
-                  onPurchase={() => handlePurchase(item)}
-                  onEquip={() => handleEquip(item)}
-                  onPreview={() => { setIntent('preview'); setSelectedItem(item); }}
-                  isEquipped={isItemEquipped(item)}
-                  price={priceFor(item)}
-                />
-              ))}
-            </div>
-          </motion.div>
+      <div className="vipstrip">
+        <span className="cr" aria-hidden="true"><Crown /></span>
+        <div style={{ flexGrow: 1, minWidth: 0 }}>
+          <b className="disp" style={{ fontSize: '17px' }}>
+            {vipActive ? 'VIP Active' : 'VIP Exclusive: +1 Featured cosmetic available'}
+          </b>
+          <p className="muted" style={{ margin: '5px 0 0' }}>
+            {vipActive
+              ? 'Your extra weekly cosmetic slot is unlocked.'
+              : 'Upgrade to VIP Pass to unlock an extra featured item every week.'}
+          </p>
+        </div>
+        {!vipActive && (
+          <button type="button" className="ar-btn blue sm" onClick={() => setActiveTab('vip')}>
+            View VIP Plans<ArrowRight aria-hidden="true" />
+          </button>
         )}
+      </div>
 
-        {activeTab === 'permanent' && (
-          <motion.div
-            key="permanent"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="catalog-toolbar"><label className="hub-search"><Search size={16} /><input aria-label="Search cosmetics" placeholder="Search cosmetics" value={queryText} onChange={event => setQueryText(event.target.value)} /></label><select aria-label="Sort cosmetics" value={sort} onChange={event=>setSort(event.target.value)}><option value="default">Collection order</option><option value="price">Price: low to high</option><option value="name">Name: A to Z</option></select></div>
-            <div className="hub-tabs hub-category-tabs">
-              {categories.map((cat) => (
+      {activeTab === 'featured' && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="ph">
+            <h2 style={{ fontSize: '24px' }}>{t('shop_weeklyFeatured')}</h2>
+            <Pill tone="line" className="refresh"><Clock aria-hidden="true" />Refreshes in {timeLeft}</Pill>
+          </div>
+          {featuredItems.length === 0
+            ? <p className="muted">No featured items right now. Check back after the next rotation.</p>
+            : <div className="shop-grid">{featuredItems.map(item => itemCard(item, true))}</div>}
+        </section>
+      )}
+
+      {activeTab === 'permanent' && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="inv-toolbar">
+            <div className="chips" role="group" aria-label="Cosmetic categories">
+              {categories.map((category) => (
                 <button
-                  key={cat.id}
-                  aria-pressed={selectedCategory === cat.id}
-                  className={`
-                    px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap
-                    ${selectedCategory === cat.id
-                      ? 'bg-[rgb(var(--gold)/25%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]'
-                      : 'bg-[rgb(var(--c3))] text-[rgb(var(--c4))] border border-[rgb(var(--c3)/30%)] hover:text-[rgb(var(--c5))]'
-                    }
-                  `}
-                  onClick={() => setSelectedCategory(cat.id)}
+                  key={category.id}
+                  type="button"
+                  aria-pressed={selectedCategory === category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  data-flat
                 >
-                  <CategoryIcon category={cat.id} size={14} />
-                  {cat.label}
+                  {category.label}
                 </button>
               ))}
             </div>
-
-            <div className="store-item-grid">
-              {permanentItems.length === 0 && <p className="col-span-full py-12 text-center text-sm text-[rgb(var(--c4))]">{t('inventory_nothingHere')}</p>}
-              {permanentItems.map((item) => (
-                <CosmeticCard
-                  key={item.id}
-                  item={item}
-                  isOwned={isItemOwned(item.id)}
-                  onPurchase={() => handlePurchase(item)}
-                  onEquip={() => handleEquip(item)}
-                  onPreview={() => { setIntent('preview'); setSelectedItem(item); }}
-                  isEquipped={isItemEquipped(item)}
-                  price={priceFor(item)}
-                />
-              ))}
+            <label className="field inv-search">
+              <Search aria-hidden="true" />
+              <input
+                type="search"
+                value={queryText}
+                onChange={event => setQueryText(event.target.value)}
+                placeholder="Search cosmetics"
+                aria-label="Search cosmetics"
+              />
+            </label>
+            <div className="select">
+              <select value={sort} onChange={event => setSort(event.target.value)} aria-label="Sort cosmetics">
+                <option value="default">Collection order</option>
+                <option value="price">Price: low to high</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+              <ChevronRight aria-hidden="true" style={{ transform: 'rotate(90deg)' }} />
             </div>
-          </motion.div>
-        )}
+          </div>
+          {permanentItems.length === 0
+            ? <p className="muted">{t('inventory_nothingHere')}</p>
+            : <div className="shop-grid">{permanentItems.map(item => itemCard(item))}</div>}
+        </section>
+      )}
 
-        {activeTab === 'vip' && (
-          <motion.div
-            key="vip"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="max-w-lg mx-auto">
-              <motion.div
-                className="bg-gradient-to-b from-[rgb(var(--orchid)/15%)] to-[rgb(var(--c1))] border border-[rgb(var(--orchid)/30%)] rounded-2xl p-8 text-center relative overflow-hidden"
-                whileHover={{ scale: 1.01 }}
+      {activeTab === 'vip' && (
+        <section className="panel tick b vip-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div className="ph">
+            <h2>{t('vip_pass')}</h2>
+            <span className="lbl">{plan.sub}</span>
+          </div>
+          <div className="vip-plans">
+            {VIP_PLANS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`pack ${selectedVipPlan === option.id ? 'pop' : ''}`.trim()}
+                aria-pressed={selectedVipPlan === option.id}
+                onClick={() => setSelectedVipPlan(option.id)}
+                data-flat
               >
-                <div className="relative z-10">
-                  <motion.div
-                    className="text-6xl mb-4"
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ repeat: Infinity, duration: 4 }}
-                  >
-                    <Crown size={56} className="mx-auto text-[rgb(var(--orchid-ink))]" />
-                  </motion.div>
-                  <h2 className="text-3xl font-bold text-[rgb(var(--orchid-ink))] mb-2">{t('vip_pass')}</h2>
-                  <p className="text-[rgb(var(--orchid-ink)/70%)] mb-6">{VIP_PLANS.find(p => p.id === selectedVipPlan)?.sub}</p>
+                {option.savingsNote && <Pill tone="lime" className="flag">Save</Pill>}
+                <span className="lbl">{option.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')}</span>
+                <b className="amt">MVR {option.priceMVR}</b>
+                {option.savingsNote && <span className="muted2">{option.savingsNote}</span>}
+              </button>
+            ))}
+          </div>
+          <ul className="vip-benefits">
+            {[t('vip_benefit1'), t('vip_benefit2'), t('vip_benefit3'), t('vip_benefit4'), t('vip_benefit5'), t('vip_benefit6')]
+              .map((benefit, index) => <li key={index} className="muted">{benefit}</li>)}
+          </ul>
+          <button
+            type="button"
+            className="ar-btn block"
+            disabled={vipActive}
+            onClick={() => {
+              if (vipActive) return;
+              activateVip(plan.days);
+              showToast(
+                t('toast_vipActivated').replace('{plan}', plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')),
+                'success'
+              );
+            }}
+          >
+            {vipActive
+              ? 'VIP Active'
+              : t('vip_activateBtn').replace('{plan}', selectedVipPlan === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel'))}
+          </button>
+          {vipActive && (
+            <p role="status" className="muted">
+              {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
+            </p>
+          )}
+        </section>
+      )}
 
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {VIP_PLANS.map((plan) => (
-                      <button
-                        key={plan.id}
-                        onClick={() => setSelectedVipPlan(plan.id)}
-                        className={`relative rounded-xl border p-4 text-left transition-all ${
-                          selectedVipPlan === plan.id
-                            ? 'border-[rgb(var(--orchid))] bg-[rgb(var(--orchid)/15%)]'
-                            : 'border-[rgb(var(--c3)/40%)] bg-[rgb(var(--c2)/40%)]'
-                        }`}
-                      >
-                        {plan.savingsNote && (
-                          <span className="absolute -top-2 right-2 bg-[rgb(var(--gold))] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            SAVE
-                          </span>
-                        )}
-                        <p className="text-[rgb(var(--orchid-ink))] text-sm font-bold">{plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')}</p>
-                        <p className="text-2xl font-bold text-[rgb(var(--text-primary))] mt-1">
-                          MVR <span className="text-[rgb(var(--orchid-ink))]">{plan.priceMVR}</span>
-                        </p>
-                        {plan.savingsNote && <p className="text-[rgb(var(--gold-ink))] text-[11px] mt-1">{plan.savingsNote}</p>}
-                      </button>
-                    ))}
-                  </div>
-
-                  <ul className="text-left space-y-3 mb-8">
-                    {[
-                      t('vip_benefit1'),
-                      t('vip_benefit2'),
-                      t('vip_benefit3'),
-                      t('vip_benefit4'),
-                      t('vip_benefit5'),
-                      t('vip_benefit6'),
-                    ].map((benefit, i) => (
-                      <motion.li
-                        key={i}
-                        className="flex items-center gap-3 text-[rgb(var(--c5))]"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                      >
-                        <span className="text-[rgb(var(--orchid-ink))]">✓</span>
-                        {benefit}
-                      </motion.li>
-                    ))}
-                  </ul>
-
-                  <motion.button
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--orchid))] to-[rgb(var(--orchid)/80%)] text-[rgb(var(--text-primary))] font-bold text-lg hover:from-[rgb(var(--orchid))] hover:to-[rgb(var(--orchid)/80%)] transition-all border border-[rgb(var(--orchid)/30%)]"
-                    disabled={state.profile.vip.active}
-                    onClick={() => {
-                      const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
-                      if (state.profile.vip.active) return;
-                      activateVip(plan.days);
-                      showToast(
-                        t('toast_vipActivated').replace(
-                          '{plan}',
-                          plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')
-                        ),
-                        'success'
-                      );
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {state.profile.vip.active ? 'VIP Active' : t('vip_activateBtn').replace('{plan}', selectedVipPlan === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel'))}
-                  </motion.button>
-
-                  {state.profile.vip.active && (
-                    <motion.div
-                      className="mt-4 p-3 bg-[rgb(var(--lagoon)/15%)] rounded-xl border border-[rgb(var(--lagoon)/20%)]"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      <p className="text-[rgb(var(--lagoon-ink))] text-sm">
-                        {t('vip_activeStatus').replace('{n}', String(state.profile.vip.remainingDays))}
-                      </p>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
+      {(activeTab === 'featured' || activeTab === 'coins') && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="ph">
+            <div>
+              <h2 style={{ fontSize: '24px' }}>Coin Packs</h2>
+              <p className="muted2" style={{ margin: '6px 0 0' }}>Get coins to buy exclusive cosmetics</p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {activeTab === 'featured' && (
+              <button type="button" className="link" onClick={() => setActiveTab('coins')} data-flat>
+                View All<ChevronRight aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <div className="pack-grid">
+            {(activeTab === 'featured' ? COIN_PACKS.slice(0, 4) : COIN_PACKS).map((pack, index) => (
+              <CoinPackCard
+                key={pack.id}
+                pack={pack}
+                index={index}
+                disabled={topupBusy || !!pendingTopup}
+                onPurchase={() => handlePurchaseCoinPack(pack)}
+              />
+            ))}
+          </div>
+          {pendingTopup && (
+            <p role="status" className="muted2" style={{ margin: 0 }}>
+              Your {pendingTopup.packName} request is pending admin approval.
+            </p>
+          )}
+          <p className="muted2" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Info aria-hidden="true" style={{ width: '16px', height: '16px' }} />
+            Prices in MVR. Top-ups require admin approval before coins are credited.
+          </p>
+        </section>
+      )}
 
-      {(activeTab === 'featured' || activeTab === 'coins') && <section className="store-coin-section">
-        <header><Coins size={22} /><h2>Coin Packs</h2><p>Get coins to buy exclusive cosmetics</p>{activeTab === 'featured' && <button onClick={() => setActiveTab('coins')}>View All<ArrowRight size={16} /></button>}</header>
-        <p className="store-payment-note">Prices in MVR. Top-ups require admin approval before coins are credited.</p>
-        {pendingTopup && <p role="status" className="store-payment-note">Your {pendingTopup.packName} request is pending admin approval.</p>}
-        <div className="store-coin-grid">{(activeTab === 'featured' ? COIN_PACKS.slice(0, 4) : COIN_PACKS).map(pack => <CoinPackCard key={pack.id} pack={pack} disabled={topupBusy || !!pendingTopup} onPurchase={() => handlePurchaseCoinPack(pack)} />)}</div>
-      </section>}
-      {selectedItem && <ShopItemDialog item={selectedItem} intent={intent} price={priceFor(selectedItem)} balance={state.economy.coins} owned={isItemOwned(selectedItem.id)} equipped={isItemEquipped(selectedItem)} onClose={() => setSelectedItem(null)} onBuy={() => confirmPurchase(selectedItem)} onEquip={() => { handleEquip(selectedItem); setSelectedItem(null); }} onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }} />}
+      {selectedItem && (
+        <ShopItemDialog
+          item={selectedItem}
+          intent={intent}
+          price={priceFor(selectedItem)}
+          balance={state.economy.coins}
+          owned={isItemOwned(selectedItem.id)}
+          equipped={isItemEquipped(selectedItem)}
+          onClose={() => setSelectedItem(null)}
+          onBuy={() => confirmPurchase(selectedItem)}
+          onEquip={() => { handleEquip(selectedItem); setSelectedItem(null); }}
+          onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }}
+        />
+      )}
     </div>
   );
 }

@@ -251,3 +251,47 @@
 /* A tbtn that can't be afforded reads as unavailable rather than dead. */
 .arena-inventory .tbtn:disabled { opacity: .55; cursor: not-allowed; }
 .arena-inventory .tbtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* ── Shop ─────────────────────────────────────────────────────────────
+   Six featured items across at 1440, four coin packs. */
+.arena-shop .shop-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1500px) {
+  .arena-shop .shop-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+.arena-shop .pack-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1000px) {
+  .arena-shop .pack-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+}
+
+/* The board's balance card sits at the end of the header row. */
+@media (max-width: 860px) {
+  .arena-shop .bal { width: 100%; }
+}
+
+/* The refresh pill is 32px tall on the board rather than the pill's 24. */
+.arena-shop .refresh { height: 32px; padding: 0 12px; }
+
+/* The catalogue toolbar reuses Inventory's chips and search; the sort
+   control sits beside them. */
+.arena-shop .inv-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.arena-shop .inv-search { margin-left: auto; width: min(240px, 100%); }
+.arena-shop .inv-search input {
+  width: 100%; min-width: 0; border: 0; background: none; color: #fff; font: inherit; outline: none;
+}
+.arena-shop .inv-search input::placeholder { color: #8E8E9C; }
+.arena-shop .inv-search:focus-within { box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .6); }
+
+/* The dialog is a real <dialog>; the board's `.scrim` becomes its backdrop. */
+.arena-shop .dlg { border: 0; max-width: calc(100vw - 32px); color: #fff; }
+.arena-shop .dlg::backdrop {
+  background: rgba(0, 0, 0, .72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* VIP tab: the plan cards and the perk list. Its own board is app-12. */
+.arena-shop .vip-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 700px) { .arena-shop .vip-plans { grid-template-columns: minmax(0, 1fr); } }
+.arena-shop .vip-benefits { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.arena-shop .vip-benefits li { display: flex; align-items: flex-start; gap: 10px; }
+.arena-shop .vip-benefits li::before { content: "✓"; color: #C6FF33; font-weight: 700; }

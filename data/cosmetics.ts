@@ -69,8 +69,8 @@ export const PROFILE_FRAMES: CosmeticItem[] = [
   { id: 'pf_dragon', name: 'Dragon Frame', category: 'profileFrame', rarity: 'Legendary', price: 5000, previewImage: '/cosmetics/frames/dragon.png', description: 'Legendary presence.' },
   { id: 'pf_vip', name: 'VIP Elite', category: 'profileFrame', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/frames/vip-elite.png', description: 'VIP exclusive frame.', isVipExclusive: true },
   { id: 'pf_platinum', name: 'Platinum Shield', category: 'profileFrame', rarity: 'Epic', price: 3000, previewImage: '/cosmetics/frames/platinum.png', description: 'Elite status.' },
-  { id: 'pf_master', name: 'Master Collector', category: 'profileFrame', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/frames/master.png', description: '100% collection reward.' },
-  { id: 'pf_animated_gold', name: 'Animated Gold', category: 'profileFrame', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/frames/animated-gold.png', description: 'Shimmering excellence.' },
+  { id: 'pf_master', name: 'Master Collector', category: 'profileFrame', rarity: 'Legendary', price: 0, earnedOnly: true, earnedFrom: 'Master Collector achievement', previewImage: '/cosmetics/frames/master.png', description: '100% collection reward.' },
+  { id: 'pf_animated_gold', name: 'Animated Gold', category: 'profileFrame', rarity: 'Legendary', price: 0, earnedOnly: true, earnedFrom: 'Reward - not yet granted by anything', previewImage: '/cosmetics/frames/animated-gold.png', description: 'Shimmering excellence.' },
 ];
 
 export const EMOTES: CosmeticItem[] = [
@@ -105,7 +105,7 @@ export const BANNERS: CosmeticItem[] = [
   { id: 'bn_maldives_wave', name: 'Maldives Wave', category: 'banner', rarity: 'Common', price: 350, previewImage: '/cosmetics/banners/wave.png', description: 'Turquoise waters banner.' },
   { id: 'bn_sunset', name: 'Golden Sunset', category: 'banner', rarity: 'Rare', price: 900, previewImage: '/cosmetics/banners/sunset.png', description: 'Warm gradient skies.' },
   { id: 'bn_royal', name: 'Royal Purple', category: 'banner', rarity: 'Epic', price: 2000, previewImage: '/cosmetics/banners/royal.png', description: 'For the ambitious.' },
-  { id: 'bn_champion', name: "Champion's Banner", category: 'banner', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/banners/champion.png', description: 'Weekend League Champion reward.' },
+  { id: 'bn_champion', name: "Champion's Banner", category: 'banner', rarity: 'Legendary', price: 0, earnedOnly: true, earnedFrom: 'Weekend League Champion', previewImage: '/cosmetics/banners/champion.png', description: 'Weekend League Champion reward.' },
   { id: 'bn_vip_gold', name: 'VIP Gold Rays', category: 'banner', rarity: 'Legendary', price: 0, previewImage: '/cosmetics/banners/vip-gold.png', description: 'VIP exclusive.', isVipExclusive: true },
 ];
 
@@ -225,3 +225,21 @@ export const WEEKLY_MISSION_TEMPLATES = [
   { id: 'wm_reach_platinum', title: 'Reach Platinum', description: 'Achieve Platinum rank', target: 1, reward: 1000, rewardCosmeticId: 'pf_platinum' },
   { id: 'wm_weekend_champ', title: 'Weekend Champion', description: 'Become Weekend Champion', target: 1, reward: 2000, rewardCosmeticId: 'bn_champion' },
 ];
+
+/**
+ * Can this cosmetic be bought with coins?
+ *
+ * CODE ISSUE 5. The Shop listed everything it wasn't told to hide, so the
+ * three reward items - Master Collector, Animated Gold and Champion's
+ * Banner - appeared with a price of 0 and could be claimed by anyone for
+ * nothing. The starter items (Arena, Classic Gold, Neon Arena, Simple
+ * Border, Classic Clap, Classic Navy) have no price either, and every
+ * account already owns them.
+ *
+ * One rule covers all three cases: an item is for sale only if it has a
+ * price, isn't VIP-exclusive and isn't a reward. Anything at zero is
+ * granted, never sold.
+ */
+export function isPurchasable(item: CosmeticItem): boolean {
+  return item.price > 0 && !item.isVipExclusive && !item.earnedOnly;
+}

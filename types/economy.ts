@@ -58,6 +58,15 @@ export interface CosmeticItem {
   description: string;
   isVipExclusive?: boolean;
   isFeatured?: boolean;
+  /**
+   * Awarded, never sold. A reward has no price, so without this flag it
+   * would appear in the Shop at "0 coins" and be claimable by anyone
+   * (code issue 5 in design/arena/APP_SCREENS.md). Items that start in
+   * every collection don't need it - they are already owned.
+   */
+  earnedOnly?: boolean;
+  /** How it is earned, shown wherever a reward is listed. */
+  earnedFrom?: string;
 }
 
 export interface OwnedCosmetic extends CosmeticItem {
