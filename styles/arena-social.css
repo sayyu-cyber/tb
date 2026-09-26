@@ -112,3 +112,118 @@
   width: 100%; min-width: 0; border: 0; background: none; color: #fff; font: inherit; outline: none;
 }
 .arena-friends .social-dlg .field input::placeholder { color: #8E8E9C; }
+
+/* ── Messages (app-05) ────────────────────────────────────────────────
+   A 380px conversation list beside the open chat. The board is a fixed
+   900px tall, so both panes fill the viewport here instead. */
+.arena-messages .msg-page,
+.arena-messages.msg-page {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 20px;
+  min-height: calc(100vh - 160px);
+}
+.arena-messages .msg-list {
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.arena-messages .msg-head { padding: 0 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+.arena-messages .msg-title { margin: 4px 0 0; font-size: clamp(28px, 4vw, 40px); }
+/* The board's closing line sits at the foot of the list. */
+.arena-messages .msg-hint { margin: auto 8px 4px; line-height: 1.45; }
+
+.arena-messages .msg-chat { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.arena-messages .msg-chat-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  flex-wrap: wrap;
+}
+/* The board has no back arrow - it never shows one pane. It appears only
+   at the width where the two panes stop fitting. */
+.arena-messages .msg-back { display: none; }
+
+/* The presence line: the Friends board's `.st`, which the Messages board
+   writes inline. Same values. */
+.arena-messages .st {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #A4A4B2;
+}
+.arena-messages .st i { width: 7px; height: 7px; border-radius: 50%; background: #4A4A56; }
+.arena-messages .st.on { color: #C6FF33; }
+.arena-messages .st.on i { background: #C6FF33; }
+
+.arena-messages .msg-thread {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.arena-messages .msg-day-group { display: flex; flex-direction: column; gap: 10px; }
+.arena-messages .msg-error {
+  margin: 0 22px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 107, 128, .1);
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 128, .4);
+  color: #FFC7CF;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.arena-messages .composer .field { position: relative; }
+.arena-messages .composer .field input {
+  flex-grow: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+.arena-messages .composer .field input::placeholder { color: #8E8E9C; }
+.arena-messages .composer .field:focus-within { box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .6); }
+.arena-messages .composer .counter {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: 11.5px;
+  color: #6A6A78;
+}
+.arena-messages .msg-send { height: 50px; width: 56px; padding: 0; flex: none; }
+
+.arena-messages .msg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 40px;
+}
+.arena-messages .msg-empty > svg { width: 40px; height: 40px; color: #3A3A46; }
+
+/* One pane at a time below the width where two stop fitting - which is
+   how this screen behaved before the board proposed the split view. */
+@media (max-width: 900px) {
+  .arena-messages .msg-page,
+  .arena-messages.msg-page { grid-template-columns: minmax(0, 1fr); }
+  .arena-messages.has-open .msg-list { display: none; }
+  .arena-messages:not(.has-open) .msg-chat { display: none; }
+  .arena-messages .msg-back { display: flex; }
+  .arena-messages .msg-chat { min-height: calc(100vh - 200px); }
+}

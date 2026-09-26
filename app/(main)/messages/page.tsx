@@ -9,8 +9,8 @@ export default function MessagesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[rgb(var(--c1))] flex items-center justify-center">
-          <p className="text-[rgb(var(--c4))] text-sm">{t("loading_messages")}</p>
+        <div className="arena-messages ar-page">
+          <p className="muted">{t("loading_messages")}</p>
         </div>
       }
     >

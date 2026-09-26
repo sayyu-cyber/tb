@@ -1,133 +1,201 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Send, MessageCircle, RefreshCw } from "lucide-react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Send, MessageCircle, RefreshCw, Gamepad2, User, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { PageHeader } from "@/components/layout/PageHeader";
-import {
-  ensureConversation,
-  watchMessages,
-  watchConversations,
-  sendMessage,
-  markConversationRead,
-  DmMessage,
-  DmConversation,
-} from "@/lib/messages";
+import { useToast } from "@/contexts/ToastContext";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useHomeSocial } from "@/contexts/HomeSocialContext";
+import { isOnline } from "@/lib/presence";
+import { createRoom } from "@/lib/rooms";
+import { sendRoomInvite } from "@/lib/friends";
+import {
+  ensureConversation, watchMessages, watchConversations, sendMessage, markConversationRead,
+  DmMessage, DmConversation,
+} from "@/lib/messages";
+import { Avatar, RankLabel } from "@/components/arena";
+import { getRankFromTrophies } from "@/constants/ranks";
+
+/**
+ * Messages — design/arena/screens/app/app-05-messages.jpg, from the
+ * Messages board.
+ *
+ * APP_SCREENS.md calls this board "a proposal": it puts the conversation
+ * list and the open chat side by side, where the app showed one at a time
+ * behind a ?with= parameter. The parameter still drives which thread is
+ * open - so every existing link into a conversation (the Friends row's
+ * Message button, the sidebar's Active Chats) still works - but the list
+ * stays visible beside it, and picking a conversation swaps the pane
+ * without a navigation.
+ *
+ * Under 900px there is no room for two panes, so it falls back to one at a
+ * time with a back arrow, which is the behaviour it had before.
+ */
+
+const MAX = 500;
 
 export function MessagesClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { user, isGuest } = useAuth();
-  const withUid = searchParams.get("with");
-  const withName = searchParams.get("name") ?? "Player";
   const t = useTranslation();
+  const myUid = user?.uid ?? "";
+  const myName = user?.displayName ?? "Player";
 
-  if (isGuest) {
-    return (
-      <div className="pt-4 pb-32 px-4">
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <p className="text-[rgb(var(--c4))] text-sm">{t("messages_signInPrompt")}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!withUid) {
-    return <ConversationList myUid={user?.uid ?? ""} />;
-  }
-  return <ChatView myUid={user?.uid ?? ""} myName={user?.displayName ?? "Player"} otherUid={withUid} otherName={withName} />;
-}
-
-function ConversationList({ myUid }: { myUid: string }) {
   const [conversations, setConversations] = useState<DmConversation[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const t = useTranslation();
+
+  const withUid = searchParams.get("with");
+  const withName = searchParams.get("name") ?? "Player";
 
   useEffect(() => {
-    if (!myUid) return;
+    if (!myUid || isGuest) return;
     setLoaded(false);
     setLoadError(false);
     return watchConversations(
       myUid,
-      (list) => {
-        setConversations(list);
-        setLoaded(true);
-      },
-      () => {
-        setLoadError(true);
-        setLoaded(true);
-      }
+      (list) => { setConversations(list); setLoaded(true); },
+      () => { setLoadError(true); setLoaded(true); },
     );
-  }, [myUid, retryKey]);
+  }, [myUid, isGuest, retryKey]);
+
+  /** Who a conversation is with, from my point of view. */
+  function other(conversation: DmConversation) {
+    const uid = conversation.participants.find(p => p !== myUid) ?? conversation.participants[0];
+    return { uid, name: conversation.participantNames[uid] ?? "Player" };
+  }
+
+  // The open thread: the ?with= parameter, or the newest conversation once
+  // the list arrives, so the screen is never an empty right-hand pane.
+  const openUid = withUid ?? (conversations.length ? other(conversations[0]).uid : null);
+  const openName = withUid
+    ? withName
+    : conversations.length ? other(conversations[0]).name : "";
+
+  function open(uid: string, name: string) {
+    router.replace(`/messages?with=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`, { scroll: false });
+  }
+
+  if (isGuest) {
+    return (
+      <div className="arena-messages ar-page">
+        <section className="panel tick" style={{ padding: "40px", textAlign: "center" }}>
+          <MessageCircle aria-hidden="true" style={{ width: "34px", height: "34px", color: "#3A3A46" }} />
+          <p className="muted" style={{ marginTop: "12px" }}>{t("messages_signInPrompt")}</p>
+        </section>
+      </div>
+    );
+  }
 
   return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_messages")} />
-      {!loaded ? (
-        <div className="space-y-2 mt-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-14 bg-[rgb(var(--c2))] rounded-xl animate-pulse" />
-          ))}
+    <div className={`arena-messages ar-page msg-page ${openUid ? "has-open" : ""}`.trim()}>
+      <section className="panel tick msg-list" aria-label="Conversations">
+        <div className="msg-head">
+          <span className="lbl dash" style={{ color: "#C6FF33" }}>Direct messages</span>
+          <h1 className="disp chrome msg-title">{t("page_messages")}</h1>
         </div>
-      ) : loadError ? (
-        <div className="glass-card rounded-2xl p-6 text-center mt-4">
-          <MessageCircle size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{t("messages_loadError")}</p>
-          <button
-            onClick={() => setRetryKey((k) => k + 1)}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c3))] px-4 py-2 text-xs font-semibold text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--c3)/70%)] transition-colors"
-          >
-            <RefreshCw size={13} aria-hidden="true" />
-            {t("error_tryAgain")}
-          </button>
-        </div>
-      ) : conversations.length === 0 ? (
-        <div className="glass-card rounded-2xl p-6 text-center mt-4">
-          <MessageCircle size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-          <p className="text-[rgb(var(--c4))] text-sm">{t("messages_noConversationsYet")}</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {conversations.map((c) => {
-            const otherUid = c.participants.find((p) => p !== myUid) ?? c.participants[0];
-            const otherName = c.participantNames[otherUid] ?? "Player";
+
+        {!loaded ? (
+          <p className="muted2" style={{ padding: "0 8px" }}>Loading conversations...</p>
+        ) : loadError ? (
+          <div style={{ padding: "0 8px" }}>
+            <p className="muted2">{t("messages_loadError")}</p>
+            <button type="button" className="minibtn lime" onClick={() => setRetryKey(k => k + 1)} data-flat>
+              <RefreshCw aria-hidden="true" />{t("error_tryAgain")}
+            </button>
+          </div>
+        ) : conversations.length === 0 ? (
+          <p className="muted2" style={{ padding: "0 8px" }}>{t("messages_noConversationsYet")}</p>
+        ) : (
+          conversations.map((conversation) => {
+            const person = other(conversation);
+            const mine = conversation.lastSenderUid === myUid;
+            const seen = conversation.lastReadAt?.[myUid] ?? 0;
+            const unread = !mine && conversation.lastMessageAt > seen;
             return (
-              <Link key={c.id} href={`/messages?with=${otherUid}&name=${encodeURIComponent(otherName)}`}>
-                <motion.div whileTap={{ scale: 0.98 }} className="glass-card rounded-xl p-3 flex items-center justify-between">
-                  <div className="min-w-0">
-                    <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{otherName}</p>
-                    <p className="text-[rgb(var(--c4))] text-xs truncate max-w-[220px]">
-                      {c.lastSenderUid === myUid && c.lastMessage ? t("messages_youPrefix") : ""}
-                      {c.lastMessage || t("messages_noMessagesYet")}
-                    </p>
-                  </div>
-                  {c.lastMessageAt > 0 && (
-                    <span className="text-[rgb(var(--c3))] text-[10px] whitespace-nowrap ml-2">
-                      {new Date(c.lastMessageAt).toLocaleDateString()}
-                    </span>
+              <button
+                type="button"
+                className={`conv ${unread ? "unread" : ""}`.trim()}
+                key={conversation.id}
+                aria-current={person.uid === openUid}
+                onClick={() => open(person.uid, person.name)}
+                data-flat
+              >
+                <Avatar name={person.name} seed={person.uid} size={44} radius={11} />
+                <span className="tx">
+                  <b>{person.name}</b>
+                  <span>
+                    {mine && conversation.lastMessage ? t("messages_youPrefix") : ""}
+                    {conversation.lastMessage || t("messages_noMessagesYet")}
+                  </span>
+                </span>
+                <span className="when">
+                  {conversation.lastMessageAt > 0 && (
+                    <span className="muted2">{when(conversation.lastMessageAt)}</span>
                   )}
-                </motion.div>
-              </Link>
+                  {unread && <i className="udot" aria-label="Unread" />}
+                </span>
+              </button>
             );
-          })}
-        </div>
+          })
+        )}
+
+        <p className="muted2 msg-hint">
+          Message a friend from the Friends tab to start a new conversation.
+        </p>
+      </section>
+
+      {openUid ? (
+        <ChatView
+          key={openUid}
+          myUid={myUid}
+          myName={myName}
+          otherUid={openUid}
+          otherName={openName}
+          onBack={() => router.replace("/messages", { scroll: false })}
+        />
+      ) : (
+        <section className="panel msg-chat msg-empty" aria-label="No conversation open">
+          <MessageCircle aria-hidden="true" />
+          <p className="muted">Pick a conversation, or message a friend from the Friends tab.</p>
+        </section>
       )}
     </div>
   );
 }
 
-function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myName: string; otherUid: string; otherName: string }) {
+/** "Today", "Sep 25" - the board's two forms. */
+function when(timestamp: number) {
+  const date = new Date(timestamp);
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  return sameDay ? "Today" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function ChatView({
+  myUid, myName, otherUid, otherName, onBack,
+}: {
+  myUid: string;
+  myName: string;
+  otherUid: string;
+  otherName: string;
+  onBack: () => void;
+}) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const t = useTranslation();
+  const { showToast } = useToast();
+  const { profiles } = useHomeSocial();
+  const profile = profiles[otherUid];
+  const online = isOnline(profile?.lastSeen ?? null);
 
   useEffect(() => {
     if (!myUid || !otherUid) return;
@@ -137,7 +205,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
         setConversationId(id);
         unsub = watchMessages(id, setMessages);
         // Opening the thread is "reading" it - marks it seen for the
-        // friends rail's unread indicator (components/home/FriendsRail.tsx).
+        // sidebar's Active Chats count and this screen's unread dot.
         markConversationRead(id, myUid).catch(() => {});
       })
       .catch((err) => setError(String(err)));
@@ -149,7 +217,7 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     // Keep "read" current while the thread stays open and new messages
     // arrive - otherwise a message that lands mid-conversation would still
-    // show as unread on the rail until the thread is reopened.
+    // show as unread until the thread is reopened.
     if (conversationId) markConversationRead(conversationId, myUid).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
@@ -161,64 +229,105 @@ function ChatView({ myUid, myName, otherUid, otherName }: { myUid: string; myNam
     await sendMessage(conversationId, myUid, toSend).catch((err) => setError(String(err)));
   }
 
+  /** The board's "Invite to Mindi" - the same action the Friends row runs. */
+  async function invite() {
+    if (inviting) return;
+    setInviting(true);
+    try {
+      const code = await createRoom(myUid, myName, "mindi", null);
+      await sendRoomInvite(myUid, myName, otherUid, code, "mindi");
+      router.push(`/play/mindi/room?code=${encodeURIComponent(code)}`);
+    } catch {
+      showToast("Could not create the room. Please try again.", "error");
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  // Messages grouped under the board's day separator.
+  const days = useMemo(() => {
+    const groups: { label: string; items: DmMessage[] }[] = [];
+    for (const message of messages) {
+      const label = when(message.createdAt);
+      const last = groups[groups.length - 1];
+      if (last && last.label === label) last.items.push(message);
+      else groups.push({ label, items: [message] });
+    }
+    return groups;
+  }, [messages]);
+
+  const trophies = profile?.trophies ?? 0;
+
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] pb-6">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <Link href="/messages">
-          <button aria-label={t("a11y_goBack")} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
-            <ArrowLeft size={18} className="text-[rgb(var(--gold-ink))]" />
-          </button>
-        </Link>
-        <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{otherName}</p>
-      </div>
+    <section className="panel msg-chat" aria-label={`Chat with ${otherName}`}>
+      <header className="msg-chat-head">
+        <button type="button" className="ibtn msg-back" aria-label={t("a11y_goBack")} onClick={onBack}>
+          <ArrowLeft aria-hidden="true" />
+        </button>
+        <Avatar name={otherName} src={profile?.photoURL} seed={otherUid} size={48} radius={12}
+          presence={online ? "online" : "offline"} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", flexGrow: 1, minWidth: 0 }}>
+          <b className="disp" style={{ fontSize: "20px", letterSpacing: ".02em" }}>{otherName}</b>
+          <span style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <span className={`st ${online ? "on" : ""}`.trim()}>
+              <i aria-hidden="true" />{online ? "Online" : "Offline"}
+            </span>
+            {profile && <RankLabel tier={getRankFromTrophies(trophies)} />}
+          </span>
+        </div>
+        <button type="button" className="ar-btn blue sm" onClick={invite} disabled={inviting}>
+          <Gamepad2 aria-hidden="true" />Invite to Mindi
+        </button>
+        <a className="ibtn" aria-label={`View ${otherName}'s profile`} href={`/player?uid=${encodeURIComponent(otherUid)}`}>
+          <User aria-hidden="true" />
+        </a>
+      </header>
 
       {error && (
-        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mx-4 mb-2">{error}</p>
+        <p role="alert" className="msg-error">{error}</p>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 space-y-2">
+      <div className="msg-thread">
         {messages.length === 0 && (
-          <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">{t("messages_sayHelloTo").replace("{name}", otherName)}</p>
+          <p className="muted2" style={{ alignSelf: "center", marginTop: "20px" }}>
+            {t("messages_sayHelloTo").replace("{name}", otherName)}
+          </p>
         )}
-        {messages.map((m) => {
-          const mine = m.senderUid === myUid;
-          return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                  mine
-                    ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]"
-                    : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))]"
-                }`}
-              >
-                {m.text}
+        {days.map((group) => (
+          <div key={group.label} className="msg-day-group">
+            <span className="day">{group.label}</span>
+            {group.items.map((message) => (
+              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id}>
+                {message.text}
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        ))}
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex items-center gap-2 px-4 pt-2">
-        <input
-          aria-label={t("messages_placeholder")}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder={t("messages_placeholder")}
-          maxLength={500}
-          className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
-        />
-        <motion.button
+      <div className="composer">
+        <label className="field">
+          <input
+            aria-label={t("messages_placeholder")}
+            value={text}
+            onChange={(event) => setText(event.target.value.slice(0, MAX))}
+            onKeyDown={(event) => { if (event.key === "Enter") handleSend(); }}
+            placeholder={t("messages_placeholder")}
+            maxLength={MAX}
+          />
+          <span className="counter" aria-hidden="true">{text.length} / {MAX}</span>
+        </label>
+        <button
+          type="button"
+          className="ar-btn msg-send"
           aria-label={t("a11y_sendMessage")}
-          whileTap={{ scale: 0.9 }}
           onClick={handleSend}
           disabled={!text.trim()}
-          className="p-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] disabled:opacity-40"
         >
-          <Send size={16} />
-        </motion.button>
+          <Send aria-hidden="true" />
+        </button>
       </div>
-    </div>
+    </section>
   );
 }
