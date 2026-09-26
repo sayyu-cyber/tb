@@ -110,6 +110,38 @@ Claude starts its own branch in the main folder: `git switch -c arena/claude-scr
    - Loops stop under `prefers-reduced-motion`.
 6. Commit each screen on its own (`Arena: <Screen>`), with a line in the message saying which reference it matches.
 
+### Exact match (Claude's screens and the shell)
+
+Sayyu's rule: Claude's screens (Home, Profile, Inventory with Collection and Room Cards, Shop, VIP Pass + coin packs,
+Daily rewards and Missions) and the shared shell (sidebar, top bar, stage, coin gem) are **copies of the artboards,
+not interpretations**. The layout, sizes, spacing, radii, colours, gradients, shadows, fonts, letter-spacing, icons,
+buttons, states and animations must all be the same.
+
+- **Styles.** Port each board's `<style>` block, and the parts of `app-reference.css` it uses, value for value. Namespace
+  them the way the table boards were, with `scripts/port-board.mjs` where it fits. Don't round numbers, don't swap in
+  Tailwind approximations, and don't bend the design to fit the old components: replace the old styling.
+- **Markup.** Keep each board's structure and class names, written as React components.
+- **Buttons.** Use the board's `.btn` recipe in every variant the board shows (lime, blue, ghost, `sm`, disabled), with
+  its hover, pressed and focus states.
+- **Animations.** Port every `@keyframes` rule and every `animation` / `transition` the board uses (`blink`, `bob`, `bob2`,
+  `breathe`, `chase`, `drift`, `fade`, `handIn`, `holo`, `rise`, `spin`). Put each one on the same element, with the
+  same duration, easing, delay and loop. The interactions in the board's `DCLogic` class (tabs, plan pick, dialogs,
+  claim, equip) must behave and animate the same way.
+- **Icons.** Use the same Lucide icons, at the same size and stroke.
+- **Screens without their own board.** Collection and Room Cards use the Inventory board's pieces (`app-03`). Missions
+  use the Rewards board (`app-13`).
+- **What may differ.** Only these:
+  - real data and strings in place of the board's sample names and numbers
+  - layout that adapts at widths other than 1440
+  - loops that stop for people who have turned on reduced motion (everyone else sees the board's animations)
+
+  If a board element has no real data or feature behind it, don't drop it and don't fake it. List it and ask Sayyu.
+- **Proof.**
+  1. Feed the board's sample data into the screen's test fixture (`scripts/*-test-services`, never app code).
+  2. Screenshot the screen at 1440 wide, in the same state as each of its references.
+  3. Save the screenshot and the reference side by side in `artifacts/compare/<screen>.png`. Don't commit these.
+  4. Fix every difference you can see, then attach the comparison images to the phase 1 summary.
+
 ## Phase 2: review and merge
 
 - Claude reviews `arena/codex-screens` and ChatGPT reviews `arena/claude-screens`. Each checks against the references and this file's ownership rules, and lists problems without fixing the other's code.

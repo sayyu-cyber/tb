@@ -15,7 +15,7 @@ The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_
 Finish what you're doing first, then read this.
 
 We're moving the Arena look from the card tables to the rest of the app. Everything you need is in design/arena/ (it's untracked right now):
-- APP_SCREENS.md: the blue edition palette (#00BCC8 replaces violet on app screens; the tables stay violet), the shell spec, shared pieces, the board → route → files → screenshot table, and 11 code issues.
+- APP_SCREENS.md: the blue edition palette (the app screens were drawn in #00BCC8 blue; leave the table code as it is), the shell spec, shared pieces, the board → route → files → screenshot table, and 11 code issues.
 - WORKSPLIT.md: who owns which files. You are "Claude". ChatGPT (Codex) builds the other half at the same time in its own worktree, C:\Users\Sayyu\thaasbai-codex, so stay strictly inside your own file list.
 - screens/app/*.jpg are the pixel references. boards/<Board>.dc.html hold the exact values. Their {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime: read them, don't copy them. app-reference.css is the shared CSS to port.
 Read both .md files in full, and look at every screenshot for your screens, before you write code.
@@ -23,7 +23,7 @@ Read both .md files in full, and look at every screenshot for your screens, befo
 PHASE 0 (on main)
 1. Finish, check and commit the table-port work that's still uncommitted (about 52 files). Run npm run verify and the check scripts it touches (check-mindi-ui, check-gin-ui, check-gameplay-ui, check-arena-gameplay). Don't commit throwaway screenshots in artifacts/.
 2. Commit design/ on its own: "Add Arena design references".
-3. Build the shared layer exactly as WORKSPLIT.md "Phase 0" lists it, and commit it as "Arena foundation: …".
+3. Build the shared layer exactly as WORKSPLIT.md "Phase 0" lists it, and commit it as "Arena foundation: …". The shell (sidebar, top bar, stage, coin gem) follows the EXACT MATCH rules below.
 4. Phase 0 is done when npm run verify and node scripts/check-shell-ui.cjs pass (dev server on 127.0.0.1:3000). Then STOP and tell me, listing the shared components and CSS classes you made, so I can start ChatGPT.
 
 PHASE 1 (when I say "start phase 1")
@@ -38,11 +38,30 @@ PHASE 1 (when I say "start phase 1")
 - Fix code issues 3, 4, 5, 6, 7 and 11 from APP_SCREENS.md. For 1 (VIP activates for free) and 2 (weekly rank rewards), write up what you'd change and ask me first.
 - If I pass on a "Needs from Claude" request from ChatGPT, do it on your branch and tell me when it's in.
 
+EXACT MATCH (my rule for your screens and the shell; also in WORKSPLIT.md "Exact match")
+Copy the artboards; don't interpret them. The layout, sizes, spacing, radii, colours, gradients, shadows, fonts, letter-spacing, icons, buttons, states and animations must all be the same as the boards.
+- Styles: port each board's <style> block, and the parts of app-reference.css it uses, value for value. Namespace them the way you did the table boards, with scripts/port-board.mjs where it fits. Don't round numbers, don't swap in Tailwind approximations, and don't bend the design to fit the old components: replace the old styling.
+- Markup: keep the board's structure and class names, written as React components.
+- Buttons: use the board's .btn recipe in every variant it shows (lime, blue, ghost, sm, disabled), with its hover, pressed and focus states.
+- Animations: port every @keyframes rule and every animation/transition the board uses (blink, bob, bob2, breathe, chase, drift, fade, handIn, holo, rise, spin). Put each one on the same element, with the same duration, easing, delay and loop. The interactions in the board's DCLogic class (tabs, plan pick, dialogs, claim, equip) must behave and animate the same way.
+- Icons: use the same Lucide icons, at the same size and stroke.
+- Screens without their own board: Collection and Room Cards use the Inventory board's pieces (app-03). Missions use the Rewards board (app-13).
+- What may differ, and nothing else:
+  - real data and strings in place of the board's sample names and numbers
+  - layout that adapts at widths other than 1440
+  - loops that stop for people who have turned on reduced motion
+  If a board element has no real data or feature behind it, don't drop it and don't fake it. List it and ask me.
+- Proof, for each screen:
+  1. Feed the board's sample data into the screen's test fixture (scripts/*-test-services, never app code).
+  2. Screenshot the screen at 1440 wide, in the same state as each of its references.
+  3. Save the screenshot and the reference side by side in artifacts/compare/<screen>.png. Don't commit these.
+  4. Fix every difference you can see. A screen isn't done until the two halves look the same apart from the allowed differences.
+
 RULES
 - Never push to GitHub (pushing main deploys to Netlify) and never run firebase deploy. I push after the review.
 - Don't touch C:\Users\Sayyu\thaasbai-codex or the arena/codex-screens branch.
 - Stage files by path, not with git add -A.
-- When you finish phase 1, give me a summary: screens done, checks run and their results, code issues fixed, anything that doesn't match its reference and why, and your questions for me.
+- When you finish phase 1, give me a summary: screens done, the artifacts/compare images, checks run and their results, code issues fixed, anything that still differs from its board and why, and your questions for me.
 ```
 
 ## 2. ChatGPT (Codex): phase 1, after Claude reports phase 0 is done
@@ -116,7 +135,10 @@ Phase 2 of design/arena/WORKSPLIT.md: review Claude's branch arena/claude-screen
    copy ..\thaasbai\.env.local .env.local
    npm ci
    Then run npm run verify, and npm run dev -- -p 3002. Claude's check scripts assume port 3000, so skip them; Claude has already run them.
-3. Compare each of Claude's screens (Home, Profile, Inventory, Collection, Room Cards, Shop, VIP, Rewards, Missions) with design/arena/screens/app/*.jpg at 1440×900, 1280, 1920 and 844×390. Check the contrast, the focus rings, reduced motion and real data.
+3. Claude's screens must be exact copies of the artboards (WORKSPLIT.md "Exact match"). For each screen (Home, Profile, Inventory, Collection, Room Cards, Shop, VIP, Rewards, Missions):
+   - Screenshot it at 1440 wide. Compare that, and Claude's own comparison in C:\Users\Sayyu\thaasbai\artifacts\compare (read it; don't edit it), with design/arena/screens/app/*.jpg.
+   - Flag every difference in layout, spacing, sizes, colours, type, icons, buttons, states or animations. Open the board's .dc.html to check the exact values, @keyframes and timings.
+   - Check 1280, 1920 and 844×390, the contrast, the focus rings, reduced motion, and that it uses real data.
 4. Check the fixes for code issues 3–7 and 11. Confirm that nothing changed how VIP is paid for and nothing was deployed.
 5. Stop the server and remove the copy: git worktree remove ..\thaasbai-review
 Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".

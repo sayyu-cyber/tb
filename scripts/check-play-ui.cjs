@@ -69,20 +69,20 @@ async function run() {
 
     // ── The Mindi panel ─────────────────────────────────────────────────
     const modes = page.locator('.lob-modes');
-    let text = await modes.innerText();
+    let text = await modes.textContent();
     assert.ok(text.toUpperCase().includes('FOUR PLAYERS, TWO TEAMS'), 'Mindi kicker');
     assert.ok(text.includes('Follow suit, find trump, and capture the Tens.'), 'Mindi rules line');
     assert.equal(await modes.locator('.mode').count(), 5, 'Mindi has five modes');
     assert.equal(await modes.locator('.x2').count(), 1, 'Only Ranked duo doubles');
     assert.equal(await modes.locator('.mode[aria-pressed=true]').count(), 1);
-    assert.ok((await modes.locator('.mode').first().innerText()).includes('Auto-teamed, no partner needed'));
+    assert.ok((await modes.locator('.mode').first().textContent()).includes('Auto-teamed, no partner needed'));
     assert.ok(text.includes('Play Mindi'), 'The CTA names the game');
     assert.ok(text.includes('Casual online'), 'and the note names the mode');
 
     // Mindi ranked is 2v2 only - there is no Mindi 1v1 queue in the app.
     await modes.getByRole('button', { name: /Ranked duo/ }).click();
     assert.equal(await modes.locator('a.ar-btn').getAttribute('href'), '/play/mindi/ranked-duo');
-    assert.ok((await modes.innerText()).includes('double trophies until'), 'x2 modes date the league');
+    assert.ok((await modes.textContent()).includes('double trophies until'), 'x2 modes date the league');
 
     // ── The rank panel ──────────────────────────────────────────────────
     const rank = await page.locator('.lob-rank').innerText();
@@ -106,7 +106,7 @@ async function run() {
     await page.getByRole('button', { name: /^Gin Rummy/ }).click();
     assert.equal(await page.locator('.deck.blk.on').count(), 1, 'The Gin deck lights');
     assert.equal(await page.locator('.deck.vio.off').count(), 1, 'and Mindi dims');
-    text = await modes.innerText();
+    text = await modes.textContent();
     assert.ok(text.toUpperCase().includes('TWO PLAYERS'), 'Gin kicker');
     assert.ok(text.includes('There is no knocking.'), 'Gin rules line');
     assert.equal(await modes.locator('.mode').count(), 6, 'Gin has six modes');
@@ -131,7 +131,7 @@ async function run() {
     await modes.getByRole('button', { name: /Play Gin Rummy/ }).click();
     assert.equal(await page.locator('.lob-modes .ar-btn.busy').count(), 1, 'The CTA goes busy');
     assert.equal(await page.locator('.lob-modes .spin').count(), 1, 'with the board spinner');
-    text = await modes.innerText();
+    text = await modes.textContent();
     assert.ok(text.includes('Finding a table'));
     assert.ok(text.includes('Tap again to stop looking'));
     assert.equal(await page.locator('body').getAttribute('data-queue'), 'gin-rummy', 'and a real queue is running');
@@ -160,7 +160,7 @@ async function run() {
 
     // ── The screen IS the artboard ──────────────────────────────────────
     // Every element is at its board coordinate on a 1440x900 canvas, and
-    // the canvas is scaled to fit. So the proof is geometric: the panels
+    // the canvas fills the available width. So the proof is geometric: the panels
     // sit at x=48 and x=1062 of the board, whatever the window is.
     for (const [width, height] of [[2200, 1100], [1500, 900]]) {
       await page.setViewportSize({ width, height });
@@ -168,26 +168,55 @@ async function run() {
       const board = await page.locator('.lob-board').boundingBox();
       const scale = board.width / 1440;
       const league = await page.locator('.lob-league').boundingBox();
-      const modes = await page.locator('.lob-modes').boundingBox();
+      const modesBounds = await page.locator('.lob-modes').boundingBox();
       const rank = await page.locator('.lob-rank').boundingBox();
       const at = (x) => board.x + x * scale;
       assert.ok(Math.abs(league.x - at(48)) < 2, `League panel at x=48 of the board (${width})`);
       assert.ok(Math.abs(rank.x - at(48)) < 2, `Rank panel at x=48 too (${width})`);
-      assert.ok(Math.abs(modes.x - at(1062)) < 2, `Modes panel at x=1062 (${width})`);
+      assert.ok(Math.abs(modesBounds.x - at(1062)) < 2, `Modes panel at x=1062 (${width})`);
       assert.ok(Math.abs(league.width - 330 * scale) < 2, `and 330 wide (${width})`);
       // The room fills the frame rather than letterboxing the canvas.
       const frame = await page.locator('.lob-frame').boundingBox();
       const room = await page.locator('.lob-frame > .bg').boundingBox();
       assert.ok(Math.abs(room.width - frame.width) < 2, `The room reaches the frame's edges (${width})`);
+      assert.ok(Math.abs(board.width - frame.width) < 2, `No height-driven shrinking of the board (${width}: ${board.width} vs ${frame.width})`);
+      assert.ok(Math.abs(board.x - frame.x) < 2, `No unused horizontal space beside the board (${width})`);
+      assert.ok(Math.abs(league.y - frame.y - 32 * scale) < 2, `No duplicate artboard header (${width})`);
+      assert.ok(Math.abs((await modes.locator('.mode').first().boundingBox()).height - 62 * scale) < 2,
+        `Mode buttons retain the artboard's 62px proportions (${width})`);
+      assert.ok(Math.abs((await modes.locator('.ar-btn').boundingBox()).height - 58 * scale) < 2,
+        `Play button retains the artboard's 58px proportions (${width})`);
     }
 
     // ── Widths ──────────────────────────────────────────────────────────
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [1024, 800], [844, 390], [390, 844]]) {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    for (const [width, height] of [[2560, 1600], [1920, 1080], [1440, 900], [1280, 720], [1024, 800], [844, 390], [390, 844]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow at ${width}`);
-      await page.screenshot({ path: path.join(output, `lobby-${width}.png`), fullPage: true });
+      for (const game of ['Mindi', 'Gin Rummy']) {
+        const deck = page.getByRole('button', { name: new RegExp('^' + game + ',') });
+        if (await deck.getAttribute('aria-pressed') !== 'true') await deck.click();
+        const frame = await page.locator('.lob-frame').boundingBox();
+        for (const selector of ['.lob-league', '.lob-rank', '.lob-modes', '.lob-title-block']) {
+          const bounds = await page.locator(selector).boundingBox();
+          assert.ok(bounds.x >= frame.x - 1 && bounds.x + bounds.width <= frame.x + frame.width + 1,
+            `${selector} fits horizontally for ${game} at ${width}`);
+          assert.ok(bounds.y >= frame.y - 1 && bounds.y + bounds.height <= frame.y + frame.height + 1,
+            `${selector} is not clipped for ${game} at ${width}`);
+        }
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.screenshot({ path: path.join(output, `lobby-${game === 'Mindi' ? '' : 'gin-'}${width}.png`), fullPage: true });
+      }
     }
+
+    await page.setViewportSize({ width: 844, height: 390 });
+    await modes.getByRole('button', { name: /Vs AI/ }).focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await modes.getByRole('button', { name: /Vs AI/ }).getAttribute('aria-pressed'), 'true');
+    const go = modes.locator('a.ar-btn');
+    await go.scrollIntoViewIfNeeded();
+    await go.click({ trial: true });
 
     // ── Signed out ──────────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });

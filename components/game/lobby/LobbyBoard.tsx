@@ -9,8 +9,9 @@ import { LOBBY_GAMES, type LobbyGameId } from "./lobbyGames";
  * The Play lobby — design/arena/boards/Lobby.dc.html, at its own size.
  *
  * This is the board's 1440x900 canvas with every element at the exact
- * coordinate the artboard gives it, scaled by one factor to fit whatever
- * the shell leaves. Same approach as the Mindi and Gin tables, and for the
+ * coordinate the artboard gives it, scaled to the shell's available width.
+ * The unused header strip is cropped because the app supplies its own.
+ * Same approach as the Mindi and Gin tables, and for the
  * same reason: the lobby is a 3D scene, not a layout. The floor, the
  * podium, the LED ring and the two deck boxes are one perspective built
  * from a single rotateX/scale over a stack of translateZ'd aprons, and the
@@ -65,12 +66,11 @@ export function LobbyBoard({ game, onPickGame, entry, ...modes }: LobbyBoardProp
     if (!element) return;
     const measure = () => {
       const box = element.getBoundingClientRect();
-      if (!box.width || !box.height) return;
-      setScale(Math.min(box.width / 1440, box.height / 900));
+      if (!box.width) return;
+      setScale(box.width / 1440);
     };
     measure();
-    // The frame rather than the window: the rail and the top bar both eat
-    // into this box without the window changing size.
+    // Measure the frame so the sidebar is excluded from the board's width.
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
@@ -85,7 +85,7 @@ export function LobbyBoard({ game, onPickGame, entry, ...modes }: LobbyBoardProp
           leave a visible box on a window that is not 16:10. */}
       <div className="bg" />
 
-      <div className="ar lob-board" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div className="ar lob-board" style={{ transform: `translateX(-50%) scale(${scale}) translateY(-90px)` }}>
         <div className="beam" style={{ left: "260px", top: "-40px", transform: "rotate(-14deg)" }} />
         <div className="beam" style={{ left: "660px", top: "-40px", transform: "rotate(14deg)" }} />
 
@@ -129,13 +129,6 @@ export function LobbyBoard({ game, onPickGame, entry, ...modes }: LobbyBoardProp
         <div className="shadow" style={{ left: "488px", top: "628px", width: "230px" }} aria-hidden="true" />
         <div className="shadow" style={{ left: "722px", top: "628px", width: "230px" }} aria-hidden="true" />
 
-        {/* "— PICK A GAME" over "CHOOSE YOUR TABLE", board block at
-            left:400 right:400 top:116. */}
-        <div className="lob-title-block">
-          <span className="lbl dash">Pick a game</span>
-          <h1 className="disp chrome lob-title">Choose your table</h1>
-        </div>
-
         {LOBBY_GAMES.map((deck) => {
           const chosen = deck.id === game;
           const isMindi = deck.id === "mindi";
@@ -178,12 +171,23 @@ export function LobbyBoard({ game, onPickGame, entry, ...modes }: LobbyBoardProp
             </button>
           );
         })}
-
-        {/* The three panels, at the board's own coordinates. */}
-        <LobbyLeagueCard window={modes.leagueWindow} style={{ left: "48px", top: "122px", width: "330px" }} />
-        <LobbyRankCard style={{ left: "48px", top: "700px", width: "330px" }} />
-        <LobbyModes {...modes} game={entry} style={{ left: "1062px", top: "122px", width: "330px" }} />
       </div>
+
+      {/* Chrome, pinned to the frame rather than scaled with the scene.
+          The board places these three against a 1440-wide picture; on a
+          real window that is the picture's business, not theirs - they are
+          controls, and controls belong in the corners they were drawn in:
+          the league top-left, your rank bottom-left, and the modes panel
+          down the right-hand edge, floor to ceiling, up against the nav.
+          The podium keeps scaling behind them, and its LED ring tucks
+          under them exactly as it does on the board. */}
+      <div className="lob-title-block">
+        <span className="lbl dash">Pick a game</span>
+        <h1 className="disp chrome lob-title">Choose your table</h1>
+      </div>
+      <LobbyLeagueCard window={modes.leagueWindow} className="lob-pin lob-pin-tl" />
+      <LobbyRankCard className="lob-pin lob-pin-bl" />
+      <LobbyModes {...modes} game={entry} className="lob-pin lob-pin-r" />
     </div>
   );
 }

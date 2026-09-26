@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,7 +38,7 @@ import type { LobbyGame, LobbyMode } from "./lobbyGames";
  * lib/trophyUpdates doubles them in the league pool - not the board's
  * printed 10 and 4, which would go stale the moment either constant moved.
  */
-export function LobbyLeagueCard({ window: leagueWindow, style }: { window: LeagueWindow; style?: CSSProperties }) {
+export function LobbyLeagueCard({ window: leagueWindow, className = "" }: { window: LeagueWindow; className?: string }) {
   const t = useTranslation();
   const win = TROPHY_WIN * 2;
   const loss = Math.abs(TROPHY_LOSS) * 2;
@@ -47,9 +46,9 @@ export function LobbyLeagueCard({ window: leagueWindow, style }: { window: Leagu
 
   return (
     <section
-      className="hud v lob-league"
+      className={`hud v lob-league ${className}`.trim()}
       aria-label={t("page_weekendLeague")}
-      style={{ ...style, padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}
+      style={{ padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}
     >
       <div
         aria-hidden="true"
@@ -91,7 +90,7 @@ const TIERS = [RANKS.BRONZE, RANKS.SILVER, RANKS.GOLD, RANKS.PLATINUM];
  * This uses the shared RankHex, which takes the tier's own metal - so a
  * Bronze player sees bronze rather than everyone being painted Gold.
  */
-export function LobbyRankCard({ style }: { style?: CSSProperties }) {
+export function LobbyRankCard({ className = "" }: { className?: string }) {
   const { user, playerStats } = useAuth();
   const trophies = playerStats?.trophies ?? 0;
   const tier = getRankFromTrophies(trophies);
@@ -107,9 +106,9 @@ export function LobbyRankCard({ style }: { style?: CSSProperties }) {
 
   return (
     <section
-      className="hud lob-rank"
+      className={`hud lob-rank ${className}`.trim()}
       aria-label="Your rank"
-      style={{ ...style, padding: "20px 24px 22px", display: "flex", flexDirection: "column", gap: "16px" }}
+      style={{ padding: "20px 24px 22px", display: "flex", flexDirection: "column", gap: "16px" }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
         <div className="av" aria-hidden="true">{name.charAt(0).toUpperCase()}</div>
@@ -157,11 +156,11 @@ export interface LobbyModesProps {
   leagueWindow: LeagueWindow;
   /** Surfaced under the CTA rather than swallowed. */
   error: string | null;
-  /** The board position its caller places it at. */
-  style?: CSSProperties;
+  /** The corner its caller pins it to. */
+  className?: string;
 }
 
-export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leagueWindow, error, style }: LobbyModesProps) {
+export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leagueWindow, error, className = "" }: LobbyModesProps) {
   const { isGuest } = useAuth();
   const t = useTranslation();
   const locked = Boolean(mode.account) && isGuest;
@@ -181,9 +180,9 @@ export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leag
 
   return (
     <section
-      className="hud lob-modes"
+      className={`hud lob-modes ${className}`.trim()}
       aria-label="Game modes"
-      style={{ ...style, padding: "22px 20px", display: "flex", flexDirection: "column", gap: "14px" }}
+      style={{ padding: "22px 20px", display: "flex", flexDirection: "column", gap: "14px" }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "9px", padding: "0 4px" }}>
         <span className="lbl dash">{game.cap}</span>
@@ -191,7 +190,9 @@ export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leag
         <p className="body" style={{ margin: 0, fontSize: "14px", lineHeight: 1.45 }}>{game.line}</p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+      {/* Full height down the right-hand edge, so on a short window the
+          list is what gives - the heading and the CTA stay put. */}
+      <div className="lob-mode-list">
         {game.modes.map((entry) => (
           <button
             type="button"

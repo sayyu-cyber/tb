@@ -397,17 +397,19 @@
    built from one rotateX/scale over a stack of translateZ'd aprons, and
    the three panels are placed against that picture. Those numbers only
    mean anything together, so the board keeps its 1440x900 canvas and the
-   whole thing is scaled by one factor - exactly what the Mindi and Gin
-   tables do, for exactly the same reason.
+   whole thing is scaled to the available width. The shell replaces the
+   first 90px of board chrome, leaving a 1440x810 content area.
 
    There is therefore no grid here, no breakpoints and no stacking: the
    composition cannot come apart, because it is never taken apart. */
 .arena-lobby.lob-frame {
   position: relative;
-  /* Everything below the top bar. The board scales to whatever this is, so
-     the exact number only decides how much of the window it fills. */
-  height: calc(100dvh - 76px);
-  min-height: 420px;
+  container-type: inline-size;
+  container-name: lobby;
+  /* Short windows scroll instead of shrinking the mode controls further. */
+  width: 100%;
+  aspect-ratio: 1440 / 810;
+  min-height: calc(100dvh - 76px);
   overflow: hidden;
 }
 /* The room reaches the frame's edges; the board is scaled inside it, so a
@@ -417,27 +419,75 @@
 .arena-lobby .lob-board {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 0;
   width: 1440px;
   height: 900px;
-  transform-origin: 50% 50%;
+  transform-origin: 50% 0;
 }
 
-/* The board's heading block: left:400, right:400, top:116. */
+/* ── The chrome, pinned to the frame ──────────────────────────────────
+   The scene above is the picture and scales with the window; these are
+   controls and do not. They sit in the corners the board draws them in -
+   the league top-left, your rank bottom-left, the modes panel down the
+   right-hand edge floor to ceiling, hard against the nav - at the size
+   they were designed, on any monitor.
+
+   The podium keeps scaling behind them and its LED ring runs under them,
+   which is what the board does too: the ring is wider than the gap
+   between the two columns. */
+.arena-lobby .lob-pin {
+  position: absolute;
+  z-index: 2;
+  width: var(--lob-col);
+}
+.arena-lobby .lob-pin-tl { left: var(--lob-gap); top: var(--lob-gap); }
+.arena-lobby .lob-pin-bl { left: var(--lob-gap); bottom: var(--lob-gap); }
+/* Top to bottom, so the CTA sits on the floor of the panel rather than
+   floating halfway up it - `margin-top:auto` in the markup does the rest. */
+.arena-lobby .lob-pin-r {
+  right: var(--lob-gap);
+  top: var(--lob-gap);
+  bottom: var(--lob-gap);
+}
+/* On a short window the mode list scrolls; the game's name and the PLAY
+   button are the two things that must never move. */
+.arena-lobby .lob-mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .16) transparent;
+}
+
+/* The heading takes the band between the two columns, so it can never run
+   underneath them however the window is shaped. */
 .arena-lobby .lob-title-block {
   position: absolute;
-  left: 400px;
-  right: 400px;
-  top: 116px;
+  z-index: 2;
+  top: var(--lob-gap);
+  left: calc(var(--lob-col) + var(--lob-gap) * 2);
+  right: calc(var(--lob-col) + var(--lob-gap) * 2);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
   text-align: center;
+  pointer-events: none;
 }
-.arena-lobby .lob-title { margin: 0; font-size: 60px; }
+.arena-lobby .lob-title { margin: 0; font-size: clamp(30px, 4vw, 60px); }
 
-/* The frame is exactly the space under the top bar, so the page's own
-   end-of-content padding would push it past the fold and raise a
-   scrollbar on a screen that has nothing to scroll. */
+/* The board's 330px column, with 24px of air around it. Both shrink on a
+   smaller window so the centre band keeps its room. */
+.arena-lobby.lob-frame { --lob-col: 330px; --lob-gap: 24px; }
+@container lobby (max-width: 1280px) {
+  .arena-lobby.lob-frame { --lob-col: 300px; --lob-gap: 18px; }
+}
+@container lobby (max-width: 1080px) {
+  .arena-lobby.lob-frame { --lob-col: 272px; --lob-gap: 14px; }
+}
+
+/* The frame already reserves the full artboard height. */
 .app-shell-main:has(.lob-frame) { padding-bottom: 0; }

@@ -2238,7 +2238,8 @@
 .launcher-result[aria-selected="true"] { background:rgb(var(--gold)/10%);box-shadow:inset 2px 0 rgb(var(--gold)); }
 .launcher-result[aria-selected="true"]>svg { color:rgb(var(--gold-ink)); }
 .app-top-bar :is(button,a):focus-visible { outline:2px solid rgb(var(--gold));outline-offset:2px; }
-.app-skip-link { position:fixed;top:12px;left:100px;z-index:100;padding:12px 18px;background:rgb(var(--gold));color:#101715;border-radius:6px;transform:translateY(-150%); }
+/* Stay out of the flex layout despite the Arena stage's child positioning. */
+.app-shell > .app-skip-link { position:fixed;top:12px;left:16px;z-index:100;padding:12px 18px;background:rgb(var(--gold));color:#101715;border-radius:6px;transform:translateY(-150%); }
 .app-skip-link:focus { transform:none; }
 .connection-notice { position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:65;max-width:calc(100vw - 32px);width:max-content;display:flex;align-items:center;gap:10px;padding:12px 16px;border:1px solid #86733a;border-radius:8px;background:#191d16;color:#f0dba0;box-shadow:0 6px 24px #0005;font-size:12px;pointer-events:none; }
 .connection-notice svg { flex-shrink:0; }
