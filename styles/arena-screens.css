@@ -38,6 +38,34 @@
 .arena-app .select select option { color: #E4E4EA; background: #121217; }
 .arena-app .select:focus-within { box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .7); }
 
+/* ── A tab that navigates ─────────────────────────────────────────────
+   The boards draw every tab as a <button> in one tablist, because a board
+   has one page. Where a tab is a separate route in the app (Profile's
+   Achievements and Settings) it has to be an <a>, or middle-click and
+   open-in-new-tab stop working. `.tabs button` is the board's own rule;
+   this hands an <a> the same values rather than inventing any. */
+.arena-app .tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0);
+  color: #A4A4B2;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.arena-app .tabs a svg { width: 16px; height: 16px; }
+.arena-app .tabs a:hover { color: #E4E4EA; }
+.arena-app .tabs a[aria-current="page"] { color: #0A0A0A; background: #C6FF33; }
+
 /* ── Home ─────────────────────────────────────────────────────────────
    The hero is 1120px wide at 1440 (1440 - 256 sidebar - 64 page padding).
    The board puts the ring at left:640 and the fan at left:860 inside it;
@@ -109,4 +137,70 @@
 /* The footer is a row at 1440 and stacks on a phone. */
 @media (max-width: 720px) {
   .arena-home .home-footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* ── Profile ──────────────────────────────────────────────────────────
+   The banner is a 236px panel with the identity block absolutely placed at
+   left:34 top:50 and Edit Profile pinned top right. Below the width where
+   the 136px avatar and the 52px name stop fitting, the block comes back
+   into flow and the banner grows to suit. */
+.arena-profile .banner-id {
+  position: absolute;
+  left: 34px;
+  top: 50px;
+  right: 190px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+.arena-profile .banner-name { font-size: clamp(30px, 4vw, 52px); }
+.arena-profile .banner-edit { position: absolute; right: 28px; top: 28px; }
+/* Avatar is the board's `.bigav`; the shared <Avatar> paints the gradient
+   and the initial, so it fills the frame rather than sitting inside it. */
+.arena-profile .bigav .bigav-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  font-size: 64px;
+  background: none;
+}
+@media (max-width: 1000px) {
+  .arena-profile .banner { height: auto; padding: 28px 24px; }
+  .arena-profile .banner-id { position: static; right: auto; flex-wrap: wrap; gap: 20px; }
+  .arena-profile .banner-edit { position: static; margin-top: 18px; }
+  .arena-profile .banner .word { display: none; }
+}
+
+/* Statistics beside Game Stats, then Achievements beside Milestones. */
+.arena-profile .profile-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; }
+.arena-profile .profile-row-b { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; }
+@media (max-width: 1100px) {
+  .arena-profile .profile-row,
+  .arena-profile .profile-row-b { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Five achievement cards across at 1440. */
+.arena-profile .ach-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1240px) {
+  .arena-profile .ach-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+}
+
+/* The three Game Stats cards. */
+@media (max-width: 860px) {
+  .arena-profile .game-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+}
+
+/* Match History is a six-column grid row. Below the width where the score
+   and the date stop fitting it becomes two lines per match. */
+@media (max-width: 900px) {
+  .arena-profile .hist {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-auto-rows: auto;
+    height: auto;
+    padding: 12px 14px;
+    gap: 8px 12px;
+  }
+  .arena-profile .hist.head { display: none; }
+  .arena-profile .hist > :nth-child(5) { grid-column: 2; }
+  .arena-profile .hist > :nth-child(6) { grid-column: 3; }
 }
