@@ -8,6 +8,7 @@ import { CoinTopupWatcher } from "@/components/economy/CoinTopupWatcher";
 import { PresenceHeartbeat } from "@/components/system/PresenceHeartbeat";
 import { HomeSocialProvider } from "@/contexts/HomeSocialContext";
 import { ConnectionNotice } from "@/components/system/ConnectionNotice";
+import { RotateDeviceGate } from "./RotateDeviceGate";
 
 /**
  * Routes that render with no app chrome and, crucially, OUTSIDE
@@ -28,6 +29,12 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const path = pathname.replace(/\/$/, "");
   const inMatch = /\/play\/[^/]+\/(casual\/(ai|passplay|online\/live)|ranked\/live)$/.test(path) || path === '/spectate';
+  /* The screens that ARE artboards - the two card tables, the hand-over
+     screen and the Play lobby - are a fixed 1440x900 picture scaled to fit.
+     On a portrait phone that scales to about a quarter size and stops being
+     readable, so those, and only those, still ask to be turned sideways.
+     Everything else has a real portrait layout now. */
+  const needsLandscape = inMatch || path === '/play';
   const roomShell = /^\/play\/[^/]+\/room$/.test(path);
   const premiumShell = path === "/home" || path === "/shop" || path === "/clubs" || path === "/settings" || roomShell;
   return (
@@ -50,6 +57,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           namespaces, and the two don't overlap. */}
       <div className={`arena-app app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
+        {needsLandscape && <RotateDeviceGate />}
         <ConnectionNotice />
         <BackgroundMusicPlayer />
         <CoinTopupWatcher />

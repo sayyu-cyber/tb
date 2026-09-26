@@ -211,7 +211,10 @@
     .app-shell .cosmetic-display { height:120px; }
     .app-shell .leaderboard-podium { gap:6px; }
   }
-  .hub-page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 24px 48px; }
+  /* No cap and no auto margins inside the shell: the sections start at the
+     content area's left edge and use the window, like every Arena screen.
+     (Admin is the only page still on this frame.) */
+  .hub-page { width: 100%; padding: 24px 32px 48px; }
   .hub-page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding: 8px 0 24px; border-bottom: 1px solid rgb(var(--c3)); }
   .hub-page-header h1 { overflow-wrap: anywhere; }
   .hub-count { display: inline-flex; padding: 6px 10px; border: 1px solid rgb(var(--c3)); border-radius: 5px; font-size: 12px; color: rgb(var(--c5)); white-space: nowrap; }
@@ -1210,6 +1213,9 @@
    ───────────────────────────────────────────────────────────────────── */
 .app-sidebar {
   --rail-w:84px;
+  /* Phone bottom bar (see the max-width:767px block at the end). */
+  --bar-h:62px;
+  --bar-item:56px;
   --sb-icon:44px;
   --sb-pad:10px;
   --sb-surface:linear-gradient(168deg,#0e1214,#0b0f10 72%);
@@ -1449,10 +1455,50 @@
 .app-sidebar a:focus-visible,
 .app-sidebar button:focus-visible { outline:2px solid var(--sb-gold-bright); outline-offset:2px; }
 
-/* Narrower rail on phones, where 84px is a real bite out of the content.
-   Keep the identity rail-w = 4*sb-pad + sb-icon (here 24 + 38 = 62) or the
-   icons stop being centred in the rail. */
-@media(max-width:639px) { .app-sidebar { --rail-w:62px; --sb-icon:38px; --sb-pad:6px; } }
+/* ── Phone: the rail lies down ────────────────────────────────────────
+   84px of a 390px screen is a fifth of the width, and a vertical strip is
+   the wrong shape for a thumb. Below 768px the same panel becomes a bottom
+   bar: the spacer stops reserving width and the page reserves height for
+   it instead.
+
+   Every destination stays in it. Ten icons do not fit across 390px, so the
+   bar scrolls horizontally rather than me deciding which four matter -
+   momentum-scrolled, snapped, and with no visible scrollbar. */
+@media(max-width:767px) {
+  .app-sidebar { --sb-icon:40px; --sb-pad:6px; width:0; }
+  .app-sidebar-panel {
+    top:auto; right:0; bottom:0; left:0;
+    flex-direction:row;
+    align-items:center;
+    gap:4px;
+    width:100%;
+    height:var(--bar-h);
+    padding:0 10px;
+    padding-bottom:env(safe-area-inset-bottom);
+    border-left:0;
+    border-top:1px solid var(--sb-line);
+    box-shadow:0 -2px 16px rgba(0,0,0,.45);
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x proximity;
+    scrollbar-width:none;
+  }
+  .app-sidebar-panel::-webkit-scrollbar { display:none; }
+  /* The wordmark and the VIP/social blocks are rail furniture; a bottom bar
+     is destinations only. Both are one tap away on Shop and Friends. */
+  .app-sidebar-head,
+  .app-sidebar-foot { display:none; }
+  .app-sidebar-nav { flex-direction:row; flex:0 0 auto; gap:4px; padding-top:0; }
+  .app-sidebar-tip-anchor { scroll-snap-align:center; }
+  .app-sidebar-item,
+  .app-sidebar-identity { width:var(--bar-item); min-height:48px; padding:0; }
+  .app-sidebar-identity { order:-1; }
+  /* Content clears the bar rather than ending behind it. */
+  .app-shell-main { padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 16px); }
+  /* Nothing hovers on a touch screen, so the label bubbles never open -
+     the icons carry their own aria-labels for everything else. */
+  .app-sidebar-tip { display:none; }
+}
 @media(prefers-reduced-motion:reduce) {
   .app-sidebar, .app-sidebar *, .app-sidebar-tip { transition:none !important; animation:none !important; }
 }
@@ -1992,8 +2038,11 @@
 .rotate-gate { display:none; }
 
 @media(orientation:portrait) and (max-width:767px) and (pointer:coarse) {
-  /* Nothing behind the gate should scroll or be reachable. */
-  body { overflow:hidden; }
+  /* Nothing behind the gate should scroll or be reachable - but ONLY where
+     the gate is actually rendered. It used to be on every page, and now
+     that portrait is a supported layout, an unconditional lock here would
+     freeze every phone screen in the app. */
+  body:has(.rotate-gate) { overflow:hidden; }
 
   .rotate-gate {
     position:fixed; inset:0; z-index:999;

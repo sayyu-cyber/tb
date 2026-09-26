@@ -34,15 +34,29 @@ async function run(){
   const main=await page.locator('.app-shell-main').boundingBox();
   return {navLeft:nav.x,navRight:nav.x+nav.width,navWidth:nav.width,mainLeft:main.x,mainRight:main.x+main.width};
  };
- for(const [width,height,rail] of [[1800,1000,84],[1280,800,84],[1024,800,84],[390,844,62]]){
+ for(const [width,height] of [[1800,1000],[1280,800],[1024,800]]){
   await page.setViewportSize({width,height});await page.waitForTimeout(250);
   const g=await geometry();
-  assert.ok(Math.abs(g.navWidth-rail)<2,`Rail is ${rail}px at ${width} (got ${Math.round(g.navWidth)})`);
+  assert.ok(Math.abs(g.navWidth-84)<2,`Rail is 84px at ${width} (got ${Math.round(g.navWidth)})`);
   assert.ok(Math.abs(g.navRight-width)<2,`Rail is against the right edge at ${width}`);
   assert.ok(g.mainLeft<2,`Content starts at the left edge at ${width} (got ${Math.round(g.mainLeft)})`);
   assert.ok(Math.abs(g.mainRight-g.navLeft)<2,
    `and ends where the rail begins at ${width} (${Math.round(g.mainRight)} vs ${Math.round(g.navLeft)})`);
  }
+ // ---- phone portrait: the rail lies down --------------------------------
+ // Below 768px the same panel is a bottom bar, so the content gets the
+ // whole width and reserves height for it instead.
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
+ const bar=await page.locator('.app-sidebar-panel').boundingBox();
+ const phoneMain=await page.locator('.app-shell-main').boundingBox();
+ assert.ok(Math.abs(bar.width-390)<2,`The bar spans the screen (got ${Math.round(bar.width)})`);
+ assert.ok(Math.abs((bar.y+bar.height)-844)<2,'and sits on the bottom edge');
+ assert.ok(bar.height<90,`It is a bar, not a rail (got ${Math.round(bar.height)}px tall)`);
+ assert.ok(phoneMain.width>386,`Content has the full width (got ${Math.round(phoneMain.width)})`);
+ assert.ok(bar.y>600,'The bar is below the content, not over it');
+ // Every destination is still in it, scrolled rather than dropped.
+ assert.ok(await page.locator('.app-sidebar-item').count()>=8,'All destinations stay in the bar');
+ assert.equal(await page.evaluate(()=>document.body.style.overflow),'','Portrait is not locked any more');
  // Every destination is reachable by name even though no label is drawn.
  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(250);
  assert.ok(await page.locator('.app-sidebar-item[aria-label]').count()>=8,
@@ -59,7 +73,7 @@ async function run(){
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));});await page.locator('.connection-notice').waitFor();
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));});assert.equal(await page.locator('.connection-notice').count(),0);
  await page.evaluate(()=>{const match=document.createElement('div');match.className='gin-room';document.querySelector('main').append(match);});assert.equal(await page.locator('.app-sidebar').isVisible(),false);
- assert.deepEqual(errors,[]);console.log('Shell checks passed: six viewports, a fixed right-hand rail at four widths, named icons, shared listeners, search keyboard controls, menus, logout errors, offline notice, private match chrome.');
+ assert.deepEqual(errors,[]);console.log('Shell checks passed: six viewports, a right-hand rail at three widths and a bottom bar on a phone, named icons, shared listeners, search keyboard controls, menus, logout errors, offline notice, private match chrome.');
  }finally{await browser.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
