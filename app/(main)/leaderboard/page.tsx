@@ -35,7 +35,7 @@ export default function LeaderboardPage() {
   const [queryText, setQueryText] = useState("");
   const [howItWorks, setHowItWorks] = useState(false);
 
-  const { user } = useAuth();
+  const { user, playerStats } = useAuth();
   const t = useTranslation();
 
   // Friend uids come from the social context the app shell already
@@ -70,7 +70,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="hub-page lb-page">
+    <div className="arena-leaderboard ar-page lb-page">
       <LeaderboardHero
         onRefresh={refresh}
         onHowItWorks={() => setHowItWorks(true)}
@@ -94,7 +94,7 @@ export default function LeaderboardPage() {
         </div>
       ) : loading ? (
         <>
-          <div className="lb-main-grid">
+          <div className="lb-grid">
             <PodiumSkeleton />
             <aside className="lb-side">
               <SideCardSkeleton />
@@ -124,38 +124,49 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <>
-          <div className="lb-main-grid">
+          <div className="lb-grid">
             {searching ? <div /> : <Podium topThree={topThree} currentUid={user?.uid} />}
             <aside className="lb-side">
               <CurrentRankCard entry={currentEntry} above={entryAbove} signedIn={Boolean(user)} />
-              <RewardsCard />
+              {/* The tier the player is actually paid from comes from their
+                  own trophies, not from profile.rank (code issue 8). */}
+              <RewardsCard trophies={currentEntry?.trophies ?? playerStats?.trophies} />
+              <section className="panel lb-how">
+                <span className="lbl dash">How ranks are ordered</span>
+                <p className="muted">
+                  Players are ordered by trophies, highest first. The weekly board counts only
+                  trophies earned since Monday; All Time counts your lifetime total.
+                </p>
+              </section>
             </aside>
           </div>
 
-          <div className="lb-toolbar">
-            <label className="lb-search">
-              <Search size={16} aria-hidden="true" />
-              <span className="sr-only">{t("leaderboard_searchLabel")}</span>
-              <input
-                type="search"
-                placeholder={t("leaderboard_searchPlaceholder")}
-                value={queryText}
-                onChange={(event) => setQueryText(event.target.value)}
-              />
-            </label>
+          <section className="panel tick lb-board">
+            <div className="lb-toolbar">
+              <label className="field lb-search">
+                <Search size={16} aria-hidden="true" />
+                <span className="sr-only">{t("leaderboard_searchLabel")}</span>
+                <input
+                  type="search"
+                  placeholder={t("leaderboard_searchPlaceholder")}
+                  value={queryText}
+                  onChange={(event) => setQueryText(event.target.value)}
+                />
+              </label>
 
-            {currentEntry && (
-              <button type="button" className="lb-you-badge" onClick={scrollToMe}>
-                {t("leaderboard_you")} · #{currentEntry.rank}
-              </button>
+              {currentEntry && (
+                <button type="button" className="ar-btn sm lb-you-badge" onClick={scrollToMe}>
+                  {t("leaderboard_you")} · #{currentEntry.rank}
+                </button>
+              )}
+            </div>
+
+            {tableRows.length === 0 ? (
+              <p className="muted">{t("leaderboard_noMatches")}</p>
+            ) : (
+              <LeaderboardTable entries={tableRows} currentUid={user?.uid} />
             )}
-          </div>
-
-          {tableRows.length === 0 ? (
-            <p className="lb-no-results">{t("leaderboard_noMatches")}</p>
-          ) : (
-            <LeaderboardTable entries={tableRows} currentUid={user?.uid} />
-          )}
+          </section>
         </>
       )}
 

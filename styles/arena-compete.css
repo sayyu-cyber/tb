@@ -1,15 +1,104 @@
 /* Arena: the competitive screens — Leaderboard, Achievements, Weekend
  * League, Hall of Fame, Settings.
  *
- * Owned by the second agent (design/arena/WORKSPLIT.md, "Phase 1:
- * ownership"). Imported from app/layout.tsx already, so nothing needs to
- * change there when this fills up.
+ * The fluid half for those boards. Each board's own CSS is generated into
+ * styles/arena-<board>.css; this holds only what a fixed 1440x900 artboard
+ * does not have to describe, plus the places where the app needs an element
+ * the board drew as something else.
  *
- * House rules for what goes here:
- *   - Namespace new classes so they can't collide with the shared layer or
- *     with the other agent's sheet. `.cmp-*` is free.
- *   - The shared pieces (.panel, .tabs, .pill, .ava, .meter, .rank) come
- *     from styles/arena-app.css. Use them; don't redefine them here.
- *   - Colours come from the Arena ramp: lime #C6FF33 is you, blue #00BCC8
- *     is everyone else, and text on blue is dark (#00191B).
+ * Every rule resolves to the board's own number at 1440.
  */
+
+/* ── Leaderboard (app-07) ─────────────────────────────────────────────
+   The podium and table beside a 360px column. */
+.arena-leaderboard .lb-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+.arena-leaderboard .lb-grid > div:first-child { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.arena-leaderboard .lb-side { display: flex; flex-direction: column; gap: 16px; }
+@media (max-width: 1160px) {
+  .arena-leaderboard .lb-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.arena-leaderboard .lb-tabrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.arena-leaderboard .lb-reset { height: 32px; padding: 0 12px; }
+
+/* The podium is 372px of fixed stage. Below the width where three 220px
+   columns stop fitting, it stacks - the plinths keep their heights so the
+   order still reads. */
+@media (max-width: 860px) {
+  .arena-leaderboard .podium { height: auto; padding: 24px 0 0; }
+  .arena-leaderboard .podium .spot { display: none; }
+  .arena-leaderboard .pl { position: static; width: auto; margin: 0 0 14px !important; }
+  .arena-leaderboard .plinth { width: 100%; }
+}
+.arena-leaderboard .podium-crown { width: 26px; height: 26px; color: #FFC940; }
+
+/* Your Rank: the board's lime bloom in the corner. */
+.arena-leaderboard .lb-rank-glow {
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(198, 255, 51, .25), rgba(198, 255, 51, 0));
+}
+.arena-leaderboard .lb-rank-number { font-size: clamp(44px, 7vw, 72px); color: #C6FF33; }
+.arena-leaderboard .lb-rank-meter { position: relative; }
+.arena-leaderboard .rw-you { height: 20px; }
+
+.arena-leaderboard .lb-how { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.arena-leaderboard .lb-how p { margin: 0; line-height: 1.5; font-weight: 500; }
+
+/* The table panel. */
+.arena-leaderboard .lb-board { padding: 16px; }
+.arena-leaderboard .lb-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.arena-leaderboard .lb-search { flex-grow: 1; min-width: 200px; }
+.arena-leaderboard .lb-search input {
+  width: 100%; min-width: 0; border: 0; background: none; color: #fff; font: inherit; outline: none;
+}
+.arena-leaderboard .lb-search input::placeholder { color: #8E8E9C; }
+.arena-leaderboard .lb-search:focus-within { box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .6); }
+.arena-leaderboard .lb-you-badge { height: 44px; }
+.arena-leaderboard .lrow-you { height: 18px; padding: 0 6px; font-size: 9.5px; }
+
+/* Six columns at 1440. On a phone the three middle figures drop under the
+   name rather than squeezing to nothing. */
+@media (max-width: 880px) {
+  .arena-leaderboard .lrow {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-auto-rows: auto;
+    height: auto;
+    padding: 12px 14px;
+    gap: 6px 12px;
+  }
+  .arena-leaderboard .lrow.head { display: none; }
+  .arena-leaderboard .lrow .n { grid-column: 2; font-size: 13px; }
+  .arena-leaderboard .lrow .t { grid-row: 1; grid-column: 3; }
+}
+
+/* The error banner and empty states reuse the shared panels. */
+.arena-leaderboard .lb-empty,
+.arena-leaderboard .lb-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 44px 24px;
+  text-align: center;
+}
+.arena-leaderboard .lb-empty > svg,
+.arena-leaderboard .lb-error > svg { width: 38px; height: 38px; color: #3A3A46; }
+.arena-leaderboard .lb-empty h2 { margin: 0; font-size: 20px; text-transform: uppercase; }
+.arena-leaderboard .lb-ghost-button { text-decoration: none; }

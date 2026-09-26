@@ -1,80 +1,72 @@
 "use client";
 
 import { Trophy } from "lucide-react";
-import { useTranslation } from "@/hooks/useTranslation";
 import type { LeaderboardEntry } from "@/types";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getRankFromTrophies } from "@/constants/ranks";
+import { RankLabel, Meter } from "@/components/arena";
 
 /**
- * "Your Rank" panel.
+ * Your Rank — the Leaderboard board's top-right panel
+ * (design/arena/screens/app/app-07-leaderboard.jpg).
  *
- * Shows the signed-in player's real position on the board currently being
- * viewed - never a stored or guessed figure. If they are not on the loaded
- * board at all, it says so plainly rather than inventing a placement, since
- * the query is capped at the top 50 and a player outside that genuinely has
- * no known position.
- *
- * The progress bar measures the gap to the player directly above, which is a
- * real, meaningful threshold. It is hidden for rank 1 (nothing to climb to)
- * and whenever the gap cannot be computed.
+ * The big placement, your tier, your trophies, and how far the player above
+ * is. The meter measures the gap to the next place, not to a tier, because
+ * that is what the line under it says.
  */
 export function CurrentRankCard({
-  entry,
-  above,
-  signedIn,
+  entry, above, signedIn,
 }: {
-  entry?: LeaderboardEntry;
-  /** The player one place higher, used for the climb-to-next bar. */
-  above?: LeaderboardEntry;
+  entry: LeaderboardEntry | undefined;
+  above: LeaderboardEntry | undefined;
   signedIn: boolean;
 }) {
   const t = useTranslation();
 
-  if (!signedIn) return null;
-
-  if (!entry) {
+  if (!signedIn || !entry) {
     return (
-      <section className="lb-side-card">
-        <h2>{t("leaderboard_yourRank")}</h2>
-        <p className="lb-unranked">{t("leaderboard_unranked")}</p>
-        <p className="lb-side-hint">{t("leaderboard_unrankedHint")}</p>
+      <section className="panel tick lb-rank" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <span className="lbl dash" style={{ position: "relative" }}>{t("leaderboard_yourRank")}</span>
+        <p className="muted" style={{ position: "relative", margin: 0 }}>
+          {signedIn
+            ? "Play a ranked match this week and you will appear here."
+            : "Sign in to see where you stand."}
+        </p>
       </section>
     );
   }
 
+  const tier = entry.currentRank || getRankFromTrophies(entry.trophies);
   const gap = above ? Math.max(0, above.trophies - entry.trophies) : 0;
-  const showBar = Boolean(above) && gap > 0 && above!.trophies > 0;
-  const progress = showBar ? Math.min(100, Math.round((entry.trophies / above!.trophies) * 100)) : 0;
+  // The bar measures progress towards the player above. At the top there is
+  // no one above, so it reads full rather than empty.
+  const progress = !above ? 1
+    : above.trophies > 0 ? entry.trophies / above.trophies
+    : 1;
 
   return (
-    <section className="lb-side-card">
-      <h2>{t("leaderboard_yourRank")}</h2>
-
-      <p className="lb-your-rank">#{entry.rank}</p>
-
-      <p className="lb-your-trophies">
-        <Trophy size={15} aria-hidden="true" />
-        {entry.trophies.toLocaleString()} {t("leaderboard_trophies")}
-      </p>
-
-      {showBar && (
-        <div className="lb-progress">
-          <div
-            className="lb-progress-track"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={t("leaderboard_climbLabel")}
-          >
-            <span style={{ width: `${progress}%` }} />
-          </div>
-          <p className="lb-side-hint">
-            {t("leaderboard_gapToNext").replace("{n}", gap.toLocaleString())}
-          </p>
-        </div>
-      )}
-
-      {!showBar && <p className="lb-side-hint">{t("leaderboard_keepPlaying")}</p>}
+    <section className="panel tick lb-rank" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}>
+      <div className="lb-rank-glow" aria-hidden="true" />
+      <span className="lbl dash" style={{ position: "relative" }}>{t("leaderboard_yourRank")}</span>
+      <div style={{ position: "relative", display: "flex", alignItems: "baseline", gap: "14px", flexWrap: "wrap" }}>
+        <b className="disp lb-rank-number">#{entry.rank}</b>
+        <RankLabel tier={tier} />
+      </div>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px", fontFamily: "var(--font-display), sans-serif", fontWeight: 700, fontSize: "20px" }}>
+        <Trophy aria-hidden="true" style={{ width: "20px", height: "20px", color: "#C6FF33" }} />
+        {entry.trophies} {entry.trophies === 1 ? "Trophy" : "Trophies"}
+      </div>
+      <Meter
+        value={progress}
+        label={above ? `Progress to place ${above.rank}` : "Top of the board"}
+        valueText={above ? `${gap} trophies behind ${above.username}` : "First place"}
+        className="lb-rank-meter"
+      />
+      <span className="muted" style={{ position: "relative" }}>
+        {above
+          ? <><b style={{ color: "#fff" }}>{gap} {gap === 1 ? "trophy" : "trophies"}</b> to the next place.</>
+          : <>You are top of the board.</>}
+      </span>
     </section>
   );
 }

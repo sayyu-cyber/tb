@@ -1,100 +1,71 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "framer-motion";
 import { Crown, Trophy } from "lucide-react";
-import { LeaderboardAvatar } from "./LeaderboardAvatar";
-import { useTranslation } from "@/hooks/useTranslation";
 import type { LeaderboardEntry } from "@/types";
+import { RankLabel } from "@/components/arena";
+import { getRankFromTrophies } from "@/constants/ranks";
 
 /**
- * Top-three podium.
+ * The top three — the Leaderboard board's `.podium`
+ * (design/arena/screens/app/app-07-leaderboard.jpg).
  *
- * Rendered in visual order #2 / #1 / #3 with #1 tallest, but the DOM order is
- * 1, 2, 3 and the visual order is produced by CSS `order`. That keeps the
- * reading order for screen readers and keyboard users correct (first place
- * first) while still looking like a podium - the brief asked for both.
+ * A lit stage with three plinths: gold in the middle and tallest, silver
+ * left, bronze right. Each player's avatar takes the metal of their plinth,
+ * and the winner gets the crown above theirs.
  *
- * Secondary stats are only rendered when the player has actually played:
- * "0 matches · 0% win rate" under a champion would be noise, and for a brand
- * new board it would be wrong-looking rather than informative.
+ * With fewer than three players it draws only the places that exist, rather
+ * than padding with blanks - a new board with one player should show one
+ * player, not two empty boxes.
  */
 
-const PLACE_CLASS = ["lb-gold", "lb-silver", "lb-bronze"] as const;
-
-function PodiumPlayer({ entry, place, isCurrentUser }: { entry: LeaderboardEntry; place: 0 | 1 | 2; isCurrentUser: boolean }) {
-  const t = useTranslation();
-  const hasPlayed = (entry.totalMatches ?? 0) > 0;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: place === 0 ? 0 : 0.08 * place, duration: 0.35 }}
-      className={`lb-podium-slot ${PLACE_CLASS[place]}`}
-      data-place={place + 1}
-    >
-      <Link href={`/player?uid=${encodeURIComponent(entry.uid)}`} className="lb-podium-card">
-        {place === 0 && (
-          <span className="lb-crown" aria-hidden="true">
-            <Crown size={22} />
-          </span>
-        )}
-
-        <span className="lb-podium-avatar">
-          <LeaderboardAvatar
-            name={entry.username}
-            photoURL={entry.avatar}
-            presetId={entry.avatarPreset}
-            size={place === 0 ? 76 : 62}
-          />
-        </span>
-
-        <strong className="lb-podium-name">{entry.username}</strong>
-
-        <span className="lb-podium-meta">
-          {entry.currentRank && <span className="lb-rank-chip">{entry.currentRank}</span>}
-          {isCurrentUser && <span className="lb-you-chip">{t("leaderboard_you")}</span>}
-        </span>
-
-        <span className="lb-podium-trophies">
-          <Trophy size={15} aria-hidden="true" />
-          {entry.trophies.toLocaleString()}
-        </span>
-
-        {hasPlayed && (
-          <span className="lb-podium-stats">
-            <span>
-              {entry.totalMatches?.toLocaleString()} {t("leaderboard_matches")}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>
-              {entry.winPercentage ?? 0}% {t("leaderboard_winRate")}
-            </span>
-          </span>
-        )}
-      </Link>
-
-      <div className="lb-podium-plinth" aria-hidden="true">
-        <span>{place + 1}</span>
-      </div>
-    </motion.div>
-  );
-}
+/** Board order: 2nd on the left, 1st centre, 3rd on the right. */
+const PLACES = [
+  { place: 2, offset: -330, plinth: "p2", size: 62, metal: "linear-gradient(135deg, #FFFFFF, #B9C2C9)" },
+  { place: 1, offset: -110, plinth: "p1", size: 76, metal: "linear-gradient(135deg, #FFE58A, #E0B52E)" },
+  { place: 3, offset: 110, plinth: "p3", size: 62, metal: "linear-gradient(135deg, #F0B587, #B0703A)" },
+];
 
 export function Podium({ topThree, currentUid }: { topThree: LeaderboardEntry[]; currentUid?: string }) {
-  if (topThree.length === 0) return null;
-
   return (
-    <section className="lb-podium" aria-label="Top three players">
-      {topThree.slice(0, 3).map((entry, index) => (
-        <PodiumPlayer
-          key={entry.uid}
-          entry={entry}
-          place={index as 0 | 1 | 2}
-          isCurrentUser={entry.uid === currentUid}
-        />
-      ))}
+    <section className="podium" aria-label="Top three">
+      <div className="spot" aria-hidden="true" style={{ left: "50%", marginLeft: "-110px" }} />
+      {PLACES.map(({ place, offset, plinth, size, metal }) => {
+        const entry = topThree[place - 1];
+        if (!entry) return null;
+        const tier = entry.currentRank || getRankFromTrophies(entry.trophies);
+        const matches = entry.totalMatches ?? 0;
+        const rate = entry.winPercentage;
+        return (
+          <div className="pl" key={place} style={{ left: "50%", marginLeft: `${offset}px` }}>
+            <div className="who">
+              {place === 1 && <Crown aria-hidden="true" className="podium-crown" />}
+              <span
+                className="bigava"
+                aria-hidden="true"
+                style={{
+                  width: size, height: size, fontSize: Math.round(size * 0.42), background: metal,
+                  ...(place === 1
+                    ? { boxShadow: "0 0 0 3px #0B0B0F, 0 0 0 5px #FFC940, 0 0 30px rgba(255,201,64,.45)" }
+                    : {}),
+                }}
+              >
+                {entry.username.charAt(0).toUpperCase()}
+              </span>
+              <b>
+                {entry.username}
+                {entry.uid === currentUid && <span className="sr-only"> (you)</span>}
+              </b>
+              <RankLabel tier={tier} />
+              <span className="tro"><Trophy aria-hidden="true" />{entry.trophies}</span>
+              <span className="muted2">
+                {matches} {matches === 1 ? "Match" : "Matches"}
+                {rate !== undefined ? ` · ${rate}% Win Rate` : ""}
+              </span>
+            </div>
+            <div className={`plinth ${plinth}`} aria-hidden="true">{place}</div>
+          </div>
+        );
+      })}
     </section>
   );
 }

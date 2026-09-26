@@ -1,85 +1,72 @@
 "use client";
 
-import { BarChart3, CalendarDays, Clock, Trophy, Users } from "lucide-react";
-import { useTranslation } from "@/hooks/useTranslation";
+import { useEffect, useState } from "react";
+import { BarChart3, Trophy, Users, Clock } from "lucide-react";
 import type { LeaderboardPeriod } from "@/types";
+import { useTranslation } from "@/hooks/useTranslation";
+import { Pill } from "@/components/arena";
 
 /**
- * Ranking-period tabs.
+ * The period tabs and the reset countdown — the Leaderboard board's row
+ * under the heading (design/arena/screens/app/app-07-leaderboard.jpg).
  *
- * Weekly, All Time and Friends are all backed by real stored data
- * (`weeklyTrophies`, `trophies`, and the signed-in player's friend list).
- * Monthly is rendered DISABLED rather than omitted: nothing in
- * `players/{uid}` tracks a monthly figure, and deriving one from the weekly
- * or lifetime counters would be a made-up ranking. Showing it greyed with a
- * "coming soon" title is honest about the roadmap without faking a board.
+ * Monthly is drawn disabled with a "Coming soon" chip, which is honest:
+ * useLeaderboard has no monthly window. It stays disabled rather than being
+ * given a board that would quietly show the weekly one.
  */
-
-const TABS: { id: LeaderboardPeriod | "monthly"; labelKey: string; icon: typeof BarChart3; enabled: boolean }[] = [
-  { id: "weekly", labelKey: "leaderboard_tabWeekly", icon: BarChart3, enabled: true },
-  { id: "monthly", labelKey: "leaderboard_tabMonthly", icon: CalendarDays, enabled: false },
-  { id: "allTime", labelKey: "leaderboard_tabAllTime", icon: Trophy, enabled: true },
-  { id: "friends", labelKey: "leaderboard_tabFriends", icon: Users, enabled: true },
+const TABS = [
+  { id: "weekly" as const, label: "Weekly", Icon: BarChart3 },
+  { id: "allTime" as const, label: "All Time", Icon: Trophy },
+  { id: "friends" as const, label: "Friends", Icon: Users },
 ];
 
-/** "2d 4h" / "6h 12m" / "Under a minute" - never a hardcoded guess. */
-function formatCountdown(msRemaining: number): string {
-  if (msRemaining <= 0) return "";
-  const minutes = Math.floor(msRemaining / 60000);
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor((minutes % 1440) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
+/** "1d 14h", "14h 20m", "20m" - the board's form, to the sensible unit. */
+function until(timestamp: number) {
+  const ms = timestamp - Date.now();
+  if (ms <= 0) return "soon";
+  const days = Math.floor(ms / 86_400_000);
+  const hours = Math.floor((ms % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((ms % 3_600_000) / 60_000);
+  if (days) return `${days}d ${hours}h`;
+  if (hours) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 }
 
 export function LeaderboardTabs({
-  active,
-  onChange,
-  nextResetAt,
-  showReset,
+  active, onChange, nextResetAt, showReset,
 }: {
   active: LeaderboardPeriod;
   onChange: (period: LeaderboardPeriod) => void;
   nextResetAt: number;
-  /** Reset copy only belongs on the weekly board. */
   showReset: boolean;
 }) {
   const t = useTranslation();
-  const countdown = formatCountdown(nextResetAt - Date.now());
+  const [, tick] = useState(0);
+  // The countdown has to age, or it reads "1d 14h" all evening.
+  useEffect(() => {
+    const timer = setInterval(() => tick(value => value + 1), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="lb-tabrow">
-      <div className="lb-tabs" role="tablist" aria-label={t("leaderboard_periodLabel")}>
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const selected = tab.enabled && tab.id === active;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              disabled={!tab.enabled}
-              title={tab.enabled ? undefined : t("leaderboard_comingSoon")}
-              onClick={() => tab.enabled && onChange(tab.id as LeaderboardPeriod)}
-              className="lb-tab"
-            >
-              <Icon size={15} aria-hidden="true" />
-              {t(tab.labelKey)}
-              {!tab.enabled && <span className="lb-soon">{t("leaderboard_comingSoon")}</span>}
-            </button>
-          );
-        })}
+      <div className="tabs" role="group" aria-label={t("leaderboard_periodLabel")}>
+        <button type="button" aria-pressed={active === "weekly"} onClick={() => onChange("weekly")} data-flat>
+          <BarChart3 aria-hidden="true" />Weekly
+        </button>
+        <button type="button" disabled title="Monthly boards are not available yet" data-flat>
+          Monthly<span className="soon">Coming soon</span>
+        </button>
+        {TABS.slice(1).map(({ id, label, Icon }) => (
+          <button key={id} type="button" aria-pressed={active === id} onClick={() => onChange(id)} data-flat>
+            <Icon aria-hidden="true" />{label}
+          </button>
+        ))}
       </div>
-
-      {showReset && (
-        <p className="lb-reset">
-          <Clock size={14} aria-hidden="true" />
-          {countdown
-            ? t("leaderboard_resetsIn").replace("{time}", countdown)
-            : t("leaderboard_resetsMonday")}
-        </p>
+      {showReset && nextResetAt > 0 && (
+        <Pill tone="line" className="lb-reset">
+          <Clock aria-hidden="true" />Resets in {until(nextResetAt)}
+        </Pill>
       )}
     </div>
   );
