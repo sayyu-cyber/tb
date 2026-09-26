@@ -178,7 +178,17 @@
   /* 112px of bottom padding used to exist purely to clear a fixed bottom
      bar. That bar is gone (the sidebar rail is on every breakpoint now), so
      this is just normal end-of-page breathing room. */
-  .app-shell-main { flex:1 1 auto; min-width:0; max-width:1440px; margin:0 auto; padding-bottom:28px; }
+  /* FLUSH TO THE SIDEBAR, AND IT STAYS PUT.
+     This was `max-width:1440px; margin:0 auto`, which did two unwanted
+     things at once on a wide window. It left a band of empty stage between
+     the nav and the content; and because `auto` margins recentre whatever
+     space is left, opening the nav slid the whole page sideways as well as
+     narrowing it. Opening a nav should cost 216px of width and nothing
+     else - scripts/check-shell-ui.cjs asserts both halves of that.
+     No auto margins, so the content starts where the sidebar ends. The cap
+     only exists to stop a true ultrawide stretching a row of panels to
+     arm's length; at 4K and below it never binds. */
+  .app-shell-main { flex:1 1 auto; min-width:0; max-width:2400px; padding-bottom:28px; }
   .app-shell-match .app-shell-main { width:100%; }
   .app-shell-toolbar { padding:12px 16px 0; }
   .app-top-bar { flex-wrap:wrap; }
@@ -904,7 +914,7 @@
 .home-gold-button:hover { filter:brightness(1.08); }
 .home-gold-button:active { transform:translateY(1px); }
 @media(min-width:1200px) {
- .app-shell-home .app-shell-main { max-width:1550px; padding-bottom:20px; }
+ .app-shell-home .app-shell-main { padding-bottom:20px; }
  .home-desktop-sidebar { display:flex; flex-direction:column; gap:13px; width:210px; flex-shrink:0; height:100dvh; overflow-y:auto; position:sticky; top:0; padding:22px 12px; border-right:1px solid #8c927f44; background:linear-gradient(165deg,#151b1c,#0b1011 70%); }
  .home-wordmark { display:flex; align-items:center; gap:10px; color:#f3c65a; padding:0 4px 18px; font-size:22px; }
  .home-desktop-sidebar nav { display:flex; flex-direction:column; gap:3px; }

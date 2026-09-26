@@ -402,6 +402,15 @@
 
    At 1440 the grid below resolves to the board's own columns: a 330px
    panel at x=48, the podium between, and a 330px panel ending at x=1392. */
+/* Everything below sizes itself against the space the shell leaves, not
+   against the window. Opening the sidebar takes 216px off that space,
+   which a viewport media query cannot see - which is how the headline
+   ended up wrapping in under the two panels on a wide screen with the nav
+   open. The container is the wrapper rather than the padded page, so a
+   query can change that padding without feeding back into its own
+   measurement. */
+.arena-lobby { container-type: inline-size; container-name: lobby; }
+
 .arena-lobby .lob-page {
   position: relative;
   display: flex;
@@ -411,7 +420,7 @@
   min-height: calc(100vh - 128px);
   padding: 40px 48px 32px;
 }
-@media (max-width: 900px) {
+@container lobby (max-width: 900px) {
   .arena-lobby .lob-page { padding: 20px 14px 28px; }
 }
 
@@ -434,7 +443,9 @@
   z-index: 1;
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr) 330px;
+  /* The board's 330px panels, allowed to give up 50px before the layout
+     gives up on three columns altogether. */
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr) minmax(280px, 330px);
   align-items: start;
   gap: 0 20px;
 }
@@ -458,7 +469,10 @@
   pointer-events: none;
 }
 .arena-lobby .lob-mid > * { pointer-events: auto; }
-.arena-lobby .lob-title { margin: 0; font-size: clamp(30px, 4.4vw, 60px); }
+/* Sized against the page box (cqi), not the window, so opening the
+   sidebar shrinks the headline with its column instead of letting it run
+   on under the panels. Resolves to the board's 60px at 1440. */
+.arena-lobby .lob-title { margin: 0; font-size: clamp(28px, 5cqi, 60px); text-wrap: balance; }
 
 /* The right panel's height is its content's, as on the board, so the CTA
    sits under the last mode rather than at the foot of the page. */
@@ -467,7 +481,11 @@
 /* Below the width where two 330px panels and a podium stop fitting, the
    columns stack: heading, modes, league, rank. The scene stays behind
    them - it is the background, not a row. */
-@media (max-width: 1080px) {
+/* Two 330px panels, two 20px gaps, a centre column with room for the
+   headline, and the page's own 96px of padding:
+   330 + 20 + 440 + 20 + 330 + 96 = 1236. Below that the columns stack
+   rather than squeezing the middle to nothing. */
+@container lobby (max-width: 1236px) {
   .arena-lobby .lob-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
@@ -484,7 +502,7 @@
 /* The three figures under the rank bar are one tracked line on the board.
    Below the width where they collide, the outer two drop away rather than
    overlapping the middle one, which is the one that matters. */
-@media (max-width: 360px) {
+@container lobby (max-width: 460px) {
   .arena-lobby .lob-scale > span:first-child,
   .arena-lobby .lob-scale > span:last-child { display: none; }
 }

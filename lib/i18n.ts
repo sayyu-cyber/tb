@@ -120,6 +120,7 @@ export const TRANSLATIONS: Record<string, Translations> = {
   page_collection: { en: "Collection", dv: "ކަލެކްޝަން", hi: "संग्रह", bn: "সংগ্রহ" },
   page_achievements: { en: "Achievements", dv: "ހާސިލްކުރުންތައް", hi: "उपलब्धियां", bn: "অর্জনসমূহ" },
   page_hallOfFame: { en: "Hall of Fame", dv: "ފޭމް ހޯލް", hi: "हॉल ऑफ़ फ़ेम", bn: "হল অফ ফেম" },
+  page_leaderboard: { en: "Leaderboard", dv: "ލީޑަރބޯޑް", hi: "लीडरबोर्ड", bn: "লিডারবোর্ড" },
   page_inventory: { en: "Inventory", dv: "އިންވެންޓްރީ", hi: "इन्वेंटरी", bn: "ইনভেন্টরি" },
   page_friends: { en: "Friends", dv: "ރަޙްމަތްތެރިން", hi: "दोस्त", bn: "বন্ধুরা" },
   page_clubs: { en: "Clubs", dv: "ކްލަބްތައް", hi: "क्लब", bn: "ক্লাব" },

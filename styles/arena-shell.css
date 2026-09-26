@@ -92,7 +92,9 @@
   /* Wraps onto a second row on a phone, where the board never had to fit
      four things into 390px; the block padding keeps that row breathing. */
   flex-wrap: wrap;
-  padding: 8px 32px 8px 28px;
+  /* The sides match `.ar-page` exactly, so the search field and the first
+     panel under it share one left edge. */
+  padding: 8px 32px;
   border-bottom: 1px solid rgba(255, 255, 255, .06);
   background: linear-gradient(180deg, rgba(0, 0, 0, .75), rgba(0, 0, 0, .35));
   -webkit-backdrop-filter: blur(10px);

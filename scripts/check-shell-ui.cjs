@@ -20,6 +20,31 @@ async function run(){
   const bounds=await page.locator('.notification-popover').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'Notification bounds '+width);
   await page.keyboard.press('Escape');await page.screenshot({path:path.join(output,'shell-'+width+'.png'),fullPage:true});
  }
+
+ // ---- the content sits against the sidebar, and stays put ---------------
+ // Both halves of a regression the shell had for a long time: `margin:0
+ // auto` on the main column left a band of empty stage between the nav and
+ // the content on a wide window, and recentred the whole page sideways
+ // whenever the nav opened. Opening it should cost width and nothing else.
+ await page.setViewportSize({width:1800,height:1000});await page.waitForTimeout(250);
+ const edges=async()=>{
+  const nav=await page.locator('.app-sidebar-panel').boundingBox();
+  const main=await page.locator('.app-shell-main').boundingBox();
+  return {navRight:nav.x+nav.width,mainLeft:main.x,mainWidth:main.width};
+ };
+ const collapsed=await edges();
+ assert.ok(Math.abs(collapsed.mainLeft-collapsed.navRight)<2,
+  `Content starts where the sidebar ends (${Math.round(collapsed.mainLeft)} vs ${Math.round(collapsed.navRight)})`);
+ await page.locator('.app-sidebar-toggle').click();await page.waitForTimeout(400);
+ const open=await edges();
+ assert.ok(Math.abs(open.mainLeft-open.navRight)<2,
+  `and still does with the sidebar open (${Math.round(open.mainLeft)} vs ${Math.round(open.navRight)})`);
+ // The nav grew by exactly what the content lost - no sideways slide.
+ const grew=open.navRight-collapsed.navRight, lost=collapsed.mainWidth-open.mainWidth;
+ assert.ok(Math.abs(grew-lost)<2,`Opening the nav only costs width (nav +${Math.round(grew)}, main -${Math.round(lost)})`);
+ await page.locator('.app-sidebar-toggle').click();await page.waitForTimeout(400);
+ await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(250);
+
  const search=page.getByRole('combobox').first();await search.fill('Gin');await page.keyboard.press('Enter');assert.equal(await page.locator('body').getAttribute('data-destination'),'/play/gin-rummy/casual/online');
  await search.fill('');await search.focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await page.locator('body').getAttribute('data-destination'),'/play/mindi/ranked');
  await search.fill('nonexistent-game');assert.equal(await page.locator('#launcher-results [role=option]').count(),0);await page.keyboard.press('Escape');assert.equal(await search.getAttribute('aria-expanded'),'false');
@@ -30,7 +55,7 @@ async function run(){
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));});await page.locator('.connection-notice').waitFor();
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));});assert.equal(await page.locator('.connection-notice').count(),0);
  await page.evaluate(()=>{const match=document.createElement('div');match.className='gin-room';document.querySelector('main').append(match);});assert.equal(await page.locator('.app-sidebar').isVisible(),false);
- assert.deepEqual(errors,[]);console.log('Shell checks passed: six viewports, shared listeners, search keyboard controls, menus, sidebar resize/focus, logout errors, offline notice, private match chrome.');
+ assert.deepEqual(errors,[]);console.log('Shell checks passed: six viewports, content flush to the sidebar on open and closed, shared listeners, search keyboard controls, menus, sidebar resize/focus, logout errors, offline notice, private match chrome.');
  }finally{await browser.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
