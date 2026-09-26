@@ -158,35 +158,47 @@ async function run() {
     assert.equal(await page.locator('.mote[data-ar-loop], .deck[data-ar-loop], .chase[data-ar-loop]').count(), loops,
       'Every loop carries data-ar-loop for prefers-reduced-motion');
 
-    // ── The screen IS the artboard ──────────────────────────────────────
-    // Every element is at its board coordinate on a 1440x900 canvas, and
-    // the canvas fills the available width. So the proof is geometric: the panels
-    // sit at x=48 and x=1062 of the board, whatever the window is.
+    // ── The scene scales, the chrome does not ───────────────────────────
+    // The podium is the board's picture and fills the width. The three
+    // panels are controls: they sit in the frame's corners at the size
+    // they were drawn, so they stay legible on any monitor instead of
+    // ballooning with the scene. The modes panel runs floor to ceiling.
+    const sizes = {};
     for (const [width, height] of [[2200, 1100], [1500, 900]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(300);
+      const frame = await page.locator('.lob-frame').boundingBox();
       const board = await page.locator('.lob-board').boundingBox();
-      const scale = board.width / 1440;
       const league = await page.locator('.lob-league').boundingBox();
       const modesBounds = await page.locator('.lob-modes').boundingBox();
       const rank = await page.locator('.lob-rank').boundingBox();
-      const at = (x) => board.x + x * scale;
-      assert.ok(Math.abs(league.x - at(48)) < 2, `League panel at x=48 of the board (${width})`);
-      assert.ok(Math.abs(rank.x - at(48)) < 2, `Rank panel at x=48 too (${width})`);
-      assert.ok(Math.abs(modesBounds.x - at(1062)) < 2, `Modes panel at x=1062 (${width})`);
-      assert.ok(Math.abs(league.width - 330 * scale) < 2, `and 330 wide (${width})`);
-      // The room fills the frame rather than letterboxing the canvas.
-      const frame = await page.locator('.lob-frame').boundingBox();
+      const gap = await page.locator('.lob-frame').evaluate(n =>
+        parseFloat(getComputedStyle(n).getPropertyValue('--lob-gap')));
+
+      // The scene still fills the frame's width.
+      assert.ok(Math.abs(board.width - frame.width) < 2, `The scene fills the frame (${width})`);
+      assert.ok(Math.abs(board.x - frame.x) < 2, `with no space beside it (${width})`);
       const room = await page.locator('.lob-frame > .bg').boundingBox();
-      assert.ok(Math.abs(room.width - frame.width) < 2, `The room reaches the frame's edges (${width})`);
-      assert.ok(Math.abs(board.width - frame.width) < 2, `No height-driven shrinking of the board (${width}: ${board.width} vs ${frame.width})`);
-      assert.ok(Math.abs(board.x - frame.x) < 2, `No unused horizontal space beside the board (${width})`);
-      assert.ok(Math.abs(league.y - frame.y - 32 * scale) < 2, `No duplicate artboard header (${width})`);
-      assert.ok(Math.abs((await modes.locator('.mode').first().boundingBox()).height - 62 * scale) < 2,
-        `Mode buttons retain the artboard's 62px proportions (${width})`);
-      assert.ok(Math.abs((await modes.locator('.ar-btn').boundingBox()).height - 58 * scale) < 2,
-        `Play button retains the artboard's 58px proportions (${width})`);
+      assert.ok(Math.abs(room.width - frame.width) < 2, `The room reaches the edges (${width})`);
+
+      // Top-left, bottom-left, and the right-hand edge floor to ceiling.
+      assert.ok(Math.abs(league.x - (frame.x + gap)) < 2, `League pinned top-left (${width})`);
+      assert.ok(Math.abs(league.y - (frame.y + gap)) < 2, `and to the top (${width})`);
+      assert.ok(Math.abs(rank.x - (frame.x + gap)) < 2, `Rank pinned bottom-left (${width})`);
+      assert.ok(Math.abs((rank.y + rank.height) - (frame.y + frame.height - gap)) < 2,
+        `and to the bottom (${width})`);
+      assert.ok(Math.abs((modesBounds.x + modesBounds.width) - (frame.x + frame.width - gap)) < 2,
+        `Modes pinned to the right edge (${width})`);
+      assert.ok(Math.abs(modesBounds.y - (frame.y + gap)) < 2, `Modes starts at the top (${width})`);
+      assert.ok(Math.abs((modesBounds.y + modesBounds.height) - (frame.y + frame.height - gap)) < 2,
+        `and runs to the bottom (${width})`);
+      sizes[width] = { league: league.width, modes: modesBounds.width, board: board.width };
     }
+    // The proof that the chrome is pinned rather than scaled: the frame got
+    // 700px wider and the panels did not move a pixel in size.
+    assert.equal(sizes[2200].league, sizes[1500].league, 'The panels keep their width as the window grows');
+    assert.equal(sizes[2200].modes, sizes[1500].modes, 'including the modes panel');
+    assert.ok(sizes[2200].board > sizes[1500].board + 600, 'while the scene does scale with it');
 
     // ── Widths ──────────────────────────────────────────────────────────
     await page.emulateMedia({ reducedMotion: 'reduce' });

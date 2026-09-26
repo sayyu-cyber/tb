@@ -5,7 +5,7 @@ It is reference material only: nothing in `design/` is imported, built or linted
 (`next lint`, `tsc` and `npm run check` only look at `app/`, `components/`, `lib/`, `styles/` and `*.ts(x)`).
 
 The live, playable canvas (private to Sayyu) is at
-https://claude.ai/artifact/BYFstSTQ14paceyGJpGgV8. It's titled "Thaasbai · Arena" and has 21 boards: the 7 table boards and the 14 app screens.
+https://claude.ai/artifact/BYFstSTQ14paceyGJpGgV8. It's titled "Thaasbai · Arena" and has 43 boards: the 7 table boards, the 14 app screens and 22 phone boards.
 
 ## New: the app screens (blue edition)
 
@@ -18,6 +18,7 @@ Settings. They use **blue `#00BCC8` in place of violet**. The table boards below
 | `APP_SCREENS.md` | **Start here for app screens.** Palette, shell spec, shared pieces, a board → route → files → screenshot table, and code issues found while designing. |
 | `WORKSPLIT.md` | Who builds what: Claude and ChatGPT (Codex), file ownership, branches, ports and the checks every screen must pass. |
 | `PROMPTS.md` | The prompts to paste into Claude and ChatGPT, in the order to use them. |
+| `MOBILE.md` | **Phone layouts.** Portrait app screens (`boards/M*.dc.html`) and landscape tables (`boards/P*.dc.html`), with 2× references in `screens/phone/`. |
 | `screens/app/*.jpg` | Pixel reference for every app screen and its key states (19 images). |
 | `boards/<Screen>.dc.html` | Source of each app board (same format as the table boards). |
 | `app-reference.css` | The shared shell and component CSS the app boards use, blue edition. |
