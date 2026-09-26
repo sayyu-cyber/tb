@@ -30,11 +30,21 @@ function tierClass(tier: string) {
   return TIER_CLASS[tier] ?? "bronze";
 }
 
-export function RankLabel({ tier, className = "" }: { tier: string; className?: string }) {
+export function RankLabel({
+  tier,
+  children,
+  className = "",
+}: {
+  tier: string;
+  /** Replaces the tier name, for lines like "Silver · 31" that carry the
+   *  trophy count too. The hexagon still takes its colour from `tier`. */
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
     <span className={`rank ${tierClass(tier)} ${className}`.trim()}>
       <i aria-hidden="true" />
-      {tier}
+      {children ?? tier}
     </span>
   );
 }
