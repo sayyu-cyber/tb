@@ -4,11 +4,10 @@ import { MindiDealIntro } from "./MindiDealIntro";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Home, Sparkles, Smartphone, RotateCcw } from "lucide-react";
-import Link from "next/link";
+import { Smartphone } from "lucide-react";
 import { BOT_NAMES } from "@/constants/ranks";
 import { useEconomy } from "@/contexts/EconomyContext";
-import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
+import { MindiResultScreen } from "./MindiResultScreen";
 import {
   Card,
   Suit,
@@ -29,9 +28,11 @@ import {
   trumpAfterTrick,
   isTen,
   checkHandOutcome,
+  tensFromTrick,
   chooseBotPlay,
   HandOutcome,
   CompletedTrick,
+  TenCapture,
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,11 +91,13 @@ function MindiHand({mode,onReplay}:MindiGameClientProps&{onReplay:()=>void}) {
   const [trumpSuit, setTrumpSuit] = useState<Suit | null>(deal.trumpSuit);
   const [trick, setTrick] = useState<TrickPlay[]>([]);
   const [tensCaptured, setTensCaptured] = useState<Record<Team, number>>({ A: 0, B: 0 });
+  // Which Ten went where, for the hand-over reveal (Result board). The
+  // tally above is what the rules use; this is what players want to see.
+  const [tenCaptures, setTenCaptures] = useState<TenCapture[]>([]);
   const [tricksWon, setTricksWon] = useState<Record<Team, number>>({ A: 0, B: 0 });
   const [tricksPlayed, setTricksPlayed] = useState(0);
   const [outcome, setOutcome] = useState<HandOutcome | null>(null);
   const [resolvingTrick, setResolvingTrick] = useState(false);
-  const [showRewardPopup, setShowRewardPopup] = useState(false);
   const rewardApplied=useRef(false);
   const [lastTrick,setLastTrick]=useState<CompletedTrick|null>(null);
 
@@ -166,6 +169,7 @@ function MindiHand({mode,onReplay}:MindiGameClientProps&{onReplay:()=>void}) {
     setLastTrick({plays,winner:winnerSeat,number:newTricksPlayed});
 
     setTensCaptured(newTens);
+    setTenCaptures((taken) => [...taken, ...tensFromTrick(plays, winnerSeat, newTricksPlayed)]);
     setTricksWon(newTricks);
     setTricksPlayed(newTricksPlayed);
     setTrick([]);
@@ -197,100 +201,33 @@ function MindiHand({mode,onReplay}:MindiGameClientProps&{onReplay:()=>void}) {
     processMatchEnd(outcome.winner === "A", "mindi");
   }, [outcome, processMatchEnd]);
 
-  function handleShowRewards() {
-    if (outcome) setShowRewardPopup(true);
-  }
-
   const yourHand = sortHand(hands[0] ?? []);
   const legalForYou = isHuman(turnSeat) ? getLegalPlays(hands[turnSeat], ledSuit) : [];
 
   if (outcome) {
-    const youWon = outcome.winner === "A";
+    // A bot hand pays coins but no trophies - there is no ranked pool
+    // behind vs-AI or Pass & Play, so the trophy panel says so rather than
+    // printing a change that never happened.
+    const winners = (outcome.winner === "A" ? [0, 2] : [1, 3])
+      .map((seat) => (seat === 0 ? "You" : mode === "ai" ? botNamesRef.current[seat] : seatNames[seat]));
     return (
-      <>
-        <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-center space-y-6"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon
-                  ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]"
-                  : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
-              }`}
-            >
-              <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
-            </motion.div>
-
-            <div>
-              <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
-                {youWon ? t("mindi_youWon") : t("mindi_youLost")}
-              </h1>
-              {(outcome.special === "baga" || outcome.special === "haasbaga") && (
-                <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {outcome.special === "haasbaga" ? t("mindi_haasbaga") : t("mindi_baga")}
-                </p>
-              )}
-            </div>
-
-            <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{t("mindi_yourTeam")} — {t("spectate_tensLabel")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tensCaptured.A} / 4</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{t("mindi_opponents")} — {t("spectate_tensLabel")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tensCaptured.B} / 4</span>
-              </div>
-              <div className="h-px bg-[rgb(var(--c3))]" />
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{t("offline_yourTeamTricks")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tricksWon.A}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{t("offline_opponentsTricks")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{outcome.tricksWon.B}</span>
-              </div>
-            </div>
-
-            <button className="game-play-again" onClick={onReplay}><RotateCcw size={18} aria-hidden="true"/>Play Again</button>
-            <div className="flex gap-3 max-w-xs mx-auto">
-              <Link href="/play" className="flex-1">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <Home size={16} />
-                  Exit
-                </motion.button>
-              </Link>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleShowRewards}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
-              >
-                <Sparkles size={16} />
-                Rewards
-              </motion.button>
-            </div>
-          </motion.div>
-        </div>
-        <MatchRewardPopup
-          isOpen={showRewardPopup}
-          onClose={() => setShowRewardPopup(false)}
-          isVictory={outcome.winner === "A"}
-          coinsEarned={outcome.winner === "A" ? 10 : 2}
-          trophyChange={0}
-          newCoinBalance={economyState.economy.coins}
-        />
-      </>
+      <MindiResultScreen
+        outcome={outcome}
+        myTeam="A"
+        tenCaptures={tenCaptures}
+        numPlayers={4}
+        totalTricks={13}
+        modeLabel={mode === "ai" ? "Vs AI" : "Pass & Play"}
+        trophyChange={0}
+        trophiesAfter={null}
+        coins={outcome.winner === "A" ? 10 : 2}
+        balance={economyState.economy.coins}
+        winnerNames={winners}
+        onPlayAgain={onReplay}
+      />
     );
   }
+
 
   if (needsPassScreen) {
     return (

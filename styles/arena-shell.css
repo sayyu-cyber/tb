@@ -146,7 +146,14 @@
    uses it, so it belongs with the shared pieces. Copied value for value;
    only the font names are rewritten to the --font-* variables, exactly as
    scripts/port-board.mjs would have done. */
-.arena-app .stat {
+/* Scoped to `.ar-page` because `.stat` is two different things on two
+   different boards: this figure column on Home, and a result panel on
+   design/arena/boards/Result.dc.html. The shell keeps the `arena-app`
+   namespace on in-match screens, so without this the Home rule would reach
+   into the Mindi hand-over screen and give its panels a 56px height, a
+   centred alignment and a left border. Both boards keep their own class
+   name this way; neither has to be renamed away from its artboard. */
+.arena-app .ar-page .stat {
   display: flex;
   align-items: center;
   gap: 11px;
@@ -155,8 +162,8 @@
   white-space: nowrap;
   border-left: 1px solid rgba(255, 255, 255, .08);
 }
-.arena-app .stat:first-child { border-left: 0; }
-.arena-app .stat .si {
+.arena-app .ar-page .stat:first-child { border-left: 0; }
+.arena-app .ar-page .stat .si {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,8 +173,8 @@
   background: rgba(255, 255, 255, .05);
   color: #C6FF33;
 }
-.arena-app .stat .si svg { width: 19px; height: 19px; }
-.arena-app .stat b {
+.arena-app .ar-page .stat .si svg { width: 19px; height: 19px; }
+.arena-app .ar-page .stat b {
   display: block;
   font-family: var(--font-display), sans-serif;
   font-weight: 700;
@@ -175,7 +182,7 @@
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.arena-app .stat span {
+.arena-app .ar-page .stat span {
   display: block;
   margin-top: 5px;
   font-family: var(--font-display), sans-serif;

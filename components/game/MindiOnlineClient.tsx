@@ -2,14 +2,14 @@
 import { MindiTable } from "./MindiTable";
 import { MindiDealIntro } from "./MindiDealIntro";
 
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Home, Sparkles, Users, RefreshCw } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { updateMatchResult } from "@/lib/trophyUpdates";
-import MatchRewardPopup from "@/components/rewards/MatchRewardPopup";
+import { TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks";
+import { MindiResultScreen } from "./MindiResultScreen";
 import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
 import {
   Card,
@@ -30,7 +30,9 @@ import {
   FirstPlayerDraw,
   isTen,
   checkHandOutcome,
+  tensFromTrick,
   HandOutcome,
+  TenCapture,
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { sortHand } from "@/lib/cardSort";
@@ -59,6 +61,10 @@ export interface MindiOnlineState {
    *  the same opening ceremony. Absent on matches created before this
    *  existed - those simply start without the ceremony. */
   firstDraw?: FirstPlayerDraw;
+  /** Every Ten as it was taken, for the hand-over reveal. Absent on matches
+   *  that started before this existed - those end on the same screen with
+   *  the row of Tens left out rather than guessed at. */
+  tenCaptures?: TenCapture[];
 }
 
 export function MindiOnlineClient({ matchId }: { matchId: string }) {
@@ -72,8 +78,11 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchDoc<MindiOnlineState> | null>(null);
   const [matchLoadError, setMatchLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [showRewardPopup, setShowRewardPopup] = useState(false);
   const [rewardsApplied, setRewardsApplied] = useState(false);
+  // The trophy total updateMatchResult actually wrote, so the result
+  // screen counts up to the real number rather than to whatever the auth
+  // listener happens to be holding when the hand ends.
+  const [trophiesAfter, setTrophiesAfter] = useState<number | null>(null);
   const [introSeen, setIntroSeen] = useState(false);
 
   useEffect(() => {
@@ -175,6 +184,9 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         trick: [],
         lastTrick: {plays:trick,winner:winnerSeat,number:tricksPlayed},
         tensCaptured,
+        // The same Tens the tally above just counted, recorded individually
+        // so the hand-over screen can turn them face up (Result board).
+        tenCaptures: [...(s.tenCaptures ?? []), ...tensFromTrick(trick, winnerSeat, tricksPlayed)],
         tricksWon,
         tricksPlayed,
         turnSeat: outcome ? s.turnSeat : winnerSeat,
@@ -185,11 +197,26 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     });
   }
 
-  async function handleShowRewards() {
-    if (!state?.outcome || rewardsApplied) {
-      setShowRewardPopup(true);
-      return;
-    }
+  /**
+   * CODE ISSUE 6 lived here. The reward popup was told
+   * `youWon ? 15 : -5`, two numbers that appear nowhere in the rules: a
+   * ranked hand is worth TROPHY_WIN / TROPHY_LOSS (+5 / -2), doubled to
+   * +10 / -4 in the Weekend League pool, and a casual hand is worth
+   * nothing. So the screen congratulated players on trophies they had not
+   * been given, and understated the weekend bonus. The figure shown is now
+   * the same expression updateMatchResult is called with, one line below,
+   * so the two cannot disagree again.
+   */
+  const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
+  const stakes = match?.pool === "casual" ? 0 : trophyMultiplier;
+
+  /**
+   * Rewards land as the hand ends, not when a button is pressed. The board
+   * (design/arena/boards/Result.dc.html) shows what the hand paid on the
+   * result screen itself, and the Gin result already worked this way.
+   */
+  const applyRewards = useCallback(async () => {
+    if (!state?.outcome || rewardsApplied) return;
     setRewardsApplied(true);
     const youWon = state.outcome.winner === myTeam;
     processMatchEnd(youWon, "mindi");
@@ -198,16 +225,19 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     // Play, but trophies/rank/win-loss record are real-multiplayer-Ranked
     // only, so skip updateMatchResult entirely for a casual match.
     if (match?.pool !== "casual") {
-      const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
       // A failure here means the player's trophies/rank silently didn't
       // move after a match they just finished - previously swallowed, so
       // it looked like the game simply forgot the result.
-      await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {
+      const result = await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {
         showToast(t("toast_trophiesFailed"), "error");
+        return null;
       });
+      if (result) setTrophiesAfter(result.newTrophies);
     }
-    setShowRewardPopup(true);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.outcome, rewardsApplied, myTeam, match?.pool, trophyMultiplier, myUid]);
+
+  useEffect(() => { if (state?.outcome) applyRewards(); }, [state?.outcome, applyRewards]);
 
   async function handleForfeit() {
     if (!match) return;
@@ -269,77 +299,33 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
 
   if (state.outcome) {
     const youWon = state.outcome.winner === myTeam;
+    const poolLabel = match.pool === "casual" ? "Casual online"
+      : match.pool === "weekend" ? "Weekend League"
+      : numPlayers === 2 ? "Ranked 1v1" : "Ranked duo";
+    // The winning side's real names, for the line under the headline.
+    const winnerNames = (match.players as string[])
+      .map((uid, seat) => ({ uid, seat: seat as SeatIndex }))
+      .filter(({ seat }) => teamOf(seat) === state.outcome!.winner)
+      .map(({ uid, seat }) => (uid === myUid ? "You" : opponentProfiles[uid]?.displayName ?? seatLabelFor(seat)));
     return (
-      <>
-        <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6">
-          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
-                youWon ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
-              }`}
-            >
-              <Sparkles size={40} className={youWon ? "text-[#0F0F0F]" : "text-[rgb(var(--c4))]"} />
-            </motion.div>
-            <div>
-              <h1 className={`text-3xl font-bold ${youWon ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
-                {state.outcome.special === "forfeit"
-                  ? youWon
-                    ? t("mindi_opponentForfeited")
-                    : t("mindi_youForfeited")
-                  : youWon
-                  ? t("mindi_youWon")
-                  : t("mindi_youLost")}
-              </h1>
-              {state.outcome.special && state.outcome.special !== "forfeit" && (
-                <p className="text-[rgb(var(--gold-ink))] text-sm font-semibold mt-1 uppercase tracking-wide">
-                  {state.outcome.special === "haasbaga" ? t("mindi_haasbaga") : t("mindi_baga")}
-                </p>
-              )}
-            </div>
-            <div className="glass-card rounded-2xl p-6 max-w-xs mx-auto space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? t("mindi_you") : t("mindi_yourTeam")} — {t("spectate_tensLabel")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{state.outcome.tensCaptured[myTeam]} / 4</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[rgb(var(--c4))] text-xs">{numPlayers === 2 ? t("mindi_opponent") : t("mindi_opponents")} — {t("spectate_tensLabel")}</span>
-                <span className="text-[rgb(var(--text-primary))] font-bold">{state.outcome.tensCaptured[myTeam === "A" ? "B" : "A"]} / 4</span>
-              </div>
-              <div className="flex items-center justify-between"><span className="text-xs">{numPlayers === 2 ? "Your tricks" : "Your Team tricks"}</span><strong>{state.outcome.tricksWon[myTeam]}</strong></div>
-              <div className="flex items-center justify-between"><span className="text-xs">Opponent tricks</span><strong>{state.outcome.tricksWon[myTeam === "A" ? "B" : "A"]}</strong></div>
-            </div>
-            <div className="flex gap-3 max-w-xs mx-auto">
-              <Link href="/play" className="flex-1">
-                <motion.button whileTap={{ scale: 0.95 }} className="w-full py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2">
-                  <Home size={16} />
-                  {t("common_exit")}
-                </motion.button>
-              </Link>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleShowRewards}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] text-sm font-semibold flex items-center justify-center gap-2"
-              >
-                <Sparkles size={16} />
-                {t("common_rewards")}
-              </motion.button>
-            </div>
-          </motion.div>
-        </div>
-        <MatchRewardPopup
-          isOpen={showRewardPopup}
-          onClose={() => setShowRewardPopup(false)}
-          isVictory={youWon}
-          coinsEarned={youWon ? 10 : 2}
-          trophyChange={match?.pool === "casual" ? 0 : youWon ? 15 : -5}
-          newCoinBalance={0}
-        />
-      </>
+      <MindiResultScreen
+        outcome={state.outcome}
+        myTeam={myTeam}
+        tenCaptures={state.tenCaptures ?? []}
+        numPlayers={numPlayers}
+        totalTricks={numPlayers === 2 ? 26 : 13}
+        modeLabel={poolLabel}
+        weekend={match.pool === "weekend"}
+        trophyChange={(youWon ? TROPHY_WIN : TROPHY_LOSS) * stakes}
+        trophiesAfter={trophiesAfter ?? playerStats?.trophies ?? null}
+        coins={youWon ? 10 : 2}
+        balance={economyState.economy.coins}
+        winnerNames={winnerNames}
+        playAgainHref={match.pool === "casual" ? "/play/mindi/casual/online" : "/play/mindi/ranked-duo"}
+      />
     );
   }
+
 
   // Seating is relative to the viewer, who is always at the bottom.
   // 4-player: partner opposite, opponents left and right. 1v1 (the FFA room

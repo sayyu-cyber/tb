@@ -292,6 +292,37 @@ export function isTen(card: Card): boolean {
   return card.rank === 10;
 }
 
+/**
+ * A Ten as it was taken: which one, who got it, and on which trick.
+ *
+ * The hand tally only ever counted Tens (tensCaptured is two numbers), which
+ * is all the rules need - but it throws away the part players actually talk
+ * about afterwards: which Tens you got, and when. The hand-over screen
+ * (design/arena/boards/Result.dc.html) shows all four face up with a tag on
+ * each, so the capture is recorded as it happens rather than reconstructed,
+ * which is impossible from a pair of counts.
+ *
+ * Nothing about the rules changed. This is a record of what the rules did.
+ */
+export interface TenCapture {
+  suit: Suit;
+  team: Team;
+  /** 1-based, so it reads the way players count tricks. */
+  trick: number;
+}
+
+/**
+ * The Tens in a trick that has just resolved, tagged with the team that took
+ * it. Called from the same place the tensCaptured tally is updated, so the
+ * two can never disagree about how many Tens went where.
+ */
+export function tensFromTrick(plays: TrickPlay[], winner: SeatIndex, trickNumber: number): TenCapture[] {
+  const team = teamOf(winner);
+  return plays
+    .filter((play) => isTen(play.card))
+    .map((play) => ({ suit: play.card.suit, team, trick: trickNumber }));
+}
+
 export interface HandOutcome {
   winner: Team;
   tensCaptured: Record<Team, number>;
