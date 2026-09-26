@@ -63,17 +63,17 @@ const VIOLET_RGB = [
  * renders in the wrong typeface.
  */
 const FONTS = [
-  [/'Space Grotesk',\s*system-ui,\s*sans-serif/g, "var(--font-display), system-ui, sans-serif"],
-  [/'Space Grotesk',\s*sans-serif/g, "var(--font-display), sans-serif"],
-  [/'Inter Tight',\s*system-ui,\s*sans-serif/g, "var(--font-ui), system-ui, sans-serif"],
-  [/'Inter Tight',\s*sans-serif/g, "var(--font-ui), sans-serif"],
-  [/'Noto Sans Thaana',\s*sans-serif/g, "var(--font-thaana), sans-serif"],
+  [/['"]Space Grotesk['"],\s*system-ui,\s*sans-serif/g, "var(--font-display), system-ui, sans-serif"],
+  [/['"]Space Grotesk['"],\s*sans-serif/g, "var(--font-display), sans-serif"],
+  [/['"]Inter Tight['"],\s*system-ui,\s*sans-serif/g, "var(--font-ui), system-ui, sans-serif"],
+  [/['"]Inter Tight['"],\s*sans-serif/g, "var(--font-ui), sans-serif"],
+  [/['"]Noto Sans Thaana['"],\s*sans-serif/g, "var(--font-thaana), sans-serif"],
 ];
 
 function retypeface(css) {
   let out = css;
   for (const [pattern, replacement] of FONTS) out = out.replace(pattern, replacement);
-  const stray = out.match(/'(Space Grotesk|Inter Tight|Noto Sans Thaana)'/g);
+  const stray = out.match(/['"](Space Grotesk|Inter Tight|Noto Sans Thaana)['"]/g);
   if (stray) {
     console.error(`✗ unconverted font reference: ${[...new Set(stray)].join(", ")}`);
     console.error("  add the form to FONTS in scripts/port-board.mjs");
@@ -93,12 +93,24 @@ function recolour(css) {
   return out;
 }
 
+/**
+ * Purples that are artwork, not the pack's accent colour, and must survive
+ * the recolour. The Sunset card back is a dusk gradient: orange to pink to a
+ * deep purple night. Mapping its last stop onto the blue ramp would turn a
+ * sunset into a teal smear. The allow-list is explicit so a real stray
+ * violet still fails the build.
+ */
+const DELIBERATE_PURPLE = new Set([
+  "#4A1F6B", // .cb.sunset - the night end of the dusk gradient
+]);
+
 /** Anything left that sits in the violet/purple hue band is a miss. */
 function findStrayViolet(css) {
   const strays = [];
   for (const [, hex] of css.matchAll(/#([0-9a-fA-F]{6})\b/g)) {
     const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
     // Purple: blue clearly dominant, red above green, and not near-grey.
+    if (DELIBERATE_PURPLE.has(("#" + hex).toUpperCase())) continue;
     if (b > 90 && b - g > 40 && r > g && b - Math.min(r, g) > 50) strays.push("#" + hex);
   }
   for (const [match, r, g, b] of css.matchAll(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g)) {
@@ -108,15 +120,29 @@ function findStrayViolet(css) {
   return [...new Set(strays)];
 }
 
-const [board, name] = process.argv.slice(2);
+const args = process.argv.slice(2);
+
+// `--css <file> <name>` ports a plain stylesheet that sits beside the boards
+// instead of inside one. design/arena/app-reference.css is the shared shell
+// (sidebar, top bar, panels, pills, card backs) that all fourteen app boards
+// repeat; porting it once keeps a single copy in styles/ rather than the same
+// rules duplicated through fourteen generated files.
+const cssMode = args[0] === "--css";
+const [board, name] = cssMode ? args.slice(1) : args;
 if (!board || !name) {
-  console.error("usage: node scripts/port-board.mjs <Board> <name>   e.g. Main mindi");
+  console.error("usage: node scripts/port-board.mjs <Board> <name>              e.g. Main mindi");
+  console.error("       node scripts/port-board.mjs --css <file.css> <name>     e.g. --css app-reference.css app");
   process.exit(1);
 }
 
-const html = readFileSync(join(root, "design", "arena", "boards", `${board}.dc.html`), "utf8");
-const raw = [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join("\n");
-if (!raw.trim()) { console.error(`No <style> found in ${board}.dc.html`); process.exit(1); }
+const source = cssMode
+  ? join(root, "design", "arena", board)
+  : join(root, "design", "arena", "boards", `${board}.dc.html`);
+const text = readFileSync(source, "utf8");
+const raw = cssMode
+  ? text
+  : [...text.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join("\n");
+if (!raw.trim()) { console.error(`No CSS found in ${source}`); process.exit(1); }
 
 const ns = `.arena-${name}`;
 const recoloured = retypeface(recolour(raw));
@@ -133,6 +159,10 @@ out.walkRules(rule => {
   // The board's secondary button variant is `.violet`. The colour is now
   // #00BCC8, so the name would be a lie in every call site that used it.
   rule.selector = rule.selector.replace(/\.violet\b/g, ".blue");
+  // The shared sheet carries a couple of button rules. The app's own button
+  // recipe is `.ar-btn` (styles/arena.css) - point them at it, or they'd be
+  // dead rules matching a class nothing renders.
+  if (cssMode) rule.selector = rule.selector.replace(/\.btn\b/g, ".ar-btn");
   // Keyframe steps (0%, from, to) are not selectors; prefixing them breaks
   // the animation silently.
   if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
@@ -147,13 +177,22 @@ out.walkRules(rule => {
   if (rule.selectors.length === 0) rule.remove();
 });
 
-const header = `/* GENERATED from design/arena/boards/${board}.dc.html by scripts/port-board.mjs.
+const origin = cssMode ? `design/arena/${board}` : `design/arena/boards/${board}.dc.html`;
+const header = `/* GENERATED from ${origin} by scripts/port-board.mjs.
    Do not edit by hand - re-run the script instead.
 
    Two changes from the board, and only two: every selector is namespaced
    under ${ns} so the board's generic class names (.table, .btn, .face)
    cannot collide with the app's, and the pack's violet is replaced by the
-   owner's #00BCC8 throughout. Everything else is the board's own CSS. */\n\n`;
+   owner's #00BCC8 throughout. Everything else is the board's own CSS.${
+  cssMode
+    ? `
+
+   One more for this sheet: .btn is rewritten to .ar-btn, the app's own
+   button recipe in styles/arena.css. App-only geometry that the boards get
+   from their fixed 1440x900 canvas lives in styles/arena-shell.css.`
+    : ""
+} */\n\n`;
 
 const file = join(root, "styles", `arena-${name}.css`);
 writeFileSync(file, header + out.toString() + "\n", "utf8");

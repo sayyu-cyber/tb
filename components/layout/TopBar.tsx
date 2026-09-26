@@ -8,7 +8,7 @@ import { Bell, ChevronDown, User, Settings, LogOut, UserPlus, Search, Crown, Gam
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
-import { RankBadge } from "@/components/ui/RankBadge";
+import { Avatar as ArenaAvatar, RankLabel } from "@/components/arena";
 import { Badge } from "@/components/ui/Badge";
 import { isAdminEmail } from "@/lib/admin";
 import { watchIncomingRequests, type FriendRequestDoc } from "@/lib/friends";
@@ -94,9 +94,12 @@ function SearchBox() {
   };
 
   return (
-    <div ref={ref} className="launcher-search relative w-full max-w-xs">
-      <div className="flex items-center gap-2 rounded-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] px-3.5 py-2 focus-within:border-[rgb(var(--gold)/45%)] transition-colors">
-        <Search size={15} className="text-[rgb(var(--c4))] shrink-0" aria-hidden="true" />
+    // `.search` is the board's field: 380px, 44px tall, a 12px radius and an
+    // inset hairline rather than a border, so it lines up with the coin tray
+    // and the profile chip beside it.
+    <div ref={ref} className="launcher-search relative w-full max-w-[380px]">
+      <div className="search focus-within:shadow-[inset_0_0_0_1px_rgba(198,255,51,.55)] transition-shadow">
+        <Search size={18} className="shrink-0" aria-hidden="true" />
         <input
           value={query}
           onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true); }}
@@ -116,7 +119,7 @@ function SearchBox() {
           }}
           placeholder={t("search_placeholder")}
           aria-label={t("search_placeholder")}
-          className="w-full bg-transparent text-[13px] text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--c4))] outline-none"
+          className="w-full bg-transparent text-[14px] font-medium text-white placeholder:text-[#8E8E9C] outline-none"
         />
       </div>
 
@@ -190,19 +193,18 @@ function NotificationBell() {
   const count = requests.length + unreadConvos.length;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative bell">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={t("nav_notifications")}
         aria-expanded={open}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c5))]"
+        className="ar-ibtn"
       >
-        <Bell size={17} aria-hidden="true" />
-        {count > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[rgb(var(--coral))] px-1 text-[9px] font-bold text-white shadow-[0_0_8px_-1px_rgb(var(--coral)/80%)]">
-            {count}
-          </span>
-        )}
+        <Bell size={19} aria-hidden="true" />
+        {/* `.dotc` is the board's count: a blue tile with dark text, not a
+            red dot. Unread notifications are information, and in the Arena
+            palette blue is information; red is reserved for danger. */}
+        {count > 0 && <span className="dotc">{count}</span>}
       </button>
 
       <AnimatePresence>
@@ -282,36 +284,39 @@ function ProfileChip() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={`${t("nav_profile")}: ${user.displayName || t("profile_player")}`}
-        className="flex items-center gap-2 rounded-full pl-1 pr-2.5 py-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] hover:border-[rgb(var(--gold)/45%)] transition-colors"
+        // `.chipme` is the board's account chip: a 48px tray with the
+        // avatar tile, the name in tracked uppercase, and the rank under it.
+        className="chipme"
+        data-flat
       >
-        <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-[rgb(var(--gold-bright))] to-[rgb(var(--gold-deep))] p-[2px]">
-          <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[rgb(var(--c1))]">
-            {user.photoURL ? (
-              <img src={user.photoURL} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <User size={14} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
-            )}
-          </div>
+        <span className="relative">
+          <ArenaAvatar
+            name={user.displayName || t("profile_player")}
+            src={user.photoURL}
+            seed={user.uid}
+            size={40}
+            radius={9}
+          />
           {vip && (
             <span
-              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[rgb(var(--orchid))] border border-[rgb(var(--c1))]"
+              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-[5px] bg-[#FFC940] text-[#0A0A0A]"
               aria-hidden="true"
             >
-              <Crown size={9} className="text-white" />
+              <Crown size={10} />
             </span>
           )}
-        </div>
-        <div className="hidden sm:block text-left leading-tight">
-          <p className="text-xs font-bold text-[rgb(var(--text-primary))] truncate max-w-[8rem]">
-            {user.displayName || t("profile_player")}
-          </p>
+        </span>
+        <span className="hidden sm:block text-left">
+          <b className="truncate max-w-[8rem]">{user.displayName || t("profile_player")}</b>
           {admin ? (
-            <Badge tone="gold" className="mt-0.5">Admin</Badge>
+            <Badge tone="gold" className="mt-1">Admin</Badge>
           ) : (
-            <RankBadge rank={playerStats?.currentRank || "Unranked"} size="sm" />
+            <span className="mt-1 block">
+              <RankLabel tier={playerStats?.currentRank || "Bronze"} />
+            </span>
           )}
-        </div>
-        <ChevronDown size={14} className="text-[rgb(var(--c4))]" aria-hidden="true" />
+        </span>
+        <ChevronDown size={16} className="cv" aria-hidden="true" />
       </button>
 
       <AnimatePresence>
@@ -368,10 +373,13 @@ function ProfileChip() {
  */
 export function TopBar() {
   return (
-    <div className="app-top-bar flex items-center justify-between gap-3 pt-1 pb-3">
+    // The 76px height, the rule under it and the fade behind it are the
+    // board's `.top` and live on .app-shell-toolbar (styles/arena-shell.css),
+    // so this row only has to lay its contents out. gap 14px is the board's.
+    <div className="app-top-bar flex w-full items-center gap-[14px]">
       <SearchBox />
-      <div className="flex items-center gap-2 ml-auto">
-        <CoinBalance size="sm" />
+      <div className="flex items-center gap-[14px] ml-auto">
+        <CoinBalance size="md" />
         <NotificationBell />
         <ProfileChip />
       </div>

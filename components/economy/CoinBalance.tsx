@@ -11,6 +11,18 @@ interface CoinBalanceProps {
   className?: string;
 }
 
+/**
+ * The player's coin balance.
+ *
+ * Arena (design/arena/APP_SCREENS.md, "Palette"): coins are a lime gem - a
+ * rounded square turned 45 degrees with a soft glow - not the gold circular
+ * "T" coin this used to draw. The gem is `.gem` in styles/arena-app.css, so
+ * it is the same object here, in the top bar and on the shop's price tags
+ * rather than three separate drawings of a coin.
+ *
+ * The tray around it is the board's `.coins`. The figure is tabular so a
+ * balance ticking up doesn't make the row jitter.
+ */
 export default function CoinBalance({ showAnimation = false, size = 'md', className = '' }: CoinBalanceProps) {
   const { state } = useEconomy();
   // economy.coins, not profile.coins: this display used to read the other
@@ -18,37 +30,25 @@ export default function CoinBalance({ showAnimation = false, size = 'md', classN
   // weekly rank reward it showed coins the shop then refused to spend.
   const { coins } = state.economy;
 
-  const sizeClasses = {
-    sm: 'text-sm px-2 py-1 gap-1',
-    md: 'text-base px-3 py-1.5 gap-2',
-    lg: 'text-xl px-4 py-2 gap-2',
-  };
-
-  const iconSizes = {
-    sm: 'w-4 h-4',
-    md: 'w-5 h-5',
-    lg: 'w-6 h-6',
+  // The board's tray is 44px tall with a 16px figure; sm/lg step down and up
+  // from that rather than introducing a second set of proportions.
+  const trayStyle: Record<NonNullable<CoinBalanceProps['size']>, React.CSSProperties> = {
+    sm: { height: 34, padding: '0 10px', gap: 7, fontSize: 13 },
+    md: { height: 44, padding: '0 12px', gap: 9, fontSize: 16 },
+    lg: { height: 52, padding: '0 16px', gap: 10, fontSize: 20 },
   };
 
   return (
     <motion.div
-      className={`inline-flex items-center rounded-full bg-gradient-to-r from-[rgb(var(--gold-deep)/40%)] to-[rgb(var(--gold-deep)/40%)] border border-[rgb(var(--gold)/40%)] backdrop-blur-sm ${sizeClasses[size]} ${className}`}
+      className={`coins ${className}`.trim()}
+      style={trayStyle[size]}
       initial={showAnimation ? { scale: 0.8, opacity: 0 } : false}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
     >
-      <motion.svg
-        className={`${iconSizes[size]} text-[rgb(var(--gold-ink))]`}
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        animate={showAnimation ? { rotate: [0, 360] } : {}}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-      >
-        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="currentColor">T</text>
-      </motion.svg>
+      <i className={`gem ${size === 'sm' ? 'sm' : ''}`.trim()} aria-hidden="true" />
       <motion.span
-        className="font-bold text-[rgb(var(--gold-ink))] tabular-nums"
+        className="tnum"
         key={coins}
         initial={showAnimation ? { y: -10, opacity: 0 } : false}
         animate={{ y: 0, opacity: 1 }}

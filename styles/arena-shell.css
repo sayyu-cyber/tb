@@ -1,0 +1,369 @@
+/* Arena app shell — the hand-written half of the port.
+ *
+ * styles/arena-app.css is generated from design/arena/app-reference.css and
+ * is the board's own CSS verbatim. It cannot be the whole story, because the
+ * boards are fixed 1440x900 artboards: there, .side, .top and .page are
+ * absolutely positioned at known pixel offsets inside a canvas that never
+ * changes size. The app has to be fluid - correct at 1280, 1440 and 1920, and
+ * with a sidebar that turns into a drawer under 1024.
+ *
+ * So this file does two jobs, and nothing else:
+ *
+ *   1. GEOMETRY. The fluid equivalents of what the boards get for free from
+ *      their fixed canvas - the stage background, the top bar's height and
+ *      rule, the page frame's padding.
+ *   2. SKIN. The existing shell (components/layout/sidebar/*, built earlier
+ *      against a gold-and-teal palette) retinted onto the Arena board. This
+ *      is deliberately an override layer rather than a rewrite of the
+ *      sidebar block in globals.css: that block carries the rail/drawer
+ *      width maths, the no-animation-before-ready guard and the tooltip
+ *      portalling, none of which the boards describe and all of which would
+ *      be at risk in a rewrite. Every rule below is a colour, a radius or a
+ *      shadow, traceable to app-reference.css or to the board it came from.
+ *
+ * Load order matters: this comes after globals.css so equal-specificity
+ * rules win, and after arena-app.css so the two agree on the same palette.
+ */
+
+/* ── The stage ────────────────────────────────────────────────────────
+   app-reference.css `.stagebg`, made fluid. The board paints an absolute
+   layer inside its 900px canvas; here the same three layers are fixed
+   behind the page, so they cost no DOM and cannot shift any screen's
+   layout. Values are the board's, except the grid's height, which was a
+   flat 420px of a 900px canvas and is expressed as the same fraction so a
+   short window doesn't end up all grid. */
+.ar-stage {
+  position: relative;
+  min-height: 100vh;
+  color: var(--ar-text);
+  background:
+    radial-gradient(900px 520px at 70% -10%, rgba(0, 188, 200, .22), rgba(0, 188, 200, 0) 70%),
+    radial-gradient(700px 500px at 0% 100%, rgba(0, 188, 200, .12), rgba(0, 188, 200, 0) 70%),
+    linear-gradient(180deg, #07090B 0%, #030405 60%, #000 100%);
+  background-attachment: fixed;
+}
+/* The floor grid, in perspective, fading out before the horizon. */
+.ar-stage::before {
+  content: "";
+  position: fixed;
+  left: -40%;
+  right: -40%;
+  bottom: -2px;
+  height: min(420px, 47vh);
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 188, 200, .34) 1.5px, rgba(0, 0, 0, 0) 1.5px),
+    linear-gradient(90deg, rgba(0, 188, 200, .34) 1.5px, rgba(0, 0, 0, 0) 1.5px);
+  background-size: 84px 84px;
+  background-position: center bottom;
+  transform: perspective(520px) rotateX(58deg);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, 0) 90%);
+  mask-image: linear-gradient(0deg, #000 0%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, 0) 90%);
+}
+/* The single wide beam raking down from the top right. */
+.ar-stage::after {
+  content: "";
+  position: fixed;
+  right: 120px;
+  top: -80px;
+  width: 560px;
+  height: 900px;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(79, 227, 236, .12), rgba(79, 227, 236, 0) 75%);
+  clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%);
+  filter: blur(22px);
+  transform: rotate(18deg);
+}
+.ar-stage > * { position: relative; z-index: 1; }
+
+/* ── Top bar ──────────────────────────────────────────────────────────
+   app-reference.css `.top`. The board pins it to the canvas; here it is the
+   toolbar row the shell already renders, so only the skin is set. */
+.app-shell-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  /* Wraps onto a second row on a phone, where the board never had to fit
+     four things into 390px; the block padding keeps that row breathing. */
+  flex-wrap: wrap;
+  padding: 8px 32px 8px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  background: linear-gradient(180deg, rgba(0, 0, 0, .75), rgba(0, 0, 0, .35));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+@media (max-width: 720px) {
+  .app-shell-toolbar { padding: 8px 14px; }
+}
+/* The board's `.search` is a flat 380px, which is safe inside a 1440px
+   canvas and is not safe here: at 390px wide it would push the document
+   past the viewport and fail the no-horizontal-overflow check. Same field,
+   allowed to shrink. */
+.arena-app .search { width: 100%; max-width: 380px; min-width: 0; }
+.app-top-bar .launcher-search { min-width: 0; }
+/* The tray, the bell and the account chip keep their size; the search is
+   what gives way. */
+.app-shell-toolbar .coins,
+.app-shell-toolbar .chipme { flex: none; }
+
+/* ── Page frame ───────────────────────────────────────────────────────
+   app-reference.css `.page` (28px top, 32px sides and bottom). `.ar-page`
+   already centres content; this only aligns its padding with the boards. */
+.arena-app .ar-page { padding: 28px 32px 32px; }
+@media (max-width: 720px) {
+  .arena-app .ar-page { padding: 20px 14px 28px; }
+}
+
+/* ── Section label ────────────────────────────────────────────────────
+   `.lbl` / `.lbl.dash` - the tracked uppercase kicker above a headline or
+   a section ("— THE HOME OF MALDIVIAN CARD GAMES", "CURRENT RANK"). Another
+   shared piece that lives on the boards rather than in app-reference.css.
+   Copied from design/arena/boards/Home.dc.html, fonts through --font-*. */
+.arena-app .lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #BEBECA;
+  white-space: nowrap;
+}
+.arena-app .lbl.dash::before { content: ""; width: 22px; height: 1.5px; background: currentColor; }
+
+/* ── Stat tile ────────────────────────────────────────────────────────
+   `.stat` from design/arena/boards/Home.dc.html - the strip under the hero
+   (58 GOLD / 96 MATCHES / 54 WINS / ...). It lives on the Home board rather
+   than in app-reference.css, but every screen that shows a run of figures
+   uses it, so it belongs with the shared pieces. Copied value for value;
+   only the font names are rewritten to the --font-* variables, exactly as
+   scripts/port-board.mjs would have done. */
+.arena-app .stat {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 16px;
+  height: 56px;
+  white-space: nowrap;
+  border-left: 1px solid rgba(255, 255, 255, .08);
+}
+.arena-app .stat:first-child { border-left: 0; }
+.arena-app .stat .si {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .05);
+  color: #C6FF33;
+}
+.arena-app .stat .si svg { width: 19px; height: 19px; }
+.arena-app .stat b {
+  display: block;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.arena-app .stat span {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #A4A4B2;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Sidebar, retinted onto the board.
+
+   The structural half of .app-sidebar stays exactly as globals.css has it.
+   Most of the recolour is done by the token block below, because the
+   sidebar declares its own palette; the rules after it are the places where
+   the old gold was written as a literal and a token cannot reach.
+   ───────────────────────────────────────────────────────────────────── */
+.app-sidebar {
+  --rail-w: 84px;
+  --panel-w: 256px;            /* app-reference.css: .side.open */
+  --sb-surface: linear-gradient(180deg, rgba(12, 12, 16, .96), rgba(6, 6, 9, .96));
+  --sb-panel: #0B0B0F;
+  --sb-line: rgba(255, 255, 255, .08);
+  --sb-gold: #C6FF33;          /* "gold" is now the Arena lime */
+  --sb-gold-bright: #C6FF33;
+  --sb-teal: #00BCC8;
+  --sb-text: #FFFFFF;
+  --sb-muted: #8E8E9C;
+  --sb-active-line: rgba(198, 255, 51, .75);
+  --sb-danger: #FF6B80;
+}
+.app-sidebar-panel { box-shadow: none; border-right: 1px solid rgba(255, 255, 255, .08); }
+
+/* The logo diamond: a lime crown inside a black square turned 45 degrees. */
+.app-sidebar-mark-glyph {
+  border-radius: 10px;
+  color: #C6FF33;
+  background: #0B0B0F;
+  transform: rotate(45deg) scale(.86);
+  box-shadow: 0 0 0 2px #C6FF33, 0 0 18px rgba(198, 255, 51, .35);
+}
+.app-sidebar-mark-glyph > * { transform: rotate(-45deg); }
+.app-sidebar-wordmark {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  text-shadow: none;
+}
+.app-sidebar-toggle { border-radius: 10px; }
+
+/* Nav items. Uppercase tracked labels once expanded, per `.side.open .nav a`. */
+.app-sidebar-item { border-radius: 12px; color: #8E8E9C; }
+.app-sidebar-item:hover { background: rgba(255, 255, 255, .05); color: #fff; }
+.app-sidebar-item[data-active] {
+  color: #0A0A0A;
+  background: #C6FF33;
+  box-shadow: 0 0 22px rgba(198, 255, 51, .35);
+}
+.app-sidebar-item[data-active] .app-sidebar-label { color: #0A0A0A; }
+.app-sidebar-item[data-active] .app-sidebar-item-icon { color: #0A0A0A; }
+.app-sidebar[data-expanded="true"] .app-sidebar-label {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* Identity card - `.side.open .ident`. */
+.app-sidebar[data-expanded="true"] .app-sidebar-identity {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.app-sidebar-avatar-inner {
+  border-radius: 11px;
+  color: #0A0A0A;
+  background: linear-gradient(135deg, #E4FF8C, #C6FF33 60%, #A5DD1A);
+}
+.app-sidebar-presence { background: #C6FF33; border-color: #08080B; }
+
+/* VIP. The rail button is the foil conic sweep; the card is the blue panel
+   with a lime bloom in its top-right corner. */
+.app-sidebar-vip-mini {
+  border: 0;
+  border-radius: 12px;
+  color: #0A0A0A;
+  background: conic-gradient(from 200deg, #C6FF33, #00BCC8, #FFFFFF, #C6FF33, #00BCC8, #FFFFFF, #C6FF33);
+  box-shadow: 0 0 18px rgba(0, 188, 200, .35);
+}
+.app-sidebar-vip-mini:hover { color: #0A0A0A; filter: brightness(1.06); }
+.app-sidebar-vip {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #0B2629 0%, #07141A 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 188, 200, .45);
+}
+.app-sidebar-vip::after {
+  content: "";
+  position: absolute;
+  right: -30px;
+  top: -30px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(198, 255, 51, .28), rgba(198, 255, 51, 0));
+}
+.app-sidebar-vip > * { position: relative; z-index: 1; }
+.app-sidebar-vip-crown {
+  border-radius: 10px;
+  color: #0A0A0A;
+  background: conic-gradient(from 200deg, #C6FF33, #00BCC8, #FFFFFF, #C6FF33, #00BCC8, #FFFFFF, #C6FF33);
+}
+.app-sidebar-vip-title small { color: #8E8E9C; text-transform: uppercase; letter-spacing: .14em; }
+.app-sidebar-vip-title strong { color: #FFFFFF; }
+.app-sidebar-vip p { color: #BEBECA; }
+.app-sidebar-vip-cta {
+  border: 0;
+  border-radius: 9px;
+  color: #0A0A0A;
+  background: #C6FF33;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .35), 0 3px 0 #6F9412;
+}
+
+/* Social tiles - `.soc`, `.stack`, `.mini-soc`. */
+.app-sidebar-social {
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
+}
+.app-sidebar-social:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.app-sidebar-social header {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #D4D4DC;
+}
+.app-sidebar-social-glyph { color: #C6FF33; }
+.app-sidebar-social-count { color: #C6FF33; }
+.app-sidebar-social p { color: #8E8E9C; }
+.app-sidebar-dot { background: #C6FF33; box-shadow: 0 0 8px rgba(198, 255, 51, .8); }
+.app-sidebar-stack > span {
+  border-radius: 8px;
+  border-color: #0A0A0D;
+  color: #0A0A0A;
+  background: linear-gradient(135deg, #4FE3EC, #00BCC8 60%, #00727A);
+  font-family: var(--font-display), sans-serif;
+}
+.app-sidebar-stack-more { background: transparent !important; color: #A4A4B2 !important; border-color: transparent !important; }
+.app-sidebar-stack b { border-radius: 5px; border-color: #0A0A0D; background: #C6FF33; color: #0A0A0A; }
+.app-sidebar-mini {
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+  color: #BEBECA;
+}
+.app-sidebar-mini:hover { color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
+/* Counts are blue badges on the rail (`.nav a .bdg`) and on the chat tile. */
+.app-sidebar-unread {
+  border-radius: 5px;
+  border-color: #0A0A0D;
+  background: #00BCC8;
+  color: #00191B;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+}
+.app-sidebar-social-skeleton { background: rgba(255, 255, 255, .04); }
+.app-sidebar-social-error {
+  border-color: rgba(255, 107, 128, .35);
+  background: rgba(255, 107, 128, .08);
+  color: #FFC7CF;
+}
+.app-sidebar-social-error button { color: #C6FF33; }
+
+/* ── Reduced motion ───────────────────────────────────────────────────
+   The only looping animation the shared layer introduces is `.pill.live`'s
+   blink. WORKSPLIT's accessibility checklist requires loops to stop. */
+@media (prefers-reduced-motion: reduce) {
+  .arena-app .pill.live::before { animation: none; }
+}

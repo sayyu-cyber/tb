@@ -42,7 +42,13 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           pseudo-elements on a fixed layer, so it costs no DOM and cannot
           shift any page's layout. In-match screens draw their own table and
           opt out. */}
-      <div className={`app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
+      {/* `arena-app` is the namespace the ported board CSS lives under
+          (styles/arena-app.css). Putting it on the shell makes the board's
+          own classes - .panel, .tabs, .pill, .ava, .cb, .tt - available to
+          every screen inside it, which is what components/arena/* render.
+          In-match screens keep it too: the table boards have their own
+          namespaces, and the two don't overlap. */}
+      <div className={`arena-app app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
         <ConnectionNotice />
         <BackgroundMusicPlayer />

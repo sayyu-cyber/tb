@@ -2,18 +2,27 @@
 
 import { CosmeticItem, CoinPack, RankConfig, Achievement, Rarity, RoomCardType } from '../types/economy';
 
+/**
+ * Arena rarity colours (design/arena/APP_SCREENS.md, "Palette").
+ *
+ * The old ramp went grey / blue / purple / amber. Purple is gone from the
+ * design, and its blue had been reassigned, so Epic moved to lime and Rare
+ * to the Arena blue. `.rar.common` / `.rare` / `.epic` / `.legendary` in
+ * styles/arena-app.css carry the same four values for markup that uses the
+ * board's classes instead of these constants.
+ */
 export const RARITY_COLORS: Record<Rarity, string> = {
-  Common: '#9CA3AF',
-  Rare: '#3B82F6',
-  Epic: '#A855F7',
-  Legendary: '#F59E0B',
+  Common: '#BEBECA',
+  Rare: '#00BCC8',
+  Epic: '#C6FF33',
+  Legendary: '#FFC940',
 };
 
 export const RARITY_GLOW: Record<Rarity, string> = {
-  Common: '0 0 10px rgba(156, 163, 175, 0.3)',
-  Rare: '0 0 15px rgba(59, 130, 246, 0.4)',
-  Epic: '0 0 20px rgba(168, 85, 247, 0.5)',
-  Legendary: '0 0 25px rgba(245, 158, 11, 0.6)',
+  Common: '0 0 10px rgba(190, 190, 202, 0.3)',
+  Rare: '0 0 15px rgba(0, 188, 200, 0.4)',
+  Epic: '0 0 20px rgba(198, 255, 51, 0.5)',
+  Legendary: '0 0 25px rgba(255, 201, 64, 0.6)',
 };
 
 export const CARD_BACKS: CosmeticItem[] = [

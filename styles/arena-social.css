@@ -1,0 +1,14 @@
+/* Arena: the social screens — Friends, Messages, Clubs.
+ *
+ * Owned by the second agent (design/arena/WORKSPLIT.md, "Phase 1:
+ * ownership"). Imported from app/layout.tsx already, so nothing needs to
+ * change there when this fills up.
+ *
+ * House rules for what goes here:
+ *   - Namespace new classes so they can't collide with the shared layer or
+ *     with the other agent's sheet. `.soc-*` is free.
+ *   - The shared pieces (.panel, .tabs, .pill, .ava, .meter, .rank) come
+ *     from styles/arena-app.css. Use them; don't redefine them here.
+ *   - Colours come from the Arena ramp: lime #C6FF33 is you, blue #00BCC8
+ *     is everyone else, and text on blue is dark (#00191B).
+ */

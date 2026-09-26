@@ -14,6 +14,17 @@ import "@/styles/arena-gin-board.css";
 import "@/styles/arena-lobby.css";
 import "@/styles/arena-result.css";
 import "@/styles/arena-phone.css";
+// The shared app-screen layer: arena-app.css is generated from
+// design/arena/app-reference.css, arena-shell.css is the hand-written half
+// (fluid geometry the fixed artboards don't have to describe, and the
+// existing shell retinted onto the board).
+import "@/styles/arena-app.css";
+import "@/styles/arena-shell.css";
+// Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
+// screens (design/arena/WORKSPLIT.md). Imported here, empty, so that agent
+// never has to edit this file and the two of us can't collide in it.
+import "@/styles/arena-social.css";
+import "@/styles/arena-compete.css";
 import "@/styles/mindi.css";
 import "@/styles/gin.css";
 import { AuthProvider } from "@/contexts/AuthContext";
