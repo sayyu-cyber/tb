@@ -1,6 +1,9 @@
 // src/data/cosmetics.ts
 
 import { CosmeticItem, CoinPack, RankConfig, Achievement, Rarity, RoomCardType } from '../types/economy';
+// The single source of truth for rank thresholds - the same table
+// getRankFromTrophies scores against. See RANK_CONFIGS below.
+import { RANKS } from '../constants/ranks';
 
 /**
  * Arena rarity colours (design/arena/APP_SCREENS.md, "Palette").
@@ -136,11 +139,30 @@ export const ROOM_CARD_PRICES: Record<RoomCardType, number> = {
   '1m': 5000,
 };
 
+/**
+ * Rank tiers: thresholds, weekly payout and colour.
+ *
+ * The thresholds used to be 0/500/1200/2500 here while `constants/ranks.ts`
+ * said 0/25/50/75, and `constants/ranks.ts` is what the game actually
+ * scores against - `getRankFromTrophies` reads it, and a win is worth
+ * `TROPHY_WIN` (5). A player on 58 trophies was therefore Gold everywhere
+ * except here, where this table still called them Bronze and paid a Bronze
+ * weekly reward. At 5 trophies a win, 2,500 was roughly five hundred wins,
+ * so Platinum's payout was unreachable in practice.
+ *
+ * The thresholds now come from `constants/ranks.ts` so there is one answer
+ * to "what rank am I", and the colours are the Arena rank ramp that
+ * `.rank.*` / `.rk.*` draw (design/arena/app-reference.css), so a tier is
+ * the same colour in a badge and in a chart.
+ *
+ * Only the thresholds and colours changed. The payouts (50/150/350/700) and
+ * the cosmetic rewards are as they were.
+ */
 export const RANK_CONFIGS: RankConfig[] = [
-  { tier: 'Bronze', minTrophies: 0, color: '#CD7F32', weeklyReward: 50, icon: '/ranks/bronze.png' },
-  { tier: 'Silver', minTrophies: 500, color: '#C0C0C0', weeklyReward: 150, icon: '/ranks/silver.png' },
-  { tier: 'Gold', minTrophies: 1200, color: '#FFD700', weeklyReward: 350, icon: '/ranks/gold.png', weeklyRewardCosmeticId: 'st_mindi_gold' },
-  { tier: 'Platinum', minTrophies: 2500, color: '#E5E4E2', weeklyReward: 700, icon: '/ranks/platinum.png', weeklyRewardCosmeticId: 'pf_dragon' },
+  { tier: 'Bronze', minTrophies: RANKS.BRONZE.min, color: '#E09A62', weeklyReward: 50, icon: '/ranks/bronze.png' },
+  { tier: 'Silver', minTrophies: RANKS.SILVER.min, color: '#D2D6DA', weeklyReward: 150, icon: '/ranks/silver.png' },
+  { tier: 'Gold', minTrophies: RANKS.GOLD.min, color: '#E6C24A', weeklyReward: 350, icon: '/ranks/gold.png', weeklyRewardCosmeticId: 'st_mindi_gold' },
+  { tier: 'Platinum', minTrophies: RANKS.PLATINUM.min, color: '#E9ECEF', weeklyReward: 700, icon: '/ranks/platinum.png', weeklyRewardCosmeticId: 'pf_dragon' },
 ];
 
 export const ACHIEVEMENTS: Achievement[] = [

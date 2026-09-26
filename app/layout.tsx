@@ -20,6 +20,10 @@ import "@/styles/arena-phone.css";
 // existing shell retinted onto the board).
 import "@/styles/arena-app.css";
 import "@/styles/arena-shell.css";
+// Per-board sheets for the app screens, generated the same way, plus the
+// hand-written fluid half that the fixed artboards do not describe.
+import "@/styles/arena-home.css";
+import "@/styles/arena-screens.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
 // screens (design/arena/WORKSPLIT.md). Imported here, empty, so that agent
 // never has to edit this file and the two of us can't collide in it.

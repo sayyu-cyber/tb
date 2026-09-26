@@ -1,0 +1,112 @@
+/* Arena screens: the fluid half.
+ *
+ * The generated sheets (styles/arena-<board>.css) are each board's own CSS,
+ * namespaced. The boards are fixed 1440x900 artboards, so they can place
+ * things at absolute pixel offsets inside a canvas that never changes size.
+ * The app has to be right at 1440 AND still work at 1280, 1920 and on an
+ * 844x390 phone.
+ *
+ * Everything here is one of those two jobs:
+ *   - the same position, expressed so it survives a width change
+ *   - a grid or row that has to wrap below some width
+ *
+ * Nothing here changes a colour, a radius, a shadow or a type size. If a
+ * rule would do that, it belongs in the board's own CSS and the board
+ * should be re-ported instead.
+ *
+ * At 1440 every rule below resolves to the board's own number. That is the
+ * test: change nothing at 1440, bend only outside it.
+ */
+
+/* ── A real control inside the board's `.select` ──────────────────────
+   The boards draw `.select` as a <span> with a chevron, because a board
+   has nothing to choose. Where the choice is real the app puts a native
+   <select> inside it: the tray keeps the board's look, the control keeps
+   the platform's keyboard handling, its focus ring and its picker. */
+.arena-app .select { position: relative; }
+.arena-app .select select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding-right: 4px;
+  outline: none;
+}
+.arena-app .select select option { color: #E4E4EA; background: #121217; }
+.arena-app .select:focus-within { box-shadow: inset 0 0 0 1px rgba(198, 255, 51, .7); }
+
+/* ── Home ─────────────────────────────────────────────────────────────
+   The hero is 1120px wide at 1440 (1440 - 256 sidebar - 64 page padding).
+   The board puts the ring at left:640 and the fan at left:860 inside it;
+   anchored from the right those are 1120-640-440 = 40px and 1120-860 =
+   260px. Identical at 1440, and the art stays together below it. */
+.arena-home .ring { left: auto; right: 40px; }
+.arena-home .fan { left: auto; right: 260px; }
+
+/* The board's copy block: absolute at left:36 top:34, 560px wide. The
+   width becomes a cap so the text reflows instead of running under the
+   fan on a narrower hero. */
+.arena-home .hero-copy {
+  position: absolute;
+  left: 36px;
+  top: 34px;
+  width: min(560px, calc(100% - 72px));
+  z-index: 2;
+}
+/* 92px at 1440. It has to come down on a phone or the wordmark alone is
+   two lines tall. */
+.arena-home .hero-title { font-size: clamp(44px, 6.4vw, 92px); }
+
+/* The event card: the board pins it to the hero's top right. Below the
+   width where it would collide with the copy, it drops under the buttons. */
+.arena-home .event { left: auto; right: 28px; top: 26px; bottom: auto; max-width: min(420px, calc(100% - 56px)); }
+@media (max-width: 1100px) {
+  .arena-home .hero { height: auto; padding-bottom: 24px; }
+  .arena-home .hero-copy { position: static; width: auto; padding: 34px 36px 0; }
+  .arena-home .event { position: static; margin: 20px 36px 0; max-width: none; }
+  /* The art is decorative and has nowhere to go once the copy is in flow. */
+  .arena-home .ring,
+  .arena-home .fan,
+  .arena-home .hero .word { display: none; }
+}
+
+/* The stats strip is a fixed-height row of six blocks on the board. Below
+   1280 it wraps rather than squeezing the figures together. */
+@media (max-width: 1280px) {
+  .arena-home .hudstrip { height: auto; flex-wrap: wrap; gap: 14px; padding: 18px 22px; }
+  .arena-home .hudstrip .stat:first-of-type { border-left: 0; }
+}
+
+/* Quick Play: two covers and the loadout card in a row at 1440. */
+.arena-home .quickplay { display: flex; gap: 18px; }
+@media (max-width: 1180px) {
+  .arena-home .quickplay { flex-wrap: wrap; }
+  .arena-home .quickplay > .cover { flex: 1 1 320px; }
+  .arena-home .quickplay > .loadout { flex: 1 1 100%; width: auto; }
+}
+
+/* The lower row: Current Rank 330, Weekend League 330, shortcuts fill. */
+.arena-home .lower { display: grid; grid-template-columns: 330px 330px minmax(0, 1fr); gap: 18px; }
+@media (max-width: 1180px) {
+  .arena-home .lower { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+}
+
+/* Latest Updates: three across at 1440. */
+.arena-home .updates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1000px) {
+  .arena-home .updates { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+}
+
+/* The lock bar is a single 52px row; on a phone the sentence needs two. */
+@media (max-width: 860px) {
+  .arena-home .lockbar { height: auto; flex-wrap: wrap; gap: 8px 14px; padding: 12px 18px; }
+  .arena-home .lockbar .lockbar-time { margin-left: 0; }
+}
+
+/* The footer is a row at 1440 and stacks on a phone. */
+@media (max-width: 720px) {
+  .arena-home .home-footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+}

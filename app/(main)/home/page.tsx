@@ -1,40 +1,45 @@
 "use client";
-import Link from "next/link";
-import { Users, KeyRound, Award, Package, Shield, Crown, ShoppingBag, Settings, Target } from "lucide-react";
-import { HomeLobbyHero } from "@/components/home/HomeLobbyHero";
-import { PlayerHUD } from "@/components/home/PlayerHUD";
-import { QuickPlayButtons } from "@/components/home/QuickPlayButtons";
-import { NewsSection } from "@/components/home/NewsSection";
-import { WeekendLeague } from "@/components/home/WeekendLeague";
-import { RankProgress } from "@/components/home/RankProgress";
-import { RankLockBanner } from "@/components/game/RankLockBanner";
 
-const shortcuts = [
-  { href: "/friends", label: "Friends", Icon: Users, accent: "var(--deep)" },
-  { href: "/play/mindi/room", label: "Private Rooms", Icon: KeyRound, accent: "var(--orchid)" },
-  { href: "/inventory", label: "Inventory", Icon: Package, accent: "var(--lagoon)" },
-  { href: "/clubs", label: "Clubs", Icon: Shield, accent: "var(--deep)" },
-  { href: "/shop", label: "VIP Pass", Icon: Crown, accent: "var(--gold)" },
-  { href: "/hall-of-fame", label: "Hall of Fame", Icon: Award, accent: "var(--gold)" },
-  { href: "/missions", label: "Missions", Icon: Target, accent: "var(--lagoon)" },
-  { href: "/shop", label: "Cosmetic Shop", Icon: ShoppingBag, accent: "var(--coral)" },
-  { href: "/settings", label: "Settings", Icon: Settings, accent: "var(--c5)" },
-];
+import { useState } from "react";
+import { ArenaSprite } from "@/components/game/ArenaSprite";
+import { ArenaHomeHero } from "@/components/home/arena/ArenaHomeHero";
+import { ArenaLockBar, ArenaStatsStrip } from "@/components/home/arena/ArenaHomeStats";
+import { ArenaQuickPlay } from "@/components/home/arena/ArenaQuickPlay";
+import {
+  ArenaRankCard, ArenaLeagueCard, ArenaShortcuts, ArenaUpdates, ArenaHomeFooter,
+} from "@/components/home/arena/ArenaHomeLower";
 
+/**
+ * Home — design/arena/screens/app/app-01-home.jpg, from the Home board.
+ *
+ * `arena-home` is the namespace the board's own CSS was ported under
+ * (styles/arena-home.css); the shell already carries `arena-app` for the
+ * shared pieces. The column is the board's: a 22px gap between sections,
+ * in the board's order.
+ *
+ * ArenaSprite mounts the suit symbols the fanned cards reference. It is a
+ * <defs>-only SVG, so it takes no space.
+ */
 export default function HomePage() {
-  return <div className="home-game-hub home-premium">
-    <HomeLobbyHero />
-    <PlayerHUD />
-    <QuickPlayButtons />
-    <RankLockBanner />
-    <div className="home-lower-grid">
-      <RankProgress />
-      <WeekendLeague />
-      <nav className="home-shortcut-grid" aria-label="Quick access">
-        {shortcuts.map(({ href, label, Icon, accent }) => <Link href={href} key={label} style={{ "--accent": accent } as React.CSSProperties}><Icon size={22} /><span>{label}</span></Link>)}
-      </nav>
+  // The board draws a static "All Modes" select. The app has a casual and a
+  // ranked pool per game, so the choice is real and changes where the two
+  // covers send you.
+  const [mode, setMode] = useState<"casual" | "ranked">("casual");
+
+  return (
+    <div className="arena-home ar-page" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+      <ArenaSprite />
+      <ArenaHomeHero />
+      <ArenaLockBar />
+      <ArenaStatsStrip />
+      <ArenaQuickPlay mode={mode} onMode={setMode} />
+      <section className="lower">
+        <ArenaRankCard />
+        <ArenaLeagueCard />
+        <ArenaShortcuts />
+      </section>
+      <ArenaUpdates />
+      <ArenaHomeFooter />
     </div>
-    <div className="home-news"><NewsSection /></div>
-    <footer className="home-footer"><strong>Thaasbai</strong><span>&copy; {new Date().getFullYear()} Play Fair. Good Games. Greater Friends.</span><Link href="/settings">Settings</Link><Link href="/friends">Community</Link></footer>
-  </div>;
+  );
 }

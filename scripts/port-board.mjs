@@ -128,10 +128,26 @@ const args = process.argv.slice(2);
 // repeat; porting it once keeps a single copy in styles/ rather than the same
 // rules duplicated through fourteen generated files.
 const cssMode = args[0] === "--css";
-const [board, name] = cssMode ? args.slice(1) : args;
+const positional = cssMode ? args.slice(1) : args;
+
+// `--minus <file.css>` drops every rule the board shares, byte for byte,
+// with that stylesheet. The fourteen app boards each embed the whole of
+// app-reference.css before their own rules, so without this each board
+// sheet would carry another namespaced copy of .panel, .pill, .ava and the
+// thirteen card backs - about 1,300 duplicated lines across the set, and
+// fourteen chances for a shared piece to be shadowed by a stale copy of
+// itself. Only exact matches are dropped: a board that genuinely changes a
+// shared rule keeps its version.
+const minusAt = positional.indexOf("--minus");
+const minusFile = minusAt === -1 ? null : positional[minusAt + 1];
+if (minusAt !== -1) positional.splice(minusAt, 2);
+
+const [board, name] = positional;
 if (!board || !name) {
-  console.error("usage: node scripts/port-board.mjs <Board> <name>              e.g. Main mindi");
-  console.error("       node scripts/port-board.mjs --css <file.css> <name>     e.g. --css app-reference.css app");
+  console.error("usage: node scripts/port-board.mjs <Board> <name> [--minus <file.css>]");
+  console.error("   e.g. node scripts/port-board.mjs Main mindi");
+  console.error("        node scripts/port-board.mjs --css app-reference.css app");
+  console.error("        node scripts/port-board.mjs Home home --minus app-reference.css");
   process.exit(1);
 }
 
@@ -155,14 +171,38 @@ if (stray.length) {
 }
 
 const out = postcss.parse(recoloured);
+
+// Rules the board shares verbatim with --minus's stylesheet. Keyed on the
+// selector and the declarations together, so a board that restyles a shared
+// class keeps its own version and only true duplicates are dropped.
+let shared = null;
+let dropped = 0;
+if (minusFile) {
+  shared = new Set();
+  const minusCss = retypeface(recolour(readFileSync(join(root, "design", "arena", minusFile), "utf8")));
+  postcss.parse(minusCss).walkRules(rule => shared.add(fingerprint(rule)));
+}
+function fingerprint(rule) {
+  const body = rule.nodes.map(node => node.toString().trim()).join(";");
+  return `${rule.selector.replace(/\s+/g, " ").trim()}{${body.replace(/\s+/g, " ")}}`;
+}
+
 out.walkRules(rule => {
+  // Drop before renaming or namespacing, so both sides are compared in the
+  // form they were written in.
+  if (shared && rule.parent?.type !== "atrule" && shared.has(fingerprint(rule))) {
+    rule.remove();
+    dropped += 1;
+    return;
+  }
   // The board's secondary button variant is `.violet`. The colour is now
   // #00BCC8, so the name would be a lie in every call site that used it.
   rule.selector = rule.selector.replace(/\.violet\b/g, ".blue");
-  // The shared sheet carries a couple of button rules. The app's own button
-  // recipe is `.ar-btn` (styles/arena.css) - point them at it, or they'd be
-  // dead rules matching a class nothing renders.
-  if (cssMode) rule.selector = rule.selector.replace(/\.btn\b/g, ".ar-btn");
+  // `.btn` is the app's `.ar-btn` (styles/arena.css). Renaming here rather
+  // than leaving `.btn` namespaced keeps one button recipe in the app: a
+  // board that tweaks a button lands as `.arena-<board> .ar-btn…` and wins
+  // inside that screen, which is what "replace the old styling" asks for.
+  rule.selector = rule.selector.replace(/\.btn\b/g, ".ar-btn");
   // Keyframe steps (0%, from, to) are not selectors; prefixing them breaks
   // the animation silently.
   if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
@@ -181,16 +221,25 @@ const origin = cssMode ? `design/arena/${board}` : `design/arena/boards/${board}
 const header = `/* GENERATED from ${origin} by scripts/port-board.mjs.
    Do not edit by hand - re-run the script instead.
 
-   Two changes from the board, and only two: every selector is namespaced
-   under ${ns} so the board's generic class names (.table, .btn, .face)
-   cannot collide with the app's, and the pack's violet is replaced by the
-   owner's #00BCC8 throughout. Everything else is the board's own CSS.${
+   Three changes from the board, and only three: every selector is
+   namespaced under ${ns} so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.${
   cssMode
     ? `
 
-   One more for this sheet: .btn is rewritten to .ar-btn, the app's own
-   button recipe in styles/arena.css. App-only geometry that the boards get
-   from their fixed 1440x900 canvas lives in styles/arena-shell.css.`
+   App-only geometry that the boards get free from their fixed 1440x900
+   canvas lives in styles/arena-shell.css, alongside the boards' keyframes.`
+    : ""
+}${
+  minusFile
+    ? `
+
+   ${dropped} rules this board shares byte for byte with ${minusFile} were
+   dropped: they are already in styles/arena-app.css, ported once. A rule
+   the board changed, however slightly, was kept.`
     : ""
 } */\n\n`;
 
@@ -198,4 +247,7 @@ const file = join(root, "styles", `arena-${name}.css`);
 writeFileSync(file, header + out.toString() + "\n", "utf8");
 
 let rules = 0; out.walkRules(() => rules++);
-console.log(`✓ ${board} -> styles/arena-${name}.css (${rules} rules, namespaced ${ns}, violet -> #00BCC8)`);
+console.log(
+  `✓ ${board} -> styles/arena-${name}.css (${rules} rules, namespaced ${ns}, violet -> #00BCC8` +
+  (minusFile ? `, ${dropped} shared rules already in ${minusFile}` : "") + ")"
+);
