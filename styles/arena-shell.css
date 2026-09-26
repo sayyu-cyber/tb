@@ -361,9 +361,58 @@
 }
 .app-sidebar-social-error button { color: #C6FF33; }
 
+/* ─────────────────────────────────────────────────────────────────────
+   The app boards' animations.
+
+   All eleven, copied from the boards value for value, declared once here so
+   every app screen can reach them.
+
+   Nine of these (everything but bob and bob2) already existed in the tree -
+   but only as a side effect. scripts/port-board.mjs deliberately leaves
+   @keyframes un-namespaced, so porting the Mindi and Gin boards happened to
+   put blink, breathe, chase, drift, fade, handIn, holo, rise and spin into
+   the global scope, and `.pill.live` was blinking on borrowed rules. Drop a
+   table sheet from app/layout.tsx and the app screens would have stopped
+   animating with nothing to point at. They are declared here so the app
+   screens own what they use.
+
+   Duplicating the nine is safe: they are byte-identical in the app boards
+   and the table boards (checked, not assumed), so whichever declaration
+   wins produces the same animation.
+   ───────────────────────────────────────────────────────────────────── */
+@keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: .3 } }
+@keyframes bob { 0%, 100% { translate: 0 0 } 50% { translate: 0 -8px } }
+@keyframes bob2 { 0%, 100% { translate: 0 0 } 50% { translate: 0 -5px } }
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(198, 255, 51, .6) }
+  50% { box-shadow: 0 0 0 6px rgba(198, 255, 51, 0) }
+}
+@keyframes chase { to { stroke-dashoffset: -48 } }
+@keyframes drift {
+  0% { transform: translateY(0); opacity: 0 }
+  15% { opacity: .8 }
+  85% { opacity: .6 }
+  100% { transform: translateY(-160px); opacity: 0 }
+}
+@keyframes fade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+@keyframes handIn { from { translate: 0 260px; opacity: 0 } to { translate: 0 0; opacity: 1 } }
+@keyframes holo { 0% { background-position: 130% 0 } 100% { background-position: -30% 0 } }
+@keyframes rise {
+  from { transform: translate(-50%, 14px) scale(.97); opacity: 0 }
+  to { transform: translate(-50%, 0) scale(1); opacity: 1 }
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+
 /* ── Reduced motion ───────────────────────────────────────────────────
-   The only looping animation the shared layer introduces is `.pill.live`'s
-   blink. WORKSPLIT's accessibility checklist requires loops to stop. */
+   The brief allows exactly one departure from the boards' motion: loops
+   stop for anyone who has asked for less of it. One-shot entrances (fade,
+   rise, handIn) are left alone - they finish on their own, and removing
+   them would leave elements mid-transform.
+
+   Screens add their own looping elements to this list as they land. */
 @media (prefers-reduced-motion: reduce) {
-  .arena-app .pill.live::before { animation: none; }
+  .arena-app .pill.live::before,
+  .arena-app [data-ar-loop] {
+    animation: none !important;
+  }
 }
