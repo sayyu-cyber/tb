@@ -1,14 +1,11 @@
 "use client";
-import CollectionPage from "@/components/collection/CollectionPage";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { useTranslation } from "@/hooks/useTranslation";
 
+import CollectionPage from "@/components/collection/CollectionPage";
+
+/**
+ * Collection renders its own Arena page header (it carries the collected
+ * count and the progress meter), so the route is just the component.
+ */
 export default function CollectionRoute() {
-  const t = useTranslation();
-  return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_collection")} />
-      <CollectionPage />
-    </div>
-  );
+  return <CollectionPage />;
 }

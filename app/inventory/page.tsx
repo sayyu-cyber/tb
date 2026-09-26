@@ -1,219 +1,193 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { Package, Ticket, Lock, Crown, Search, Check } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { useMemo, useState } from "react";
+import { Package, Ticket, Search } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
-import { ALL_COSMETICS, RARITY_COLORS } from "@/data/cosmetics";
-import { CosmeticCategory } from "@/types/economy";
-import RoomCardManager from "@/components/roomcards/RoomCardManager";
 import { useTranslation } from "@/hooks/useTranslation";
-import { CategoryIcon } from "@/components/ui/icons";
-import { CosmeticPreview } from "@/components/ui/CosmeticPreview";
-import { staggerParent, riseIn } from "@/lib/motion";
+import { ALL_COSMETICS } from "@/data/cosmetics";
+import type { CosmeticCategory } from "@/types/economy";
+import RoomCardManager from "@/components/roomcards/RoomCardManager";
+import { Meter } from "@/components/arena";
+import { LoadoutSlot, CategoryChips, CosmeticTile, type TileAction } from "@/components/inventory/InventoryPieces";
 
-function getCategoryTabs(t: (key: string) => string): { id: CosmeticCategory; label: string }[] {
-  return [
-    { id: "cardBack", label: t("inv_cardBacks") },
-    { id: "tableTheme", label: t("inv_tables") },
-    { id: "profileFrame", label: t("inv_frames") },
-    { id: "emote", label: t("inv_emotes") },
-    { id: "victoryAnimation", label: t("inv_victory") },
-    { id: "sticker", label: t("inv_stickers") },
-    { id: "banner", label: t("inv_banners") },
-  ];
-}
+/**
+ * Inventory — design/arena/screens/app/app-03-inventory.jpg, from the
+ * Inventory board.
+ *
+ * Every count on this screen is derived from ALL_COSMETICS rather than
+ * written down: the "15 / 56 collected" header, the per-category chips and
+ * the meter all count the real catalogue, so adding a cosmetic updates them
+ * and nothing can drift (see code issue 4 in design/arena/APP_SCREENS.md).
+ */
 
-const COLLECTION_KEY: Record<CosmeticCategory, string> = {
-  cardBack: "cardBacks",
-  tableTheme: "tableThemes",
-  profileFrame: "profileFrames",
-  emote: "emotes",
-  victoryAnimation: "victoryAnimations",
-  sticker: "stickers",
-  banner: "banners",
-};
+/** The seven categories, in the board's order. */
+const CATEGORIES: { id: CosmeticCategory; labelKey: string; collection: string }[] = [
+  { id: "cardBack", labelKey: "inv_cardBacks", collection: "cardBacks" },
+  { id: "tableTheme", labelKey: "inv_tables", collection: "tableThemes" },
+  { id: "profileFrame", labelKey: "inv_frames", collection: "profileFrames" },
+  { id: "emote", labelKey: "inv_emotes", collection: "emotes" },
+  { id: "victoryAnimation", labelKey: "inv_victory", collection: "victoryAnimations" },
+  { id: "sticker", labelKey: "inv_stickers", collection: "stickers" },
+  { id: "banner", labelKey: "inv_banners", collection: "banners" },
+];
+
+/** The five slots the loadout shows, in the board's order. */
+const SLOTS: { key: string; label: string }[] = [
+  { key: "cardBack", label: "Card Back" },
+  { key: "tableTheme", label: "Table" },
+  { key: "profileFrame", label: "Frame" },
+  { key: "victoryAnimation", label: "Victory" },
+  { key: "banner", label: "Banner" },
+];
 
 export default function InventoryPage() {
-  const { state, equipCosmetic } = useEconomy();
+  const { user } = useAuth();
+  const { state, equipCosmetic, purchaseCosmetic } = useEconomy();
   const t = useTranslation();
   const [tab, setTab] = useState<"cosmetics" | "roomCards">("cosmetics");
   const [category, setCategory] = useState<CosmeticCategory>("cardBack");
-  const [query, setQuery] = useState('');
-  const [ownedOnly, setOwnedOnly] = useState(false);
+  const [query, setQuery] = useState("");
 
   const collection = state.profile.collection as unknown as Record<string, string[]>;
-  const ownedIds = new Set(collection[COLLECTION_KEY[category]] ?? []);
-  // The full catalogue for this category, not just what's owned - an
-  // unowned item renders locked/dimmed rather than simply not existing, so
-  // a new account sees what there is to collect instead of one card lost
-  // in an otherwise empty page.
-  const categoryItems = ALL_COSMETICS.filter((c) => c.category === category && (!ownedOnly || ownedIds.has(c.id)) && c.name.toLowerCase().includes(query.trim().toLowerCase()))
-    .sort((a, b) => Number(ownedIds.has(b.id)) - Number(ownedIds.has(a.id)));
+  const equipped = state.profile.equipped as unknown as Record<string, string>;
+  const vip = Boolean(state.profile.vip?.active);
+  const initial = (user?.displayName ?? "P").charAt(0).toUpperCase();
 
-  const equippedMap: Record<string, string> = {
-    cardBack: state.profile.equipped.cardBack,
-    tableTheme: state.profile.equipped.tableTheme,
-    profileFrame: state.profile.equipped.profileFrame,
-    victoryAnimation: state.profile.equipped.victoryAnimation,
-    banner: state.profile.equipped.banner,
-  };
-  // Emotes and stickers are used contextually in-match, not persistently
-  // equipped - only these categories have a single "equipped" slot.
-  const canEquip = category !== "emote" && category !== "sticker";
-  const categoryTabs = getCategoryTabs(t);
-  const equippedItem = ALL_COSMETICS.find(item => item.id === equippedMap[category]);
+  // Totals come from the catalogue, never from a written-down number.
+  const totals = useMemo(() => {
+    const byCategory = new Map<string, number>();
+    for (const item of ALL_COSMETICS) byCategory.set(item.category, (byCategory.get(item.category) ?? 0) + 1);
+    return byCategory;
+  }, []);
+
+  const owned = useMemo(() => {
+    const ids = new Set<string>();
+    for (const { collection: key } of CATEGORIES) for (const id of collection[key] ?? []) ids.add(id);
+    return ids;
+  }, [collection]);
+
+  const collected = ALL_COSMETICS.filter((item) => owned.has(item.id)).length;
+  const catalogue = ALL_COSMETICS.length;
+
+  const chips = CATEGORIES.map(({ id, labelKey, collection: key }) => ({
+    id,
+    label: t(labelKey),
+    owned: (collection[key] ?? []).filter((cosmeticId) =>
+      ALL_COSMETICS.some((item) => item.id === cosmeticId && item.category === id)
+    ).length,
+    total: totals.get(id) ?? 0,
+  }));
+
+  const needle = query.trim().toLowerCase();
+  const items = ALL_COSMETICS
+    .filter((item) => item.category === category && (!needle || item.name.toLowerCase().includes(needle)))
+    // Owned first, then by price, so what you have leads and what is
+    // cheapest to get comes next - the board's own order.
+    .sort((a, b) => Number(owned.has(b.id)) - Number(owned.has(a.id)) || a.price - b.price);
+
+  // Emotes and stickers are played in-match rather than worn, so they have
+  // no equipped slot; owning one is the whole state.
+  const wearable = category !== "emote" && category !== "sticker";
+
+  function actionFor(item: (typeof ALL_COSMETICS)[number]): TileAction {
+    const isOwned = owned.has(item.id);
+    if (isOwned && wearable && equipped[item.category] === item.id) return { kind: "equipped" };
+    if (isOwned) return { kind: "equip", onEquip: () => equipCosmetic(item.category, item.id) };
+    if (item.isVipExclusive && !vip) return { kind: "vip" };
+    return {
+      kind: "buy",
+      price: item.price,
+      affordable: state.economy.coins >= item.price,
+      onBuy: () => purchaseCosmetic(item.id),
+    };
+  }
 
   return (
-    <div className="hub-page inventory-page">
-      <PageHeader title={t("page_inventory")} icon={Package} actions={<span className="hub-count">{Object.values(collection).flat().length} / {ALL_COSMETICS.length}</span>} />
+    <div className="arena-inventory ar-page" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div className="phead">
+        <div>
+          <span className="lbl dash" style={{ color: "#C6FF33" }}>
+            Everything you own &mdash; cosmetics and Room Cards.
+          </span>
+          <h1 className="disp chrome ar-h1">{t("page_inventory")}</h1>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
+          <span style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+            <b className="num" style={{ fontSize: "34px" }}>{collected}</b>
+            <span className="muted">/ {catalogue} collected</span>
+          </span>
+          <Meter
+            value={catalogue ? collected / catalogue : 0}
+            tone="blue"
+            segmented
+            label="Collection progress"
+            valueText={`${collected} of ${catalogue} cosmetics`}
+            className="inv-meter"
+          />
+        </div>
+      </div>
 
-      <div className="hub-tabs">
-        <button
-          onClick={() => setTab("cosmetics")}
-          aria-pressed={tab === 'cosmetics'}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-            tab === "cosmetics" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
-          }`}
-        >
-          <Package size={16} /> {t("inventory_cosmetics")}
+      <div className="tabs" style={{ alignSelf: "flex-start" }} role="group" aria-label="Inventory sections">
+        <button type="button" aria-pressed={tab === "cosmetics"} onClick={() => setTab("cosmetics")} data-flat>
+          <Package aria-hidden="true" />{t("inventory_cosmetics")}
         </button>
-        <button
-          onClick={() => setTab("roomCards")}
-          aria-pressed={tab === 'roomCards'}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-            tab === "roomCards" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"
-          }`}
-        >
-          <Ticket size={16} /> {t("inventory_roomCards")}
+        <button type="button" aria-pressed={tab === "roomCards"} onClick={() => setTab("roomCards")} data-flat>
+          <Ticket aria-hidden="true" />{t("inventory_roomCards")}
+          {state.profile.roomCards.filter((card) => !card.activated).length > 0 && (
+            <span className="n">{state.profile.roomCards.filter((card) => !card.activated).length}</span>
+          )}
         </button>
       </div>
 
       {tab === "cosmetics" ? (
         <>
-          {equippedItem && <div className="inventory-loadout"><div className="inventory-equipped-art"><CosmeticPreview item={equippedItem} /></div><div><span className="flex items-center gap-2 text-xs text-[rgb(var(--lagoon))]"><Check size={14} />{t('collection_equipped')}</span><h2 className="text-xl font-bold mt-2">{equippedItem.name}</h2><p className="text-xs text-[rgb(var(--c4))] mt-2 max-w-md">{equippedItem.description}</p></div></div>}
-          <div className="hub-tabs hub-category-tabs">
-            {categoryTabs.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                aria-pressed={category === cat.id}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap ${
-                  category === cat.id ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))] border border-[rgb(var(--gold)/30%)]" : "bg-[rgb(var(--c2))] text-[rgb(var(--c4))] border border-[rgb(var(--c3))]"
-                }`}
-              >
-                <CategoryIcon category={cat.id} size={14} />
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="catalog-toolbar"><label className="hub-search"><Search size={16} /><input aria-label="Search inventory" placeholder="Search inventory" value={query} onChange={event=>setQuery(event.target.value)} /></label><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={ownedOnly} onChange={event=>setOwnedOnly(event.target.checked)} />{t('inventory_owned')}</label><span className="hub-count">{categoryItems.length}</span></div>
-          <motion.div
-            key={category}
-            variants={staggerParent(0.03)}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
-          >
-            {categoryItems.map((item) => {
-              const isOwned = ownedIds.has(item.id);
-              const isEquipped = isOwned && canEquip && equippedMap[item.category] === item.id;
-              return (
-                <motion.div
-                  key={item.id}
-                  variants={riseIn}
-                  className={`inventory-item rounded-lg border p-3 transition-colors ${
-                    isEquipped
-                      ? "border-[rgb(var(--gold)/50%)] bg-[rgb(var(--gold)/5%)]"
-                      : isOwned
-                        ? "border-[rgb(var(--c3))] bg-[rgb(var(--c2)/50%)]"
-                        : "border-[rgb(var(--c3)/60%)] bg-[rgb(var(--c2)/25%)]"
-                  }`}
-                >
-                  <div
-                    className={`cosmetic-display relative mb-2 flex items-center justify-center overflow-hidden ${
-                      isOwned ? "" : "opacity-80"
-                    }`}
-                  >
-                    <CosmeticPreview item={item} />
-                    {isEquipped && (
-                      <span className="absolute top-1 right-1 rounded-full bg-[rgb(var(--gold))] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-[#0C0E12]">
-                        {t("collection_equipped")}
-                      </span>
-                    )}
-                    {!isOwned && (
-                      <span className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5">
-                        <Lock size={14} className="text-[rgb(var(--c5))]" aria-hidden="true" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-start gap-1 mb-2">
-                    <span
-                      className={`text-sm font-medium min-h-10 ${isOwned ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--c4))]"}`}
-                    >
-                      {item.name}
-                    </span>
-                    <span
-                      className="text-[9px] font-bold shrink-0 ml-1"
-                      style={{ color: isOwned ? RARITY_COLORS[item.rarity] : "rgb(var(--c4))" }}
-                    >
-                      {item.rarity}
-                    </span>
-                  </div>
-                  <p className="text-[rgb(var(--c4))] text-xs mb-3 line-clamp-2">{item.description}</p>
-
-                  {isOwned ? (
-                    canEquip ? (
-                      <button
-                        onClick={() => equipCosmetic(item.category, item.id)}
-                        disabled={isEquipped}
-                        className={`w-full py-1.5 rounded-lg text-xs font-semibold ${
-                          isEquipped ? "bg-[rgb(var(--gold)/20%)] text-[rgb(var(--gold-ink))]" : "bg-[rgb(var(--c3))] text-[rgb(var(--c5))]"
-                        }`}
-                      >
-                        {isEquipped ? t("collection_equipped") : t("collection_equip")}
-                      </button>
-                    ) : (
-                      <span className="block w-full text-center py-1.5 rounded-lg text-xs font-medium bg-[rgb(var(--c3))] text-[rgb(var(--c5))]">
-                        {t("inventory_owned")}
-                      </span>
-                    )
-                  ) : (
-                    <Link
-                      href="/shop"
-                      className="flex w-full items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold bg-[rgb(var(--c3)/60%)] text-[rgb(var(--c5))] hover:bg-[rgb(var(--c3))] hover:text-[rgb(var(--text-primary))] transition-colors"
-                    >
-                      {item.isVipExclusive ? (
-                        <>
-                          <Crown size={12} className="text-[rgb(var(--gold-ink))]" aria-hidden="true" />
-                          VIP only
-                        </>
-                      ) : item.price > 0 ? (
-                        <>
-                          <Lock size={11} aria-hidden="true" />
-                          {item.price.toLocaleString()} coins
-                        </>
-                      ) : (
-                        <>
-                          <Lock size={11} aria-hidden="true" />
-                          Locked
-                        </>
-                      )}
-                    </Link>
-                  )}
-                </motion.div>
-              );
-            })}
-          </motion.div>
-          {categoryItems.length === 0 && (
-            <div className="glass-card rounded-2xl p-6 text-center">
-              <Package size={28} className="text-[rgb(var(--c3))] mx-auto mb-2" />
-              <p className="text-[rgb(var(--c4))] text-sm">{t("inventory_nothingHere")}</p>
+          <section className="panel tick" aria-label="Loadout" style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div className="ph"><h2>Loadout</h2><span className="lbl">One equipped item per slot</span></div>
+            <div className="loadout-grid">
+              {SLOTS.map(({ key, label }) => (
+                <LoadoutSlot
+                  key={key}
+                  label={label}
+                  item={ALL_COSMETICS.find((item) => item.id === equipped[key])}
+                  initial={initial}
+                />
+              ))}
             </div>
-          )}
+          </section>
+
+          <section style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div className="inv-toolbar">
+              <CategoryChips categories={chips} value={category} onChange={setCategory} />
+              <label className="field inv-search">
+                <Search aria-hidden="true" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search inventory"
+                  aria-label="Search inventory"
+                />
+              </label>
+            </div>
+            {items.length === 0 ? (
+              <p className="muted">Nothing matches &ldquo;{query}&rdquo; in this category.</p>
+            ) : (
+              <div className="inv-grid">
+                {items.map((item) => (
+                  <CosmeticTile
+                    key={item.id}
+                    item={item}
+                    owned={owned.has(item.id)}
+                    action={actionFor(item)}
+                    initial={initial}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <RoomCardManager />
         </>
       ) : (
         <RoomCardManager />

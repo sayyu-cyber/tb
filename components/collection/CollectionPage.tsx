@@ -1,170 +1,131 @@
 // src/components/collection/CollectionPage.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useEconomy } from '../../contexts/EconomyContext';
-import { ALL_COSMETICS, RARITY_COLORS } from '../../data/cosmetics';
-import { useTranslation } from '../../hooks/useTranslation';
-import { CategoryIcon } from '../ui/icons';
+import React, { useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEconomy } from '@/contexts/EconomyContext';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ALL_COSMETICS } from '@/data/cosmetics';
+import type { CosmeticCategory } from '@/types/economy';
+import { Meter } from '@/components/arena';
+import { CategoryChips, CosmeticTile, type TileAction } from '@/components/inventory/InventoryPieces';
+
+/**
+ * Collection — design/arena/screens/app/app-03-inventory.jpg.
+ *
+ * APP_SCREENS.md: "Collection and Room Cards use the Inventory board's
+ * pieces". So this is the same `.chips` row and the same `.tile` grid, with
+ * Collection's own framing: everything there is to collect, and how far
+ * along you are.
+ *
+ * CODE ISSUE 4. This page used to declare its own totals - 25 card backs,
+ * 12 tables, 18 frames, 30 emotes, 8 victory animations, 93 in all - while
+ * the catalogue holds 56 items across seven categories. It then filled the
+ * gap with "???" tiles for cosmetics that do not exist, so a completed
+ * collection read as roughly 60% and could never reach 100%. Every total
+ * here is now counted from ALL_COSMETICS, the "???" tiles are gone, and the
+ * two categories the old list omitted entirely (stickers and banners) are
+ * included. See also the Master Collector target in data/cosmetics.ts.
+ */
+
+const CATEGORIES: { id: CosmeticCategory; labelKey: string; collection: string }[] = [
+  { id: 'cardBack', labelKey: 'collection_cardBacks', collection: 'cardBacks' },
+  { id: 'tableTheme', labelKey: 'collection_tableThemes', collection: 'tableThemes' },
+  { id: 'profileFrame', labelKey: 'collection_profileFrames', collection: 'profileFrames' },
+  { id: 'emote', labelKey: 'collection_emotes', collection: 'emotes' },
+  { id: 'victoryAnimation', labelKey: 'collection_victoryAnimations', collection: 'victoryAnimations' },
+  { id: 'sticker', labelKey: 'inv_stickers', collection: 'stickers' },
+  { id: 'banner', labelKey: 'inv_banners', collection: 'banners' },
+];
 
 export default function CollectionPage() {
+  const { user } = useAuth();
   const { state, equipCosmetic } = useEconomy();
-  const { profile } = state;
-  const [activeCategory, setActiveCategory] = useState<string>('cardBack');
   const t = useTranslation();
+  const [category, setCategory] = useState<CosmeticCategory>('cardBack');
 
-  const categories = [
-    { key: 'cardBack', label: t("collection_cardBacks"), owned: profile.collection.cardBacks, total: 25 },
-    { key: 'tableTheme', label: t("collection_tableThemes"), owned: profile.collection.tableThemes, total: 12 },
-    { key: 'profileFrame', label: t("collection_profileFrames"), owned: profile.collection.profileFrames, total: 18 },
-    { key: 'emote', label: t("collection_emotes"), owned: profile.collection.emotes, total: 30 },
-    { key: 'victoryAnimation', label: t("collection_victoryAnimations"), owned: profile.collection.victoryAnimations, total: 8 },
-  ];
+  const collection = state.profile.collection as unknown as Record<string, string[]>;
+  const equipped = state.profile.equipped as unknown as Record<string, string>;
+  const initial = (user?.displayName ?? 'P').charAt(0).toUpperCase();
 
-  const totalOwned = categories.reduce((acc, c) => acc + c.owned.length, 0);
-  const totalItems = categories.reduce((acc, c) => acc + c.total, 0);
-  const percentage = Math.round((totalOwned / totalItems) * 100);
+  const totals = useMemo(() => {
+    const byCategory = new Map<string, number>();
+    for (const item of ALL_COSMETICS) byCategory.set(item.category, (byCategory.get(item.category) ?? 0) + 1);
+    return byCategory;
+  }, []);
 
-  const currentCategory = categories.find(c => c.key === activeCategory);
-  const ownedInCategory = currentCategory ? currentCategory.owned : [];
-  const allInCategory = ALL_COSMETICS.filter(c => c.category === activeCategory);
-  const unknownCount = (currentCategory?.total || 0) - allInCategory.length;
+  const owned = useMemo(() => {
+    const ids = new Set<string>();
+    for (const { collection: key } of CATEGORIES) for (const id of collection[key] ?? []) ids.add(id);
+    return ids;
+  }, [collection]);
 
-  const equipMap: Record<string, string> = {
-    cardBack: profile.equipped.cardBack,
-    tableTheme: profile.equipped.tableTheme,
-    profileFrame: profile.equipped.profileFrame,
-    victoryAnimation: profile.equipped.victoryAnimation,
-  };
+  const chips = CATEGORIES.map(({ id, labelKey, collection: key }) => ({
+    id,
+    label: t(labelKey),
+    owned: (collection[key] ?? []).filter(cosmeticId =>
+      ALL_COSMETICS.some(item => item.id === cosmeticId && item.category === id)
+    ).length,
+    total: totals.get(id) ?? 0,
+  }));
+
+  const collected = ALL_COSMETICS.filter(item => owned.has(item.id)).length;
+  const catalogue = ALL_COSMETICS.length;
+  const percentage = catalogue ? Math.round((collected / catalogue) * 100) : 0;
+  const wearable = category !== 'emote' && category !== 'sticker';
+  const items = ALL_COSMETICS.filter(item => item.category === category);
+
+  function actionFor(item: (typeof ALL_COSMETICS)[number]): TileAction {
+    const isOwned = owned.has(item.id);
+    if (isOwned && wearable && equipped[item.category] === item.id) return { kind: 'equipped' };
+    if (isOwned) return { kind: 'equip', onEquip: () => equipCosmetic(item.category, item.id) };
+    if (item.isVipExclusive && !state.profile.vip?.active) return { kind: 'vip' };
+    // Collection shows what there is to collect; buying happens in the
+    // Shop, so an unowned item here reads as its price and nothing more.
+    return { kind: 'buy', price: item.price, affordable: false, onBuy: () => {} };
+  }
 
   return (
-    <div className="w-full pt-4 pb-32 px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <p className="text-[rgb(var(--c4))] text-sm mb-6">{t("collection_subtitle")}</p>
+    <div className="arena-inventory ar-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="phead">
+        <div>
+          <span className="lbl dash" style={{ color: '#C6FF33' }}>Every cosmetic in the game.</span>
+          <h1 className="disp chrome ar-h1">{t('page_collection')}</h1>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <b className="num" style={{ fontSize: '34px' }}>{percentage}%</b>
+            <span className="muted">
+              {t('collection_collected').replace('{owned}', String(collected)).replace('{total}', String(catalogue))}
+            </span>
+          </span>
+          <Meter
+            value={catalogue ? collected / catalogue : 0}
+            tone="blue"
+            segmented
+            label="Collection progress"
+            valueText={`${collected} of ${catalogue} cosmetics`}
+            className="inv-meter"
+          />
+        </div>
+      </div>
 
-        {/* Overall Progress */}
-        <div className="bg-gradient-to-r from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/20%)] rounded-2xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-[rgb(var(--gold-ink))]">{t("collection_overallProgress")}</h2>
-            <span className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{percentage}%</span>
-          </div>
-          <div className="w-full bg-[rgb(var(--c3))] rounded-full h-3 overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${percentage}%` }}
-              transition={{ duration: 1 }}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="inv-toolbar">
+          <CategoryChips categories={chips} value={category} onChange={setCategory} />
+        </div>
+        <div className="inv-grid">
+          {items.map(item => (
+            <CosmeticTile
+              key={item.id}
+              item={item}
+              owned={owned.has(item.id)}
+              action={actionFor(item)}
+              initial={initial}
             />
-          </div>
-          <p className="text-[rgb(var(--c4))] text-sm mt-2">{t("collection_collected").replace("{owned}", String(totalOwned)).replace("{total}", String(totalItems))}</p>
-        </div>
-
-        {/* Category Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => setActiveCategory(cat.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                activeCategory === cat.key
-                  ? 'bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[rgb(var(--text-primary))]'
-                  : 'bg-[rgb(var(--c2)/60%)] text-[rgb(var(--c5))] border border-[rgb(var(--c3)/30%)] hover:border-[rgb(var(--gold)/20%)]'
-              }`}
-            >
-              <CategoryIcon category={cat.key} size={14} />
-              {cat.label}
-              <span className={`ml-2 ${activeCategory === cat.key ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c3))]'}`}>
-                {cat.owned.length}/{cat.total}
-              </span>
-            </button>
           ))}
         </div>
-
-        {/* Items Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {allInCategory.map((item) => {
-            const isOwned = ownedInCategory.includes(item.id);
-            const isEquipped = equipMap[activeCategory] === item.id;
-
-            return (
-              <motion.div
-                key={item.id}
-                className={`relative rounded-xl border p-3 transition-all ${
-                  isOwned
-                    ? isEquipped
-                      ? 'border-[rgb(var(--gold))] bg-[rgb(var(--gold)/10%)] ring-1 ring-[rgb(var(--gold)/50%)]'
-                      : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/40%)] hover:border-[rgb(var(--gold)/30%)]'
-                    : 'border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/20%)] opacity-50'
-                }`}
-                whileHover={isOwned ? { y: -2 } : {}}
-              >
-                <div className="aspect-square bg-[rgb(var(--c3)/50%)] rounded-lg flex items-center justify-center mb-2">
-                  {isOwned ? (
-                    <CategoryIcon category={activeCategory} size={30} className="text-[rgb(var(--c4))]" />
-                  ) : (
-                    <span className="text-2xl text-[rgb(var(--c3))]">???</span>
-                  )}
-                </div>
-
-                <h3 className={`text-sm font-bold truncate ${isOwned ? 'text-[rgb(var(--text-primary))]' : 'text-[rgb(var(--c3))]'}`}>
-                  {isOwned ? item.name : '???'}
-                </h3>
-
-                {isOwned && (
-                  <div className="flex items-center justify-between mt-1">
-                    <span
-                      className="text-xs font-bold px-1.5 py-0.5 rounded"
-                      style={{
-                        color: RARITY_COLORS[item.rarity],
-                        backgroundColor: `${RARITY_COLORS[item.rarity]}15`,
-                      }}
-                    >
-                      {item.rarity}
-                    </span>
-                    {isEquipped && (
-                      <span className="text-[rgb(var(--gold-ink))] text-xs font-bold">{t("collection_equipped")}</span>
-                    )}
-                  </div>
-                )}
-
-                {isOwned && !isEquipped && (
-                  <motion.button
-                    className="w-full mt-2 py-1.5 rounded-lg bg-[rgb(var(--c3))] text-[rgb(var(--c5))] text-xs font-bold hover:bg-[rgb(var(--gold)/15%)] hover:text-[rgb(var(--gold-ink))] transition-all"
-                    onClick={() => equipCosmetic(activeCategory, item.id)}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {t("collection_equip")}
-                  </motion.button>
-                )}
-
-                {!isOwned && (
-                  <p className="text-[rgb(var(--c3))] text-xs mt-1 text-center">
-                    {item.rarity === 'Legendary' ? t("collection_legendary") : t("collection_locked")}
-                  </p>
-                )}
-              </motion.div>
-            );
-          })}
-
-          {/* Unknown slots */}
-          {[...Array(unknownCount)].map((_, i) => (
-            <div
-              key={`unknown-${i}`}
-              className="rounded-xl border border-[rgb(var(--c3)/30%)] bg-[rgb(var(--c2)/20%)] p-3 opacity-40"
-            >
-              <div className="aspect-square bg-[rgb(var(--c3)/30%)] rounded-lg flex items-center justify-center mb-2">
-                <span className="text-2xl text-[rgb(var(--c3))]">???</span>
-              </div>
-              <h3 className="text-sm font-bold text-[rgb(var(--c3))] truncate">???</h3>
-              <p className="text-[rgb(var(--c3))] text-xs mt-1 text-center">Unlock Requirement Unknown</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
+      </section>
     </div>
   );
 }

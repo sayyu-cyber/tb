@@ -165,6 +165,16 @@ export const RANK_CONFIGS: RankConfig[] = [
   { tier: 'Platinum', minTrophies: RANKS.PLATINUM.min, color: '#E9ECEF', weeklyReward: 700, icon: '/ranks/platinum.png', weeklyRewardCosmeticId: 'pf_dragon' },
 ];
 
+/**
+ * How many cosmetics exist, in one category or in all of them.
+ *
+ * Declared after ALL_COSMETICS and before ACHIEVEMENTS, so the collection
+ * targets are counted rather than written down.
+ */
+function countCosmetics(category?: CosmeticItem['category']) {
+  return category ? ALL_COSMETICS.filter(item => item.category === category).length : ALL_COSMETICS.length;
+}
+
 export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ach_first_win', title: 'First Win', description: 'Win your first match', icon: '🏆', reward: 50, unlocked: false, progress: 0, target: 1, category: 'wins' },
   { id: 'ach_10_wins', title: '10 Wins', description: 'Win 10 matches', icon: '🥉', reward: 100, unlocked: false, progress: 0, target: 10, category: 'wins' },
@@ -174,8 +184,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ach_first_platinum', title: 'First Platinum Rank', description: 'Reach Platinum rank for the first time', icon: '💎', reward: 2000, unlocked: false, progress: 0, target: 1, category: 'rank' },
   { id: 'ach_weekend_champ', title: 'Weekend Champion', description: 'Become Weekend Champion', icon: '👑', reward: 3000, unlocked: false, progress: 0, target: 1, category: 'special' },
   { id: 'ach_10_cardbacks', title: 'Card Collector', description: 'Collect 10 Card Backs', icon: '🃏', reward: 100, unlocked: false, progress: 0, target: 10, category: 'collection' },
-  { id: 'ach_all_tables', title: 'Table Master', description: 'Collect every Table Theme', icon: '◇', reward: 0, unlocked: false, progress: 0, target: 10, category: 'collection' },
-  { id: 'ach_100_collection', title: 'Master Collector', description: 'Collect 100% of all cosmetics', icon: '💯', reward: 0, unlocked: false, progress: 0, target: 85, category: 'collection' },
+  // Counted from the catalogue rather than written down. Table Master's
+  // target was 10 against 10 tables, which happened to be right; Master
+  // Collector's was 85 against 56 items, so "collect 100%" could never be
+  // reached however much you bought (code issue 4 in
+  // design/arena/APP_SCREENS.md). Deriving both means neither can drift
+  // again when a cosmetic is added.
+  { id: 'ach_all_tables', title: 'Table Master', description: 'Collect every Table Theme', icon: '◇', reward: 0, unlocked: false, progress: 0, target: countCosmetics('tableTheme'), category: 'collection' },
+  { id: 'ach_100_collection', title: 'Master Collector', description: 'Collect 100% of all cosmetics', icon: '💯', reward: 0, unlocked: false, progress: 0, target: countCosmetics(), category: 'collection' },
 ];
 
 // bonusItem is either the special "room_card_1h" token (handled directly in

@@ -24,6 +24,7 @@ import "@/styles/arena-shell.css";
 // hand-written fluid half that the fixed artboards do not describe.
 import "@/styles/arena-home.css";
 import "@/styles/arena-profile.css";
+import "@/styles/arena-inventory.css";
 import "@/styles/arena-screens.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
 // screens (design/arena/WORKSPLIT.md). Imported here, empty, so that agent
