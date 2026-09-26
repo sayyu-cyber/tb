@@ -1,28 +1,71 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { Crown, Send, LogOut, Trophy } from "lucide-react";
-import { ClubDoc, ClubMessage, watchClubMessages, sendClubMessage, leaveClub, kickMember } from "@/lib/clubs";
-import { useTranslation } from "@/hooks/useTranslation";
-import { Button } from "@/components/ui/Button";
+
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Crown, Send, LogOut, Trophy, MessageCircle, RefreshCw } from "lucide-react";
+import {
+  ClubDoc, ClubMessage, MAX_MEMBERS,
+  watchClubMessages, sendClubMessage, leaveClub, kickMember,
+} from "@/lib/clubs";
+import { watchSocialProfiles, type PlayerSearchResult } from "@/lib/friends";
 import { useToast } from "@/contexts/ToastContext";
+import { Avatar, Pill } from "@/components/arena";
+import { Suit } from "@/components/game/ArenaSprite";
+
+/**
+ * My Club — the right-hand panel of the Clubs board
+ * (design/arena/screens/app/app-06-clubs.jpg, with the chat tab from
+ * app-06b).
+ *
+ * The header carries the crest, tag, name and member count; below it the
+ * Members list or the Club Chat.
+ *
+ * CODE ISSUE 10. A member's trophy count was written into the club document
+ * when they joined and never touched again, so the ladder here froze at
+ * whatever everyone had on their join date - someone who joined at 4
+ * trophies still read 4 a season later, and the list's order was wrong with
+ * it. The stored `memberTrophies` is now only a fallback: the live figure
+ * comes from each member's own player document, through the same
+ * watchSocialProfiles the Friends screen uses. No schema change and no
+ * write - the club document is left exactly as it was, and the number on
+ * screen is simply the true one.
+ */
+
+const MAX = 500;
+const SUITS = ["S", "H", "D", "C"] as const;
+const TINTS = ["t1", "t2", "t3", "t4"] as const;
+
+function pick(id: string, size: number) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(hash) % size;
+}
+
 export function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myName: string }) {
   const [tab, setTab] = useState<"members" | "chat">("members");
   const [messages, setMessages] = useState<ClubMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const isOwner = club.ownerUid === myUid;
-  const t = useTranslation();
-  const { showToast } = useToast();
+  const [profiles, setProfiles] = useState<Record<string, PlayerSearchResult>>({});
   const [busy, setBusy] = useState(false);
-  const action = useRef(false);
   const [confirm, setConfirm] = useState<string | null>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
   const [chatLoaded, setChatLoaded] = useState(false);
   const [chatRetry, setChatRetry] = useState(0);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const action = useRef(false);
+  const { showToast } = useToast();
+  const isOwner = club.ownerUid === myUid;
 
   useEffect(() => { if (confirm) dialog.current?.showModal(); }, [confirm]);
+
+  // Code issue 10: live trophies for every member.
+  const memberIds = JSON.stringify([...club.members].sort());
+  useEffect(() => {
+    return watchSocialProfiles(JSON.parse(memberIds), setProfiles, () => {
+      // A failure here is not worth an error banner: the stored figures
+      // still render, just without the refresh.
+    });
+  }, [memberIds]);
 
   useEffect(() => {
     if (tab !== "chat") return;
@@ -45,136 +88,158 @@ export function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string
   }
 
   async function handleLeave() {
-    await rosterAction(() => leaveClub(club.id, myUid), "Left club.");
+    if (action.current) return;
+    action.current = true; setBusy(true);
+    try { await leaveClub(club.id, myUid); showToast("You left " + club.name + ".", "success"); }
+    catch { showToast("Could not leave the club. Please try again.", "error"); }
+    finally { action.current = false; setBusy(false); setConfirm(null); dialog.current?.close(); }
   }
 
   async function handleKick(uid: string) {
-    await rosterAction(() => kickMember(club.id, myUid, uid), "Member removed.");
-  }
-
-  async function rosterAction(run: () => Promise<void>, message: string) {
     if (action.current) return;
-    action.current = true; setBusy(true); setError(null);
-    try { await run(); setConfirm(null); showToast(message, "success"); }
-    catch { setError("Couldn't update membership. Please try again."); setConfirm(null); }
-    finally { action.current = false; setBusy(false); }
+    action.current = true; setBusy(true);
+    try {
+      await kickMember(club.id, myUid, uid);
+      showToast((club.memberNames[uid] ?? "Member") + " was removed.", "success");
+    } catch {
+      showToast("Could not remove that member. Please try again.", "error");
+    } finally { action.current = false; setBusy(false); setConfirm(null); dialog.current?.close(); }
   }
 
-  const sortedMembers = [...club.members].sort((a, b) => (club.memberTrophies[b] ?? 0) - (club.memberTrophies[a] ?? 0));
+  /** Members by trophies, highest first - the board's ladder. */
+  const members = useMemo(() => club.members
+    .map(uid => ({
+      uid,
+      name: profiles[uid]?.displayName ?? club.memberNames[uid] ?? "Player",
+      // Live where we have it, the stored figure where we do not.
+      trophies: profiles[uid]?.trophies ?? club.memberTrophies[uid] ?? 0,
+      photoURL: profiles[uid]?.photoURL,
+      owner: uid === club.ownerUid,
+    }))
+    .sort((a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name)),
+    [club, profiles]);
+
+  const suit = SUITS[pick(club.id, SUITS.length)];
+  const tint = TINTS[pick(club.id + "t", TINTS.length)];
+  const confirmName = confirm === "leave" ? club.name : club.memberNames[confirm ?? ""] ?? "this member";
 
   return (
-    <div className="club-detail">
-      <h2 className="mb-4">{club.name}</h2>
-
-      <div className="glass-card rounded-2xl p-4 mb-4">
-        <p className="text-[rgb(var(--gold-ink))] text-sm font-bold">[{club.tag}]</p>
-        {club.description && <p className="text-[rgb(var(--c4))] text-xs mt-1">{club.description}</p>}
-      </div>
-
-      {error && (
-        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
-      )}
-
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setTab("members")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "members" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
-        >
-          {t("clubs_membersTab").replace("{n}", String(club.members.length))}
-        </button>
-        <button
-          onClick={() => setTab("chat")}
-          className={`flex-1 py-2 rounded-xl text-sm font-medium ${tab === "chat" ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]" : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))]"}`}
-        >
-          {t("clubs_chatTab")}
-        </button>
+    <section className="panel tick club-panel" aria-label="My club">
+      <div className="club-head">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+          <span className="lbl dash" style={{ color: "#C6FF33" }}>My Club</span>
+          {isOwner && <Pill tone="lime"><Crown aria-hidden="true" />Owner</Pill>}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <span className={`crest ${tint}`} aria-hidden="true" style={{ width: "64px", height: "70px" }}>
+            <Suit suit={suit} />
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
+            <span className="tag">[{club.tag}]</span>
+            <b className="disp club-name">{club.name}</b>
+            <span className="muted2 tnum">{club.members.length} / {MAX_MEMBERS} members</span>
+          </div>
+        </div>
+        <div className="tabs" style={{ alignSelf: "flex-start" }} role="group" aria-label="Club sections">
+          <button type="button" aria-pressed={tab === "members"} onClick={() => setTab("members")} data-flat>
+            Members ({club.members.length})
+          </button>
+          <button type="button" aria-pressed={tab === "chat"} onClick={() => setTab("chat")} data-flat>
+            <MessageCircle aria-hidden="true" />Club Chat
+          </button>
+        </div>
       </div>
 
       {tab === "members" ? (
-        <div className="space-y-2">
-          {sortedMembers.map((uid) => (
-            <div key={uid} className="glass-card rounded-xl p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {uid === club.ownerUid && <Crown size={14} className="text-[rgb(var(--gold-ink))]" />}
-                <span className="text-[rgb(var(--text-primary))] text-sm">{club.memberNames[uid] || "Player"}</span>
-                {uid === myUid && <span className="text-[rgb(var(--c4))] text-xs">{t("clubs_you")}</span>}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[rgb(var(--c4))] text-xs flex items-center gap-1">
-                  <Trophy size={10} className="text-[rgb(var(--gold-ink))]" /> {club.memberTrophies[uid] ?? 0}
-                </span>
-                {isOwner && uid !== myUid && (
-                  <button disabled={busy} onClick={() => setConfirm(uid)} className="text-[rgb(var(--coral-ink))] text-xs">
-                    {t("clubs_kick")}
-                  </button>
-                )}
-              </div>
+        <div className="club-members">
+          {members.map((member, index) => (
+            <div className={`mem ${member.uid === myUid ? "me" : ""}`.trim()} key={member.uid}>
+              <span className="pos">{index + 1}</span>
+              <Avatar name={member.name} src={member.photoURL} seed={member.uid} size={34} radius={9} />
+              <b>
+                {member.owner && <Crown aria-hidden="true" />}
+                {member.name}
+                {member.uid === myUid && <span className="muted you">(you)</span>}
+              </b>
+              <span className="muted2 tnum" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <Trophy aria-hidden="true" style={{ width: "14px", height: "14px" }} />{member.trophies}
+              </span>
+              {isOwner && member.uid !== myUid ? (
+                <button type="button" className="kick" disabled={busy} onClick={() => setConfirm(member.uid)} data-flat>
+                  Kick<span className="sr-only"> {member.name}</span>
+                </button>
+              ) : <span />}
             </div>
           ))}
           <button
+            type="button"
+            className="ar-btn ghost sm club-leave"
             disabled={busy}
             onClick={() => setConfirm("leave")}
-            className="w-full mt-3 py-2.5 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium flex items-center justify-center gap-2"
           >
-            <LogOut size={14} /> {t("clubs_leaveClub")}
+            <LogOut aria-hidden="true" />Leave Club
           </button>
         </div>
       ) : (
-        <div className="flex flex-col" style={{ height: "50vh" }}>
-          <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {!chatLoaded && <p role="status">Loading messages...</p>}
-            {error && <Button variant="secondary" onClick={() => setChatRetry(n => n + 1)}>Retry Chat</Button>}
-            {chatLoaded && !error && messages.length === 0 && (
-              <p className="text-[rgb(var(--c3))] text-xs text-center mt-6">{t("clubs_noMessagesYet")}</p>
-            )}
-            {messages.map((m) => {
-              const mine = m.senderUid === myUid;
-              return (
-                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                      mine
-                        ? "bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F]"
-                        : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))]"
-                    }`}
-                  >
-                    {!mine && <p className="text-[10px] text-[rgb(var(--gold-ink))] font-semibold mb-0.5">{m.senderName}</p>}
-                    {m.text}
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={bottomRef} />
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="club-chat">
+          {!chatLoaded && <p className="muted2">Loading club chat...</p>}
+          {error && (
+            <p role="alert" className="muted2">
+              {error}{" "}
+              <button type="button" className="link" onClick={() => setChatRetry(v => v + 1)} data-flat>
+                <RefreshCw aria-hidden="true" />Retry
+              </button>
+            </p>
+          )}
+          {chatLoaded && !error && messages.length === 0 && (
+            <p className="muted2">No messages yet. Say hello to the club.</p>
+          )}
+          {messages.map(message => (
+            <div className={`cb2 ${message.senderUid === myUid ? "me" : "them"}`} key={message.id}>
+              {message.senderUid !== myUid && <small>{message.senderName}</small>}
+              {message.text}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+          <label className="field club-composer">
             <input
-              aria-label={t("clubs_messagePlaceholder")}
               value={text}
-              disabled={busy}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={t("clubs_messagePlaceholder")}
-              maxLength={500}
-              className="flex-1 bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] rounded-xl px-4 py-3 text-[rgb(var(--text-primary))] text-sm outline-none focus:border-[rgb(var(--gold)/50%)]"
+              onChange={event => setText(event.target.value.slice(0, MAX))}
+              onKeyDown={event => { if (event.key === "Enter") handleSend(); }}
+              placeholder="Message the club…"
+              aria-label="Message the club"
+              maxLength={MAX}
             />
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleSend}
-              aria-label="Send message"
-              disabled={busy || !text.trim()}
-              className="p-3 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] disabled:opacity-40"
-            >
-              <Send size={16} aria-label="Send message" />
-            </motion.button>
-          </div>
+            <button type="button" className="club-send" aria-label="Send to club" disabled={!text.trim() || busy} onClick={handleSend}>
+              <Send aria-hidden="true" />
+            </button>
+          </label>
         </div>
       )}
-      {confirm && <dialog ref={dialog} className="club-create-dialog" onCancel={e => { if (busy) e.preventDefault(); else setConfirm(null); }}>
-        <h2>{confirm === "leave" ? "Leave club?" : "Remove member?"}</h2>
-        <p className="mt-3 text-sm">{confirm === "leave" ? isOwner ? "Ownership passes to the next member when you leave." : "You will lose access to this club chat." : "This player will be removed from your club."}</p>
-        <footer><Button variant="secondary" disabled={busy} onClick={() => setConfirm(null)}>Cancel</Button>
-          <Button variant="danger" loading={busy} onClick={() => confirm === "leave" ? handleLeave() : handleKick(confirm)}>Confirm</Button></footer>
-      </dialog>}
-    </div>
+
+      <dialog ref={dialog} className="dlg club-dlg" onClose={() => setConfirm(null)}>
+        <h2 className="disp" style={{ margin: "0 0 8px", fontSize: "24px" }}>
+          {confirm === "leave" ? "Leave club?" : "Remove member?"}
+        </h2>
+        <p className="muted" style={{ margin: "0 0 22px" }}>
+          {confirm === "leave"
+            ? `You will leave ${confirmName} and lose access to its chat.`
+            : `${confirmName} will be removed from ${club.name}.`}
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+          <button type="button" className="ar-btn ghost sm" onClick={() => { setConfirm(null); dialog.current?.close(); }}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ar-btn danger sm"
+            disabled={busy}
+            onClick={() => confirm === "leave" ? handleLeave() : confirm && handleKick(confirm)}
+          >
+            {confirm === "leave" ? "Leave" : "Remove"}
+          </button>
+        </div>
+      </dialog>
+    </section>
   );
 }

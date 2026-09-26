@@ -1,28 +1,89 @@
-import { Club, Crown, Spade, Diamond, Heart, Users, ArrowRight } from "lucide-react";
-import type { ClubDoc } from "@/lib/clubs";
-import { MAX_MEMBERS } from "@/lib/clubs";
-import { Button } from "@/components/ui/Button";
+"use client";
 
-export function ClubCard({ club, uid, hasClub, busy, disabled, onJoin, onOpen }: {
-  club: ClubDoc; uid: string; hasClub: boolean; busy: boolean; disabled: boolean;
-  onJoin: () => void; onOpen: () => void;
+import { ClubDoc, MAX_MEMBERS } from "@/lib/clubs";
+import { Suit } from "@/components/game/ArenaSprite";
+import { Meter } from "@/components/arena";
+
+/**
+ * A club in the browse grid — the Clubs board's `.club`
+ * (design/arena/screens/app/app-06-clubs.jpg).
+ *
+ * The crest is a suit in one of four tints. Which suit and which tint come
+ * from the club's own id, so a club looks the same every time it is drawn
+ * and two clubs side by side rarely match - rather than every club getting
+ * the same crest, which is what a fixed choice would give.
+ */
+
+const SUITS = ["S", "H", "D", "C"] as const;
+const TINTS = ["t1", "t2", "t3", "t4"] as const;
+
+/** Stable index from a club id. */
+function pick(id: string, size: number) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(hash) % size;
+}
+
+export function ClubCard({
+  club, hasClub, isMine, busy, disabled, onJoin, onOpen,
+}: {
+  club: ClubDoc;
+  /** The player already belongs to a club, so they cannot join another. */
+  hasClub: boolean;
+  isMine: boolean;
+  busy: boolean;
+  disabled: boolean;
+  onJoin: () => void;
+  onOpen: () => void;
 }) {
-  const member = club.members.includes(uid);
-  const owner = member && club.ownerUid === uid;
-  const full = club.members.length >= MAX_MEMBERS;
-  const seed = Array.from(club.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 4;
-  const Suit = [Spade, Diamond, Club, Heart][seed];
-  return <article className={"club-card club-tone-" + seed}>
-    <div className="club-card-art"><div className="club-crest"><Suit size={42} aria-hidden="true" /></div>
-      <span className="club-tag">[{club.tag}]</span>
-      {member && <span className="club-role">{owner && <Crown size={13} />}{owner ? "Owner" : "Member"}</span>}
-    </div>
-    <div className="club-card-content"><h3>{club.name}</h3><p className="club-description">{club.description || "A Thaasbai card-game community."}</p>
-      <p className="club-member-count"><Users size={15} /> {club.members.length} / {MAX_MEMBERS} members</p>
-      <Button fullWidth variant={member ? "secondary" : "primary"} loading={busy}
-        disabled={disabled || (!member && (full || hasClub))} onClick={member ? onOpen : onJoin}>
-        {member ? owner ? "Manage Club" : "Open Club" : full ? "Full" : hasClub ? "Already in a club" : "Join Club"}{member && <ArrowRight size={16} />}
-      </Button>
-    </div>
-  </article>;
+  const count = club.members.length;
+  const full = count >= MAX_MEMBERS;
+  const suit = SUITS[pick(club.id, SUITS.length)];
+  const tint = TINTS[pick(club.id + "t", TINTS.length)];
+
+  // The board's four button states, in the order it resolves them.
+  const action = isMine ? { label: "Open Club", kind: "open" as const }
+    : full ? { label: "Full", kind: "off" as const }
+    : hasClub ? { label: "Already in a club", kind: "off" as const }
+    : { label: busy ? "Joining..." : "Join Club", kind: "join" as const };
+
+  return (
+    <article className="club">
+      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <span className={`crest ${tint}`} aria-hidden="true"><Suit suit={suit} /></span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
+          <span className="tag">[{club.tag}]</span>
+          <h3>{club.name}</h3>
+        </div>
+      </div>
+      <p>{club.description}</p>
+      <div className="cap">
+        <span className="muted2 tnum">{count} / {MAX_MEMBERS} members</span>
+        <Meter
+          value={count / MAX_MEMBERS}
+          // The board fills the bar lime only once the club is full; a club
+          // still taking members reads blue.
+          tone={full ? "lime" : "blue"}
+          thin
+          label={`${club.name} membership`}
+          valueText={`${count} of ${MAX_MEMBERS} members`}
+        />
+      </div>
+      {action.kind === "off" ? (
+        <button type="button" className="ar-btn ghost sm" disabled style={{ alignSelf: "stretch" }}>
+          {action.label}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={action.kind === "open" ? "ar-btn sm" : "ar-btn ghost sm"}
+          style={{ alignSelf: "stretch" }}
+          disabled={disabled || busy}
+          onClick={action.kind === "open" ? onOpen : onJoin}
+        >
+          {action.label}<span className="sr-only"> — {club.name}</span>
+        </button>
+      )}
+    </article>
+  );
 }
