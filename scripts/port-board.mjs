@@ -120,6 +120,59 @@ function findStrayViolet(css) {
   return [...new Set(strays)];
 }
 
+/** Keyed on the selector and the declarations together, so a board that
+ *  restyles a shared class keeps its own version and only true duplicates
+ *  are dropped. */
+function fingerprint(rule) {
+  const body = rule.nodes.map(node => node.toString().trim()).join(";");
+  return `${rule.selector.replace(/\s+/g, " ").trim()}{${body.replace(/\s+/g, " ")}}`;
+}
+
+/**
+ * The phone set. Unlike the desktop app boards, which all embed a copy of
+ * design/arena/app-reference.css, the phone boards have no shared file to
+ * point at - the layer they have in common only exists as the rules they
+ * repeat. So it is computed: `--shared phone` writes the rules that appear
+ * in at least half of these boards to styles/arena-phone.css, and
+ * `--minus-shared` drops that same set from a board's own sheet.
+ *
+ * Both derive from one function over one list, so the shared sheet and the
+ * subtraction can never disagree about what "shared" means.
+ */
+const PHONE_BOARDS = [
+  "MHome", "MMore", "MPlay", "MPlayFind", "MRotate", "MProfile", "MInventory",
+  "MFriends", "MMessages", "MChat", "MClubs", "MLeaderboard", "MAchievements",
+  "MLeague", "MHallOfFame", "MShop", "MShopBuy", "MShopShort", "MShopVip",
+  "MRewards", "MSettings",
+];
+
+/** A board's <style> blocks, recoloured and retypefaced but not namespaced. */
+function boardCss(name) {
+  const file = join(root, "design", "arena", "boards", `${name}.dc.html`);
+  const text = readFileSync(file, "utf8");
+  const raw = [...text.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join("\n");
+  return retypeface(recolour(raw));
+}
+
+/**
+ * Fingerprints of the rules the phone boards have in common. A rule counts
+ * as shared once at least half the boards carry it byte for byte; a board
+ * that restyles one keeps its own version, exactly as `--minus` does.
+ */
+function sharedPhoneRules() {
+  const seen = new Map();
+  for (const name of PHONE_BOARDS) {
+    const own = new Set();
+    postcss.parse(boardCss(name)).walkRules(rule => {
+      if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
+      own.add(fingerprint(rule));
+    });
+    for (const print of own) seen.set(print, (seen.get(print) ?? 0) + 1);
+  }
+  const quorum = Math.ceil(PHONE_BOARDS.length / 2);
+  return new Set([...seen].filter(([, count]) => count >= quorum).map(([print]) => print));
+}
+
 const args = process.argv.slice(2);
 
 // `--css <file> <name>` ports a plain stylesheet that sits beside the boards
@@ -128,6 +181,72 @@ const args = process.argv.slice(2);
 // repeat; porting it once keeps a single copy in styles/ rather than the same
 // rules duplicated through fourteen generated files.
 const cssMode = args[0] === "--css";
+
+// `--shared <name>` writes the phone set's common layer to
+// styles/arena-<name>.css. The rules are taken in MHome's order so the
+// sheet reads the way a board does rather than in hash order.
+if (args[0] === "--shared") {
+  const name = args[1];
+  if (!name) { console.error("usage: node scripts/port-board.mjs --shared phone"); process.exit(1); }
+  const keep = sharedPhoneRules();
+  const sheet = postcss.parse(boardCss(PHONE_BOARDS[0]));
+  const ns = `.arena-${name}`;
+
+  // Every @keyframes in the set, declared once here. They are not
+  // namespaced (an animation name is global), so leaving them in the board
+  // sheets would put twenty copies of `drift` in the stylesheet and make
+  // whichever loaded last the real one. A name defined two different ways
+  // is a genuine conflict and stops the build rather than picking a winner.
+  const frames = new Map();
+  for (const other of PHONE_BOARDS) {
+    postcss.parse(boardCss(other)).walkAtRules(at => {
+      if (!/keyframes/.test(at.name)) return;
+      const body = at.toString().replace(/\s+/g, " ");
+      const had = frames.get(at.params);
+      if (had && had.body !== body) {
+        console.error(`✗ @keyframes ${at.params} differs between ${had.board} and ${other}`);
+        process.exit(1);
+      }
+      if (!had) frames.set(at.params, { board: other, node: at.clone(), body });
+    });
+  }
+  sheet.walkAtRules(at => { if (/keyframes/.test(at.name)) at.remove(); });
+  for (const { node } of [...frames.values()].sort((a, b) => a.node.params.localeCompare(b.node.params))) {
+    sheet.append(node);
+  }
+  sheet.walkRules(rule => {
+    // A keyframe's steps (0%, from, to) are rules too. They are not part of
+    // the shared SET - they belong to their @keyframes, which is copied
+    // whole above - so testing them against it would empty every animation.
+    if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
+    if (!keep.has(fingerprint(rule))) { rule.remove(); return; }
+    rule.selector = rule.selector.replace(/\.violet\b/g, ".blue").replace(/\.btn\b/g, ".ar-btn");
+    rule.selectors = rule.selectors.map(selector => {
+      const trimmed = selector.trim();
+      if (trimmed === ":root" || trimmed.startsWith("@")) return selector;
+      if (/^(body|html)\b/.test(trimmed)) return null;
+      return `${ns} ${trimmed}`;
+    }).filter(Boolean);
+    if (rule.selectors.length === 0) rule.remove();
+  });
+  let count = 0; sheet.walkRules(rule => { if (rule.parent?.type !== "atrule") count++; });
+  const head = `/* GENERATED by scripts/port-board.mjs --shared ${name}.
+   Do not edit by hand - re-run the script instead.
+
+   The layer the phone boards have in common. They have no shared file to
+   point at the way the desktop boards have app-reference.css, so this is
+   the set of rules at least half of them repeat byte for byte, namespaced
+   under ${ns} and taken in ${PHONE_BOARDS[0]}'s order.
+
+   Each board's own sheet is generated with --minus-shared, which drops
+   this same set, so a board that restyles one of these keeps its version
+   and only true duplicates are dropped. Board sheets are imported after
+   this one, so where both define a selector the board wins. */\n\n`;
+  writeFileSync(join(root, "styles", `arena-${name}.css`), head + sheet.toString() + "\n", "utf8");
+  console.log(`✓ phone shared layer -> styles/arena-${name}.css (${count} rules and ${frames.size} keyframes from ${PHONE_BOARDS.length} boards)`);
+  process.exit(0);
+}
+
 const positional = cssMode ? args.slice(1) : args;
 
 // `--minus <file.css>` drops every rule the board shares, byte for byte,
@@ -141,6 +260,12 @@ const positional = cssMode ? args.slice(1) : args;
 const minusAt = positional.indexOf("--minus");
 const minusFile = minusAt === -1 ? null : positional[minusAt + 1];
 if (minusAt !== -1) positional.splice(minusAt, 2);
+
+// `--minus-shared` is the phone set's equivalent: it drops the computed
+// common layer (styles/arena-phone.css) instead of a named file.
+const minusSharedAt = positional.indexOf("--minus-shared");
+const minusShared = minusSharedAt !== -1;
+if (minusShared) positional.splice(minusSharedAt, 1);
 
 const [board, name] = positional;
 if (!board || !name) {
@@ -181,10 +306,11 @@ if (minusFile) {
   shared = new Set();
   const minusCss = retypeface(recolour(readFileSync(join(root, "design", "arena", minusFile), "utf8")));
   postcss.parse(minusCss).walkRules(rule => shared.add(fingerprint(rule)));
-}
-function fingerprint(rule) {
-  const body = rule.nodes.map(node => node.toString().trim()).join(";");
-  return `${rule.selector.replace(/\s+/g, " ").trim()}{${body.replace(/\s+/g, " ")}}`;
+} else if (minusShared) {
+  shared = sharedPhoneRules();
+  // styles/arena-phone.css declares every phone keyframe once; a second
+  // copy here would be dead weight at best and a silent override at worst.
+  out.walkAtRules(at => { if (/keyframes/.test(at.name)) at.remove(); });
 }
 
 out.walkRules(rule => {
@@ -234,12 +360,12 @@ const header = `/* GENERATED from ${origin} by scripts/port-board.mjs.
    canvas lives in styles/arena-shell.css, alongside the boards' keyframes.`
     : ""
 }${
-  minusFile
+  minusFile || minusShared
     ? `
 
-   ${dropped} rules this board shares byte for byte with ${minusFile} were
-   dropped: they are already in styles/arena-app.css, ported once. A rule
-   the board changed, however slightly, was kept.`
+   ${dropped} rules this board shares byte for byte with ${minusFile || "the phone set's common layer"}
+   were dropped: they are already in ${minusFile ? "styles/arena-app.css" : "styles/arena-phone.css"},
+   ported once. A rule the board changed, however slightly, was kept.`
     : ""
 } */\n\n`;
 
@@ -249,5 +375,5 @@ writeFileSync(file, header + out.toString() + "\n", "utf8");
 let rules = 0; out.walkRules(() => rules++);
 console.log(
   `✓ ${board} -> styles/arena-${name}.css (${rules} rules, namespaced ${ns}, violet -> #00BCC8` +
-  (minusFile ? `, ${dropped} shared rules already in ${minusFile}` : "") + ")"
+  (shared ? `, ${dropped} shared rules already in ${minusFile || "arena-phone.css"}` : "") + ")"
 );
