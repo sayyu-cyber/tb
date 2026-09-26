@@ -54,14 +54,18 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         <BackgroundMusicPlayer />
         <CoinTopupWatcher />
         <PresenceHeartbeat />
-        {/* No bottom bar at any breakpoint - the sidebar rail is present on
-            every screen size, so a second navigation surface would just be
-            a duplicate eating vertical space on phones. */}
-        {!inMatch && <AppSidebar />}
+        {/* The nav comes AFTER the content in the DOM because it sits on the
+            right of the screen, and reading order should follow the eye
+            rather than be reversed by CSS. The skip link above still lands
+            on the content first, and the rail is one Tab away after it.
+            No bottom bar at any breakpoint - the rail is present at every
+            screen size, so a second navigation surface would just be a
+            duplicate eating vertical space on phones. */}
         <main className="app-shell-main" id="app-content" tabIndex={-1}>
           {!inMatch && <div className="app-shell-toolbar"><TopBar /></div>}
           {children}
         </main>
+        {!inMatch && <AppSidebar />}
       </div>
       </HomeSocialProvider>
     </ProtectedRoute>

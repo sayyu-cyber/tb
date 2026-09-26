@@ -1194,21 +1194,22 @@
 /* ─────────────────────────────────────────────────────────────────────
    Unified app sidebar (components/layout/sidebar/*)
 
-   One rail that widens into a full panel. Two elements do the work:
-     .app-sidebar        an in-flow flex child that RESERVES horizontal space
-     .app-sidebar-panel  position:fixed, the thing you actually see
+   A fixed icon rail down the RIGHT edge, at every window size. It has one
+   state, on purpose: it used to widen into a 300px panel, and that was
+   what made the page move. Two elements do the work:
+     .app-sidebar        an in-flow flex child that RESERVES the rail's width
+     .app-sidebar-panel  position:fixed to the right edge, the thing you see
 
-   That split is the whole trick. Above 1024px the spacer grows with the
-   panel, so content is pushed aside; below it the spacer stays at rail
-   width while the panel widens over the top, so it behaves as a drawer.
-   No JS measures the viewport to decide - the same markup does both.
+   The spacer is what keeps content from running under the panel, and its
+   width is a constant - so no page in the app depends on the nav's state,
+   because there isn't one. Labels live in tooltips that open to the LEFT
+   (SidebarTooltip); every control carries its own aria-label.
 
-   Every icon box is 44px and sits 10px from the panel's edge in BOTH
-   states, so nothing shifts horizontally while the width animates.
+   Every icon box is 44px and sits 10px from the panel's edge, which is what
+   centres it in the 84px rail (10 + 10 + 44 + 20).
    ───────────────────────────────────────────────────────────────────── */
 .app-sidebar {
   --rail-w:84px;
-  --panel-w:300px;
   --sb-icon:44px;
   --sb-pad:10px;
   --sb-surface:linear-gradient(168deg,#0e1214,#0b0f10 72%);
@@ -1226,11 +1227,10 @@
   z-index:59;
   flex:0 0 auto;
   width:var(--rail-w);
-  transition:width 200ms var(--sb-ease);
 }
 .app-sidebar-panel {
   position:fixed;
-  top:0; bottom:0; left:0;
+  top:0; bottom:0; right:0;
   z-index:59;
   display:flex;
   flex-direction:column;
@@ -1238,80 +1238,48 @@
   width:var(--rail-w);
   padding:16px var(--sb-pad) 14px;
   background:var(--sb-surface);
-  border-right:1px solid var(--sb-line);
-  box-shadow:2px 0 16px rgba(0,0,0,.45);
-  /* x-hidden is what clips the labels while collapsed; tooltips escape it
-     by portalling to document.body (see SidebarTooltip). */
+  border-left:1px solid var(--sb-line);
+  box-shadow:-2px 0 16px rgba(0,0,0,.45);
+  /* x-hidden clips the labels the markup still carries for screen readers;
+     the visible ones are tooltips portalled to document.body. */
   overflow-x:hidden;
   overflow-y:auto;
   overscroll-behavior:contain;
   scrollbar-width:thin;
   scrollbar-color:rgba(255,255,255,.14) transparent;
-  transition:width 200ms var(--sb-ease);
 }
 .app-sidebar-panel::-webkit-scrollbar { width:6px; }
 .app-sidebar-panel::-webkit-scrollbar-track { background:transparent; }
 .app-sidebar-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,.13); border-radius:99px; }
-.app-sidebar[data-expanded="true"] .app-sidebar-panel { width:var(--panel-w); }
-/* Push content only where there is room for it. */
-@media(min-width:1024px) {
-  .app-sidebar[data-expanded="true"] { width:var(--panel-w); }
-}
-/* No open/close animation before the stored preference has been read, so a
-   restored "expanded" doesn't play a slide-open on every page load. */
-.app-sidebar:not([data-ready]),
-.app-sidebar:not([data-ready]) * { transition:none !important; animation:none !important; }
 
-/* Dismiss layer - overlay breakpoints only. Sits just below the panel. */
-.app-sidebar-backdrop {
-  position:fixed; inset:0; z-index:58;
-  border:0; padding:0;
-  background:rgba(4,7,8,.66);
-  -webkit-backdrop-filter:blur(2px);
-  backdrop-filter:blur(2px);
-}
-@media(min-width:1024px) { .app-sidebar-backdrop { display:none; } }
+/* One width, always. No stored preference, no push/overlay breakpoint, no
+   open animation - the rail cannot change size, so none of that exists.
 
-/* ── Collapsible text ────────────────────────────────────────────────
-   Labels fade out fast, then the width contracts; on the way back the
-   width opens first and the labels follow (the delay below). */
+   ── The labels the markup still carries ──────────────────────────────
+   Each row keeps its text node so the accessibility tree reads as a list
+   of named links rather than a column of unlabelled icons. Hidden from
+   sight, not from assistive tech, which is why this clips rather than
+   using display:none. The visible label is the tooltip, and it opens to
+   the LEFT of the rail because the rail is against the right edge. */
 .app-sidebar-wordmark,
 .app-sidebar-label,
 .app-sidebar-identity-text {
-  opacity:0;
-  transform:translateX(-6px);
-  pointer-events:none;
-  transition:opacity 120ms var(--sb-ease), transform 120ms var(--sb-ease);
+  position:absolute;
+  width:1px; height:1px;
+  margin:-1px; padding:0;
+  overflow:hidden;
+  clip-path:inset(50%);
+  white-space:nowrap;
 }
-.app-sidebar[data-expanded="true"] .app-sidebar-wordmark,
-.app-sidebar[data-expanded="true"] .app-sidebar-label,
-.app-sidebar[data-expanded="true"] .app-sidebar-identity-text {
-  opacity:1;
-  transform:none;
-  pointer-events:auto;
-  transition-delay:90ms;
-}
-/* Blocks that only exist in the expanded panel fade in rather than snapping. */
-@keyframes app-sidebar-fade { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @keyframes app-sidebar-pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
-.app-sidebar[data-expanded="true"] .app-sidebar-vip,
-.app-sidebar[data-expanded="true"] .app-sidebar-social,
-.app-sidebar[data-expanded="true"] .app-sidebar-social-skeleton,
-.app-sidebar[data-expanded="true"] .app-sidebar-social-error {
-  animation:app-sidebar-fade 180ms var(--sb-ease) 80ms both;
-}
+
 
 /* ── Header ──────────────────────────────────────────────────────────
-   Stacked on the rail (logo over toggle), a row with the wordmark left and
-   the collapse control right once expanded. */
-/* padding-left matches .app-sidebar-item's, so the logo, the toggle, every
-   nav icon and the avatar all share one vertical axis - dead centre of the
-   rail when collapsed (10px panel padding + 10px here + 44px box + 20px =
-   the 84px rail), and one flush left edge when expanded. */
-.app-sidebar-head { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding-left:var(--sb-pad); padding-bottom:2px; }
-.app-sidebar[data-expanded="true"] .app-sidebar-head {
-  flex-direction:row; align-items:center; justify-content:space-between; gap:8px; padding-bottom:6px;
-}
+   Just the mark now; the expand control it used to sit beside is gone.
+   Every icon box shares one vertical axis down the middle of the rail:
+   the panel centres its children, so the mark, each nav icon, the avatar
+   and the footer buttons all line up without per-row padding. */
+.app-sidebar-head { display:flex; flex-direction:column; align-items:center; gap:8px; padding-bottom:2px; }
 .app-sidebar-mark { display:flex; align-items:center; gap:11px; min-width:0; border-radius:13px; }
 .app-sidebar-mark-glyph {
   display:grid; place-items:center; flex:0 0 var(--sb-icon);
@@ -1325,21 +1293,13 @@
   font-size:19px; font-weight:800; letter-spacing:.3px; white-space:nowrap;
   color:var(--sb-gold-bright); text-shadow:0 0 18px rgba(244,205,98,.3);
 }
-.app-sidebar-toggle {
-  display:grid; place-items:center; flex:0 0 var(--sb-icon);
-  width:var(--sb-icon); height:var(--sb-icon);
-  border:1px solid var(--sb-line); border-radius:13px;
-  background:rgba(255,255,255,.04); color:var(--sb-muted);
-  transition:background-color 160ms var(--sb-ease), color 160ms var(--sb-ease), border-color 160ms var(--sb-ease);
-}
-.app-sidebar-toggle:hover { background:rgba(255,255,255,.09); color:var(--sb-text); border-color:rgba(244,205,98,.35); }
 
 /* ── Identity ────────────────────────────────────────────────────────
    Avatar + who's signed in. TopBar already owns the account menu, so this
    stays a marker and a route to /profile rather than a second profile card. */
 .app-sidebar-identity {
   display:flex; align-items:center; width:100%; min-height:52px;
-  padding-left:var(--sb-pad);
+  justify-content:center;
   border-radius:13px; overflow:hidden;
   transition:background-color 160ms var(--sb-ease);
 }
@@ -1366,7 +1326,7 @@
 .app-sidebar-tip-anchor { display:block; }
 .app-sidebar-item {
   position:relative; display:flex; align-items:center; width:100%; min-height:48px;
-  padding-left:var(--sb-pad);
+  justify-content:center;
   border:1px solid transparent; border-radius:13px;
   color:var(--sb-muted); overflow:hidden;
   transition:background-color 160ms var(--sb-ease), border-color 160ms var(--sb-ease), color 160ms var(--sb-ease);
@@ -1387,7 +1347,6 @@
   display:flex; flex-direction:column; align-items:center; gap:8px; flex-shrink:0;
   margin-top:auto; padding-top:12px; border-top:1px solid var(--sb-line);
 }
-.app-sidebar[data-expanded="true"] .app-sidebar-foot { align-items:stretch; gap:10px; }
 .app-sidebar-vip-mini {
   display:grid; place-items:center; width:var(--sb-icon); height:var(--sb-icon);
   border:1px solid rgba(226,178,59,.42); border-radius:13px; color:#f6d98a;
@@ -1475,10 +1434,12 @@
 }
 .app-sidebar-social-error button { min-height:36px; margin-top:6px; color:var(--sb-gold-bright); text-decoration:underline; }
 
-/* ── Tooltips (collapsed rail) ───────────────────────────────────────
-   Portalled to <body>, so the rail's own overflow can never clip them. */
+/* ── Tooltips ────────────────────────────────────────────────────────
+   Portalled to <body>, so the rail's own overflow can never clip them, and
+   pulled back by their own width so they open to the LEFT of the rail -
+   there is no room on the right, the rail is against the window's edge. */
 .app-sidebar-tip {
-  position:fixed; z-index:80; transform:translateY(-50%);
+  position:fixed; z-index:80; transform:translate(-100%,-50%);
   padding:7px 11px; border-radius:9px; white-space:nowrap; pointer-events:none;
   border:1px solid rgba(255,255,255,.1); background:#161d1f;
   color:var(--sb-text); font-size:12px; font-weight:600;
@@ -1486,13 +1447,12 @@
 }
 
 .app-sidebar a:focus-visible,
-.app-sidebar button:focus-visible,
-.app-sidebar-backdrop:focus-visible { outline:2px solid var(--sb-gold-bright); outline-offset:2px; }
+.app-sidebar button:focus-visible { outline:2px solid var(--sb-gold-bright); outline-offset:2px; }
 
 /* Narrower rail on phones, where 84px is a real bite out of the content.
    Keep the identity rail-w = 4*sb-pad + sb-icon (here 24 + 38 = 62) or the
    icons stop being centred in the rail. */
-@media(max-width:639px) { .app-sidebar { --rail-w:62px; --panel-w:min(300px,84vw); --sb-icon:38px; --sb-pad:6px; } }
+@media(max-width:639px) { .app-sidebar { --rail-w:62px; --sb-icon:38px; --sb-pad:6px; } }
 @media(prefers-reduced-motion:reduce) {
   .app-sidebar, .app-sidebar *, .app-sidebar-tip { transition:none !important; animation:none !important; }
 }

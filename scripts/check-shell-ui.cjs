@@ -21,41 +21,45 @@ async function run(){
   await page.keyboard.press('Escape');await page.screenshot({path:path.join(output,'shell-'+width+'.png'),fullPage:true});
  }
 
- // ---- the content sits against the sidebar, and stays put ---------------
- // Both halves of a regression the shell had for a long time: `margin:0
- // auto` on the main column left a band of empty stage between the nav and
- // the content on a wide window, and recentred the whole page sideways
- // whenever the nav opened. Opening it should cost width and nothing else.
- await page.setViewportSize({width:1800,height:1000});await page.waitForTimeout(250);
- const edges=async()=>{
+ // ---- the rail: right edge, one width, no way to change it --------------
+ // The nav used to widen to 300px, which took 216px off the content and -
+ // while the shell still centred that content - slid the whole page
+ // sideways with it. There is no expanded state any more, so the only
+ // thing to prove is that it cannot appear: no toggle, no drawer, and the
+ // same geometry at every width.
+ assert.equal(await page.locator('.app-sidebar-toggle').count(),0,'The rail has no expand control');
+ assert.equal(await page.locator('.app-sidebar-backdrop').count(),0,'and no drawer backdrop');
+ const geometry=async()=>{
   const nav=await page.locator('.app-sidebar-panel').boundingBox();
   const main=await page.locator('.app-shell-main').boundingBox();
-  return {navRight:nav.x+nav.width,mainLeft:main.x,mainWidth:main.width};
+  return {navLeft:nav.x,navRight:nav.x+nav.width,navWidth:nav.width,mainLeft:main.x,mainRight:main.x+main.width};
  };
- const collapsed=await edges();
- assert.ok(Math.abs(collapsed.mainLeft-collapsed.navRight)<2,
-  `Content starts where the sidebar ends (${Math.round(collapsed.mainLeft)} vs ${Math.round(collapsed.navRight)})`);
- await page.locator('.app-sidebar-toggle').click();await page.waitForTimeout(400);
- const open=await edges();
- assert.ok(Math.abs(open.mainLeft-open.navRight)<2,
-  `and still does with the sidebar open (${Math.round(open.mainLeft)} vs ${Math.round(open.navRight)})`);
- // The nav grew by exactly what the content lost - no sideways slide.
- const grew=open.navRight-collapsed.navRight, lost=collapsed.mainWidth-open.mainWidth;
- assert.ok(Math.abs(grew-lost)<2,`Opening the nav only costs width (nav +${Math.round(grew)}, main -${Math.round(lost)})`);
- await page.locator('.app-sidebar-toggle').click();await page.waitForTimeout(400);
+ for(const [width,height,rail] of [[1800,1000,84],[1280,800,84],[1024,800,84],[390,844,62]]){
+  await page.setViewportSize({width,height});await page.waitForTimeout(250);
+  const g=await geometry();
+  assert.ok(Math.abs(g.navWidth-rail)<2,`Rail is ${rail}px at ${width} (got ${Math.round(g.navWidth)})`);
+  assert.ok(Math.abs(g.navRight-width)<2,`Rail is against the right edge at ${width}`);
+  assert.ok(g.mainLeft<2,`Content starts at the left edge at ${width} (got ${Math.round(g.mainLeft)})`);
+  assert.ok(Math.abs(g.mainRight-g.navLeft)<2,
+   `and ends where the rail begins at ${width} (${Math.round(g.mainRight)} vs ${Math.round(g.navLeft)})`);
+ }
+ // Every destination is reachable by name even though no label is drawn.
  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(250);
+ assert.ok(await page.locator('.app-sidebar-item[aria-label]').count()>=8,
+  'Every icon carries its own name for assistive tech');
 
  const search=page.getByRole('combobox').first();await search.fill('Gin');await page.keyboard.press('Enter');assert.equal(await page.locator('body').getAttribute('data-destination'),'/play/gin-rummy/casual/online');
  await search.fill('');await search.focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await page.locator('body').getAttribute('data-destination'),'/play/mindi/ranked');
  await search.fill('nonexistent-game');assert.equal(await page.locator('#launcher-results [role=option]').count(),0);await page.keyboard.press('Escape');assert.equal(await search.getAttribute('aria-expanded'),'false');
- await page.locator('.app-sidebar-toggle').click();assert.equal(await page.locator('.app-shell-main').evaluate(n=>n.inert),true);assert.equal(await page.evaluate(()=>document.body.style.overflow),'hidden');
- await page.setViewportSize({width:1280,height:800});await page.waitForTimeout(250);assert.equal(await page.locator('.app-shell-main').evaluate(n=>n.inert),false);assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
- await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);await page.keyboard.press('Escape');assert.equal(await page.locator('.app-sidebar-toggle').getAttribute('aria-expanded'),'false');
+ // The rail never covers the page, so it never inerts it or locks scroll.
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
+ assert.equal(await page.locator('.app-shell-main').evaluate(n=>n.inert),false,'Content is never inert');
+ assert.equal(await page.evaluate(()=>document.body.style.overflow),'','and the body never locks');
  await page.getByRole('button',{name:'Profile: Test Player'}).click();await page.getByRole('button',{name:/Log Out|Logout|Sign Out/i}).click();assert.equal(await page.locator('body').getAttribute('data-toast'),"Couldn't sign out. Please try again.");
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));});await page.locator('.connection-notice').waitFor();
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));});assert.equal(await page.locator('.connection-notice').count(),0);
  await page.evaluate(()=>{const match=document.createElement('div');match.className='gin-room';document.querySelector('main').append(match);});assert.equal(await page.locator('.app-sidebar').isVisible(),false);
- assert.deepEqual(errors,[]);console.log('Shell checks passed: six viewports, content flush to the sidebar on open and closed, shared listeners, search keyboard controls, menus, sidebar resize/focus, logout errors, offline notice, private match chrome.');
+ assert.deepEqual(errors,[]);console.log('Shell checks passed: six viewports, a fixed right-hand rail at four widths, named icons, shared listeners, search keyboard controls, menus, logout errors, offline notice, private match chrome.');
  }finally{await browser.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

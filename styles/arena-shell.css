@@ -217,7 +217,7 @@
   --sb-active-line: rgba(198, 255, 51, .75);
   --sb-danger: #FF6B80;
 }
-.app-sidebar-panel { box-shadow: none; border-right: 1px solid rgba(255, 255, 255, .08); }
+.app-sidebar-panel { box-shadow: none; border-left: 1px solid rgba(255, 255, 255, .08); border-right: 0; }
 
 /* The logo diamond: a lime crown inside a black square turned 45 degrees. */
 .app-sidebar-mark-glyph {
@@ -237,7 +237,6 @@
   color: #FFFFFF;
   text-shadow: none;
 }
-.app-sidebar-toggle { border-radius: 10px; }
 
 /* Nav items. Uppercase tracked labels once expanded, per `.side.open .nav a`. */
 .app-sidebar-item { border-radius: 12px; color: #8E8E9C; }
@@ -249,20 +248,7 @@
 }
 .app-sidebar-item[data-active] .app-sidebar-label { color: #0A0A0A; }
 .app-sidebar-item[data-active] .app-sidebar-item-icon { color: #0A0A0A; }
-.app-sidebar[data-expanded="true"] .app-sidebar-label {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
 
-/* Identity card - `.side.open .ident`. */
-.app-sidebar[data-expanded="true"] .app-sidebar-identity {
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .035);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
-}
 .app-sidebar-avatar-inner {
   border-radius: 11px;
   color: #0A0A0A;

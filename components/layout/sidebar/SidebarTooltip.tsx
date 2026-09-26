@@ -4,13 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
- * Label tooltip for the collapsed rail.
+ * The rail's label. Since the rail carries icons only, this is the whole
+ * visible naming of the navigation.
  *
  * A pure-CSS tooltip can't work here: the rail scrolls vertically, and an
- * element with `overflow-y: auto` clips on the x-axis too, so a tooltip
- * sitting to the right of an icon would be cut off at the rail's edge. This
- * measures the trigger on hover/focus and renders the bubble into
- * document.body through a portal, where nothing can clip it.
+ * element with `overflow-y: auto` clips on the x-axis too, so a bubble
+ * beside an icon would be cut off at the rail's edge. This measures the
+ * trigger on hover/focus and renders the bubble into document.body through
+ * a portal, where nothing can clip it.
  *
  * The portal only mounts after a real pointer/keyboard interaction, so it
  * never runs during the static export's build-time render and can't cause a
@@ -22,7 +23,6 @@ import { createPortal } from "react-dom";
  */
 export function SidebarTooltip({
   label,
-  /** Pass false in the expanded panel, where labels are already visible. */
   enabled = true,
   children,
 }: {
@@ -40,15 +40,18 @@ export function SidebarTooltip({
     // affordances belong to devices that can actually hover.
     if (typeof window !== "undefined" && !window.matchMedia("(hover: hover)").matches) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    // Vertically centred on the trigger, just past its right edge. Fixed
+    // Vertically centred on the trigger and just OUTSIDE its left edge -
+    // the rail is against the right edge of the window, so a bubble to its
+    // right would open off-screen. The CSS pulls it back by its own width
+    // (translateX(-100%)), so `left` is the bubble's right edge. Fixed
     // coordinates, so the page scrolling underneath doesn't drag it along.
-    setPos({ top: rect.top + rect.height / 2, left: rect.right + 12 });
+    setPos({ top: rect.top + rect.height / 2, left: rect.left - 12 });
   }, [enabled]);
 
   const hide = useCallback(() => setPos(null), []);
 
-  // Expanding the panel while the pointer rests on a rail icon would
-  // otherwise leave that icon's bubble stranded on screen.
+  // A bubble left over from a trigger that has just been disabled would
+  // otherwise stay stranded on screen.
   useEffect(() => {
     if (!enabled) setPos(null);
   }, [enabled]);
