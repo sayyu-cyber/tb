@@ -42,14 +42,15 @@ async function run() {
     const bodyClass = await page.locator('body').getAttribute('class');
     const script = fs.readFileSync(path.join(output, 'component.js'), 'utf8');
     // The shell is what the page sits in, so the fixture reproduces it: the
-    // arena-app namespace, the stage, and a rail the width of the sidebar.
+    // arena-app namespace, the stage, the top bar, and the icon rail - which
+    // is on the RIGHT now, after the content, as AppShell renders it.
     await page.route('**/play-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div class="arena-app app-shell ar-stage">`
-        + `<aside style="width:96px;flex:none"></aside>`
-        + `<main class="app-shell-main"><div class="app-shell-toolbar" style="height:72px"></div>`
-        + `<div id="test-root"></div></main></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app app-shell ar-stage">`
+        + `<main class="app-shell-main"><div class="app-shell-toolbar" style="height:76px"></div>`
+        + `<div id="test-root"></div></main>`
+        + `<aside class="app-sidebar"></aside></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -57,14 +58,14 @@ async function run() {
     await page.getByRole('heading', { name: 'Choose your table' }).waitFor();
 
     // ── The podium (lobby-01) ───────────────────────────────────────────
-    assert.equal(await page.locator('.lob-canvas .deck').count(), 2, 'Two deck boxes');
+    assert.equal(await page.locator('.lob-board .deck').count(), 2, 'Two deck boxes');
     assert.equal(await page.locator('.deck.vio.on').count(), 1, 'Mindi is the lit deck');
     assert.equal(await page.locator('.deck.blk.off').count(), 1, 'Gin Rummy is dimmed');
     assert.equal(await page.locator('.apron').count(), 10, 'Ten stacked aprons');
     assert.equal(await page.locator('.leds ellipse').count(), 4, 'The four LED rings');
     assert.equal(await page.locator('.mote').count(), 4, 'Four drifting motes');
-    assert.equal(await page.locator('.lob-canvas .beam').count(), 2, 'Two spotlight beams');
-    assert.ok((await page.locator('.lob-mid').innerText()).toUpperCase().includes('PICK A GAME'));
+    assert.equal(await page.locator('.lob-board .beam').count(), 2, 'Two spotlight beams');
+    assert.ok((await page.locator('.lob-title-block').innerText()).toUpperCase().includes('PICK A GAME'));
 
     // ── The Mindi panel ─────────────────────────────────────────────────
     const modes = page.locator('.lob-modes');
@@ -157,24 +158,28 @@ async function run() {
     assert.equal(await page.locator('.mote[data-ar-loop], .deck[data-ar-loop], .chase[data-ar-loop]').count(), loops,
       'Every loop carries data-ar-loop for prefers-reduced-motion');
 
-    // ── The composition keeps the artboard's width ──────────────────────
-    // The board is a picture, not a dashboard: its panels are at x=48 and
-    // x=1062 of 1440 with the podium between them. Stretched to a 2,400px
-    // monitor that flings them to opposite walls, so the page caps at the
-    // artboard and starts where the sidebar ends. The room behind it still
-    // reaches both edges, and the podium stays centred on the composition
-    // rather than on the room.
-    await page.setViewportSize({ width: 2200, height: 1000 });
-    await page.waitForTimeout(300);
-    const box = await page.locator('.lob-page').boundingBox();
-    const room = await page.locator('.lob-scene').boundingBox();
-    const main = await page.locator('.app-shell-main').boundingBox();
-    assert.ok(box.width <= 1441, `The composition stops at the artboard (got ${Math.round(box.width)}px)`);
-    assert.ok(Math.abs(box.x - main.x) < 2, 'and starts where the content area does, not centred');
-    assert.ok(room.width > box.width + 200, 'while the room bleeds past it');
-    const podium = await page.locator('.lob-canvas').boundingBox();
-    assert.ok(Math.abs((podium.x + podium.width / 2) - (box.x + 720)) < 3,
-      'The podium is centred on the composition, not on the room');
+    // ── The screen IS the artboard ──────────────────────────────────────
+    // Every element is at its board coordinate on a 1440x900 canvas, and
+    // the canvas is scaled to fit. So the proof is geometric: the panels
+    // sit at x=48 and x=1062 of the board, whatever the window is.
+    for (const [width, height] of [[2200, 1100], [1500, 900]]) {
+      await page.setViewportSize({ width, height });
+      await page.waitForTimeout(300);
+      const board = await page.locator('.lob-board').boundingBox();
+      const scale = board.width / 1440;
+      const league = await page.locator('.lob-league').boundingBox();
+      const modes = await page.locator('.lob-modes').boundingBox();
+      const rank = await page.locator('.lob-rank').boundingBox();
+      const at = (x) => board.x + x * scale;
+      assert.ok(Math.abs(league.x - at(48)) < 2, `League panel at x=48 of the board (${width})`);
+      assert.ok(Math.abs(rank.x - at(48)) < 2, `Rank panel at x=48 too (${width})`);
+      assert.ok(Math.abs(modes.x - at(1062)) < 2, `Modes panel at x=1062 (${width})`);
+      assert.ok(Math.abs(league.width - 330 * scale) < 2, `and 330 wide (${width})`);
+      // The room fills the frame rather than letterboxing the canvas.
+      const frame = await page.locator('.lob-frame').boundingBox();
+      const room = await page.locator('.lob-frame > .bg').boundingBox();
+      assert.ok(Math.abs(room.width - frame.width) < 2, `The room reaches the frame's edges (${width})`);
+    }
 
     // ── Widths ──────────────────────────────────────────────────────────
     for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [1024, 800], [844, 390], [390, 844]]) {

@@ -392,134 +392,52 @@
 }
 
 /* ── Play lobby (lobby-01, lobby-02) ──────────────────────────────────
-   The board is the one screen here that is a 3D scene rather than a
-   layout: the floor, the podium, the LED ring and the two deck boxes are
-   a single perspective built from one rotateX/scale and a stack of
-   translateZ'd aprons. Those numbers only mean anything together, so the
-   scene keeps its 1440x900 canvas and is scaled by one factor
-   (components/game/lobby/LobbyPodium), while the three HUD panels around
-   it are ordinary flow layout and stay readable at any width.
+   The one screen here that is a picture rather than a layout. The floor,
+   the podium, the LED ring and the two deck boxes are a single perspective
+   built from one rotateX/scale over a stack of translateZ'd aprons, and
+   the three panels are placed against that picture. Those numbers only
+   mean anything together, so the board keeps its 1440x900 canvas and the
+   whole thing is scaled by one factor - exactly what the Mindi and Gin
+   tables do, for exactly the same reason.
 
-   At 1440 the grid below resolves to the board's own columns: a 330px
-   panel at x=48, the podium between, and a 330px panel ending at x=1392. */
-/* Everything below sizes itself against the space the shell leaves, not
-   against the window. Opening the sidebar takes 216px off that space,
-   which a viewport media query cannot see - which is how the headline
-   ended up wrapping in under the two panels on a wide screen with the nav
-   open. The container is the wrapper rather than the padded page, so a
-   query can change that padding without feeding back into its own
-   measurement. */
-.arena-lobby { position: relative; container-type: inline-size; container-name: lobby; }
-
-/* The composition never grows past the artboard. The board places its
-   panels at x=48 and x=1062 of 1440 with the podium between them, and
-   stretching that to a 2,400px monitor flings the panels to opposite walls
-   with a lake of felt in the middle - it stops being the picture that was
-   drawn. So the page keeps 1440 and, per the rest of the shell, starts
-   where the sidebar ends rather than floating in the middle.
-
-   The room behind it is NOT capped: `.lob-scene` hangs off the wrapper, so
-   the backdrop still reaches both edges and there is no seam where the
-   composition stops. */
-.arena-lobby .lob-page {
+   There is therefore no grid here, no breakpoints and no stacking: the
+   composition cannot come apart, because it is never taken apart. */
+.arena-lobby.lob-frame {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  /* Tall enough that the rank panel sits where the board puts it (y=700 of
-     900) rather than riding up under the league panel. */
-  min-height: calc(100vh - 128px);
-  max-width: 1440px;
-  padding: 40px 48px 32px;
+  /* Everything below the top bar. The board scales to whatever this is, so
+     the exact number only decides how much of the window it fills. */
+  height: calc(100dvh - 76px);
+  min-height: 420px;
+  overflow: hidden;
 }
-@container lobby (max-width: 900px) {
-  .arena-lobby .lob-page { padding: 20px 14px 28px; }
-}
+/* The room reaches the frame's edges; the board is scaled inside it, so a
+   window that is not 16:10 shows more room rather than a letterbox. */
+.arena-lobby.lob-frame > .bg { position: absolute; inset: 0; }
 
-/* The scene fills the whole area the shell leaves, behind the capped
-   composition. The board's own .bg sits on this layer, so the room stays
-   the right size while the table scales. */
-.arena-lobby .lob-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.arena-lobby .lob-canvas {
+.arena-lobby .lob-board {
   position: absolute;
-  /* Centred on the composition, not on the room: once the page is wider
-     than the artboard the podium stays under the 1440 the panels live in,
-     which is where the board draws it. */
-  left: min(50%, 720px);
+  left: 50%;
   top: 50%;
   width: 1440px;
   height: 900px;
   transform-origin: 50% 50%;
 }
-/* Everything in the scene is decoration except the two decks. */
-.arena-lobby .lob-canvas .deck { pointer-events: auto; }
 
-.arena-lobby .lob-grid {
-  position: relative;
-  z-index: 1;
-  flex-grow: 1;
-  display: grid;
-  /* The board's 330px panels, allowed to give up 50px before the layout
-     gives up on three columns altogether. */
-  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr) minmax(280px, 330px);
-  align-items: start;
-  gap: 0 20px;
-}
-/* The board's panels are absolutely placed; in the grid they are not. */
-.arena-lobby .lob-grid .hud { position: relative; }
-
-/* Left: the league panel at the top, your rank at the foot, as the board
-   places them (y=122 and y=700). */
-.arena-lobby .lob-left { align-self: stretch; display: flex; flex-direction: column; gap: 20px; }
-.arena-lobby .lob-rank { margin-top: auto; }
-
-/* Centre: the heading only. The cell spans the full height of the row, so
-   it has to let clicks through to the podium behind it - but the heading
-   itself stays selectable, and it sits above the decks anyway. */
-.arena-lobby .lob-mid {
+/* The board's heading block: left:400, right:400, top:116. */
+.arena-lobby .lob-title-block {
+  position: absolute;
+  left: 400px;
+  right: 400px;
+  top: 116px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
   text-align: center;
-  pointer-events: none;
 }
-.arena-lobby .lob-mid > * { pointer-events: auto; }
-/* Sized against the page box (cqi), not the window, so opening the
-   sidebar shrinks the headline with its column instead of letting it run
-   on under the panels. Resolves to the board's 60px at 1440. */
-.arena-lobby .lob-title { margin: 0; font-size: clamp(28px, 5cqi, 60px); text-wrap: balance; }
+.arena-lobby .lob-title { margin: 0; font-size: 60px; }
 
-/* The right panel's height is its content's, as on the board, so the CTA
-   sits under the last mode rather than at the foot of the page. */
-.arena-lobby .lob-modes { align-self: start; }
-
-/* Below the width where two 330px panels and a podium stop fitting, the
-   columns stack: heading, modes, league, rank. The scene stays behind
-   them - it is the background, not a row. */
-/* Two 330px panels, two 20px gaps, a centre column with room for the
-   headline, and the page's own 96px of padding:
-   330 + 20 + 440 + 20 + 330 + 96 = 1236. Below that the columns stack
-   rather than squeezing the middle to nothing. The query measures the
-   wrapper while the grid lives inside the 1440 cap, which changes nothing:
-   above 1236 the grid is at least 1140 either way. */
-@container lobby (max-width: 1236px) {
-  .arena-lobby .lob-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-  }
-  .arena-lobby .lob-mid { order: -1; }
-  .arena-lobby .lob-modes { order: 0; }
-  .arena-lobby .lob-left { order: 1; }
-  .arena-lobby .lob-rank { margin-top: 0; }
-  /* With the panels stacked the podium would sit under a column of text,
-     so it drops to a band behind the heading instead of the whole page. */
-  .arena-lobby .lob-scene { bottom: auto; height: 420px; }
-}
-
-/* The three figures under the rank bar are one tracked line on the board.
-   Below the width where they collide, the outer two drop away rather than
-   overlapping the middle one, which is the one that matters. */
-@container lobby (max-width: 460px) {
-  .arena-lobby .lob-scale > span:first-child,
-  .arena-lobby .lob-scale > span:last-child { display: none; }
-}
+/* The frame is exactly the space under the top bar, so the page's own
+   end-of-content padding would push it past the fold and raise a
+   scrollbar on a screen that has nothing to scroll. */
+.app-shell-main:has(.lob-frame) { padding-bottom: 0; }

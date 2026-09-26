@@ -115,9 +115,16 @@
 .app-shell-toolbar .chipme { flex: none; }
 
 /* ── Page frame ───────────────────────────────────────────────────────
-   app-reference.css `.page` (28px top, 32px sides and bottom). `.ar-page`
-   already centres content; this only aligns its padding with the boards. */
-.arena-app .ar-page { padding: 28px 32px 32px; }
+   app-reference.css `.page`: 28px top, 32px sides and bottom.
+
+   The width and margin matter as much as the padding. `.ar-page` in
+   arena.css is `width: min(1280px, 100%); margin: 0 auto`, which centred
+   every screen in a 1280 column - on a 2,500px window that is ~600px of
+   dead stage down each side, and it survived the shell's own de-centring
+   because it is a second, inner one. Inside the app shell the page takes
+   the width it is given and starts at its left edge, like everything
+   else. */
+.arena-app .ar-page { width: 100%; max-width: none; margin: 0; padding: 28px 32px 32px; }
 @media (max-width: 720px) {
   .arena-app .ar-page { padding: 20px 14px 28px; }
 }

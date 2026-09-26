@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +16,9 @@ import type { LobbyGame, LobbyMode } from "./lobbyGames";
  * design/arena/boards/Lobby.dc.html.
  *
  * The board fixes them at left:48/top:122, left:48/top:700 and
- * left:1062/top:122 on its artboard. Here they sit in a three-column grid
- * (styles/arena-screens.css) that resolves to those positions at 1440 and
- * still reads at every other width.
+ * left:1062/top:122 of its artboard, and LobbyBoard passes exactly those
+ * as `style` - `.hud` is already position:absolute in the generated sheet,
+ * so each one lands where it was drawn.
  *
  * Everything else - padding, gaps, type sizes, the corner bloom - is
  * written inline because that is where the board writes it too, so the two
@@ -38,7 +39,7 @@ import type { LobbyGame, LobbyMode } from "./lobbyGames";
  * lib/trophyUpdates doubles them in the league pool - not the board's
  * printed 10 and 4, which would go stale the moment either constant moved.
  */
-export function LobbyLeagueCard({ window: leagueWindow }: { window: LeagueWindow }) {
+export function LobbyLeagueCard({ window: leagueWindow, style }: { window: LeagueWindow; style?: CSSProperties }) {
   const t = useTranslation();
   const win = TROPHY_WIN * 2;
   const loss = Math.abs(TROPHY_LOSS) * 2;
@@ -48,7 +49,7 @@ export function LobbyLeagueCard({ window: leagueWindow }: { window: LeagueWindow
     <section
       className="hud v lob-league"
       aria-label={t("page_weekendLeague")}
-      style={{ padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}
+      style={{ ...style, padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}
     >
       <div
         aria-hidden="true"
@@ -90,7 +91,7 @@ const TIERS = [RANKS.BRONZE, RANKS.SILVER, RANKS.GOLD, RANKS.PLATINUM];
  * This uses the shared RankHex, which takes the tier's own metal - so a
  * Bronze player sees bronze rather than everyone being painted Gold.
  */
-export function LobbyRankCard() {
+export function LobbyRankCard({ style }: { style?: CSSProperties }) {
   const { user, playerStats } = useAuth();
   const trophies = playerStats?.trophies ?? 0;
   const tier = getRankFromTrophies(trophies);
@@ -108,7 +109,7 @@ export function LobbyRankCard() {
     <section
       className="hud lob-rank"
       aria-label="Your rank"
-      style={{ padding: "20px 24px 22px", display: "flex", flexDirection: "column", gap: "16px" }}
+      style={{ ...style, padding: "20px 24px 22px", display: "flex", flexDirection: "column", gap: "16px" }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
         <div className="av" aria-hidden="true">{name.charAt(0).toUpperCase()}</div>
@@ -156,9 +157,11 @@ export interface LobbyModesProps {
   leagueWindow: LeagueWindow;
   /** Surfaced under the CTA rather than swallowed. */
   error: string | null;
+  /** The board position its caller places it at. */
+  style?: CSSProperties;
 }
 
-export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leagueWindow, error }: LobbyModesProps) {
+export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leagueWindow, error, style }: LobbyModesProps) {
   const { isGuest } = useAuth();
   const t = useTranslation();
   const locked = Boolean(mode.account) && isGuest;
@@ -180,7 +183,7 @@ export function LobbyModes({ game, mode, onMode, finding, matchFound, onGo, leag
     <section
       className="hud lob-modes"
       aria-label="Game modes"
-      style={{ padding: "22px 20px", display: "flex", flexDirection: "column", gap: "14px" }}
+      style={{ ...style, padding: "22px 20px", display: "flex", flexDirection: "column", gap: "14px" }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "9px", padding: "0 4px" }}>
         <span className="lbl dash">{game.cap}</span>

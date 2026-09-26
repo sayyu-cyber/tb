@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LobbyPodium } from "@/components/game/lobby/LobbyPodium";
-import { LobbyLeagueCard, LobbyRankCard, LobbyModes } from "@/components/game/lobby/LobbyPanels";
+import { LobbyBoard } from "@/components/game/lobby/LobbyBoard";
 import { lobbyGame, type LobbyGameId } from "@/components/game/lobby/lobbyGames";
 import { useCasualQueue } from "@/hooks/useCasualQueue";
 import { getLeagueWindow } from "@/lib/weekendLeague";
@@ -15,10 +14,11 @@ import { getLeagueWindow } from "@/lib/weekendLeague";
  * left, and the chosen game's modes down the right. Picking a deck swaps
  * the whole right-hand panel; picking a mode changes where PLAY goes.
  *
- * The board's header (logo, nav, coin chip, avatar) is deliberately not
- * here: this screen sits inside the app shell, which already carries all
- * four in its sidebar and top bar. Everything below that line is the
- * board's.
+ * The screen IS the artboard: LobbyBoard renders the board's 1440x900
+ * canvas at its own coordinates and scales it to the space the shell
+ * leaves, the same way the Mindi and Gin tables do. Only the board's
+ * header row is left out - the shell already carries the logo, the nav,
+ * the coin chip and the avatar.
  *
  * The busy state (lobby-02) is a real queue, not a mock. Casual Online is
  * the one mode whose destination screen is nothing but a queue, so the
@@ -59,40 +59,18 @@ export default function PlayPage() {
     setFinding(false);
   }
 
-  // `ar` is the board's own root class (font, white text, isolation) and
-  // `arena-lobby` is the namespace its CSS was ported under, so the two sit
-  // on different elements - exactly as the Mindi and Gin table screens do it.
   return (
-    <div className="arena-lobby">
-      {/* The room bleeds to the edges of whatever the shell leaves; the
-          composition inside it keeps the artboard's 1440. So the podium is
-          a sibling of the page, not a child of it. */}
-      <LobbyPodium game={game} onPick={pickGame} />
-
-      <div className="ar lob-page">
-        <div className="lob-grid">
-          <div className="lob-left">
-            <LobbyLeagueCard window={leagueWindow} />
-            <LobbyRankCard />
-          </div>
-
-          <div className="lob-mid">
-            <span className="lbl dash">Pick a game</span>
-            <h1 className="disp chrome lob-title">Choose your table</h1>
-          </div>
-
-          <LobbyModes
-            game={entry}
-            mode={mode}
-            onMode={pickMode}
-            finding={finding}
-            matchFound={matchFound}
-            onGo={() => setFinding((on) => !on)}
-            leagueWindow={leagueWindow}
-            error={error}
-          />
-        </div>
-      </div>
-    </div>
+    <LobbyBoard
+      game={game}
+      onPickGame={pickGame}
+      entry={entry}
+      mode={mode}
+      onMode={pickMode}
+      finding={finding}
+      matchFound={matchFound}
+      onGo={() => setFinding((on) => !on)}
+      leagueWindow={leagueWindow}
+      error={error}
+    />
   );
 }
