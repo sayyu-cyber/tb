@@ -1,13 +1,27 @@
 "use client";
+
 import MissionsPanel from "@/components/missions/MissionsPanel";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/hooks/useTranslation";
 
+/**
+ * Missions — design/arena/screens/app/app-13-rewards-missions.jpg.
+ *
+ * The board has no Missions board of its own; it draws both panels inside
+ * Daily Rewards. This route renders the same panels under its own heading,
+ * so the two routes are one object rather than two drawings of it.
+ */
 export default function MissionsPage() {
   const t = useTranslation();
   return (
-    <div className="pt-4 pb-32 px-4">
-      <PageHeader title={t("page_missions")} />
+    <div className="arena-rewards ar-page" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div className="phead">
+        <div>
+          <span className="lbl dash" style={{ color: "#C6FF33" }}>
+            Daily and weekly goals, and what they pay.
+          </span>
+          <h1 className="disp chrome ar-h1">{t("page_missions")}</h1>
+        </div>
+      </div>
       <MissionsPanel />
     </div>
   );

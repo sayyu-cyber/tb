@@ -322,3 +322,71 @@
   .arena-shopvip .prow > :nth-child(4) { grid-column: 2; }
 }
 .arena-shopvip .prow .ar-btn:disabled { opacity: .55; }
+
+/* ── Daily rewards and Missions (app-13) ──────────────────────────────
+   Seven day tiles across at 1440, then the two mission panels side by
+   side. One board drives /rewards and /missions. */
+.arena-rewards .day-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1240px) {
+  .arena-rewards .day-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+.arena-rewards .streak { height: 40px; padding: 0 16px; font-size: 13px; }
+/* `.day.today`'s Claim pill is 26px on the board, not the pill's 24. */
+.arena-rewards .day-claim { height: 26px; }
+
+.arena-rewards .mission-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 1100px) {
+  .arena-rewards .mission-row { grid-template-columns: minmax(0, 1fr); }
+}
+/* The "complete all daily missions" dashed row. */
+.arena-rewards .all-bonus {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px dashed rgba(198, 255, 51, .4);
+}
+.arena-rewards .all-bonus > svg { width: 20px; height: 20px; color: #C6FF33; flex: none; }
+/* A mission row is icon, body, reward. The reward column drops under the
+   body once 110px stops fitting beside it. */
+@media (max-width: 520px) {
+  .arena-rewards .mis { grid-template-columns: 46px minmax(0, 1fr); }
+  .arena-rewards .mis .rw { grid-column: 2; flex-direction: row; align-items: center; gap: 10px; }
+}
+
+/* The claim popup (app-13b). Its own layer rather than a <dialog>, because
+   it sits inside the page's stacking context on the board. */
+.arena-rewards .claim-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, .7);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.arena-rewards .claim-pop {
+  width: min(420px, 100%);
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  background:
+    radial-gradient(260px 160px at 50% 0%, rgba(198, 255, 51, .25), rgba(198, 255, 51, 0)),
+    linear-gradient(180deg, #16161C, #0A0A0D);
+  box-shadow: inset 0 0 0 1.5px #C6FF33, 0 40px 80px -20px rgba(0, 0, 0, .9);
+  animation: fade .35s ease-out both;
+}
+.arena-rewards .claim-gems { margin: 0 auto 10px; transform: scale(1.4); }
+.arena-rewards .claim-title { margin: 18px 0 8px; font-size: clamp(28px, 6vw, 40px); }
+.arena-rewards .claim-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 28px;
+  color: #C6FF33;
+}

@@ -412,6 +412,12 @@
    Screens add their own looping elements to this list as they land. */
 @media (prefers-reduced-motion: reduce) {
   .arena-app .pill.live::before,
+  /* The lit "today" tile bobs (Rewards board) and the pending top-up
+     spinner turns (ShopVip board). Both loop forever. */
+  .arena-rewards .day.today .rew,
+  .arena-shopvip .spin,
+  .arena-home .fan,
+  .arena-home .mote,
   .arena-app [data-ar-loop] {
     animation: none !important;
   }

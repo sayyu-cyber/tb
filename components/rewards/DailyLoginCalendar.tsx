@@ -1,154 +1,155 @@
-// src/components/rewards/DailyLoginCalendar.tsx
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEconomy } from '../../contexts/EconomyContext';
-import { DAILY_LOGIN_REWARDS } from '../../data/cosmetics';
-import { useTranslation } from '../../hooks/useTranslation';
-import { CoinIcon, Check, Gift, Flame } from '../ui/icons';
+import { useState } from "react";
+import { Check, Gift } from "lucide-react";
+import { useEconomy } from "@/contexts/EconomyContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import { DAILY_LOGIN_REWARDS } from "@/data/cosmetics";
+import { Pill, Meter, CoinGem } from "@/components/arena";
+import { bonusLabel } from "./bonusLabel";
+
+/**
+ * Daily Login Rewards — design/arena/screens/app/app-13-rewards-missions.jpg,
+ * with the claim popup from app-13b.
+ *
+ * Seven tiles: claimed days dim with a lime tick, today is the lit tile you
+ * can press, and Day 7 carries the blue ring and the gift. The gem cluster
+ * grows with the day, as the board draws it.
+ *
+ * The bonus line under each tile names the real bonus (see bonusLabel -
+ * code issue 7), so Day 3 says GG Sticker and Day 5 says Maldives Wave
+ * banner instead of both claiming a Room Card.
+ */
+
+/** The board's gem clusters, day 1 to day 6. */
+const CLUSTERS: { left: number; top: number }[][] = [
+  [{ left: 20, top: 14 }],
+  [{ left: 8, top: 16 }, { left: 32, top: 12 }],
+  [{ left: 2, top: 18 }, { left: 20, top: 6 }, { left: 38, top: 18 }],
+  [{ left: 2, top: 18 }, { left: 20, top: 6 }, { left: 38, top: 18 }],
+  [{ left: 2, top: 18 }, { left: 20, top: 6 }, { left: 38, top: 18 }],
+  [{ left: 2, top: 20 }, { left: 20, top: 6 }, { left: 38, top: 20 }, { left: 20, top: 28 }],
+];
+
+function GemStack({ day, className = "", style }: { day: number; className?: string; style?: React.CSSProperties }) {
+  const cluster = CLUSTERS[Math.min(day, CLUSTERS.length) - 1];
+  return (
+    <div className={`stackg ${className}`.trim()} style={style} aria-hidden="true">
+      {cluster.map((gem, index) => <i key={index} style={{ left: gem.left, top: gem.top }} />)}
+    </div>
+  );
+}
 
 export default function DailyLoginCalendar() {
   const { state, claimDailyReward } = useEconomy();
   const { dailyLogin } = state;
   const t = useTranslation();
-  const [showPopup, setShowPopup] = useState(false);
   const [claimedDay, setClaimedDay] = useState<number | null>(null);
 
-  const handleClaim = (day: number) => {
-    const reward = dailyLogin.rewards[day - 1];
-    if (reward.claimed) return;
-    const nextAvailableDay = dailyLogin.rewards.findIndex(r => !r.claimed) + 1;
+  const nextAvailableDay = dailyLogin.rewards.findIndex((reward) => !reward.claimed) + 1;
+  const claimedCount = dailyLogin.rewards.filter((reward) => reward.claimed).length;
+
+  function handleClaim(day: number) {
     if (day !== nextAvailableDay) return;
-
-    setClaimedDay(day);
     claimDailyReward(day);
-    setShowPopup(true);
-    setTimeout(() => setShowPopup(false), 3000);
-  };
+    setClaimedDay(day);
+  }
 
-  const nextAvailableDay = dailyLogin.rewards.findIndex(r => !r.claimed) + 1;
+  const claimed = claimedDay ? DAILY_LOGIN_REWARDS[claimedDay - 1] : null;
+  const tomorrow = claimedDay && claimedDay < 7 ? DAILY_LOGIN_REWARDS[claimedDay] : null;
+  const tomorrowBonus = bonusLabel(tomorrow?.bonusItem);
 
   return (
-    <div className="w-full max-w-lg mx-auto">
-      <motion.div
-        className="bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/20%)] rounded-2xl p-6"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+    <>
+      <section
+        className="panel tick"
+        aria-label="Daily Login Rewards"
+        style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}
       >
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-[rgb(var(--gold-ink))]">{t('rewards_title')}</h2>
-          <p className="text-[rgb(var(--c5))] text-sm mt-1">{t('rewards_subtitle')}</p>
-          <div className="mt-2 inline-flex items-center gap-2 bg-[rgb(var(--gold)/15%)] rounded-full px-3 py-1">
-            <Flame size={16} className="text-[rgb(var(--coral-ink))]" />
-            <span className="text-[rgb(var(--gold-ink))] text-sm font-medium">{t('rewards_streak').replace('{n}', String(dailyLogin.streak))}</span>
-          </div>
+        <div className="ph">
+          <h2>Daily Login Rewards</h2>
+          <span className="muted2 tnum">{claimedCount} / 7 claimed this cycle</span>
         </div>
 
-        <div className="grid grid-cols-7 gap-2">
-          {DAILY_LOGIN_REWARDS.map((reward, index) => {
-            const day = index + 1;
-            const isClaimed = dailyLogin.rewards[index]?.claimed ?? false;
-            const isNext = day === nextAvailableDay;
-            const isPast = day < nextAvailableDay;
+        <div className="day-grid">
+          {DAILY_LOGIN_REWARDS.map((reward) => {
+            const day = reward.day;
+            const isClaimed = dailyLogin.rewards[day - 1]?.claimed ?? false;
+            const isToday = day === nextAvailableDay;
+            const bonus = bonusLabel(reward.bonusItem);
+            const art = day === 7
+              ? <span className="gift" aria-hidden="true"><Gift /></span>
+              : <GemStack day={day} />;
 
+            const body = (
+              <>
+                <span className="dn" style={isToday ? { color: "#C6FF33" } : undefined}>
+                  {isToday ? `Day ${day} · Today` : `Day ${day}`}
+                </span>
+                <div className="rew">{art}</div>
+                <span className="amt"><CoinGem small />{reward.coins}</span>
+                {isToday
+                  ? <Pill tone="lime" className="day-claim">Claim</Pill>
+                  : <span className="bonus">{bonus ? `+ ${bonus}` : ""}</span>}
+              </>
+            );
+
+            if (isToday) {
+              return (
+                <button
+                  type="button"
+                  className="day today"
+                  key={day}
+                  onClick={() => handleClaim(day)}
+                  aria-label={`Claim Day ${day}: ${reward.coins} coins${bonus ? ` and ${bonus}` : ""}`}
+                  data-flat
+                >
+                  {body}
+                </button>
+              );
+            }
             return (
-              <motion.button
-                key={day}
-                className={`
-                  relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1
-                  border transition-all duration-300
-                  ${isClaimed
-                    ? 'bg-[rgb(var(--gold)/10%)] border-[rgb(var(--gold)/10%)] opacity-60'
-                    : isNext
-                    ? 'bg-gradient-to-b from-[rgb(var(--gold-deep)/40%)] to-[rgb(var(--gold-deep)/25%)] border-[rgb(var(--gold)/60%)] shadow-lg shadow-[rgb(var(--gold)/20%)] cursor-pointer hover:shadow-[rgb(var(--gold)/40%)]'
-                    : 'bg-[rgb(var(--c3)/50%)] border-[rgb(var(--c3)/30%)] opacity-50'
-                  }
-                `}
-                onClick={() => handleClaim(day)}
-                whileHover={isNext ? { scale: 1.05 } : {}}
-                whileTap={isNext ? { scale: 0.95 } : {}}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <span className={`text-xs font-bold ${isClaimed ? 'text-[rgb(var(--gold-ink))]' : isNext ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c4))]'}`}>
-                  {t('rewards_day').replace('{n}', String(day))}
-                </span>
-                {isClaimed ? <Check size={16} strokeWidth={3} /> : day === 7 ? <Gift size={16} /> : <CoinIcon size={16} />}
-                <span className={`text-xs font-semibold ${isClaimed ? 'text-[rgb(var(--gold-ink))]' : isNext ? 'text-[rgb(var(--gold-ink))]' : 'text-[rgb(var(--c3))]'}`}>
-                  {reward.coins}
-                </span>
-                {day === 7 && !isClaimed && (
-                  <motion.div
-                    className="absolute -top-1 -right-1 w-3 h-3 bg-[rgb(var(--coral))] rounded-full"
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  />
-                )}
-                {isNext && !isClaimed && (
-                  <motion.div
-                    className="absolute inset-0 rounded-xl border-2 border-[rgb(var(--gold)/50%)]"
-                    animate={{ opacity: [0.3, 0.8, 0.3] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  />
-                )}
-              </motion.button>
+              <div className={`day ${isClaimed ? "claimed" : ""} ${day === 7 ? "big" : ""}`.replace(/\s+/g, " ").trim()} key={day}>
+                {isClaimed && <span className="chk" aria-hidden="true"><Check /></span>}
+                {body}
+              </div>
             );
           })}
         </div>
 
-        <div className="mt-4 text-center">
-          <div className="w-full bg-[rgb(var(--c3))] rounded-full h-2 overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${(dailyLogin.rewards.filter(r => r.claimed).length / 7) * 100}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-            />
-          </div>
-          <p className="text-[rgb(var(--c4))] text-xs mt-2">
-            {t('rewards_claimedThisCycle').replace('{n}', String(dailyLogin.rewards.filter(r => r.claimed).length))}
-          </p>
-        </div>
-      </motion.div>
+        <Meter
+          value={claimedCount / 7}
+          segmented
+          label="Daily reward cycle"
+          valueText={`${claimedCount} of 7 claimed`}
+        />
+      </section>
 
-      <AnimatePresence>
-        {showPopup && claimedDay && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-gradient-to-b from-[rgb(var(--c2))] to-[rgb(var(--c1))] border border-[rgb(var(--gold)/30%)] rounded-2xl p-8 text-center max-w-sm mx-4"
-              initial={{ scale: 0.5, rotate: -10 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0.5, rotate: 10 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-            >
-              <motion.div
-                className="text-5xl mb-4"
-                animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.6 }}
-              >
-                🎉
-              </motion.div>
-              <h3 className="text-2xl font-bold text-[rgb(var(--gold-ink))] mb-2">{t('rewards_dayClaimed').replace('{n}', String(claimedDay))}</h3>
-              <p className="text-[rgb(var(--gold-ink))] text-lg font-semibold">
-                +{DAILY_LOGIN_REWARDS[claimedDay - 1].coins} Coins
+      {claimed && (
+        <div className="claim-scrim" role="dialog" aria-modal="true" aria-label={`Day ${claimedDay} claimed`}>
+          <div className="claim-pop">
+            <GemStack day={claimedDay!} className="claim-gems" />
+            <h2 className="disp chrome claim-title">
+              {t("rewards_dayClaimed").replace("{n}", String(claimedDay))}
+            </h2>
+            <b className="claim-coins"><CoinGem />+{claimed.coins} Coins</b>
+            {tomorrow && (
+              <p className="muted" style={{ margin: "12px 0 22px" }}>
+                Come back tomorrow for Day {tomorrow.day}: {tomorrow.coins} coins
+                {tomorrowBonus ? ` and a ${tomorrowBonus}` : ""}.
               </p>
-              {DAILY_LOGIN_REWARDS[claimedDay - 1].bonusItem && (
-                <p className="text-[rgb(var(--gold-ink))] text-sm mt-1">
-                  {t('rewards_roomCardBonus')}
-                </p>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            )}
+            {!tomorrow && (
+              <p className="muted" style={{ margin: "12px 0 22px" }}>
+                That&apos;s the full week. The cycle starts again tomorrow.
+              </p>
+            )}
+            <button type="button" className="ar-btn" style={{ width: "100%" }} onClick={() => setClaimedDay(null)} autoFocus>
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
