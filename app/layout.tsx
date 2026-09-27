@@ -46,6 +46,11 @@ import "@/styles/arena-phone.css";
 import "@/styles/arena-mhome.css";
 import "@/styles/arena-mmore.css";
 import "@/styles/arena-phome.css";
+// MPlay is the portrait Play lobby; MPlayFind is MPlay with the rotate sheet
+// open, and its stylesheet came out byte-for-byte identical, so one sheet
+// serves both states. MRotate is the gate over a table held upright.
+import "@/styles/arena-mplay.css";
+import "@/styles/arena-mrotate.css";
 import "@/styles/arena-phone-shell.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
 // screens (design/arena/WORKSPLIT.md). Imported here, empty, so that agent

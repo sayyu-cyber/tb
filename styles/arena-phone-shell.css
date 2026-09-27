@@ -119,6 +119,17 @@
     background: rgba(255, 255, 255, .22);
   }
 
+  /* The Play lobby's docked PLAY button. The board pins it inside its own
+     390x844 box at `bottom: 84px`, which is exactly the tab bar's height;
+     here the bar is fixed and its height includes the home indicator, so
+     the dock follows it. */
+  .arena-mplay .dock {
+    position: fixed;
+    bottom: calc(62px + max(22px, env(safe-area-inset-bottom)));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
   /* The rail is the sideways shape only. */
   .arena-phone .mrail { display: none; }
 }
@@ -165,6 +176,62 @@
   .arena-phone .sheet-handle { display: none; }
 }
 
+/* ── Which composition (MPlay upright, PLobby sideways) ───────────────
+   design/arena/MOBILE.md "Turning the phone": the Play lobby is MPlay in
+   portrait and PLobby held sideways, so both are in the DOM and this
+   decides. The query is the phone shell's own width rule rather than the
+   gate's - a narrow window gets the phone chrome, so it gets the phone
+   composition too. hooks/usePhonePortrait.ts holds the same string, for the
+   two decisions that are actions rather than styles. */
+.portrait-view { display: none; }
+/* `contents` rather than `block`, so neither wrapper is a box: the lobby
+   board sizes itself against the shell's main column and would notice one. */
+.landscape-view { display: contents; }
+
+@media (max-width: 767px) and (orientation: portrait) {
+  .portrait-view { display: contents; }
+  .landscape-view { display: none; }
+}
+
+/* ── The rotate gate (MRotate) ────────────────────────────────────────
+   design/arena/MOBILE.md "A table held upright". Pure CSS on purpose: right
+   on the first paint, no orientation listener to disagree with the viewport,
+   and gone the instant the phone turns.
+
+   The conditions are the ones the old gate used, and they still matter:
+     orientation:portrait  the thing being asked to change
+     max-width:767px       phones; a tablet at 768+ has room for the table
+     pointer:coarse        a screen that can physically be turned. A desktop
+                           window dragged tall and narrow is also portrait,
+                           and gating that would be nonsense. */
+.rotate-gate { display: none; }
+
+@media (orientation: portrait) and (max-width: 767px) and (pointer: coarse) {
+  /* Nothing behind the gate should scroll - but only where the gate is
+     actually rendered. Portrait is a supported layout now, so an
+     unconditional lock here would freeze every phone screen in the app. */
+  body:has(.rotate-gate) { overflow: hidden; }
+
+  .rotate-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    /* The board draws its own table and blurs it with
+       `.stage { filter: blur(5px) brightness(.62) }`. Here the live table is
+       genuinely behind the gate, so the board's two values are applied to it
+       as a backdrop instead - same picture, real hand. */
+    -webkit-backdrop-filter: blur(5px) brightness(.62);
+    backdrop-filter: blur(5px) brightness(.62);
+  }
+  /* The board's 18/16/34, plus the notch and the home indicator. */
+  .arena-mrotate .gate {
+    padding-top: calc(18px + env(safe-area-inset-top));
+    padding-bottom: calc(34px + env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
 /* ── Reduced motion ───────────────────────────────────────────────────
    The phone's own loops, alongside the ones styles/arena-shell.css
    already stops. One-shot entrances (sheetUp, scrimIn, sideIn, slideIn,
@@ -172,6 +239,7 @@
    would leave a sheet mid-slide. */
 @media (prefers-reduced-motion: reduce) {
   .arena-phone [data-ar-loop],
+  .arena-mrotate [data-ar-loop],
   .arena-phone .mtab .pw .fc,
   .arena-phone .mrail .pw .fc { animation: none !important; }
 }

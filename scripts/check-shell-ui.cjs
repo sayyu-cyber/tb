@@ -66,7 +66,7 @@ async function run(){
  // Everything the bar cannot reach is in the More sheet.
  await page.locator('.mtab').getByRole('button',{name:/More/}).click();
  await page.getByRole('dialog').waitFor();
- const inSheet=await page.locator('.more-grid a, .acts2 a, .more-who a').evaluateAll(
+ const inSheet=await page.locator('.more-grid a, .acts2 a, .sheet .link').evaluateAll(
    nodes=>nodes.map(n=>n.getAttribute('href')));
  for(const href of ['/leaderboard','/tournament','/clubs','/messages','/inventory',
                     '/achievements','/rewards','/missions','/hall-of-fame','/settings','/profile']){

@@ -29,14 +29,36 @@ export function Sheet({
   open,
   onClose,
   label,
+  headingId,
   className = "",
+  namespace = "",
+  style,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   /** Names the sheet for assistive tech, e.g. "More". */
   label: string;
+  /**
+   * The id of a heading the sheet's own content draws, as MPlayFind's
+   * "Rotate your phone" does. Given one, the hidden title below is left out
+   * rather than announcing the sheet's name twice.
+   */
+  headingId?: string;
+  /** Extra classes on the panel itself, e.g. "more-sheet". */
   className?: string;
+  /**
+   * Inline layout on the panel, for the sheets whose boards write it inline
+   * rather than in a class - MPlayFind centres its column that way.
+   */
+  style?: React.CSSProperties;
+  /**
+   * A board namespace for content that needs one class the shared phone
+   * layer does not carry - "arena-mplay" for the rotate sheet's `.qrow` and
+   * `.spin`. The host already carries `arena-app arena-phone`, so most
+   * sheets need nothing here.
+   */
+  namespace?: string;
   children: React.ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -78,20 +100,24 @@ export function Sheet({
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="mview phone-sheet-host">
+    /* The portal lands on <body>, outside the shell, so the namespaces the
+       generated sheets are scoped under have to travel with it - otherwise
+       none of the board's classes match and the sheet arrives unstyled. */
+    <div className={`arena-app arena-phone ${namespace} mview phone-sheet-host`.replace(/\s+/g, " ").trim()}>
       {/* A real button, so the scrim is reachable by keyboard and announces
           what it does instead of being an unlabelled div that eats taps. */}
       <button type="button" className="mscrim" aria-label={`Close ${label}`} onClick={onClose} data-flat />
       <div
         className={`sheet tick ${className}`.trim()}
+        style={style}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={headingId ?? titleId}
         tabIndex={-1}
         ref={panel}
       >
         <span className="sheet-handle" aria-hidden="true" />
-        <h2 id={titleId} className="sr-only">{label}</h2>
+        {!headingId && <h2 id={titleId} className="sr-only">{label}</h2>}
         {children}
       </div>
     </div>,

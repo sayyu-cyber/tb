@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "./sidebar/AppSidebar";
 import { TopBar } from "./TopBar";
@@ -8,8 +9,10 @@ import { CoinTopupWatcher } from "@/components/economy/CoinTopupWatcher";
 import { PresenceHeartbeat } from "@/components/system/PresenceHeartbeat";
 import { HomeSocialProvider } from "@/contexts/HomeSocialContext";
 import { ConnectionNotice } from "@/components/system/ConnectionNotice";
-import { RotateDeviceGate } from "./RotateDeviceGate";
+import { RotateGate } from "./RotateGate";
 import { PhoneChrome } from "./phone/PhoneChrome";
+import { MatchGateProvider } from "@/contexts/MatchGateContext";
+import { releaseLandscape } from "@/lib/orientationLock";
 
 /**
  * Routes that render with no app chrome and, crucially, OUTSIDE
@@ -30,12 +33,24 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const path = pathname.replace(/\/$/, "");
   const inMatch = /\/play\/[^/]+\/(casual\/(ai|passplay|online\/live)|ranked\/live)$/.test(path) || path === '/spectate';
-  /* The screens that ARE artboards - the two card tables, the hand-over
-     screen and the Play lobby - are a fixed 1440x900 picture scaled to fit.
-     On a portrait phone that scales to about a quarter size and stops being
-     readable, so those, and only those, still ask to be turned sideways.
-     Everything else has a real portrait layout now. */
-  const needsLandscape = inMatch || path === '/play';
+  /* Only the screens INSIDE a match need landscape: the two card tables in
+     every mode, spectating, and the hand result. They are a fixed picture of
+     a wide table, and on a portrait phone that scales to about a quarter
+     size and stops being playable.
+     The Play lobby used to be here too. It is not any more - MPlay is its
+     portrait composition (design/arena/MOBILE.md "Turning the phone"), so
+     the turn is asked for at the Play button instead, when it starts to
+     matter, and browsing works either way up. */
+  const needsLandscape = inMatch;
+  /* Give the orientation and fullscreen back the moment the player is out of
+     a match - MOBILE.md: "When the player leaves the match, call
+     screen.orientation.unlock(), and document.exitFullscreen() if the app
+     entered fullscreen." Keyed on leaving rather than on a particular exit,
+     so every way out of a table is covered: the gate's Leave table, the
+     table's own back button, the hand result, and the browser's Back.
+     Harmless when nothing was locked; both calls are no-ops then. */
+  useEffect(() => { if (!inMatch) void releaseLandscape(); }, [inMatch]);
+
   const roomShell = /^\/play\/[^/]+\/room$/.test(path);
   const premiumShell = path === "/home" || path === "/shop" || path === "/clubs" || path === "/settings" || roomShell;
   return (
@@ -60,9 +75,14 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           under, alongside `arena-app` for the desktop ones. Both sheets are
           on the shell and the media queries in arena-phone-shell.css decide
           which chrome is visible, so nothing here branches on width. */}
+      {/* The rotate gate covers a LIVE table, so it has to say what is
+          happening behind it. The table publishes the turn into this
+          provider and the gate reads it; see contexts/MatchGateContext. It
+          wraps both so the two are in the same tree. */}
+      <MatchGateProvider>
       <div className={`arena-app arena-phone app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
-        {needsLandscape && <RotateDeviceGate />}
+        {needsLandscape && <RotateGate />}
         <ConnectionNotice />
         <BackgroundMusicPlayer />
         <CoinTopupWatcher />
@@ -81,6 +101,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         {!inMatch && <AppSidebar />}
         {!inMatch && <div className="phone-chrome"><PhoneChrome /></div>}
       </div>
+      </MatchGateProvider>
       </HomeSocialProvider>
     </ProtectedRoute>
   );

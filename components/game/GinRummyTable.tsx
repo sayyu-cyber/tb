@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Settings, X, Layers, ArrowDownToLine, Music, BookOpen, Volume2, VolumeX } from "lucide-react";
 import { Card, cardId, rankLabel, bestMeldArrangement, winningDiscard, findGinLayout, TURN_SECONDS } from "@/lib/ginRummyEngine";
@@ -8,6 +8,8 @@ import { Avatar, ArenaSeatData } from "./GameArena";
 import { Button } from "@/components/ui/Button";
 import { SettingToggle } from "@/components/settings/SettingToggle";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import { usePublishMatchGate } from "@/contexts/MatchGateContext";
 import { sortHand } from "@/lib/cardSort";
 import { HandTools, HandOrder, navigateHand } from "./HandTools";
 import { RuleBook } from "./RuleBook";
@@ -33,6 +35,7 @@ interface Props {
 export function GinRummyTable(p:Props) {
   const router=useRouter();
   const {settings,updateSettings}=useSettings();
+  const t=useTranslation();
   const [modal,setModal]=useState<"rules"|"settings"|"leave"|null>(null);
   // The board draws the brackets on, so that is the state you arrive in.
   const [melds,setMelds]=useState(true);
@@ -48,6 +51,9 @@ export function GinRummyTable(p:Props) {
   const suppressClick=useRef(false);
   const lastTap=useRef<{id:string;at:number}|null>(null);
   const previousHand=useRef(p.hand.map(cardId));
+  /* Stable, because the gate keeps whatever it was last given: a new closure
+     on every render would have it republishing for no reason. */
+  const askToLeave=useCallback(()=>setModal("leave"),[]);
   const [drawnId,setDrawnId]=useState<string|null>(null);
   // Which pile the card came from, so the status line can say so the way the
   // board does ("You drew the 3 of spades from the stock").
@@ -147,6 +153,21 @@ export function GinRummyTable(p:Props) {
     : p.myTurn
       ? "Deadwood never wins a hand here. Three complete melds go out."
       : `Deadwood never wins a hand here. ${p.opponent.name} is ${p.phase==="draw"?"drawing":"discarding"}.`;
+
+  /* What the rotate gate says while this hand runs on a phone held upright
+     (components/layout/RotateGate.tsx, design/arena/boards/MRotate.dc.html).
+     Gin does have a turn clock, so the deadline goes across and the gate
+     draws its countdown ring and pulses from five seconds - the same clock
+     this screen shows, not a second one. */
+  usePublishMatchGate({
+    label:`Gin Rummy · ${p.mode}`,
+    progress:t("rotate_inStock").replace("{n}",String(p.stock)),
+    turn:p.myTurn
+      ? {mine:true,deadline:p.deadline??null,seconds:TURN_SECONDS,
+         detail:p.phase==="draw"?t("rotate_drawACard"):t("rotate_discardACard")}
+      : {mine:false,name:p.opponent.name},
+    onLeave:askToLeave,
+  });
 
   useEffect(()=>{if(modal)dialog.current?.showModal();},[modal]);
   // The arrangement belongs to the cards that were in the hand when it was

@@ -6,6 +6,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { CrownGlyph } from "@/components/arena";
+import { RANKS } from "@/constants/ranks";
+
+/** The ring colour behind the avatar, by tier. */
+const TIER_RING: Record<string, string> = {
+  Bronze: RANKS.BRONZE.color,
+  Silver: RANKS.SILVER.color,
+  Gold: RANKS.GOLD.color,
+  Platinum: RANKS.PLATINUM.color,
+};
 
 /**
  * The phone's top bar — design/arena/boards/MHome.dc.html (`.mtop`),
@@ -14,6 +23,12 @@ import { CrownGlyph } from "@/components/arena";
  * Left: the lime logo diamond and the wordmark in chrome. Right, in the
  * board's order: the coins chip with its `+`, the bell with its blue
  * count, and your avatar ringed in your rank colour, which opens Profile.
+ *
+ * The board hard-codes that ring gold, because its sample player is Gold.
+ * MOBILE.md asks for "your rank colour", so the ring takes the tier's own
+ * metal from constants/ranks - a Bronze player is ringed bronze rather than
+ * everybody being painted Gold. It is an inline box-shadow rather than a
+ * class because the board has no per-tier `.ava` variants to reach for.
  *
  * The desktop TopBar's search field is deliberately not here. The board
  * has no room for it at 390px and does not draw one; every destination is
@@ -26,7 +41,8 @@ export function PhoneTopBar({ notifications = 0 }: { notifications?: number }) {
 
   const name = user?.displayName || t("profile_player");
   const coins = state.economy.coins;
-  const tier = (playerStats?.currentRank || "Bronze").toLowerCase();
+  const tier = playerStats?.currentRank || "Bronze";
+  const ring = TIER_RING[tier] ?? RANKS.BRONZE.color;
 
   return (
     <header className="mtop">
@@ -54,7 +70,7 @@ export function PhoneTopBar({ notifications = 0 }: { notifications?: number }) {
         </span>
 
         <Link href="/profile" className="meb" aria-label={`${t("nav_profile")}: ${name}`}>
-          <span className={`ava ${tier}`}>{name.charAt(0).toUpperCase()}</span>
+          <span className="ava" style={{ boxShadow: `0 0 0 1.5px ${ring}` }}>{name.charAt(0).toUpperCase()}</span>
         </Link>
       </div>
     </header>

@@ -16,7 +16,7 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/
 const mocks = path.join(__dirname, 'play-test-services.tsx');
 const alias = Object.fromEntries([
   '@/contexts/AuthContext', '@/hooks/useTranslation', '@/hooks/useCasualQueue',
-  '@/lib/weekendLeague', 'next/link',
+  '@/lib/weekendLeague', '@/lib/orientationLock', 'next/link', 'next/navigation',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
 
@@ -47,7 +47,7 @@ async function run() {
     await page.route('**/play-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app app-shell ar-stage">`
+        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app arena-phone app-shell ar-stage">`
         + `<main class="app-shell-main"><div class="app-shell-toolbar" style="height:76px"></div>`
         + `<div id="test-root"></div></main>`
         + `<aside class="app-sidebar"></aside></div>`
@@ -59,11 +59,11 @@ async function run() {
 
     // ── The podium (lobby-01) ───────────────────────────────────────────
     assert.equal(await page.locator('.lob-board .deck').count(), 2, 'Two deck boxes');
-    assert.equal(await page.locator('.deck.vio.on').count(), 1, 'Mindi is the lit deck');
-    assert.equal(await page.locator('.deck.blk.off').count(), 1, 'Gin Rummy is dimmed');
-    assert.equal(await page.locator('.apron').count(), 10, 'Ten stacked aprons');
-    assert.equal(await page.locator('.leds ellipse').count(), 4, 'The four LED rings');
-    assert.equal(await page.locator('.mote').count(), 4, 'Four drifting motes');
+    assert.equal(await page.locator('.landscape-view .deck.vio.on').count(), 1, 'Mindi is the lit deck');
+    assert.equal(await page.locator('.landscape-view .deck.blk.off').count(), 1, 'Gin Rummy is dimmed');
+    assert.equal(await page.locator('.landscape-view .apron').count(), 10, 'Ten stacked aprons');
+    assert.equal(await page.locator('.landscape-view .leds ellipse').count(), 4, 'The four LED rings');
+    assert.equal(await page.locator('.landscape-view .mote').count(), 4, 'Four drifting motes');
     assert.equal(await page.locator('.lob-board .beam').count(), 2, 'Two spotlight beams');
     assert.ok((await page.locator('.lob-title-block').innerText()).toUpperCase().includes('PICK A GAME'));
 
@@ -104,8 +104,8 @@ async function run() {
 
     // ── Gin Rummy (lobby-02) ────────────────────────────────────────────
     await page.getByRole('button', { name: /^Gin Rummy/ }).click();
-    assert.equal(await page.locator('.deck.blk.on').count(), 1, 'The Gin deck lights');
-    assert.equal(await page.locator('.deck.vio.off').count(), 1, 'and Mindi dims');
+    assert.equal(await page.locator('.landscape-view .deck.blk.on').count(), 1, 'The Gin deck lights');
+    assert.equal(await page.locator('.landscape-view .deck.vio.off').count(), 1, 'and Mindi dims');
     text = await modes.textContent();
     assert.ok(text.toUpperCase().includes('TWO PLAYERS'), 'Gin kicker');
     assert.ok(text.includes('There is no knocking.'), 'Gin rules line');
@@ -150,12 +150,12 @@ async function run() {
     assert.equal(await page.locator('body').getAttribute('data-queue'), 'off');
 
     // ── Accessibility ───────────────────────────────────────────────────
-    assert.equal(await page.locator('.deck[aria-pressed]').count(), 2, 'Decks say which is chosen');
-    assert.equal(await page.locator('.mode[aria-pressed]').count(), 5);
+    assert.equal(await page.locator('.landscape-view .deck[aria-pressed]').count(), 2, 'Decks say which is chosen');
+    assert.equal(await page.locator('.lob-modes .mode[aria-pressed]').count(), 5);
     assert.equal(await page.locator('.lob-rank .xp[role=progressbar]').count(), 1, 'The bar is a progressbar');
     // Every loop the board runs forever can be switched off.
-    const loops = await page.locator('.mote, .deck, .chase').count();
-    assert.equal(await page.locator('.mote[data-ar-loop], .deck[data-ar-loop], .chase[data-ar-loop]').count(), loops,
+    const loops = await page.locator('.landscape-view .mote, .landscape-view .deck, .landscape-view .chase').count();
+    assert.equal(await page.locator('.landscape-view .mote[data-ar-loop], .landscape-view .deck[data-ar-loop], .landscape-view .chase[data-ar-loop]').count(), loops,
       'Every loop carries data-ar-loop for prefers-reduced-motion');
 
     // ── The scene scales, the chrome does not ───────────────────────────
@@ -206,6 +206,10 @@ async function run() {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow at ${width}`);
+      // Below 768 held upright the lobby is MPlay, not this board, so the
+      // board's frame is not on screen to measure. The portrait composition
+      // has its own section below.
+      if (width < 768 && height > width) continue;
       for (const game of ['Mindi', 'Gin Rummy']) {
         const deck = page.getByRole('button', { name: new RegExp('^' + game + ',') });
         if (await deck.getAttribute('aria-pressed') !== 'true') await deck.click();
@@ -230,8 +234,101 @@ async function run() {
     await go.scrollIntoViewIfNeeded();
     await go.click({ trial: true });
 
+    // ── Held upright: MPlay and the rotate sheet ────────────────────────
+    // design/arena/boards/MPlay.dc.html and MPlayFind.dc.html,
+    // design/arena/MOBILE.md "The turn happens at the Play button".
+    // /play works either way up now - only the table needs landscape - so
+    // the turn is asked for at the Play button.
+    await page.goto(BASE + '/play-test/');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('.lob-frame').isVisible(), false, 'The wide board steps aside');
+    const phone = page.locator('.arena-mplay');
+    assert.equal(await phone.isVisible(), true, 'and MPlay takes over');
+    assert.equal(await phone.locator('.deck').count(), 2, 'Two deck boxes on the podium');
+    assert.equal(await phone.locator('.apron').count(), 7, "The board's seven aprons");
+    assert.equal(await phone.locator('.leds ellipse').count(), 3, 'and its three LED rings');
+    assert.equal(await phone.locator('.glow').count(), 1, 'One bloom, which slides between the decks');
+    assert.equal(await phone.locator('.mode').count(), 5, 'Mindi still has all five modes');
+    assert.ok((await phone.innerText()).includes('Play Mindi'), 'The dock names the game');
+    // Nothing is dropped from the wide board: the league and the rank strip
+    // are both here, shortened.
+    assert.ok((await phone.innerText()).toUpperCase().includes('WEEKEND LEAGUE'));
+    assert.ok((await phone.innerText()).includes('Gold · 58 trophies') ||
+              (await phone.innerText()).includes('Gold · 58'), 'and your rank, from the account');
+    assert.equal(await phone.locator('.xp i').evaluate(n => n.style.width), '32%',
+      "the same 32% the wide board works out");
+    await page.screenshot({ path: path.join(output, 'mplay-390.png'), fullPage: true });
+
+    // Casual Online: looking starts at once, and the sheet opens over it.
+    await phone.getByRole('button', { name: /Play Mindi/ }).click();
+    await page.getByRole('dialog').waitFor();
+    assert.equal(await page.locator('body').getAttribute('data-queue'), 'mindi',
+      'The queue runs while the sheet is up');
+    let sheet = await page.getByRole('dialog').innerText();
+    assert.ok(sheet.includes('Rotate your phone'));
+    assert.ok(sheet.toUpperCase().includes('THE TABLE PLAYS SIDEWAYS'));
+    assert.ok(sheet.includes("We'll keep looking for a table while you turn."));
+    assert.ok(sheet.includes('Finding a Mindi table'), 'The status row names the game');
+    assert.ok(sheet.includes('Stop looking'));
+    assert.equal(await page.locator('.phone-sheet-host .spin').count(), 1, 'and it spins');
+    assert.equal(await page.locator('.phone-sheet-host .turn.sm').count(), 1, 'The turning phone, at 96px');
+    // No lock in this browser, so no button that could not work.
+    assert.equal(await page.getByRole('button', { name: /Go landscape/ }).count(), 0,
+      '"Go landscape" only exists where the lock does');
+    assert.ok(sheet.includes('Rotation Lock'), 'and the hint is the iPhone one');
+    await page.screenshot({ path: path.join(output, 'mplayfind-390.png') });
+
+    // Turning the phone closes the sheet and the search carries on.
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(300);
+    assert.equal(await page.getByRole('dialog').count(), 0, 'The sheet goes when the phone turns');
+    assert.equal(await page.locator('body').getAttribute('data-queue'), 'mindi',
+      'and the queue is still running');
+    assert.equal(await page.locator('.lob-modes .ar-btn.busy').count(), 1,
+      'the wide lobby carries on with "Finding a table"');
+
+    // Stop looking leaves the queue and hands the orientation back.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    await page.getByRole('dialog').getByRole('button', { name: 'Stop looking' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-queue'), 'off');
+    assert.equal(await page.locator('body').getAttribute('data-lock'), 'free',
+      'and screen.orientation.unlock() is called');
+
+    // Vs AI has nothing to queue for: the sheet says ready, no clock runs,
+    // and the game starts only once the phone is sideways.
+    await phone.getByRole('button', { name: /Vs AI/ }).click();
+    await phone.getByRole('button', { name: /Play Mindi/ }).click();
+    await page.getByRole('dialog').waitFor();
+    sheet = await page.getByRole('dialog').innerText();
+    assert.ok(sheet.includes('Your Mindi table is ready'));
+    assert.ok(sheet.includes('Your table starts as soon as you turn.'));
+    assert.equal(await page.locator('.phone-sheet-host .spin').count(), 0, 'No spinner, because nothing is searching');
+    assert.ok(!/0:\d\d/.test(sheet), 'and no clock runs while the player turns the phone');
+    assert.equal(await page.locator('body').getAttribute('data-queue'), 'off', 'and no queue is joined');
+    assert.equal(await page.locator('body').getAttribute('data-lock'), 'landscape',
+      'The tap does ask the phone to turn');
+    assert.equal(await page.locator('body').getAttribute('data-destination'), null, 'but nothing starts yet');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('body').getAttribute('data-destination'), '/play/mindi/casual/ai',
+      'Turning the phone is what starts it');
+
+    // Where the lock exists, "Go landscape" is offered.
+    await page.goto(BASE + '/play-test/?lock');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('heading', { name: 'Choose your table' }).waitFor();
+    await page.locator('.arena-mplay').getByRole('button', { name: /Play Mindi/ }).click();
+    await page.getByRole('dialog').waitFor();
+    assert.equal(await page.getByRole('button', { name: /Go landscape/ }).count(), 1,
+      '"Go landscape" appears where screen.orientation.lock does');
+    assert.ok((await page.getByRole('dialog').innerText()).includes('Auto-rotate off?'),
+      'and the hint changes to the Android one');
+
     // ── Signed out ──────────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
+    await page.emulateMedia({ reducedMotion: null });
     await page.goto(BASE + '/play-test/?guest');
     await page.getByRole('heading', { name: 'Choose your table' }).waitFor();
     assert.equal(await page.locator('.lob-modes a.ar-btn').getAttribute('href'), '/login',
@@ -250,7 +347,7 @@ async function run() {
     assert.ok(quiet.includes('It opens'), 'and the sentence says when it opens');
 
     assert.deepEqual(errors, [], 'No page errors');
-    console.log('✓ Play lobby matches lobby-01 and lobby-02');
+    console.log('✓ Play lobby matches lobby-01, lobby-02, MPlay and MPlayFind');
   } finally {
     await browser.close();
   }

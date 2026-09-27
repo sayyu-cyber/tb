@@ -1,0 +1,145 @@
+/* GENERATED from design/arena/boards/MRotate.dc.html by scripts/port-board.mjs.
+   Do not edit by hand - re-run the script instead.
+
+   Three changes from the board, and only three: every selector is
+   namespaced under .arena-mrotate so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.
+
+   435 rules this board shares byte for byte with the phone set's common layer
+   were dropped: they are already in styles/arena-phone.css,
+   ported once. A rule the board changed, however slightly, was kept. */
+
+
+/* arena backdrop */
+
+/* table */
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+
+/* player frames */
+
+/* HUD panels */
+
+/* controls */
+
+/* hand */
+
+/* popovers */
+
+/* ================= app shell (blue edition) ================= */
+
+/* sidebar: collapsed rail (default in the app) */
+
+/* sidebar: expanded panel */
+
+/* small avatars */
+
+/* top bar */
+
+/* rank badge */
+
+/* page frame */
+
+/* rarity */
+
+/* mini card-back art, sized by font-size (7.2em x 10.08em) */
+
+/* table theme swatch */
+
+/* ================= mobile shell: portrait phone, 390 wide ================= */
+/* stage: fixed to the viewport in the app (position: fixed), drawn once at the top here */
+
+/* top bar: sticky in the app, 60px + safe-area-inset-top */
+
+/* bottom tab bar: fixed in the app, 62px + safe-area-inset-bottom (22 here) */
+/* the raised Play diamond */
+
+/* page */
+
+/* buttons at phone size: 52 / 44 tall, full-width where they lead a card */
+
+/* tabs: equal-width segments that fill the row */
+
+/* horizontal scrollers bleed to the screen edge */
+
+/* list rows */
+
+/* bottom sheet */
+
+/* toast */
+
+/* chip tabs: a scrolling row when the labels don't fit as equal segments */
+
+/* one phone viewport, for sheets and dialogs on a long board (in the app: position fixed, inset 0) */
+
+/* ================= turning the phone ================= */
+/* the illustration: a phone that turns sideways, a landscape table drawn inside it */
+.arena-mrotate .turn{position:relative;flex:none;width:132px;height:132px;display:flex;align-items:center;justify-content:center}
+.arena-mrotate .turn .arc{position:absolute;inset:0;width:132px;height:132px;color:#C6FF33;opacity:.9}
+.arena-mrotate .turn .ph{position:relative;width:62px;height:108px;border-radius:15px;background:#0B0B0F;box-shadow:inset 0 0 0 2.5px #E8E8EE,inset 0 0 0 6px #0B0B0F,0 0 0 1px rgba(255,255,255,.08),0 18px 30px -10px rgba(0,0,0,.9),0 0 34px -6px rgba(0,188,200,.55);animation:turnPhone 2.8s cubic-bezier(.6,0,.3,1) infinite}
+.arena-mrotate .turn .ph::before{content:"";position:absolute;left:50%;top:7px;width:14px;height:3px;margin-left:-7px;border-radius:2px;background:#2A2A33}
+.arena-mrotate .turn .scr{position:absolute;left:8px;right:8px;top:14px;bottom:14px;border-radius:7px;overflow:hidden;background:radial-gradient(closest-side,rgba(0,188,200,.55),rgba(0,188,200,0)),#06121A}
+.arena-mrotate .turn .scr i{position:absolute;left:50%;top:50%;width:66px;height:30px;margin:-15px 0 0 -33px;border-radius:50%;transform:rotate(90deg);background:#06323A;box-shadow:0 0 0 2px #C6FF33,0 0 10px rgba(198,255,51,.6)}
+.arena-mrotate .turn .scr b{position:absolute;left:50%;top:50%;width:9px;height:13px;margin:-6px 0 0 -4px;border-radius:2px;background:#fff;transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.arena-mrotate .turn .ph{animation:none;transform:rotate(-90deg)}}
+.arena-mrotate .turn.sm{width:96px;height:96px}
+.arena-mrotate .turn.sm .arc{width:96px;height:96px}
+.arena-mrotate .turn.sm .ph{width:46px;height:80px;border-radius:12px}
+.arena-mrotate .turn.sm .scr{left:6px;right:6px;top:11px;bottom:11px;border-radius:5px}
+.arena-mrotate .turn.sm .scr i{width:48px;height:22px;margin:-11px 0 0 -24px}
+.arena-mrotate .turn.sm .scr b{width:7px;height:10px;margin:-5px 0 0 -3px}
+.arena-mrotate .hint2{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.45;font-weight:500;color:#A4A4B2}
+.arena-mrotate .hint2 svg{flex:none;width:15px;height:15px;margin-top:1px;color:#00BCC8}
+.arena-mrotate .tring{position:relative;flex:none;width:30px;height:30px}
+.arena-mrotate .tring svg{position:absolute;inset:0;width:30px;height:30px;transform:rotate(-90deg)}
+.arena-mrotate .tring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display), sans-serif;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
+
+/* ================= app screens on a phone held sideways ================= */
+/* the tab bar stands up as a rail on the left; the page is one centred column */
+.arena-mrotate .land .mtop{left:76px;height:52px;padding:0 14px 0 18px}
+.arena-mrotate .land .mpage{margin-left:76px;padding:68px 104px 40px}
+.arena-mrotate .mrail{position:absolute;left:0;top:0;bottom:0;z-index:31;width:76px;display:flex;flex-direction:column;align-items:center;padding:8px 0;background:linear-gradient(90deg,rgba(15,15,19,.97),rgba(8,8,11,.97));border-right:1px solid rgba(255,255,255,.09)}
+.arena-mrotate .mrail::before{content:"";position:absolute;right:-1px;top:190px;width:1px;height:84px;background:linear-gradient(180deg,rgba(198,255,51,0),rgba(198,255,51,.8),rgba(198,255,51,0))}
+.arena-mrotate .mrail .logo{margin:7px 0 16px;width:30px;height:30px;border-radius:8px;box-shadow:0 0 0 1.5px #C6FF33,0 0 14px rgba(198,255,51,.35)}
+.arena-mrotate .mrail .logo svg{width:16px;height:16px}
+.arena-mrotate .mrail a{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:76px;padding:5px 0;color:#8E8E9C;text-decoration:none;font-family:var(--font-display), sans-serif;font-weight:700;font-size:9px;line-height:1;letter-spacing:.12em;text-transform:uppercase}
+.arena-mrotate .mrail a .ti{display:flex;align-items:center;justify-content:center;width:48px;height:30px;border-radius:9px}
+.arena-mrotate .mrail a svg{width:19px;height:19px}
+.arena-mrotate .mrail a[aria-current="page"]{color:#fff}
+.arena-mrotate .mrail a[aria-current="page"] .ti{color:#0A0A0A;background:#C6FF33;box-shadow:0 0 18px rgba(198,255,51,.35)}
+.arena-mrotate .mrail a:focus-visible{outline:none}
+.arena-mrotate .mrail a:focus-visible .ti{box-shadow:0 0 0 2px #fff}
+.arena-mrotate .mrail .bdg{position:absolute;left:calc(50% + 8px);top:1px;min-width:17px;height:17px;padding:0 4px;border-radius:5px;background:#00BCC8;color:#00191B;font:700 10px/17px var(--font-display), sans-serif;letter-spacing:0;text-align:center;box-shadow:0 0 0 2px #0B0B0F}
+.arena-mrotate .mrail a.play{color:#C6FF33;margin:8px 0 6px;gap:6px}
+.arena-mrotate .mrail .pw{position:relative;width:60px;height:46px}
+.arena-mrotate .mrail .pw i{position:absolute;left:12px;width:36px;height:36px;border-radius:10px;transform:rotate(45deg)}
+.arena-mrotate .mrail .pw .lip{top:9px;background:#5E7F0E;box-shadow:0 0 0 4px #0A0A0D}
+.arena-mrotate .mrail .pw .fc{top:5px;background:linear-gradient(135deg,#E4FF8C 0%,#C6FF33 50%,#A5DD1A 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 0 26px rgba(198,255,51,.45);animation:playglow 2.6s ease-in-out infinite}
+.arena-mrotate .mrail .pw svg{position:absolute;left:50%;top:12px;width:22px;height:22px;margin-left:-11px;color:#0A0A0A}
+/* sheets on a sideways phone open from the rail as a side panel */
+.arena-mrotate .land .mview{height:390px}
+.arena-mrotate .land .mscrim{height:390px}
+.arena-mrotate .land .sheet{left:76px;right:auto;top:0;width:392px;padding:16px 16px 20px;border-radius:0 24px 24px 0;overflow-y:auto;scrollbar-width:none;animation:sideIn .38s cubic-bezier(.2,.9,.25,1) both}
+.arena-mrotate .land .sheet::before{display:none}
+.arena-mrotate .land .sheet.tick::after{left:0;top:50%;width:2px;height:120px;transform:translateY(-50%);background:linear-gradient(180deg,rgba(198,255,51,0),#C6FF33,rgba(198,255,51,0))}
+.arena-mrotate .land .mstage{height:390px}
+.arena-mrotate .land .mstage::before{height:170px;background-size:60px 60px}
+
+/* the live table, blurred behind the gate */
+.arena-mrotate .bg{background:radial-gradient(300px 260px at 50% 42%,rgba(0,188,200,.42),rgba(0,188,200,0) 72%),radial-gradient(500px 700px at 50% 30%,#0F1216 0%,#07080A 55%,#000 100%)}
+.arena-mrotate .stage{perspective:1400px;perspective-origin:50% 10%;filter:blur(5px) brightness(.62)}
+.arena-mrotate .floor{left:-1805px;top:-560px;transform:rotateX(50deg) scale(.5) translateZ(-420px)}
+.arena-mrotate .table{left:-405px;top:-10px;transform:rotateX(50deg) scale(.5)}
+.arena-mrotate .felt{background-color:#06323A;background-size:auto,auto,40px 40px;background-image:radial-gradient(50% 58% at 50% 46%,rgba(255,255,255,.16),rgba(255,255,255,0) 72%),radial-gradient(closest-side,rgba(0,0,0,0) 56%,rgba(0,0,0,.55) 100%),radial-gradient(circle,rgba(255,255,255,.08) 0 5px,rgba(255,255,255,0) 6px)}
+.arena-mrotate .ghostcard{position:absolute;width:44px;height:62px;border-radius:7px;background:linear-gradient(160deg,#FFFFFF,#E7E7EE);box-shadow:0 10px 16px -6px rgba(0,0,0,.8);filter:blur(4px) brightness(.55)}
+.arena-mrotate .gate{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;padding:18px 16px 34px}
+.arena-mrotate .gatecard{position:relative;margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px 20px 20px;text-align:center;border-radius:22px;background:linear-gradient(180deg,rgba(22,22,28,.94),rgba(9,9,12,.96));border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 60px -20px rgba(0,0,0,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:fade .4s ease-out both}
+.arena-mrotate .live2{display:flex;align-items:center;gap:12px;width:100%;margin-top:4px;padding:10px 12px;border-radius:14px;text-align:left;background:rgba(198,255,51,.08);box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.55)}
+.arena-mrotate .live2.them{background:rgba(0,188,200,.08);box-shadow:inset 0 0 0 1.5px rgba(0,188,200,.45)}
+.arena-mrotate .live2.hurry{animation:hurry 1s ease-in-out infinite}
+.arena-mrotate .live2 > div > b{display:block;font-family:var(--font-display), sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.arena-mrotate .live2 > div > span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:#BEBECA}
+

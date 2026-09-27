@@ -1,4 +1,5 @@
 import React from "react";
+import { translate } from "@/lib/i18n";
 
 /**
  * Stand-ins for what the Play lobby reads.
@@ -9,7 +10,8 @@ import React from "react";
  * screens/lobby-01-mindi.jpg can be compared directly.
  *
  * Query flags: ?guest (signed out), ?off (the league is not running),
- * ?found (a table formed while looking).
+ * ?found (a table formed while looking), ?lock (the browser can turn the
+ * screen itself, which is what draws "Go landscape").
  */
 
 const flag = (name: string) => typeof location !== "undefined" && location.search.includes(name);
@@ -22,6 +24,12 @@ export function useAuth() {
   };
 }
 
+/**
+ * The real dictionary, in English, with the few strings the screens read
+ * from elsewhere pinned so the assertions have something fixed to match.
+ * Falling through to lib/i18n rather than a short list means a new key in
+ * the screen shows up as its own English text, not as its key name.
+ */
 export function useTranslation() {
   const strings: Record<string, string> = {
     page_weekendLeague: "Weekend League",
@@ -31,8 +39,37 @@ export function useTranslation() {
     rankedq_matchFound: "Match Found!",
     rankedq_starting: "Starting {label}…",
   };
-  return (key: string) => strings[key] ?? key;
+  return (key: string) => strings[key] ?? translate(key, "en");
 }
+
+/**
+ * Turning the phone, recorded rather than performed: a headless browser has
+ * no orientation to lock, and the point of the check is that the lobby ASKS
+ * at the right moment and hands the orientation back when the player stops
+ * looking.
+ */
+export function canLockOrientation() {
+  return flag("lock");
+}
+export async function lockLandscape() {
+  if (typeof document !== "undefined") document.body.dataset.lock = "landscape";
+  return flag("lock");
+}
+export async function releaseLandscape() {
+  if (typeof document !== "undefined") document.body.dataset.lock = "free";
+}
+
+/** Where PLAY went, for the modes that navigate instead of queueing. */
+export function useRouter() {
+  return {
+    push: (href: string) => { if (typeof document !== "undefined") document.body.dataset.destination = href; },
+    replace: () => {},
+    back: () => {},
+    prefetch: () => {},
+  };
+}
+export function usePathname() { return "/play"; }
+export function useSearchParams() { return new URLSearchParams(); }
 
 /**
  * The real queue talks to Firestore, so the fixture records whether the

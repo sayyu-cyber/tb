@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/hooks/useTranslation";
-import { getRankFromTrophies, RANKS, TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks";
+import { useRankProgress } from "@/hooks/useRankProgress";
+import { TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks";
 import { formatLeagueBoundary, type LeagueWindow } from "@/lib/weekendLeague";
 import { RankHex, CrownGlyph } from "@/components/arena";
 import type { LobbyGame, LobbyMode } from "./lobbyGames";
@@ -80,8 +81,6 @@ export function LobbyLeagueCard({ window: leagueWindow, className = "" }: { wind
 
 /* ── Your rank ──────────────────────────────────────────────────────── */
 
-const TIERS = [RANKS.BRONZE, RANKS.SILVER, RANKS.GOLD, RANKS.PLATINUM];
-
 /**
  * The board's rank strip: avatar, name, tier hexagon, and the bar to the
  * next tier.
@@ -89,20 +88,13 @@ const TIERS = [RANKS.BRONZE, RANKS.SILVER, RANKS.GOLD, RANKS.PLATINUM];
  * The board hard-codes a gold hexagon because its sample player is Gold.
  * This uses the shared RankHex, which takes the tier's own metal - so a
  * Bronze player sees bronze rather than everyone being painted Gold.
+ *
+ * The four numbers come from hooks/useRankProgress, shared with the phone
+ * lobby's own copy of this strip (MPlay).
  */
 export function LobbyRankCard({ className = "" }: { className?: string }) {
-  const { user, playerStats } = useAuth();
-  const trophies = playerStats?.trophies ?? 0;
-  const tier = getRankFromTrophies(trophies);
-  const name = user?.displayName || "Player";
-
-  const index = TIERS.findIndex((rank) => rank.name === tier);
-  const floor = TIERS[index]?.min ?? 0;
-  const next = TIERS[index + 1];
-  const span = next ? next.min - floor : 0;
-  const progress = next && span > 0 ? Math.min(1, Math.max(0, (trophies - floor) / span)) : 1;
-  const remaining = next ? Math.max(0, next.min - trophies) : 0;
-  const pct = Math.round(progress * 100);
+  const { name, tier, trophies, floor, ceiling, nextTier, remaining, pct } = useRankProgress();
+  const next = nextTier ? { name: nextTier, min: ceiling ?? 0 } : null;
 
   return (
     <section

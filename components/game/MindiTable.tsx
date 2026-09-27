@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card, Suit, SeatIndex, Team, TrickPlay, CompletedTrick,
@@ -8,6 +8,8 @@ import {
 import { ArenaSeatData } from "./GameArena";
 import { SettingToggle } from "@/components/settings/SettingToggle";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import { usePublishMatchGate } from "@/contexts/MatchGateContext";
 import { sortHand, HandSort } from "@/lib/cardSort";
 import { navigateHand } from "./HandTools";
 import { RuleBook } from "./RuleBook";
@@ -69,6 +71,7 @@ const TRICK_SPOT = [
 export function MindiTable(p:Props) {
   const router=useRouter();
   const {settings,updateSettings}=useSettings();
+  const t=useTranslation();
   const [selected,setSelected]=useState<string|null>(null);
   const [modal,setModal]=useState<"rules"|"settings"|"leave"|"info"|null>(null);
   const [lastOpen,setLastOpen]=useState(false);
@@ -83,6 +86,9 @@ export function MindiTable(p:Props) {
   const lastTap=useRef<{id:string;at:number}|null>(null);
   const pending=useRef(false);
   const dialog=useRef<HTMLDialogElement>(null);
+  /* Stable, because the gate keeps whatever it was last given: a new closure
+     on every render would have it republishing for no reason. */
+  const askToLeave=useCallback(()=>setModal("leave"),[]);
 
   const duel=!p.left&&!p.right;
   const team=teamOf(p.viewer), other=team==="A"?"B":"A";
@@ -213,6 +219,29 @@ export function MindiTable(p:Props) {
     : complete?"Resolving the trick.":`Waiting for ${[p.top,p.left,p.right].find(s=>s?.active)?.name??"the next player"}.`;
 
   const felt=FELT[p.tableSkin??"tt_default"]??FELT.tt_default;
+
+  /* What the rotate gate says while this hand runs on a phone held upright
+     (components/layout/RotateGate.tsx, design/arena/boards/MRotate.dc.html).
+     The gate covers the table rather than replacing it, so it reports the
+     same turn this screen is showing - and its Leave table opens the same
+     confirm this screen's back button opens.
+
+     Mindi has no turn clock in this app, so no `deadline` is published and
+     the gate's countdown ring is left off. That is the truth about the game,
+     not a gap in the gate: there is nothing here to count down. */
+  const waitingOn=[p.top,p.left,p.right].find(seat=>seat?.active)??null;
+  usePublishMatchGate({
+    label:`Mindi · ${p.mode}`,
+    progress:t("rotate_trickOf")
+      .replace("{n}",String(Math.min(13,p.tricks.A+p.tricks.B+1)))
+      .replace("{total}","13"),
+    turn:p.active
+      ? {mine:true,detail:p.trick.length
+          ? t("rotate_followSuit").replace("{suit}",suitName(p.trick[0].card.suit))
+          : t("rotate_leadAnyCard")}
+      : waitingOn?{mine:false,name:waitingOn.name}:null,
+    onLeave:askToLeave,
+  });
 
   return <ArenaStage className="arena-mindi">
     <div className="ar" style={{position:"relative",width:1440,height:900,overflow:"hidden",background:"#000"}}>

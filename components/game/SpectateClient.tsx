@@ -1,7 +1,8 @@
 "use client";
 import { TrickArea } from "./TrickArea";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ import { rankLabel as ginRankLabel } from "@/lib/ginRummyEngine";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePublishMatchGate } from "@/contexts/MatchGateContext";
 import { PlayingCard, suitFromLetter } from "@/components/game/PlayingCard";
 import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, ArenaSeatData } from "@/components/game/GameArena";
 
@@ -106,6 +108,11 @@ export function SpectateClient({ matchId }: { matchId: string }) {
 
   return (
     <ArenaFelt accent={isMindi ? "var(--lagoon)" : "var(--deep)"}>
+      {/* Spectating is a match screen, so the rotate gate covers it on a
+          phone held upright. Without this it would have nothing to say and
+          no way out; a spectator has no seat to forfeit, so its Leave table
+          is simply the way back this screen already offers. */}
+      <SpectateGate label={isMindi ? "Mindi" : "Gin Rummy"} />
       <ArenaHeader
         leaveSlot={
           <Link href="/play">
@@ -129,6 +136,19 @@ export function SpectateClient({ matchId }: { matchId: string }) {
       )}
     </ArenaFelt>
   );
+}
+
+/**
+ * Publishes what the rotate gate should say over a spectated match.
+ * Its own component so the publish sits beside the gate's other callers
+ * (MindiTable, GinRummyTable) rather than inside a render branch.
+ */
+function SpectateGate({ label }: { label: string }) {
+  const router = useRouter();
+  const t = useTranslation();
+  const leave = useCallback(() => router.push("/play"), [router]);
+  usePublishMatchGate({ label: `${label} · ${t("rotate_spectating")}`, turn: null, onLeave: leave });
+  return null;
 }
 
 /** Public-only seat data: name, avatar, skin and card COUNT - never the cards. */

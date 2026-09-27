@@ -66,13 +66,87 @@ export const TRANSLATIONS: Record<string, Translations> = {
   nav_socialError: { en: "Couldn't load social activity.", dv: "ސޯޝަލް ހަރަކާތްތައް ލޯޑް ނުވިއެވެ.", hi: "सोशल गतिविधि लोड नहीं हो सकी।", bn: "সোশ্যাল কার্যকলাপ লোড করা যায়নি।" },
   nav_socialLoading: { en: "Loading social activity", dv: "ސޯޝަލް ހަރަކާތްތައް ލޯޑްވަނީ", hi: "सोशल गतिविधि लोड हो रही है", bn: "সোশ্যাল কার্যকলাপ লোড হচ্ছে" },
 
-  // Landscape gate (components/layout/RotateDeviceGate.tsx).
+  // Turning the phone - design/arena/MOBILE.md "Turning the phone".
+  // The gate over a live table (components/layout/RotateGate.tsx, board
+  // MRotate) and the sheet over the portrait lobby
+  // (components/game/lobby/RotateToPlaySheet.tsx, board MPlayFind).
   rotate_title: { en: "Rotate your phone", dv: "ފޯނު އަނބުރާލައްވާ", hi: "अपना फ़ोन घुमाएं", bn: "আপনার ফোন ঘোরান" },
-  rotate_body: {
-    en: "Thaasbai is built for landscape. Turn your phone sideways to play.",
-    dv: "ތާސްބައި ފަރުމާކޮށްފައިވަނީ ހުރަސްކޮށެވެ. ކުޅުމަށް ފޯނު ހުރަހަށް އަނބުރާލައްވާ.",
-    hi: "थासबाई लैंडस्केप के लिए बना है। खेलने के लिए अपना फ़ोन बगल में घुमाएं।",
-    bn: "থাসবাই ল্যান্ডস্কেপের জন্য তৈরি। খেলতে আপনার ফোন পাশ ফিরিয়ে ধরুন।",
+  rotate_sideways: {
+    en: "The table plays sideways",
+    dv: "މޭޒުގައި ކުޅެވެނީ ހުރަހަށް",
+    hi: "टेबल बगल में खेलती है",
+    bn: "টেবিল পাশ ফিরিয়ে খেলা হয়",
+  },
+  // rotate_body used to say "Thaasbai is built for landscape". Only the
+  // table is, now, so it became these two: one for the table and one for
+  // the lobby, plus a third for a local table that is already waiting.
+  rotate_bodyTable: {
+    en: "Your seat is held and the hand keeps going. Turn sideways to play your cards.",
+    dv: "ތިބާގެ ގޮނޑި ހިފެހެއްޓިފައި، އަދި ހޭންޑް ކުރިއަށްދެއެވެ. ކާޑު ކުޅުމަށް ހުރަހަށް އަނބުރާލައްވާ.",
+    hi: "आपकी सीट सुरक्षित है और हाथ चलता रहता है। अपने पत्ते खेलने के लिए बगल में घुमाएं।",
+    bn: "আপনার আসন ধরে রাখা আছে এবং হাতটি চলছে। কার্ড খেলতে পাশ ফিরিয়ে ধরুন।",
+  },
+  rotate_bodyLobby: {
+    en: "We'll keep looking for a table while you turn.",
+    dv: "ތިބާ އަނބުރާލާއިރު އަހަރެމެން މޭޒެއް ހޯދަމުން ދާނަމެވެ.",
+    hi: "जब आप घुमाएंगे, हम टेबल खोजते रहेंगे।",
+    bn: "আপনি ঘোরানোর সময় আমরা টেবিল খুঁজতে থাকব।",
+  },
+  rotate_bodyReady: {
+    en: "Your table starts as soon as you turn.",
+    dv: "ތިބާ އަނބުރާލާއިރަށް މޭޒު ފެށޭނެއެވެ.",
+    hi: "आप घुमाते ही आपकी टेबल शुरू हो जाएगी।",
+    bn: "আপনি ঘোরালেই আপনার টেবিল শুরু হবে।",
+  },
+  rotate_goLandscape: { en: "Go landscape", dv: "ހުރަހަށް ބަދަލުކުރޭ", hi: "लैंडस्केप में जाएं", bn: "ল্যান্ডস্কেপে যান" },
+  rotate_leaveTable: { en: "Leave table", dv: "މޭޒުން ނުކުންނަވާ", hi: "टेबल छोड़ें", bn: "টেবিল ছাড়ুন" },
+  rotate_stopLooking: { en: "Stop looking", dv: "ހޯދުން ހުއްޓަވާ", hi: "खोजना बंद करें", bn: "খোঁজা বন্ধ করুন" },
+  rotate_findingTable: {
+    en: "Finding a {game} table",
+    dv: "{game} މޭޒެއް ހޯދަނީ",
+    hi: "{game} टेबल खोज रहे हैं",
+    bn: "{game} টেবিল খোঁজা হচ্ছে",
+  },
+  rotate_tableReady: {
+    en: "Your {game} table is ready",
+    dv: "ތިބާގެ {game} މޭޒު ތައްޔާރު",
+    hi: "आपकी {game} टेबल तैयार है",
+    bn: "আপনার {game} টেবিল প্রস্তুত",
+  },
+  // The dock's shorter forms, where the game's name is already on screen.
+  rotate_findingTableShort: { en: "Finding a table", dv: "މޭޒެއް ހޯދަނީ", hi: "टेबल खोज रहे हैं", bn: "টেবিল খোঁজা হচ্ছে" },
+  rotate_tableReadyShort: { en: "Table ready", dv: "މޭޒު ތައްޔާރު", hi: "टेबल तैयार", bn: "টেবিল প্রস্তুত" },
+  rotate_turnToStart: {
+    en: "Turn your phone to start",
+    dv: "ފެށުމަށް ފޯނު އަނބުރާލައްވާ",
+    hi: "शुरू करने के लिए फ़ोन घुमाएं",
+    bn: "শুরু করতে ফোন ঘোরান",
+  },
+  rotate_tapAgainToStop: {
+    en: "Tap again to stop looking",
+    dv: "ހޯދުން ހުއްޓަން އަނެއްކާ ޖައްސަވާ",
+    hi: "खोजना बंद करने के लिए फिर टैप करें",
+    bn: "খোঁজা বন্ধ করতে আবার ট্যাপ করুন",
+  },
+  rotate_yourTurn: { en: "Your turn", dv: "ތިބާގެ ފުރުޞަތު", hi: "आपकी बारी", bn: "আপনার পালা" },
+  rotate_playing: { en: "{name} is playing", dv: "{name} ކުޅެނީ", hi: "{name} खेल रहे हैं", bn: "{name} খেলছেন" },
+  rotate_youreNext: { en: "You're next", dv: "ދެން ތިބާ", hi: "अगली बारी आपकी", bn: "পরের পালা আপনার" },
+  rotate_secondsLeft: { en: "{n}s left", dv: "{n} ސެކަންޑް", hi: "{n} सेकंड बाकी", bn: "{n} সেকেন্ড বাকি" },
+  // What the gate's chip and turn row report from the live table. The suit
+  // name itself comes from the table's own vocabulary, as every other line
+  // on that table does.
+  rotate_trickOf: { en: "Trick {n} of {total}", dv: "ޓްރިކް {n} / {total}", hi: "ट्रिक {n} / {total}", bn: "ট্রিক {n} / {total}" },
+  rotate_inStock: { en: "{n} left in the stock", dv: "ސްޓޮކްގައި {n}", hi: "स्टॉक में {n} बाकी", bn: "স্টকে {n} বাকি" },
+  rotate_followSuit: { en: "Follow {suit}", dv: "{suit} ފޮލޯކުރޭ", hi: "{suit} का अनुसरण करें", bn: "{suit} অনুসরণ করুন" },
+  rotate_leadAnyCard: { en: "Lead any card", dv: "ކޮންމެ ކާޑެއް ލީޑްކުރޭ", hi: "कोई भी पत्ता चलें", bn: "যেকোনো কার্ড দিয়ে শুরু করুন" },
+  rotate_drawACard: { en: "Draw a card", dv: "ކާޑެއް ނަންގަވާ", hi: "एक पत्ता उठाएं", bn: "একটি কার্ড নিন" },
+  rotate_discardACard: { en: "Discard a card", dv: "ކާޑެއް އުކާލައްވާ", hi: "एक पत्ता फेंकें", bn: "একটি কার্ড ফেলুন" },
+  rotate_spectating: { en: "Spectating", dv: "ބަލަނީ", hi: "देख रहे हैं", bn: "দেখছেন" },
+  rotate_androidHint: {
+    en: "Auto-rotate off? Go landscape turns the table for you.",
+    dv: "އޮޓޯ-ރޮޓޭޓް ނިއްވާފައިތޯ؟ \"ހުރަހަށް ބަދަލުކުރޭ\" އިން މޭޒު އަނބުރާލަދޭނެއެވެ.",
+    hi: "ऑटो-रोटेट बंद है? \"लैंडस्केप में जाएं\" टेबल को घुमा देगा।",
+    bn: "অটো-রোটেট বন্ধ? \"ল্যান্ডস্কেপে যান\" টেবিলটি ঘুরিয়ে দেবে।",
   },
   rotate_lockHint: {
     en: "Screen not turning? Switch off Rotation Lock in your phone's settings.",
@@ -80,6 +154,34 @@ export const TRANSLATIONS: Record<string, Translations> = {
     hi: "स्क्रीन नहीं घूम रही? अपने फ़ोन की सेटिंग्स में रोटेशन लॉक बंद करें।",
     bn: "স্ক্রিন ঘুরছে না? আপনার ফোনের সেটিংসে রোটেশন লক বন্ধ করুন।",
   },
+
+  // The Play lobby, shared by the desktop board (Lobby) and the phone's
+  // (MPlay) - components/game/lobby/*.
+  lobby_pickAGame: { en: "Pick a game", dv: "ގޭމެއް ޚިޔާރުކުރައްވާ", hi: "एक गेम चुनें", bn: "একটি গেম বাছুন" },
+  lobby_chooseYourTable: { en: "Choose your table", dv: "ތިބާގެ މޭޒު ޚިޔާރުކުރައްވާ", hi: "अपनी टेबल चुनें", bn: "আপনার টেবিল বাছুন" },
+  lobby_gameModes: { en: "Game modes", dv: "ގޭމް މޯޑްތައް", hi: "गेम मोड", bn: "গেম মোড" },
+  lobby_playGame: { en: "Play {game}", dv: "{game} ކުޅޭ", hi: "{game} खेलें", bn: "{game} খেলুন" },
+  lobby_yourRank: { en: "Your rank", dv: "ތިބާގެ ރޭންކް", hi: "आपकी रैंक", bn: "আপনার র‍্যাঙ্ক" },
+  lobby_doubleTrophies: { en: "Double trophies", dv: "ދެގުނަ ޓްރޮފީ", hi: "दोगुनी ट्रॉफ़ी", bn: "দ্বিগুণ ট্রফি" },
+  lobby_doubleTrophiesLabel: { en: "double trophies", dv: "ދެގުނަ ޓްރޮފީ", hi: "दोगुनी ट्रॉफ़ी", bn: "দ্বিগুণ ট্রফি" },
+  lobby_doubleTrophiesUntil: {
+    en: "double trophies until {when}",
+    dv: "{when} ވަންދެން ދެގުނަ ޓްރޮފީ",
+    hi: "{when} तक दोगुनी ट्रॉफ़ी",
+    bn: "{when} পর্যন্ত দ্বিগুণ ট্রফি",
+  },
+  lobby_leagueLine: {
+    en: "Every ranked win is worth {win} trophies instead of {base}, and a loss costs {loss}.",
+    dv: "ކޮންމެ ރޭންކްޑް ކާމިޔާބަކަށް {base} ގެ ބަދަލުގައި {win} ޓްރޮފީ، އަދި ބަލިވުމުން {loss} ގެއްލޭނެ.",
+    hi: "हर रैंक जीत {base} के बजाय {win} ट्रॉफ़ी की है, और हार पर {loss} घटती हैं।",
+    bn: "প্রতিটি র‍্যাঙ্কড জয় {base} এর বদলে {win} ট্রফি, এবং হারলে {loss} কমে।",
+  },
+  lobby_enter: { en: "Enter", dv: "ވަދެވަޑައިގަންނަވާ", hi: "प्रवेश करें", bn: "প্রবেশ করুন" },
+  lobby_progressTo: { en: "Progress to {tier}", dv: "{tier} އަށް ދާ ކުރިއެރުން", hi: "{tier} तक प्रगति", bn: "{tier} পর্যন্ত অগ্রগতি" },
+  lobby_toTier: { en: "to {tier}", dv: "{tier} އަށް", hi: "{tier} तक", bn: "{tier} পর্যন্ত" },
+  lobby_topTier: { en: "Top tier", dv: "އެންމެ މަތީ ފަންތި", hi: "सर्वोच्च श्रेणी", bn: "সর্বোচ্চ স্তর" },
+  common_trophy: { en: "trophy", dv: "ޓްރޮފީ", hi: "ट्रॉफ़ी", bn: "ট্রফি" },
+  common_trophies: { en: "trophies", dv: "ޓްރޮފީ", hi: "ट्रॉफ़ी", bn: "ট্রফি" },
   notifications_empty: { en: "You're all caught up", dv: "ތިބާ ހުރިހާ ކަމެއް ބައްލަވައިފި", hi: "आप पूरी तरह अपडेट हैं", bn: "আপনি সব দেখে ফেলেছেন" },
   notifications_newMessage: { en: "New message from {name}", dv: "{name} ގެ އައު މެސެޖެއް", hi: "{name} की ओर से नया संदेश", bn: "{name} থেকে নতুন বার্তা" },
 
