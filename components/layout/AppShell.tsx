@@ -9,6 +9,7 @@ import { PresenceHeartbeat } from "@/components/system/PresenceHeartbeat";
 import { HomeSocialProvider } from "@/contexts/HomeSocialContext";
 import { ConnectionNotice } from "@/components/system/ConnectionNotice";
 import { RotateDeviceGate } from "./RotateDeviceGate";
+import { PhoneChrome } from "./phone/PhoneChrome";
 
 /**
  * Routes that render with no app chrome and, crucially, OUTSIDE
@@ -55,7 +56,11 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           every screen inside it, which is what components/arena/* render.
           In-match screens keep it too: the table boards have their own
           namespaces, and the two don't overlap. */}
-      <div className={`arena-app app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
+      {/* `arena-phone` is the namespace the phone boards were ported
+          under, alongside `arena-app` for the desktop ones. Both sheets are
+          on the shell and the media queries in arena-phone-shell.css decide
+          which chrome is visible, so nothing here branches on width. */}
+      <div className={`arena-app arena-phone app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
         {needsLandscape && <RotateDeviceGate />}
         <ConnectionNotice />
@@ -74,6 +79,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         {!inMatch && <AppSidebar />}
+        {!inMatch && <div className="phone-chrome"><PhoneChrome /></div>}
       </div>
       </HomeSocialProvider>
     </ProtectedRoute>

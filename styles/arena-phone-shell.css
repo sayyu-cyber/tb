@@ -1,0 +1,188 @@
+/* The phone shell: the app-only half.
+ *
+ * styles/arena-phone.css is the boards' own CSS, generated. The boards are
+ * single 390x844 artboards, so they can pin the stage, the top bar, the tab
+ * bar and the sheet host to a box of that exact height. A real phone is not
+ * 844 tall, has a notch and a home indicator, and scrolls. This file is the
+ * difference, and nothing else: no colour, no radius, no type size, no
+ * timing. Those all come from the generated sheet.
+ *
+ * Two jobs:
+ *   1. Turn the board's `position:absolute; height:844px` boxes into fixed
+ *      chrome with safe-area insets.
+ *   2. Decide which shell is on screen. That is CSS, not JavaScript, so the
+ *      first paint is already right and turning the phone costs nothing.
+ *
+ * WHEN THE PHONE SHELL APPLIES (design/arena/MOBILE.md "Two orientations"):
+ *   - below 768px wide, and
+ *   - on a phone held sideways, which is
+ *     (orientation: landscape) and (max-height: 500px) and (pointer: coarse)
+ * Desktop at 768 and up is untouched.
+ */
+
+/* ── Which shell ──────────────────────────────────────────────────────
+   Both are in the DOM on every shelled screen. Hiding rather than
+   unmounting is what keeps the switch free of JavaScript; `display:none`
+   also takes the hidden one out of the accessibility tree, so a screen
+   reader is never offered two navigations. */
+.phone-chrome { display: none; }
+.app-shell .app-sidebar,
+.app-shell .app-shell-toolbar { display: revert; }
+
+@media (max-width: 767px),
+       (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .phone-chrome { display: contents; }
+  /* The desktop rail and top bar step aside entirely - the phone has its
+     own of each, and two top bars would eat a third of the screen. */
+  .app-shell .app-sidebar,
+  .app-shell .app-shell-toolbar { display: none; }
+  .app-shell { display: block; }
+  .app-shell-main { padding-bottom: 0; }
+
+  /* The board's `.mstage` is the page background; on a phone it is the
+     whole viewport rather than the top 844px of it. */
+  .arena-phone .mstage {
+    position: fixed;
+    inset: 0;
+    height: auto;
+    z-index: 0;
+  }
+
+  /* 60px plus the notch. The board writes the height flat because an
+     artboard has no notch to clear. */
+  .arena-phone .mtop {
+    position: fixed;
+    top: 0;
+    height: calc(60px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  /* 62px of bar plus the board's 22px of home-indicator room, which on a
+     real phone is env() instead. */
+  .arena-phone .mtab {
+    position: fixed;
+    bottom: 0;
+    height: calc(62px + max(22px, env(safe-area-inset-bottom)));
+    padding-bottom: max(22px, env(safe-area-inset-bottom));
+  }
+  /* More is a button here, not the board's `<a href="#more">`: it opens a
+     sheet rather than navigating. Same pixels, honest semantics. */
+  .arena-phone .mtab button,
+  .arena-phone .mrail button {
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* The page clears both bars. The board's own 78/110 padding assumes its
+     flat 60 and 84; these add the insets. */
+  .arena-phone .mpage,
+  .arena-phone .ar-page {
+    padding-top: calc(78px + env(safe-area-inset-top));
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  /* Sheets: the board draws them inside its 844px box, so the host is
+     fixed to the viewport here. */
+  .arena-phone .mview,
+  .phone-sheet-host {
+    position: fixed;
+    inset: 0;
+    height: auto;
+    z-index: 70;
+  }
+  .arena-phone .mscrim {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    border: 0;
+    width: 100%;
+  }
+  .arena-phone .sheet {
+    max-height: calc(100dvh - 64px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(34px + env(safe-area-inset-bottom));
+  }
+  /* The 40x5 handle from MOBILE.md "Patterns". The boards draw it as part
+     of each sheet's markup; one component draws it once here. */
+  .arena-phone .sheet-handle {
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 0 auto 12px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .22);
+  }
+
+  /* The rail is the sideways shape only. */
+  .arena-phone .mrail { display: none; }
+}
+
+/* ── Held sideways (PHome) ────────────────────────────────────────────
+   The tab bar stands up as a 76px rail, the top bar shortens to 52 and
+   starts after it, and the page becomes one centred column up to 560px.
+   Sheets come in from the rail as a side panel instead of up from the
+   floor. */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .arena-phone .mtab { display: none; }
+  .arena-phone .mrail {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    padding-left: env(safe-area-inset-left);
+    width: calc(76px + env(safe-area-inset-left));
+  }
+  .arena-phone .mtop {
+    left: calc(76px + env(safe-area-inset-left));
+    height: 52px;
+    padding-top: 0;
+  }
+  .arena-phone .mpage,
+  .arena-phone .ar-page {
+    margin-left: calc(76px + env(safe-area-inset-left));
+    padding: 68px 104px 40px;
+    padding-right: max(104px, env(safe-area-inset-right));
+  }
+  /* A 392px panel off the rail, on `sideIn` rather than `sheetUp`. */
+  .arena-phone .sheet {
+    left: calc(76px + env(safe-area-inset-left));
+    right: auto;
+    top: 0;
+    bottom: 0;
+    width: 392px;
+    max-height: none;
+    border-radius: 0 24px 24px 0;
+    padding-bottom: 24px;
+    animation: sideIn .38s cubic-bezier(.2, .9, .25, 1) both;
+  }
+  .arena-phone .sheet-handle { display: none; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────
+   The phone's own loops, alongside the ones styles/arena-shell.css
+   already stops. One-shot entrances (sheetUp, scrimIn, sideIn, slideIn,
+   pop) are left alone: they finish by themselves, and cancelling them
+   would leave a sheet mid-slide. */
+@media (prefers-reduced-motion: reduce) {
+  .arena-phone [data-ar-loop],
+  .arena-phone .mtab .pw .fc,
+  .arena-phone .mrail .pw .fc { animation: none !important; }
+}
+
+/* Screen-reader-only text, for the label a sheet needs and the board does
+   not draw. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

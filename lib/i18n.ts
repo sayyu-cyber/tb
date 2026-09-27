@@ -478,6 +478,16 @@ export const TRANSLATIONS: Record<string, Translations> = {
 
   // Home page subcomponents
   nav_more: { en: "More", dv: "އިތުރު", hi: "और", bn: "আরও" },
+  // Phone shell (design/arena/MOBILE.md). The five-slot tab bar, the More
+  // sheet and the top bar name things the desktop rail never had to.
+  nav_clubs: { en: "Clubs", dv: "ކްލަބްތައް", hi: "क्लब", bn: "ক্লাব" },
+  nav_inventory: { en: "Inventory", dv: "އިންވެންޓްރީ", hi: "इन्वेंटरी", bn: "ইনভেন্টরি" },
+  nav_vipPass: { en: "VIP Pass", dv: "ވީއައިޕީ ޕާސް", hi: "VIP पास", bn: "VIP পাস" },
+  nav_friendRequests: { en: "friend requests", dv: "ރަޙްމަތްތެރިކަމުގެ އެދުން", hi: "मित्र अनुरोध", bn: "বন্ধুত্বের অনুরোধ" },
+  common_coins: { en: "coins", dv: "ކޮއިން", hi: "सिक्के", bn: "কয়েন" },
+  common_live: { en: "Live", dv: "ލައިވް", hi: "लाइव", bn: "লাইভ" },
+  shop_getCoins: { en: "Get coins", dv: "ކޮއިން ހޯދާ", hi: "सिक्के लें", bn: "কয়েন নিন" },
+  vip_blurb: { en: "Get more matches, exclusive rewards and more!", dv: "އިތުރު މެޗް، ޚާއްޞަ އިނާމުތައް އަދި އިތުރު ކަންކަން!", hi: "अधिक मैच, विशेष पुरस्कार और बहुत कुछ पाएं!", bn: "আরও ম্যাচ, এক্সক্লুসিভ পুরস্কার এবং আরও অনেক কিছু!" },
   nav_moreTitle: { en: "All sections", dv: "ހުރިހާ ބައިތައް", hi: "सभी अनुभाग", bn: "সব বিভাগ" },
 
   // Home page shortcut tiles - hardcoded English until now.
