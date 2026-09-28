@@ -10,6 +10,8 @@ import { ArenaSprite } from "@/components/game/ArenaSprite";
 import { ClubHome } from "./ClubHome";
 import { ClubCard } from "./ClubCard";
 import { CreateClubDialog } from "./CreateClubDialog";
+import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { PhoneClubs } from "./phone/PhoneClubs";
 
 /**
  * Clubs — design/arena/screens/app/app-06-clubs.jpg, with the chat tab from
@@ -37,6 +39,7 @@ export function ClubsClient() {
   const [pending, setPending] = useState("");
   const action = useRef(false);
   const uid = user?.uid ?? "";
+  const phone = usePhonePortrait();
 
   useEffect(() => {
     setMine(undefined); setClubs([]); setLoaded(false); setError("");
@@ -64,6 +67,47 @@ export function ClubsClient() {
     [club.name, club.tag, club.description].join(" ").toLocaleLowerCase().includes(query));
   const browse = expanded || query ? matches : matches.slice(0, 4);
   const listed = tab === "mine" ? (mine ? [mine] : []) : browse;
+
+  const createDialog = create && (
+    <CreateClubDialog
+      uid={uid}
+      playerName={user?.displayName ?? "Player"}
+      trophies={playerStats?.trophies ?? 0}
+      onClose={() => setCreate(false)}
+      onCreated={() => { setCreate(false); setTab("mine"); }}
+    />
+  );
+
+  /* Held upright a phone gets MClubs, which stacks the two columns and puts
+     your own club first. It picks in JavaScript rather than CSS because
+     ClubHome holds the club chat subscription, the member watcher and the
+     kick/leave confirm - mounting both compositions would double all three. */
+  if (phone) return (
+    <>
+      <ArenaSprite />
+      <PhoneClubs
+        isGuest={isGuest}
+        uid={uid}
+        myName={user?.displayName ?? "Player"}
+        mine={mine}
+        listed={listed}
+        matches={matches}
+        query={search}
+        onQuery={setSearch}
+        tab={tab}
+        onTab={setTab}
+        ready={ready}
+        error={error}
+        onRetry={() => setAttempt(v => v + 1)}
+        expanded={expanded}
+        onExpanded={setExpanded}
+        pending={pending}
+        onJoin={join}
+        onCreate={() => setCreate(true)}
+      />
+      {createDialog}
+    </>
+  );
 
   return (
     <div className="arena-clubs ar-page" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -184,15 +228,7 @@ export function ClubsClient() {
         </div>
       )}
 
-      {create && (
-        <CreateClubDialog
-          uid={uid}
-          playerName={user?.displayName ?? "Player"}
-          trophies={playerStats?.trophies ?? 0}
-          onClose={() => setCreate(false)}
-          onCreated={() => { setCreate(false); setTab("mine"); }}
-        />
-      )}
+      {createDialog}
     </div>
   );
 }

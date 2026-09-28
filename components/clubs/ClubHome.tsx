@@ -40,7 +40,19 @@ function pick(id: string, size: number) {
   return Math.abs(hash) % size;
 }
 
-export function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string; myName: string }) {
+export function ClubHome({ club, myUid, myName, compact = false }: {
+  club: ClubDoc;
+  myUid: string;
+  myName: string;
+  /**
+   * MClubs draws the same panel two sizes down - a 58x64 crest and a 23px
+   * name instead of 64x70 and the wide `club-name` size. Only those two
+   * numbers differ, so the panel is one component rather than two: it holds
+   * the club chat subscription, the member watcher and the kick/leave
+   * confirm, and none of those should exist twice.
+   */
+  compact?: boolean;
+}) {
   const [tab, setTab] = useState<"members" | "chat">("members");
   const [messages, setMessages] = useState<ClubMessage[]>([]);
   const [text, setText] = useState("");
@@ -131,12 +143,13 @@ export function ClubHome({ club, myUid, myName }: { club: ClubDoc; myUid: string
           {isOwner && <Pill tone="lime"><Crown aria-hidden="true" />Owner</Pill>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <span className={`crest ${tint}`} aria-hidden="true" style={{ width: "64px", height: "70px" }}>
+          <span className={`crest ${tint}`} aria-hidden="true"
+            style={compact ? { width: "58px", height: "64px" } : { width: "64px", height: "70px" }}>
             <Suit suit={suit} />
           </span>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
             <span className="tag">[{club.tag}]</span>
-            <b className="disp club-name">{club.name}</b>
+            <b className="disp club-name" style={compact ? { fontSize: "23px" } : undefined}>{club.name}</b>
             <span className="muted2 tnum">{club.members.length} / {MAX_MEMBERS} members</span>
           </div>
         </div>
