@@ -114,6 +114,39 @@ async function run() {
     await page.locator('.faq').first().click();
     await page.getByText('Equip owned cosmetics from your').waitFor();
 
+    // ── Held upright: MSettings ─────────────────────────────────────────
+    // design/arena/boards/MSettings.dc.html. The category rail becomes the
+    // phone's scrolling chip row - still scroll-to, not swap - the sections
+    // stack at the board's `.sec2` size with the first one ticked, and the
+    // About card moves to the foot of the page with Log Out inside it. The
+    // rows themselves are the wide screen's own, checked above.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(350);
+    assert.equal(await page.locator('.set-page').count(), 0, 'The wide screen steps aside');
+    const phone = page.locator('.arena-msettings');
+    assert.equal(await phone.isVisible(), true, 'and MSettings takes over');
+    assert.equal(await phone.locator('.chips > button').count(), 4, 'Four categories, as chips');
+    assert.equal(await phone.locator('.sec2').count(), 5, 'Every section is still on the page');
+    assert.equal(await phone.locator('.panel.tick.sec2').count(), 1, 'The board ticks the first panel only');
+    assert.equal(await phone.locator('[role=switch]').count(), 3, 'The same three switches');
+    assert.equal(await phone.locator('.langs button').count(), 4, 'and the four languages');
+    // The language control takes a line of its own at 390.
+    assert.equal(
+      await phone.locator('.langs').evaluate(node => node.getBoundingClientRect().width > node.parentElement.getBoundingClientRect().width * 0.9),
+      true, 'The language buttons wrap onto their own row');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'msettings-390.png'), fullPage: true });
+
+    // The chips scroll to a section rather than swapping panels.
+    await phone.locator('.chips > button', { hasText: 'Privacy & Security' }).click();
+    await page.waitForTimeout(300);
+    assert.equal(await phone.locator('.sec2').count(), 5, 'Nothing was swapped out');
+    assert.equal(await phone.locator('.chips button[aria-pressed="true"]').count(), 1, 'One chip is pressed');
+    const heading = await page.locator('#settings-privacy').boundingBox();
+    assert.ok(heading.y >= 0, 'and the section it scrolled to is not under the top bar');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(250);
+
     // ── Widths ──────────────────────────────────────────────────────────
     for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
       await page.setViewportSize({ width, height });
@@ -137,7 +170,7 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    console.log('Settings: five sections, the category rail that scrolls rather than swaps, three switches with two honestly disabled, the four-language control with the right-to-left note, a failed save, the masked address, admin/guest/blocked states, FAQs, seven widths and accessibility passed.');
+    console.log('Settings: five sections, the category rail that scrolls rather than swaps, three switches with two honestly disabled, the four-language control with the right-to-left note, a failed save, the masked address, admin/guest/blocked states, FAQs, MSettings held upright with its chip row and footed About card, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

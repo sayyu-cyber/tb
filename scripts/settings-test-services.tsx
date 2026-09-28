@@ -48,12 +48,23 @@ export const RANKS = {
 };
 export const TROPHY_WIN = 5;
 export const TROPHY_LOSS = -2;
-export function BlockedPlayers() {
-  return flag('blocked')
-    ? <p className="muted2">1 blocked player.</p>
-    : <p className="muted2">You haven&apos;t blocked anyone. You can block a player from their profile.</p>;
+export function BlockedPlayers({ phone = false }: { phone?: boolean }) {
+  const text = flag('blocked')
+    ? '1 blocked player.'
+    : "You haven't blocked anyone. You can block a player from their profile.";
+  // Held upright the note is boxed inside the row's text column.
+  return phone
+    ? <span style={{ marginTop: 8, padding: '11px 12px', borderRadius: 10, background: 'rgba(255,255,255,.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)', color: '#BEBECA' }}>{text}</span>
+    : <p className="muted2">{text}</p>;
 }
-export function LogoutBar() {
+export function LogoutBar({ phone = false }: { phone?: boolean }) {
+  if (phone) {
+    return (
+      <button type="button" className="ar-btn ghost sm" style={{ marginLeft: 'auto', height: 42, color: '#FF6B80' }}>
+        Log Out
+      </button>
+    );
+  }
   return (
     <div className="panel set-logout">
       <b className="disp chrome">Thaasbai</b>

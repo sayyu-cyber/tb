@@ -21,7 +21,7 @@ import { getPublicProfile } from "@/lib/publicProfile";
  * degrades to the raw id rather than dropping the row, because you must
  * still be able to unblock it.
  */
-export function BlockedPlayers() {
+export function BlockedPlayers({ phone = false }: { phone?: boolean }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [blocked, setBlocked] = useState<string[]>([]);
@@ -71,16 +71,23 @@ export function BlockedPlayers() {
 
   if (!user) return null;
 
-  if (loading) {
-    return <p className="settings-note">Loading blocked players…</p>;
-  }
+  // MSettings boxes the note inside the row's text column rather than
+  // letting it run on as a third line; the wide screen has the width for
+  // the plain paragraph.
+  const note = (text: string) => phone
+    ? (
+      <span style={{
+        marginTop: 8, padding: "11px 12px", borderRadius: 10,
+        background: "rgba(255,255,255,.03)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.08)",
+        color: "#BEBECA",
+      }}>{text}</span>
+    )
+    : <p className="settings-note">{text}</p>;
+
+  if (loading) return note("Loading blocked players…");
 
   if (blocked.length === 0) {
-    return (
-      <p className="settings-note">
-        You haven&rsquo;t blocked anyone. You can block a player from their profile.
-      </p>
-    );
+    return note("You haven’t blocked anyone. You can block a player from their profile.");
   }
 
   return (

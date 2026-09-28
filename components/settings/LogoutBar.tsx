@@ -4,7 +4,12 @@ import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/Button";
-export function LogoutBar() {
+/**
+ * Held upright the bar goes: MSettings puts Log Out inside the About card
+ * at the foot of the page, beside the version pill, as a red ghost button.
+ * The confirm dialog is the same one either way.
+ */
+export function LogoutBar({ phone = false }: { phone?: boolean }) {
   const {logout} = useAuth();
   const t = useTranslation();
   const [open,setOpen] = useState(false);
@@ -20,7 +25,10 @@ export function LogoutBar() {
     catch { setError("Couldn't log out. Please try again."); }
     finally { pending.current=false;setBusy(false); }
   }
-  return <><div className="settings-logout"><button onClick={() => {setError("");setOpen(true);}}><LogOut size={20} />{t("settings_logout")}</button><span>THAASBAI v1.0.0</span></div>
+  return <>{phone
+    ? <button type="button" className="ar-btn ghost sm" style={{marginLeft:"auto",height:42,color:"#FF6B80"}}
+        onClick={() => {setError("");setOpen(true);}}><LogOut aria-hidden="true" />{t("settings_logout")}</button>
+    : <div className="settings-logout"><button onClick={() => {setError("");setOpen(true);}}><LogOut size={20} />{t("settings_logout")}</button><span>THAASBAI v1.0.0</span></div>}
     {open && <dialog ref={dialog} className="settings-dialog" aria-labelledby="logout-heading" onCancel={e => {if(busy)e.preventDefault();else setOpen(false);}}>
       <h2 id="logout-heading">Log out?</h2><p>You will need to sign in again to access your account.</p>
       {error && <p role="alert">{error}</p>}

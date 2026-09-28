@@ -14,6 +14,8 @@ import { useToast } from "@/contexts/ToastContext";
 import { LogoutBar } from "@/components/settings/LogoutBar";
 import { isAdminEmail } from "@/lib/admin";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { PhoneSettings } from "@/components/settings/phone/PhoneSettings";
 import { LANGUAGE_NAMES } from "@/lib/i18n";
 import { LanguageCode, AppSettings } from "@/types";
 import { RankLabel } from "@/components/arena";
@@ -21,7 +23,8 @@ import { getRankFromTrophies } from "@/constants/ranks";
 
 /**
  * Settings — design/arena/screens/app/app-14-settings.jpg, from the
- * Settings board.
+ * Settings board; held upright, design/arena/boards/MSettings.dc.html and
+ * design/arena/screens/phone/phone-14-settings.jpg.
  *
  * A category rail and an About card on the left, the sections themselves on
  * the right. The rail scrolls to a section rather than swapping panels,
@@ -32,6 +35,11 @@ import { getRankFromTrophies } from "@/constants/ranks";
  * notifications and game sound effects have no delivery behind them yet.
  * They stay switched off and unusable rather than becoming toggles that
  * remember a preference nothing reads.
+ *
+ * Both compositions build the same five section bodies and only frame them
+ * differently - the rail becomes a chip row, the About card moves to the
+ * foot of the page. One composition mounts at a time, because the blocked
+ * list inside Privacy holds a live subscription that must exist once.
  */
 
 const CATEGORIES = [
@@ -125,6 +133,7 @@ export default function SettingsPage() {
   const { user, isGuest, playerStats } = useAuth();
   const { showToast } = useToast();
   const t = useTranslation();
+  const phone = usePhonePortrait();
   const [active, setActive] = useState("preferences");
 
   function save(change: Partial<AppSettings>) {
@@ -142,6 +151,168 @@ export default function SettingsPage() {
   const tier = playerStats?.currentRank || getRankFromTrophies(playerStats?.trophies ?? 0);
   // The board masks the address to its first letter, as Profile does.
   const maskedEmail = user?.email ? `${user.email[0]}••••@${user.email.split("@")[1] ?? ""}` : null;
+
+  // The five section bodies, built once. Each composition frames them its
+  // own way: the wide screen in `.sec` panels beside the rail, MSettings in
+  // `.sec2` panels under the chip row.
+  const sections = [
+    {
+      id: "preferences", title: "Game Preferences", Icon: Gamepad2, tone: "l" as const, mtone: "l" as const,
+      body: (
+        <>
+          <ToggleRow
+            Icon={Bell}
+            label={t("settings_notifications")}
+            description="Push delivery is not connected yet."
+            checked={false}
+            disabled
+          />
+          <ToggleRow
+            Icon={Volume2}
+            label={t("settings_sound")}
+            description="Game sound effects are not connected yet."
+            checked={false}
+            disabled
+          />
+          <ToggleRow
+            Icon={Music}
+            label={t("settings_music")}
+            description="Ambient game music"
+            checked={settings.music}
+            onChange={() => save({ music: !settings.music })}
+          />
+          {/* Upright the four language buttons take a line of their own:
+              they are 40px each and will not share a row with the label at
+              390px, which is how the board draws them. */}
+          <div className="srow" style={phone ? { flexWrap: "wrap", rowGap: 12 } : undefined}>
+            <span className="ri" aria-hidden="true"><Languages /></span>
+            <span className="tx">
+              <b>{t("settings_language")}</b>
+              <span>
+                {phone && settings.language === "dv"
+                  ? "Dhivehi lays the app out right to left."
+                  : "App language"}
+              </span>
+            </span>
+            <div className="langs" role="group" aria-label={t("settings_language")}
+              style={phone ? { flex: "1 0 100%" } : undefined}>
+              {LANGUAGES.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={code === "dv" ? "dv" : undefined}
+                  lang={code}
+                  aria-pressed={settings.language === code}
+                  onClick={() => save({ language: code })}
+                  data-flat
+                >
+                  {LANGUAGE_NAMES[code]}
+                </button>
+              ))}
+            </div>
+          </div>
+          {!phone && settings.language === "dv" && (
+            <p className="muted2 set-note">Dhivehi lays the app out right to left.</p>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "appearance", title: "Appearance", Icon: Palette,
+      body: (
+        <>
+          <div className="srow">
+            <span className="ri" aria-hidden="true"><Moon /></span>
+            <span className="tx"><b>Theme</b><span>Thaasbai Dark</span></span>
+            <span className="stat2">Dark</span>
+          </div>
+          <div className="srow">
+            <span className="ri" aria-hidden="true"><Activity /></span>
+            <span className="tx"><b>Reduced Motion</b><span>Follows your device accessibility preference.</span></span>
+            <span className="stat2">System</span>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: "account", title: "Account", Icon: User,
+      body: (
+        <>
+          {isAdminEmail(user?.email) && (
+            <LinkRow Icon={LayoutDashboard} title="Admin Panel" description="Manage the app" href="/admin" />
+          )}
+          <LinkRow Icon={Pencil} title="Username & Profile" description="Display name and avatar" href="/profile" />
+          <div className="srow">
+            <span className="ri" aria-hidden="true"><BadgeCheck /></span>
+            <span className="tx">
+              <b>{isGuest ? "Guest Session" : "Signed-in Account"}</b>
+              <span>{isGuest ? "Sign in to keep your progress." : maskedEmail || user?.displayName || "Player"}</span>
+            </span>
+            {!isGuest && <RankLabel tier={tier} />}
+          </div>
+        </>
+      ),
+    },
+    {
+      id: "privacy", title: "Privacy & Security", Icon: Shield, tone: "l" as const,
+      body: (
+        <>
+          <div className="srow">
+            <span className="ri" aria-hidden="true"><Smartphone /></span>
+            <span className="tx">
+              <b>Device Preferences</b>
+              <span>Music and language preferences are stored in this browser.</span>
+            </span>
+          </div>
+          <div className="srow set-blocked" style={phone ? { alignItems: "flex-start", paddingTop: 14 } : undefined}>
+            <span className="ri" aria-hidden="true"><Ban /></span>
+            <span className="tx">
+              <b>Blocked Players</b>
+              <span>Blocked players cannot message you, and you will not see their messages.</span>
+              <BlockedPlayers phone={phone} />
+            </span>
+          </div>
+          <LinkRow
+            Icon={Lock}
+            title="Privacy Policy"
+            description="What we collect, why, and how to have it removed."
+            href="/privacy"
+          />
+          <LinkRow
+            Icon={Flag}
+            title="Terms of Service"
+            description="Account rules, coins, and fair play."
+            href="/terms"
+          />
+          <p className="muted2 set-note" style={phone ? { margin: "12px 2px 0", fontSize: 12.5, lineHeight: 1.5 } : undefined}>
+            Account deletion and data export are handled by request — see the Privacy Policy for how
+            to ask. Two-factor authentication is not available in the app yet.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "help", title: "Help & Support", Icon: HelpCircle,
+      body: FAQS.map(({ q, a }) => (
+        <details className="set-faq" key={q}>
+          <summary className="faq">{q}<ChevronDown aria-hidden="true" /></summary>
+          <p className="muted">{a}</p>
+        </details>
+      )),
+    },
+  ];
+
+  if (phone) {
+    return (
+      <PhoneSettings
+        title={t("settings_title")}
+        categories={CATEGORIES}
+        active={active}
+        onCategory={focusSection}
+        sections={sections}
+      />
+    );
+  }
 
   return (
     <div className="arena-settings ar-page set-page">
@@ -175,122 +346,9 @@ export default function SettingsPage() {
       </aside>
 
       <div className="set-main">
-        <Section id="preferences" title="Game Preferences" Icon={Gamepad2} tone="l">
-          <ToggleRow
-            Icon={Bell}
-            label={t("settings_notifications")}
-            description="Push delivery is not connected yet."
-            checked={false}
-            disabled
-          />
-          <ToggleRow
-            Icon={Volume2}
-            label={t("settings_sound")}
-            description="Game sound effects are not connected yet."
-            checked={false}
-            disabled
-          />
-          <ToggleRow
-            Icon={Music}
-            label={t("settings_music")}
-            description="Ambient game music"
-            checked={settings.music}
-            onChange={() => save({ music: !settings.music })}
-          />
-          <div className="srow">
-            <span className="ri" aria-hidden="true"><Languages /></span>
-            <span className="tx"><b>{t("settings_language")}</b><span>App language</span></span>
-            <div className="langs" role="group" aria-label={t("settings_language")}>
-              {LANGUAGES.map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  className={code === "dv" ? "dv" : undefined}
-                  lang={code}
-                  aria-pressed={settings.language === code}
-                  onClick={() => save({ language: code })}
-                  data-flat
-                >
-                  {LANGUAGE_NAMES[code]}
-                </button>
-              ))}
-            </div>
-          </div>
-          {settings.language === "dv" && (
-            <p className="muted2 set-note">Dhivehi lays the app out right to left.</p>
-          )}
-        </Section>
-
-        <Section id="appearance" title="Appearance" Icon={Palette}>
-          <div className="srow">
-            <span className="ri" aria-hidden="true"><Moon /></span>
-            <span className="tx"><b>Theme</b><span>Thaasbai Dark</span></span>
-            <span className="stat2">Dark</span>
-          </div>
-          <div className="srow">
-            <span className="ri" aria-hidden="true"><Activity /></span>
-            <span className="tx"><b>Reduced Motion</b><span>Follows your device accessibility preference.</span></span>
-            <span className="stat2">System</span>
-          </div>
-        </Section>
-
-        <Section id="account" title="Account" Icon={User}>
-          {isAdminEmail(user?.email) && (
-            <LinkRow Icon={LayoutDashboard} title="Admin Panel" description="Manage the app" href="/admin" />
-          )}
-          <LinkRow Icon={Pencil} title="Username & Profile" description="Display name and avatar" href="/profile" />
-          <div className="srow">
-            <span className="ri" aria-hidden="true"><BadgeCheck /></span>
-            <span className="tx">
-              <b>{isGuest ? "Guest Session" : "Signed-in Account"}</b>
-              <span>{isGuest ? "Sign in to keep your progress." : maskedEmail || user?.displayName || "Player"}</span>
-            </span>
-            {!isGuest && <RankLabel tier={tier} />}
-          </div>
-        </Section>
-
-        <Section id="privacy" title="Privacy & Security" Icon={Shield} tone="l">
-          <div className="srow">
-            <span className="ri" aria-hidden="true"><Smartphone /></span>
-            <span className="tx">
-              <b>Device Preferences</b>
-              <span>Music and language preferences are stored in this browser.</span>
-            </span>
-          </div>
-          <div className="srow set-blocked">
-            <span className="ri" aria-hidden="true"><Ban /></span>
-            <span className="tx">
-              <b>Blocked Players</b>
-              <span>Blocked players cannot message you, and you will not see their messages.</span>
-              <BlockedPlayers />
-            </span>
-          </div>
-          <LinkRow
-            Icon={Lock}
-            title="Privacy Policy"
-            description="What we collect, why, and how to have it removed."
-            href="/privacy"
-          />
-          <LinkRow
-            Icon={Flag}
-            title="Terms of Service"
-            description="Account rules, coins, and fair play."
-            href="/terms"
-          />
-          <p className="muted2 set-note">
-            Account deletion and data export are handled by request — see the Privacy Policy for how
-            to ask. Two-factor authentication is not available in the app yet.
-          </p>
-        </Section>
-
-        <Section id="help" title="Help & Support" Icon={HelpCircle}>
-          {FAQS.map(({ q, a }) => (
-            <details className="set-faq" key={q}>
-              <summary className="faq">{q}<ChevronDown aria-hidden="true" /></summary>
-              <p className="muted">{a}</p>
-            </details>
-          ))}
-        </Section>
+        {sections.map(({ id, title: heading, Icon, tone, body }) => (
+          <Section key={id} id={id} title={heading} Icon={Icon} tone={tone}>{body}</Section>
+        ))}
 
         <LogoutBar />
       </div>

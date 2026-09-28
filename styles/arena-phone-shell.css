@@ -167,6 +167,14 @@
     margin-block: auto;
   }
 
+  /* ── Settings' chip row (MSettings) ────────────────────────────────
+     The chips scroll to a section rather than swapping panels, as the
+     rail does on the wide screen. The top bar is fixed here, so a
+     section scrolled to `block: start` would land under it. */
+  .arena-msettings .sec2 {
+    scroll-margin-top: calc(72px + env(safe-area-inset-top));
+  }
+
   /* The rail is the sideways shape only. */
   .arena-phone .mrail { display: none; }
 }
