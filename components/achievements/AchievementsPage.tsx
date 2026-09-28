@@ -11,6 +11,7 @@ import {
   type AchievementCategoryId,
 } from "@/lib/achievements";
 import { AchievementRow } from "./AchievementRow";
+import { PhoneAchievements } from "./phone/PhoneAchievements";
 
 /**
  * Achievements — design/arena/screens/app/app-08-achievements.jpg, from the
@@ -76,7 +77,31 @@ export default function AchievementsPage() {
 
   const shown = category === "all" ? resolved : resolved.filter((a) => a.category === category);
 
+  const chipList = ACHIEVEMENT_CATEGORIES.map(({ id, labelKey }) => {
+    const tally = id === "all" ? { done: completed, all: total } : counts.get(id) ?? { done: 0, all: 0 };
+    return {
+      id,
+      label: t(labelKey),
+      Icon: CATEGORY_ICONS[id as keyof typeof CATEGORY_ICONS] ?? Grid2X2,
+      done: tally.done,
+      all: tally.all,
+    };
+  });
+
   return (
+    <>
+    <div className="portrait-view">
+      <PhoneAchievements
+        title={t("page_achievements")}
+        completed={completed}
+        total={total}
+        categories={chipList}
+        category={category}
+        onCategory={(id) => setCategory(id as AchievementCategoryId)}
+        shown={shown}
+      />
+    </div>
+    <div className="landscape-view">
     <div className="arena-achievements ar-page ach-page">
       <aside className="ach-side">
         <div>
@@ -144,5 +169,7 @@ export default function AchievementsPage() {
           ))}
       </section>
     </div>
+    </div>
+    </>
   );
 }
