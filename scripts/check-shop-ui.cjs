@@ -43,7 +43,9 @@ async function run() {
     await page.route('**/shop-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -178,7 +180,9 @@ async function run() {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     // ── Accessibility ───────────────────────────────────────────────────
-    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
+    // Two are in the DOM - the wide screen's and MShop's - and CSS
+    // hides one; the accessibility tree must only see the one on screen.
     const unlabelled = await page.locator('button').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
@@ -186,7 +190,34 @@ async function run() {
     assert.equal(await page.locator('input[aria-label="Search cosmetics"]').count(), 0, 'Search is on the Permanent tab');
 
     assert.deepEqual(errors, []);
-    console.log('Shop: board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero and plan pick, pending top-up, seven widths and accessibility passed.');
+    // ── Held upright: MShop, MShopBuy, MShopShort ───────────────────────
+    // MShop is this screen's own column - same balance strip, same tabs,
+    // same VIP strip, same sections in the same order - so only the two
+    // grids narrow to two columns and the purchase confirm becomes a bottom
+    // sheet. MShopBuy and MShopShort are that sheet in its two states, and
+    // their stylesheets came out byte-identical to MShop's because they are
+    // MShop with it open.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(350);
+    assert.equal(await page.locator('.shop-grid').count(), 0, 'The six-across grid steps aside');
+    assert.ok(await page.locator('.item').count() > 0, 'and the items are still here');
+    assert.equal(await page.locator('.bal').count(), 1, 'The balance strip stays');
+    // The buy confirm is a sheet, not a dialog element.
+    await page.locator('.item .buy').first().click();
+    await page.getByRole('dialog').waitFor();
+    assert.equal(await page.locator('dialog.dlg[open]').count(), 0, 'No <dialog> at this size');
+    const sheet = await page.getByRole('dialog').innerText();
+    assert.ok(sheet.includes('Price'), 'The sheet keeps the price row');
+    assert.ok(sheet.includes('Current balance'), 'the balance row');
+    assert.ok(sheet.includes('Cancel'), 'and a way out');
+    await page.screenshot({ path: path.join(output, 'mshopbuy-390.png') });
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getByRole('dialog').count(), 0, 'Escape closes it');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'mshop-390.png'), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    console.log('Shop: MShop, MShopBuy and MShopShort held upright, board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero and plan pick, pending top-up, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -90,7 +90,7 @@ export function ShopItemCard({
  * sticker. Nothing here is an image file - `/public/cosmetics/*` does not
  * exist (APP_SCREENS.md, "Card-back art").
  */
-function ShopArt({ item, initial }: { item: CosmeticItem; initial: string }) {
+export function ShopArt({ item, initial }: { item: CosmeticItem; initial: string }) {
   if (item.category === "cardBack") {
     return <CardBackArt id={item.id} width={101} style={{ transform: "rotate(-6deg)" }} />;
   }

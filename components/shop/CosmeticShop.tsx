@@ -14,6 +14,7 @@ import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '@/lib/coinTop
 import { Pill, CoinGem, Meter } from '@/components/arena';
 import { ShopItemCard } from './ShopItemCard';
 import { ShopItemDialog } from './ShopItemDialog';
+import { usePhonePortrait } from "@/hooks/usePhonePortrait";
 import { CoinPackCard } from './StoreCoinPacks';
 import { CoinPackRow } from './CoinPackRow';
 import { VipPanel } from '@/components/vip/VipPanel';
@@ -58,6 +59,12 @@ export default function CosmeticShop() {
   const t = useTranslation();
   const { showToast } = useToast();
   const initial = (user?.displayName ?? 'S').charAt(0).toUpperCase();
+  /* MShop is the wide screen's own column - same `.bal`, same `.tabs`, same
+     `.vipstrip`, same sections in the same order - so only three things
+     change at 390px: the two grids drop to two columns, and the purchase
+     confirm becomes a bottom sheet (MShopBuy / MShopShort). */
+  const phone = usePhonePortrait();
+  const twoUp = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' } as const;
 
   useEffect(() => {
     if (!user?.uid || isGuest) return;
@@ -242,7 +249,9 @@ export default function CosmeticShop() {
           </div>
           {featuredItems.length === 0
             ? <p className="muted">No featured items right now. Check back after the next rotation.</p>
-            : <div className="shop-grid">{featuredItems.map(item => itemCard(item, true))}</div>}
+            : <div className={phone ? undefined : 'shop-grid'} style={phone ? twoUp : undefined}>
+                {featuredItems.map(item => itemCard(item, true))}
+              </div>}
         </section>
       )}
 
@@ -283,7 +292,9 @@ export default function CosmeticShop() {
           </div>
           {permanentItems.length === 0
             ? <p className="muted">{t('inventory_nothingHere')}</p>
-            : <div className="shop-grid">{permanentItems.map(item => itemCard(item))}</div>}
+            : <div className={phone ? undefined : 'shop-grid'} style={phone ? twoUp : undefined}>
+                {permanentItems.map(item => itemCard(item))}
+              </div>}
         </section>
       )}
 
@@ -343,7 +354,7 @@ export default function CosmeticShop() {
           )}
 
           {activeTab === 'featured' ? (
-            <div className="pack-grid">
+            <div className={phone ? undefined : 'pack-grid'} style={phone ? { ...twoUp, rowGap: '18px' } : undefined}>
               {COIN_PACKS.slice(0, 4).map((pack, index) => (
                 <CoinPackCard
                   key={pack.id}
@@ -385,6 +396,8 @@ export default function CosmeticShop() {
           onBuy={() => confirmPurchase(selectedItem)}
           onEquip={() => { handleEquip(selectedItem); setSelectedItem(null); }}
           onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }}
+          phone={phone}
+          initial={initial}
         />
       )}
     </div>
