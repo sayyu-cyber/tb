@@ -36,7 +36,7 @@ function MissionIcon({ mission, done }: { mission: DailyMission | WeeklyMission;
   return <Gamepad2 />;
 }
 
-function MissionRow({ mission, tone }: { mission: DailyMission | WeeklyMission; tone: "lime" | "blue" }) {
+function MissionRow({ mission, tone, phone = false }: { mission: DailyMission | WeeklyMission; tone: "lime" | "blue"; phone?: boolean }) {
   const done = mission.completed;
   const target = Math.max(1, mission.target);
   const progress = Math.max(0, Math.min(target, mission.progress));
@@ -47,73 +47,106 @@ function MissionRow({ mission, tone }: { mission: DailyMission | WeeklyMission; 
     : cosmeticId?.startsWith("bn_") ? "banner"
     : "";
 
+  const meter = (
+    <div className="pr">
+      <Meter
+        value={progress / target}
+        // A finished mission reads lime; one still running reads blue,
+        // which is the board's own rule for "in progress".
+        tone={done ? "lime" : tone}
+        thin
+        label={mission.title}
+        valueText={`${progress} of ${target}`}
+      />
+      <span className="tnum">{progress} / {target}</span>
+    </div>
+  );
+
   return (
     <div className={`mis ${done ? "done" : ""}`.trim()}>
       <span className="mi" aria-hidden="true"><MissionIcon mission={mission} done={done} /></span>
       <div style={{ minWidth: 0 }}>
         <h3>{mission.title}</h3>
         <p>{mission.description}</p>
-        <div className="pr">
-          <Meter
-            value={progress / target}
-            // A finished mission reads lime; one still running reads blue,
-            // which is the board's own rule for "in progress".
-            tone={done ? "lime" : tone}
-            thin
-            label={mission.title}
-            valueText={`${progress} of ${target}`}
-          />
-          <span className="tnum">{progress} / {target}</span>
-        </div>
+        {/* The wide row keeps the meter under the description, inside the
+            middle column. MRewards moves it out to its own line across
+            columns 2-4, because 390px leaves the description no room to
+            share with a bar. Same three children either way. */}
+        {!phone && meter}
       </div>
       <div className="rw">
         <b><CoinGem small />{mission.reward.toLocaleString()}</b>
         {cosmetic && <small>+ {cosmetic}{suffix ? ` ${suffix}` : ""}</small>}
       </div>
+      {phone && meter}
     </div>
   );
 }
 
-export default function MissionsPanel() {
+/**
+ * Held upright the two panels stack and shrink to MRewards' own numbers -
+ * 14px padding, a 10px gap, "2/3 done" rather than "2/3 completed", and
+ * the dashed all-missions row at the board's 12px. Everything inside a
+ * panel is the same markup at both sizes.
+ */
+export default function MissionsPanel({ phone = false }: { phone?: boolean }) {
   const { state } = useEconomy();
   const { missions } = state;
   const t = useTranslation();
 
   const dailyCompleted = missions.daily.filter((mission) => mission.completed).length;
   const weeklyCompleted = missions.weekly.filter((mission) => mission.completed).length;
+  const done = phone ? "done" : "completed";
+  const panel = phone
+    ? { padding: "14px", display: "flex", flexDirection: "column", gap: "10px" } as const
+    : { padding: "20px", display: "flex", flexDirection: "column", gap: "12px" } as const;
 
   return (
-    <section className="mission-row">
-      <div className="panel tick" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+    <section className={phone ? undefined : "mission-row"}
+      style={phone ? { display: "flex", flexDirection: "column", gap: "20px" } : undefined}>
+      <div className="panel tick" style={panel}>
         <div className="ph">
           <div>
             <h2>{t("missions_dailyTitle")}</h2>
             <p className="muted2" style={{ margin: "6px 0 0" }}>{t("missions_dailyReset")}</p>
           </div>
-          <Pill tone="line">{dailyCompleted}/{missions.daily.length} completed</Pill>
+          <Pill tone="line">{dailyCompleted}/{missions.daily.length} {done}</Pill>
         </div>
         {missions.daily.map((mission) => (
-          <MissionRow key={mission.id} mission={mission} tone="blue" />
+          <MissionRow key={mission.id} mission={mission} tone="blue" phone={phone} />
         ))}
-        <div className="all-bonus">
-          <Gift aria-hidden="true" />
-          <span style={{ flexGrow: 1, fontSize: "14px", fontWeight: 600 }}>Complete all daily missions</span>
-          <b style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-display), sans-serif", fontSize: "16px" }}>
-            <CoinGem small />+{missions.dailyAllBonus} bonus
-          </b>
-        </div>
+        {phone ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: "10px", padding: "12px",
+            borderRadius: "12px", border: "1.5px dashed rgba(198,255,51,.4)",
+          }}>
+            <Gift aria-hidden="true" style={{ flex: "none", width: 19, height: 19, color: "#C6FF33" }} />
+            <span style={{ flex: "1 1 0", fontSize: "13px", fontWeight: 600, lineHeight: 1.3 }}>Complete all daily missions</span>
+            <b style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-display), sans-serif", fontSize: "15px", whiteSpace: "nowrap" }}>
+              <CoinGem small />+{missions.dailyAllBonus} bonus
+            </b>
+          </div>
+        ) : (
+          <div className="all-bonus">
+            <Gift aria-hidden="true" />
+            <span style={{ flexGrow: 1, fontSize: "14px", fontWeight: 600 }}>Complete all daily missions</span>
+            <b style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-display), sans-serif", fontSize: "16px" }}>
+              <CoinGem small />+{missions.dailyAllBonus} bonus
+            </b>
+          </div>
+        )}
       </div>
 
-      <div className="panel tick b" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div className="panel tick b" style={panel}>
         <div className="ph">
           <div>
             <h2>{t("missions_weeklyTitle")}</h2>
             <p className="muted2" style={{ margin: "6px 0 0" }}>{t("missions_weeklyReset")}</p>
           </div>
-          <Pill tone="line">{weeklyCompleted}/{missions.weekly.length} completed</Pill>
+          <Pill tone="line">{weeklyCompleted}/{missions.weekly.length} {done}</Pill>
         </div>
         {missions.weekly.map((mission) => (
-          <MissionRow key={mission.id} mission={mission} tone="blue" />
+          <MissionRow key={mission.id} mission={mission} tone="blue" phone={phone} />
         ))}
       </div>
     </section>

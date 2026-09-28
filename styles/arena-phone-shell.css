@@ -154,6 +154,19 @@
   body:has(.arena-mchat .chat) .mtab,
   body:has(.arena-mchat .chat) .mtop { display: none; }
 
+  /* ── The claim celebration (MRewards) ──────────────────────────────
+     The board pins `.cel` at `top: 190px` inside its own 844px viewport
+     box - roughly the middle of it, worked out per tap. On a real phone
+     the viewport is the phone, so it centres instead. `margin-block:auto`
+     between two zero insets rather than a translate, because `pop` ends
+     on `transform: none` and would wipe one out. */
+  .arena-mrewards .cel {
+    top: 0;
+    bottom: 0;
+    height: fit-content;
+    margin-block: auto;
+  }
+
   /* The rail is the sideways shape only. */
   .arena-phone .mrail { display: none; }
 }

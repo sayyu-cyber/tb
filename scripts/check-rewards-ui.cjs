@@ -103,6 +103,53 @@ async function run() {
     assert.equal(await page.locator('.mis').count(), 6, 'The same panels, not a second drawing of them');
     assert.equal(await page.locator('.day').count(), 0, 'and no login calendar');
 
+    // ── Held upright: MRewards ──────────────────────────────────────────
+    // design/arena/boards/MRewards.dc.html. The calendar's seven tiles go
+    // four to a row with Day 7 spanning two and lying on its side; the two
+    // mission panels stack and each row's meter drops to its own line. The
+    // claim celebration becomes the board's centred `.cel` over an
+    // `.mscrim`. What a day or a mission is worth is the wide screen's own
+    // working, checked above.
+    await page.goto(BASE + '/rewards-test/');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('heading', { name: 'Daily Rewards' }).waitFor();
+    assert.equal(await page.locator('.arena-rewards').count(), 0, 'The wide screen steps aside');
+    const phone = page.locator('.arena-mrewards');
+    assert.equal(await phone.isVisible(), true, 'and MRewards takes over');
+    assert.equal(await phone.locator('.days > .day').count(), 7, 'Seven tiles in the four-column grid');
+    assert.equal(await phone.locator('.day.big .col').count(), 1, 'Day 7 lies on its side');
+    assert.equal(await phone.locator('.day.claimed').count(), 5, 'Five claimed');
+    assert.equal(await phone.locator('.day.today').count(), 1, 'One is today');
+    assert.equal(await phone.locator('.mis').count(), 6, 'Both mission panels, stacked');
+    assert.equal(
+      await phone.locator('.mis').first().evaluate(node => node.lastElementChild.className),
+      'pr', 'and each row ends with its meter on its own line');
+    // No tile promises a bonus it does not give, and none reserves a blank
+    // line for one it has not got.
+    assert.deepEqual(
+      (await phone.locator('.day .bonus').allTextContents()).map(text => text.trim()),
+      ['+ GG Sticker', '+ Maldives Wave banner', '+ 1-Hour Room Card'],
+      'Only the three days with a bonus draw a bonus line');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'mrewards-390.png'), fullPage: true });
+
+    // The celebration, centred rather than pinned at the board's 190px.
+    await phone.locator('.day.today').click();
+    await page.locator('.cel').waitFor();
+    const cel = await page.getByRole('dialog').innerText();
+    assert.ok(cel.includes('Day 6 Claimed!') && cel.includes('+150 Coins'), 'It says what was claimed');
+    assert.equal(await page.locator('.mscrim').count(), 1, 'over the phone scrim');
+    await page.screenshot({ path: path.join(output, 'mrewards-claimed-390.png') });
+    await page.getByRole('button', { name: 'Continue' }).click();
+    assert.equal(await page.getByRole('dialog').count(), 0, 'and Continue closes it');
+
+    // Missions upright: the same two panels, no calendar.
+    await page.goto(BASE + '/rewards-test/?missions');
+    await page.getByRole('heading', { name: 'Missions' }).waitFor();
+    assert.equal(await page.locator('.arena-mrewards .mis').count(), 6, 'The same panels held upright');
+    assert.equal(await page.locator('.day').count(), 0, 'and no login calendar');
+    await page.setViewportSize({ width: 1440, height: 900 });
+
     // ── Widths ──────────────────────────────────────────────────────────
     await page.goto(BASE + '/rewards-test/');
     await page.getByRole('heading', { name: 'Daily Rewards' }).waitFor();
@@ -134,7 +181,7 @@ async function run() {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
 
     assert.deepEqual(errors, []);
-    console.log('Rewards: seven tiles and their states, named bonuses (code issue 7), the claim popup incl. end of cycle, six missions with catalogue-named rewards, Missions on its own route, seven widths, accessibility and reduced motion passed.');
+    console.log('Rewards: seven tiles and their states, named bonuses (code issue 7), the claim popup incl. end of cycle, six missions with catalogue-named rewards, Missions on its own route, MRewards held upright with its four-column grid and centred celebration, seven widths, accessibility and reduced motion passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

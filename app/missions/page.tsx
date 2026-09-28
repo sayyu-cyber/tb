@@ -2,6 +2,8 @@
 
 import MissionsPanel from "@/components/missions/MissionsPanel";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { PhoneRewards } from "@/components/rewards/phone/PhoneRewards";
 
 /**
  * Missions — design/arena/screens/app/app-13-rewards-missions.jpg.
@@ -12,6 +14,14 @@ import { useTranslation } from "@/hooks/useTranslation";
  */
 export default function MissionsPage() {
   const t = useTranslation();
+  const phone = usePhonePortrait();
+
+  // Same arrangement as Daily Rewards held upright, minus the login
+  // calendar and the streak chip, which belong to that route.
+  if (phone) {
+    return <PhoneRewards title={t("page_missions")} lede="Daily and weekly goals" missionsOnly />;
+  }
+
   return (
     <div className="arena-rewards ar-page" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div className="phead">

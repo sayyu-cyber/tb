@@ -18,12 +18,17 @@ export type PillProps = {
   icon?: ReactNode;
   className?: string;
   title?: string;
+  /**
+   * Inline size, for the boards that draw one chip smaller than the sheet's
+   * own - MRewards' 22px Claim chip inside a four-column tile.
+   */
+  style?: React.CSSProperties;
 };
 
-export function Pill({ children, tone = "dim", live = false, icon, className = "", title }: PillProps) {
+export function Pill({ children, tone = "dim", live = false, icon, className = "", title, style }: PillProps) {
   const classes = ["pill", tone, live && "live", className].filter(Boolean).join(" ");
   return (
-    <span className={classes} title={title}>
+    <span className={classes} title={title} style={style}>
       {icon}
       {children}
     </span>
