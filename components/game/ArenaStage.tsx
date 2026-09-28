@@ -18,6 +18,15 @@ import { cn } from "@/lib/utils";
  * The scale has to be computed in JS: CSS `calc()` cannot divide a length by
  * a length, so there is no pure-CSS way to express "the smaller of vw/1440
  * and vh/900" as a unitless factor.
+ *
+ * WHAT "FITS" MEANS ON A PHONE (design/arena/MOBILE.md "Tables fit what is
+ * visible"). A fixed element's `inset: 0` covers the LAYOUT viewport, and on
+ * a phone browser that is taller than what you can see: the URL bar and the
+ * toolbar sit over the bottom of it. Scaling to that would push the hand and
+ * the action button - the two things MOBILE.md says must never be cropped -
+ * under the browser's own chrome. So the frame takes its height from
+ * `visualViewport` where there is one, `100dvh` where there isn't, and the
+ * board is scaled to what is actually on screen.
  */
 export function ArenaStage({
   width = 1440,
@@ -49,6 +58,23 @@ export function ArenaStage({
     observer.observe(element);
     return () => observer.disconnect();
   }, [width, height]);
+
+  // The visible height, which on a phone browser is not the layout height.
+  // Written as a custom property so the ResizeObserver above re-measures off
+  // the frame's own box and one number drives both.
+  useEffect(() => {
+    const element = frame.current;
+    const view = typeof window === "undefined" ? null : window.visualViewport;
+    if (!element || !view) return;
+    const apply = () => element.style.setProperty("--arena-vh", `${view.height}px`);
+    apply();
+    view.addEventListener("resize", apply);
+    view.addEventListener("scroll", apply);
+    return () => {
+      view.removeEventListener("resize", apply);
+      view.removeEventListener("scroll", apply);
+    };
+  }, []);
 
   return (
     <div ref={frame} className="arena-frame">

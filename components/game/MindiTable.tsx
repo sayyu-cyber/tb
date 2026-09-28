@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Card, Suit, SeatIndex, Team, TrickPlay, CompletedTrick,
+  Card, Suit, SeatIndex, Team, TrickPlay, CompletedTrick, TenCapture,
   cardId, rankLabel, resolveTrick, trumpAfterTrick, teamOf, isTen,
 } from "@/lib/mindiEngine";
 import { ArenaSeatData } from "./GameArena";
@@ -17,6 +17,8 @@ import { ArenaStage } from "./ArenaStage";
 import { ArenaSprite, Suit as SuitGlyph, Icon } from "./ArenaSprite";
 import { ArenaFace, ArenaBack } from "./ArenaCard";
 import { Music } from "lucide-react";
+import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { PhoneMindiBoard } from "./phone/PhoneMindiBoard";
 
 /**
  * The Mindi table, built to design/arena/boards/Main.dc.html.
@@ -43,6 +45,12 @@ interface Props {
   tens:Record<Team,number>; tricks:Record<Team,number>; mode:string; tableSkin?:string; online?:boolean;
   onPlay:(card:Card)=>void|Promise<void>; onLeave?:()=>void|Promise<void>;
   lastTrick?:CompletedTrick|null;
+  /* Every Ten taken so far, in order. The desktop board's rack only has room
+     for a count, but PMindi draws each Ten's own suit, so the phone
+     composition needs the list rather than the total. Optional because a
+     client that does not track it still gets a working table - the rack just
+     shows nothing rather than four spades that were never taken. */
+  tenCaptures?:TenCapture[];
 }
 
 /** Felt colours, keyed by the table-theme cosmetic (data/cosmetics.ts). */
@@ -70,6 +78,7 @@ const TRICK_SPOT = [
 
 export function MindiTable(p:Props) {
   const router=useRouter();
+  const phone=usePhoneTable();
   const {settings,updateSettings}=useSettings();
   const t=useTranslation();
   const [selected,setSelected]=useState<string|null>(null);
@@ -243,6 +252,62 @@ export function MindiTable(p:Props) {
     onLeave:askToLeave,
   });
 
+  /* PMindi prints one short line mid-table, and the board's is the tap hint
+     rather than the turn status - the turn status is in the chip bottom-left.
+     Short because `.hint` is nowrap and the desktop's full sentence does not
+     fit at 844px wide. */
+  const phoneHint=!p.active
+    ? complete?"Resolving the trick":`Waiting for ${waitingOn?.name??"the next player"}`
+    : chosen
+      ? canPlay?`Tap the ${rankLabel(chosen.rank)} again to play it`:"That card cannot follow"
+      : "Tap a card to pick it";
+
+  /* The rules, settings and leave-confirm dialog. Declared once and rendered
+     by both compositions - it is a <dialog> in the top layer, so it sits over
+     the table whichever picture is underneath, and the phone never needed a
+     second copy of the leave flow. */
+  const dialogs = <>
+  {modal&&<dialog ref={dialog} className={"gin-dialog"+(modal==="rules"?" rule-book-dialog":"")} aria-labelledby="mindi-dialog-title"
+    onCancel={e=>{if(busy)e.preventDefault();else setModal(null);}}>
+    <header><h2 id="mindi-dialog-title">{modal==="leave"?"Leave game?":modal==="rules"?"Mindi rule book":modal==="info"?"Game Info":"Game Settings"}</h2>
+      <button type="button" className="ibtn" aria-label="Close dialog" disabled={busy} onClick={()=>setModal(null)} style={{width:40,height:40}}><Icon name="i-close"/></button></header>
+    {modal==="rules"?<RuleBook game="mindi"/>
+      :modal==="settings"?<SettingToggle icon={Music} label="Background Music" enabled={settings.music}
+          onChange={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}/>
+      :<><p>{p.online?"Leaving forfeits this match.":"Your current hand will be lost."}</p>
+        <footer>
+          <button type="button" className="btn sm blue" disabled={busy} onClick={()=>setModal(null)}>Cancel</button>
+          {/* The board has no destructive variant, so this one comes from
+              the app's own recipe in styles/arena.css rather than being
+              invented on the board's .btn. */}
+          <button type="button" className="ar-btn sm danger" disabled={busy}
+            onClick={()=>run(async()=>{await p.onLeave?.();router.push("/play");})}>Leave game</button>
+        </footer></>}
+    {error&&<p role="alert">{error}</p>}
+  </dialog>}
+  </>;
+
+  /* Sideways on a phone the table is PMindi, an 844x390 composition of its
+     own - see components/game/phone/PhoneMindiBoard.tsx. Everything above
+     this line is shared: the same selection, the same legal cards, the same
+     double-tap, the same leave confirm. Only the picture below differs. */
+  if (phone) return <>
+    <PhoneMindiBoard
+      hand={displayedHand} legal={legal} selected={selected} viewer={p.viewer}
+      top={p.top} left={p.left} right={p.right}
+      you={{name:p.name,cards:p.hand.length}}
+      active={p.active} trump={effectiveTrump} trick={p.trick} winner={winner}
+      tens={{us:tensUs,them:tensThem}} tricks={{us:p.tricks[team],them:p.tricks[other]}}
+      tenSuits={{us:capturedSuits(p.tenCaptures,team),them:capturedSuits(p.tenCaptures,other)}}
+      hint={phoneHint} actionLabel={chosen?`Play ${rankLabel(chosen.rank)}`:"Pick a card"}
+      tableSkin={p.tableSkin} canPlay={canPlay}
+      onActivate={activateCard}
+      onPlay={()=>{if(canPlay&&chosen)run(async()=>{await p.onPlay(chosen);setSelected(null);});}}
+      onLeave={askToLeave} onMenu={()=>setModal("settings")}
+    />
+    {dialogs}
+  </>;
+
   return <ArenaStage className="arena-mindi">
     <div className="ar" style={{position:"relative",width:1440,height:900,overflow:"hidden",background:"#000"}}>
       <ArenaSprite/>
@@ -408,24 +473,7 @@ export function MindiTable(p:Props) {
       {error&&<p role="alert" style={{position:"absolute",left:36,bottom:12,color:"#FF6B7F",fontSize:13}}>{error}</p>}
     </div>
 
-    {modal&&<dialog ref={dialog} className={"gin-dialog"+(modal==="rules"?" rule-book-dialog":"")} aria-labelledby="mindi-dialog-title"
-      onCancel={e=>{if(busy)e.preventDefault();else setModal(null);}}>
-      <header><h2 id="mindi-dialog-title">{modal==="leave"?"Leave game?":modal==="rules"?"Mindi rule book":modal==="info"?"Game Info":"Game Settings"}</h2>
-        <button type="button" className="ibtn" aria-label="Close dialog" disabled={busy} onClick={()=>setModal(null)} style={{width:40,height:40}}><Icon name="i-close"/></button></header>
-      {modal==="rules"?<RuleBook game="mindi"/>
-        :modal==="settings"?<SettingToggle icon={Music} label="Background Music" enabled={settings.music}
-            onChange={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}/>
-        :<><p>{p.online?"Leaving forfeits this match.":"Your current hand will be lost."}</p>
-          <footer>
-            <button type="button" className="btn sm blue" disabled={busy} onClick={()=>setModal(null)}>Cancel</button>
-            {/* The board has no destructive variant, so this one comes from
-                the app's own recipe in styles/arena.css rather than being
-                invented on the board's .btn. */}
-            <button type="button" className="ar-btn sm danger" disabled={busy}
-              onClick={()=>run(async()=>{await p.onLeave?.();router.push("/play");})}>Leave game</button>
-          </footer></>}
-      {error&&<p role="alert">{error}</p>}
-    </dialog>}
+    {dialogs}
   </ArenaStage>;
 }
 
@@ -463,6 +511,15 @@ function TensRow({label,tens,tricks,them,keys}:{label:string;tens:number;tricks:
 }
 
 const SUIT_NAMES: Record<string,string> = { S:"Spades", H:"Hearts", D:"Diamonds", C:"Clubs" };
+
+/**
+ * The suits of the Tens one side has taken, in the order they were taken.
+ * PMindi's rack draws each Ten's own suit rather than a count, so it needs
+ * the list; without one it draws nothing, which is honest.
+ */
+function capturedSuits(captures:TenCapture[]|undefined,team:Team):Suit[] {
+  return (captures??[]).filter(ten=>ten.team===team).sort((a,b)=>a.trick-b.trick).map(ten=>ten.suit);
+}
 function suitName(letter:string) { return SUIT_NAMES[letter] ?? letter; }
 
 function nameForSeat(p:Props,seat:SeatIndex,duel:boolean) {

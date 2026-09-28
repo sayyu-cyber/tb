@@ -223,8 +223,37 @@ async function run() {
     await page.locator('.mindi-trump[data-set=true]').waitFor();
     assert.equal(await page.locator('.mindi-trump').getAttribute('aria-label'),'Trump: hearts');
     assert.equal(await page.locator('.mindi-trump button').count(),0,'Trump is a read-only match state');
+    // ---- held sideways: PMindi (design/arena/boards/PMindi.dc.html) ------
+    // A different artboard, not this one shrunk: the score rack and trump
+    // become two bars along the top, the seats become chips on the edges and
+    // the hand runs across the middle. `pointer: coarse` needs a touch
+    // context, so this runs in one of its own.
+    const touch = await browser.newContext({viewport:{width:844,height:390},hasTouch:true});
+    const phone = await touch.newPage();
+    const touchErrors = []; phone.on('pageerror',e=>{touchErrors.push(e.message);console.error(e.message);});
+    await phone.route('**/mindi-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div class="arena-app arena-phone app-shell app-shell-match"><div id="test-root"></div></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+    await phone.goto('http://127.0.0.1:3000/mindi-test/?online');
+    const board = phone.locator('.arena-pmindi');
+    await board.waitFor();
+    assert.equal(await phone.locator('.arena-mindi').count(),0,'The wide board steps aside');
+    assert.equal(await board.locator('.apron').count(),8,"The board's eight aprons");
+    assert.ok(await board.locator('.hc').count()>0,'and your hand is here');
+    assert.ok((await board.innerText()).toUpperCase().includes('TRUMP'),'with the trump badge');
+    assert.ok((await board.innerText()).toUpperCase().includes('TRICKS'),'and the trick count');
+    // Scaled to the visible viewport: nothing, least of all the hand or the
+    // action button, may hang off the screen (design/arena/MOBILE.md).
+    for(const selector of ['.hc','.ar-btn','.who','.bar']) {
+      assert.ok(await board.locator(selector).evaluateAll(nodes=>nodes.every(n=>{
+        const r=n.getBoundingClientRect();
+        return r.left>=-1&&r.right<=innerWidth+1&&r.top>=-1&&r.bottom<=innerHeight+1;
+      })),'Clipped '+selector+' sideways');
+    }
+    await phone.screenshot({path:path.join(output,'pmindi-844.png')});
+    assert.deepEqual(touchErrors,[],'No page errors sideways');
+    await touch.close();
+
     assert.deepEqual(errors,[]);
-    console.log('Mindi passed: six sizes, WebGL pixels and interactive lighting, context recovery, card bounds, dealing, real play/trick scoring, keyboard sorting, hidden hands, pass-device privacy, equipped skins, live trump, failed actions and dialogs.');
+    console.log('Mindi passed: six sizes, PMindi sideways with nothing clipped, WebGL pixels and interactive lighting, context recovery, card bounds, dealing, real play/trick scoring, keyboard sorting, hidden hands, pass-device privacy, equipped skins, live trump, failed actions and dialogs.');
   } finally { await browser.close(); }
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

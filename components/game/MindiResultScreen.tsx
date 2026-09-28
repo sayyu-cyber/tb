@@ -7,6 +7,8 @@ import { ArenaStage } from "./ArenaStage";
 import { ArenaSprite } from "./ArenaSprite";
 import { ArenaFace } from "./ArenaCard";
 import { RANKS, getRankFromTrophies } from "@/constants/ranks";
+import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { PhoneResultBoard } from "./phone/PhoneResultBoard";
 import type { HandOutcome, Team, TenCapture } from "@/lib/mindiEngine";
 
 /**
@@ -78,6 +80,7 @@ export function MindiResultScreen({
   trophyChange, trophiesAfter = null, coins, balance, winnerNames = [],
   onPlayAgain, playAgainHref = "/play",
 }: MindiResultScreenProps) {
+  const phone = usePhoneTable();
   const youWon = outcome.winner === myTeam;
   const theirTeam: Team = myTeam === "A" ? "B" : "A";
   const myTens = outcome.tensCaptured[myTeam];
@@ -108,6 +111,41 @@ export function MindiResultScreen({
   const barW = trophies === null ? 0
     : next ? Math.round(Math.min(1, Math.max(0, (trophies - floor) / (next.min - floor))) * 100)
     : 100;
+
+  /* Sideways on a phone this screen is PResult, an 844x390 composition of its
+     own - see components/game/phone/PhoneResultBoard.tsx. Every number and
+     every line of copy is worked out above and shared; only the picture
+     differs. */
+  if (phone) return (
+    <PhoneResultBoard
+      key={take}
+      modeLabel={modeLabel}
+      weekend={weekend}
+      headline={headline(outcome, youWon)}
+      subtitle={subtitle(outcome, youWon, myTens, theirTens, winnerNames)}
+      tens={tens}
+      mine={(ten) => ten.team === myTeam}
+      tagFor={(ten) => {
+        const ours = ten.team === myTeam;
+        const tag = numPlayers === 2 ? (ours ? "You" : "Them") : (ours ? "Us" : "Them");
+        return ten.trick === deciderTrick ? `${tag} · trick ${ten.trick}` : tag;
+      }}
+      tensLine={`${myTens} – ${theirTens}`}
+      tricksLine={`${myTricks} – ${theirTricks}`}
+      trophyChange={trophyChange}
+      barW={barW}
+      trophyLine={trophies === null
+        ? "Nothing at stake in this mode"
+        : next
+          ? `${tier} · ${trophies} · ${Math.max(0, next.min - trophies)} to ${next.name}`
+          : `${tier} · ${trophies} · top tier`}
+      coins={coins}
+      coinLine={`${youWon ? "Victory bonus" : "Consolation"} · ${balance.toLocaleString()}`}
+      onReplay={() => setTake((n) => n + 1)}
+      onPlayAgain={onPlayAgain}
+      playAgainHref={playAgainHref}
+    />
+  );
 
   return (
     <ArenaStage className="arena-result">

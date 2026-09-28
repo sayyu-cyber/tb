@@ -365,5 +365,6 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} active={isMyTurn}
     trump={state.trumpSuit} trick={state.trick} lastTrick={state.lastTrick} tens={state.tensCaptured} tricks={state.tricksWon}
     mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
-    tableSkin={activeTableTheme} online onPlay={handlePlayCard} onLeave={handleForfeit}/>;
+    tableSkin={activeTableTheme} tenCaptures={state.tenCaptures ?? []} online
+    onPlay={handlePlayCard} onLeave={handleForfeit}/>;
 }

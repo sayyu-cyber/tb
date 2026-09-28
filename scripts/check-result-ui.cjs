@@ -156,8 +156,43 @@ async function run() {
       await page.screenshot({ path: path.join(output, `result-${width}.png`) });
     }
 
+    // ── Held sideways: PResult ──────────────────────────────────────────
+    // design/arena/boards/PResult.dc.html. The headline and the four Tens
+    // down the left, the four numbers as a 2x2 grid on the right. The board
+    // does not draw the five-cell endings legend - there is nowhere to put
+    // it at 390px tall - so that is the one thing this composition omits.
+    // `pointer: coarse` needs a touch context of its own.
+    const touch = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true });
+    const phone = await touch.newPage();
+    const touchErrors = [];
+    phone.on('pageerror', e => { touchErrors.push(e.message); console.error(e.message); });
+    await phone.route('**/result-test/**', route => route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
+        + `<body class="${bodyClass || ''}"><div class="arena-app arena-phone app-shell app-shell-match">`
+        + `<main class="app-shell-main"><div id="test-root"></div></main></div>`
+        + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
+    }));
+    await phone.goto(BASE + '/result-test/');
+    const board = phone.locator('.arena-presult');
+    await board.waitFor();
+    assert.equal(await phone.locator('.arena-result').count(), 0, 'The wide board steps aside');
+    await phone.getByRole('heading', { name: 'You won the hand' }).waitFor();
+    assert.equal(await board.locator('.big').count(), 4, 'All four Tens are turned over');
+    assert.equal(await board.locator('.stat2').count(), 4, 'and all four numbers are here');
+    assert.equal(await board.locator('.end').count(), 0, 'The endings legend is not on this board');
+    for (const selector of ['.big', '.stat2', '.ar-btn']) {
+      assert.ok(await board.locator(selector).evaluateAll(nodes => nodes.every(n => {
+        const r = n.getBoundingClientRect();
+        return r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1;
+      })), 'Clipped ' + selector + ' sideways');
+    }
+    await phone.screenshot({ path: path.join(output, 'presult-844.png') });
+    assert.deepEqual(touchErrors, [], 'No page errors sideways');
+    await touch.close();
+
     assert.deepEqual(errors, [], 'No page errors');
-    console.log('✓ Mindi hand-over matches result-hand-won.jpg');
+    console.log('✓ Mindi hand-over matches result-hand-won.jpg and PResult sideways');
   } finally {
     await browser.close();
   }

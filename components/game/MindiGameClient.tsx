@@ -280,5 +280,6 @@ function MindiHand({mode,onReplay}:MindiGameClientProps&{onReplay:()=>void}) {
     top={botSeatData(((selfSeat+2)%4) as SeatIndex)} left={botSeatData(((selfSeat+1)%4) as SeatIndex)} right={botSeatData(((selfSeat+3)%4) as SeatIndex)}
     name={mode === "ai" ? user?.displayName ?? "You" : seatNames[selfSeat]} avatar={playerStats?.avatarPreset}
     active={selfCanAct} trump={trumpSuit} trick={trick} lastTrick={lastTrick} tens={tensCaptured} tricks={tricksWon}
-    mode={mode === "ai" ? "Casual" : "Pass & Play"} tableSkin={economyState.profile.equipped.tableTheme} onPlay={handleCardSelect}/>;
+    mode={mode === "ai" ? "Casual" : "Pass & Play"} tableSkin={economyState.profile.equipped.tableTheme}
+    tenCaptures={tenCaptures} onPlay={handleCardSelect}/>;
 }

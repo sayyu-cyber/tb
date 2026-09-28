@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LobbyBoard } from "@/components/game/lobby/LobbyBoard";
 import { PhoneLobby } from "@/components/game/lobby/PhoneLobby";
+import { PhoneLobbyBoard } from "@/components/game/lobby/PhoneLobbyBoard";
 import { RotateToPlaySheet } from "@/components/game/lobby/RotateToPlaySheet";
 import { lobbyGame, type LobbyGameId } from "@/components/game/lobby/lobbyGames";
 import { useCasualQueue } from "@/hooks/useCasualQueue";
 import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { usePhoneTable } from "@/hooks/usePhoneTable";
 import { lockLandscape, releaseLandscape } from "@/lib/orientationLock";
 import { getLeagueWindow } from "@/lib/weekendLeague";
 
@@ -20,10 +22,12 @@ import { getLeagueWindow } from "@/lib/weekendLeague";
  * chosen game's modes. Picking a deck swaps the whole mode panel; picking a
  * mode changes where PLAY goes.
  *
- * ONE STATE, TWO COMPOSITIONS. The lobby is not a responsive layout - it is
- * two artboards, LobbyBoard at 1440x900 and PhoneLobby at 390 wide - so both
- * are mounted and CSS decides which is on screen
- * (`.portrait-view` / `.landscape-view` in styles/arena-phone-shell.css).
+ * ONE STATE, THREE COMPOSITIONS. The lobby is not a responsive layout, it is
+ * three artboards: Lobby at 1440x900 for a desktop, PLobby at 844x390 for a
+ * phone held sideways, and MPlay at 390 wide for one held upright. CSS picks
+ * upright from sideways-or-wide (`.portrait-view` / `.landscape-view` in
+ * styles/arena-phone-shell.css) and hooks/usePhoneTable picks which of the two
+ * landscape boards, since mounting both 3D podiums to hide one would be waste.
  * Everything that can be chosen or searched for lives here instead, so
  * turning the phone mid-search changes the picture and nothing else: the
  * queue keeps running, as design/arena/MOBILE.md requires.
@@ -52,6 +56,10 @@ import { getLeagueWindow } from "@/lib/weekendLeague";
 export default function PlayPage() {
   const router = useRouter();
   const portrait = usePhonePortrait();
+  /* A phone held sideways gets PLobby, the 844x390 composition, rather than
+     the 1440x900 board scaled to a third of its height
+     (design/arena/MOBILE.md "Tables fit what is visible"). */
+  const sideways = usePhoneTable();
   const [game, setGame] = useState<LobbyGameId>("mindi");
   const [modeId, setModeId] = useState("online");
   const [finding, setFinding] = useState(false);
@@ -130,7 +138,9 @@ export default function PlayPage() {
   return (
     <>
       <div className="landscape-view">
-        <LobbyBoard game={game} onPickGame={pickGame} {...shared} />
+        {sideways
+          ? <PhoneLobbyBoard game={game} onPickGame={pickGame} {...shared} />
+          : <LobbyBoard game={game} onPickGame={pickGame} {...shared} />}
       </div>
       <div className="portrait-view">
         <PhoneLobby game={game} onPickGame={pickGame} {...shared} />

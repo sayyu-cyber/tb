@@ -346,8 +346,58 @@ async function run() {
     assert.ok(!quiet.toUpperCase().includes('LIVE NOW'));
     assert.ok(quiet.includes('It opens'), 'and the sentence says when it opens');
 
+    // ── Held sideways: PLobby ───────────────────────────────────────────
+    // design/arena/boards/PLobby.dc.html. A phone held sideways is
+    // `(orientation: landscape) and (max-height: 500px) and (pointer: coarse)`,
+    // and `pointer: coarse` needs a touch context - which is why this runs in
+    // one of its own rather than by resizing the page above.
+    const touch = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true });
+    const phonePage = await touch.newPage();
+    const touchErrors = [];
+    phonePage.on('pageerror', e => { touchErrors.push(e.message); console.error(e.message); });
+    await phonePage.route('**/play-test/**', route => route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
+        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app arena-phone app-shell ar-stage">`
+        + `<main class="app-shell-main"><div id="test-root"></div></main></div>`
+        + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
+    }));
+    await phonePage.goto(BASE + '/play-test/');
+    await phonePage.locator('.arena-plobby').waitFor();
+    const wide = phonePage.locator('.arena-plobby');
+    assert.equal(await phonePage.locator('.lob-frame').count(), 0, 'The 1440 board steps aside');
+    assert.equal(await phonePage.locator('.arena-mplay').count() === 0
+      || await phonePage.locator('.arena-mplay').isVisible() === false, true, 'and so does the upright one');
+    assert.equal(await wide.locator('.deck').count(), 2, 'Two decks on the podium');
+    assert.equal(await wide.locator('.apron').count(), 8, "The board's eight aprons");
+    assert.equal(await wide.locator('.mode').count(), 5, 'Mindi still has all five modes');
+    assert.ok((await wide.innerText()).includes('Choose your table'));
+    assert.ok((await wide.innerText()).toUpperCase().includes('WEEKEND LEAGUE'), 'The league card is here');
+    assert.ok((await wide.innerText()).includes('Gold · 58'), 'and your rank, from the account');
+    assert.equal(await wide.locator('.xp i').evaluate(n => n.style.width), '32%');
+    // Scaled to the visible viewport, so nothing is off the screen.
+    for (const selector of ['.deck', '.mode', '.ar-btn', '.coinchip']) {
+      assert.ok(await wide.locator(selector).evaluateAll(nodes => nodes.every(n => {
+        const r = n.getBoundingClientRect();
+        return r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1;
+      })), 'Clipped ' + selector + ' sideways');
+    }
+    await phonePage.screenshot({ path: path.join(output, 'plobby-844.png') });
+    // The same queue, from the same state: sideways is a different picture,
+    // not a different lobby.
+    await wide.getByRole('button', { name: /Play Mindi/ }).tap();
+    assert.equal(await phonePage.locator('body').getAttribute('data-queue'), 'mindi');
+    assert.equal(await wide.locator('.ar-btn.busy').count(), 1, 'The CTA goes busy');
+    assert.ok((await wide.innerText()).includes('Tap again to stop looking'));
+    await phonePage.screenshot({ path: path.join(output, 'plobby-844-finding.png') });
+    await wide.getByRole('button', { name: /^Gin Rummy/ }).tap();
+    assert.equal(await phonePage.locator('body').getAttribute('data-queue'), 'off', 'Picking a deck stops it');
+    assert.equal(await wide.locator('.mode').count(), 6, 'and Gin has six modes');
+    assert.deepEqual(touchErrors, [], 'No page errors sideways');
+    await touch.close();
+
     assert.deepEqual(errors, [], 'No page errors');
-    console.log('✓ Play lobby matches lobby-01, lobby-02, MPlay and MPlayFind');
+    console.log('✓ Play lobby matches lobby-01, lobby-02, PLobby, MPlay and MPlayFind');
   } finally {
     await browser.close();
   }

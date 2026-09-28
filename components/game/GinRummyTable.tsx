@@ -10,6 +10,9 @@ import { SettingToggle } from "@/components/settings/SettingToggle";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { usePublishMatchGate } from "@/contexts/MatchGateContext";
+import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { useSecondsLeft } from "@/components/layout/phone/TurnRing";
+import { PhoneGinBoard, type PhoneGinGroup } from "./phone/PhoneGinBoard";
 import { sortHand } from "@/lib/cardSort";
 import { HandTools, HandOrder, navigateHand } from "./HandTools";
 import { RuleBook } from "./RuleBook";
@@ -36,6 +39,7 @@ export function GinRummyTable(p:Props) {
   const router=useRouter();
   const {settings,updateSettings}=useSettings();
   const t=useTranslation();
+  const phone=usePhoneTable();
   const [modal,setModal]=useState<"rules"|"settings"|"leave"|null>(null);
   // The board draws the brackets on, so that is the state you arrive in.
   const [melds,setMelds]=useState(true);
@@ -141,6 +145,31 @@ export function GinRummyTable(p:Props) {
   },[displayedHand,arrangement,p.hand.length]);
 
   /**
+   * PGin's brackets over the hand. The same consecutive runs the desktop
+   * brackets are built from, but labelled the way the phone board labels
+   * them - "Run 3", "Set 4", "DW 10" - because at 844px wide there is no
+   * room for "Deadwood 10" over three cards.
+   */
+  const phoneGroups=useMemo<PhoneGinGroup[]>(()=>{
+    const meldOf=new Map<string,number>();
+    arrangement.melds.forEach((meld,index)=>meld.forEach(card=>meldOf.set(cardId(card),index)));
+    const runs:{ids:string[];meld:number}[]=[];
+    displayedHand.forEach(card=>{
+      const id=cardId(card);
+      const meld=meldOf.get(id)??-1;
+      const last=runs[runs.length-1];
+      if(last&&last.meld===meld) last.ids.push(id);
+      else runs.push({ids:[id],meld});
+    });
+    return runs.map(run=>{
+      const meld=run.meld>=0?arrangement.melds[run.meld]:null;
+      if(!meld) return {ids:run.ids,label:`DW ${arrangement.deadwoodValue}`,deadwood:true};
+      const kind=meld.every(card=>card.rank===meld[0].rank)?"Set":"Run";
+      return {ids:run.ids,label:`${kind} ${run.ids.length}`,deadwood:false};
+    });
+  },[displayedHand,arrangement]);
+
+  /**
    * What the left-hand panel says. The board names the card that wins -
    * "Throw the King of diamonds and all ten cards are melded. That is Gin."
    * - rather than saying a winning discard exists, and it prints the melds
@@ -168,6 +197,11 @@ export function GinRummyTable(p:Props) {
       : {mine:false,name:p.opponent.name},
     onLeave:askToLeave,
   });
+
+  /* The phone bar draws the countdown itself rather than mounting TurnClock,
+     because PGin's ring is its own 34px shape. Same absolute deadline, so the
+     two can never disagree. */
+  const secondsLeft=useSecondsLeft(p.deadline);
 
   useEffect(()=>{if(modal)dialog.current?.showModal();},[modal]);
   // The arrangement belongs to the cards that were in the hand when it was
@@ -268,6 +302,65 @@ export function GinRummyTable(p:Props) {
     <div><dt>Stock</dt><dd>{p.stock} cards</dd></div>
     <div><dt>Opponent</dt><dd>{p.opponent.cardCount} cards</dd></div>
     {!!p.reshuffles&&<div><dt>Reshuffles</dt><dd>{p.reshuffles}</dd></div>}</dl>;
+
+  /* PGin prints one short line mid-table and one on the button, both of
+     which say what THIS tap would do - the board's own words, because at
+     844px wide `.hint` is nowrap and the desktop panel's full sentences do
+     not fit. The preview arrangement is the same one the desktop brackets
+     are drawn from, so the two never disagree about what a discard leaves. */
+  const phoneStatus=!p.myTurn
+    ? `${p.opponent.name} to ${p.phase==="draw"?"draw":"discard"}`
+    : p.phase==="draw"
+      ? "Draw from the stock, or take the discard."
+      : selectedCard
+        ? selectedWins
+          ? `Throw the ${rankLabel(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)}: that is Gin.`
+          : `Leaves ${preview&&preview.melds.length?preview.melds.map(meld=>meld.length).join(" · "):"nothing"} and ${preview?preview.deadwoodValue:arrangement.deadwoodValue} deadwood. Tap again to throw.`
+        : drawnCard
+          ? `You drew the ${rankLabel(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}. Now discard.`
+          : "Pick a discard.";
+  const phoneAction=!p.myTurn
+    ? "Discarded"
+    : selectedCard
+      ? selectedWins ? "Discard & win" : `Discard ${rankLabel(selectedCard.rank)}`
+      : "Pick a card";
+
+  /* Rules, settings and the leave confirm. Declared once and rendered by
+     both compositions: it is a <dialog> in the top layer, so it sits over
+     whichever table is underneath and the phone needs no second copy of the
+     leave flow. */
+  const dialogs = <>
+    {modal&&<dialog ref={dialog} className={"gin-dialog"+(modal==="rules"?" rule-book-dialog":"")} aria-labelledby="gin-dialog-title" onCancel={e=>{if(busy)e.preventDefault();else setModal(null);}}>
+      <header><h2 id="gin-dialog-title">{modal==="leave"?"Leave game?":modal==="rules"?"Gin Rummy rule book":"Game Settings"}</h2>
+        <Button variant="ghost" aria-label="Close dialog" disabled={busy} onClick={()=>setModal(null)}><X size={20}/></Button></header>
+      {modal==="rules"?<RuleBook game="gin"/>
+        :modal==="settings"?<><SettingToggle icon={Music} label="Background Music" enabled={settings.music} onChange={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}/>{info}</>
+        :<><p>{p.online?"Leaving forfeits this match.":"Your current hand will be lost."}</p>
+          <footer><Button variant="secondary" disabled={busy} onClick={()=>setModal(null)}>Cancel</Button><Button variant="danger" loading={busy} onClick={()=>run(async()=>{await p.onLeave?.();router.push("/play");})}>Leave Game</Button></footer></>}
+      {error&&<p role="alert">{error}</p>}
+    </dialog>}
+  </>;
+
+  /* Sideways on a phone the table is PGin, an 844x390 composition of its own
+     - see components/game/phone/PhoneGinBoard.tsx. Everything above this line
+     is shared: the same hand order, the same melds, the same clock, the same
+     legal actions. Only the picture below differs. */
+  if (phone) return <>
+    <PhoneGinBoard
+      hand={displayedHand} groups={phoneGroups} selected={selectedCard??null}
+      phase={p.phase} myTurn={p.myTurn} name={p.name} opponent={p.opponent}
+      stock={p.stock} discard={p.discard}
+      secondsLeft={secondsLeft} turnSeconds={TURN_SECONDS}
+      reading={{title:outCard?"Ready":"Not out",big:meldSizes.length?meldSizes.join(" · "):"—",ready:!!outCard}}
+      deadwoodValue={arrangement.deadwoodValue}
+      hint={phoneStatus} actionLabel={phoneAction} drawnId={drawnId} busy={busy} selectedWins={selectedWins}
+      onDraw={source=>{if(canDraw)run(()=>p.onDraw(source));}}
+      onActivate={activateCard}
+      onDiscard={()=>{if(canDiscard)run(p.onDiscard);}}
+      onLeave={askToLeave} onMenu={()=>setModal("settings")}
+    />
+    {dialogs}
+  </>;
 
   return <>
     <ArenaStage height={compact?660:900} className={"arena-gin-board gin-arena"+(compact?" gin-compact":"")}>
@@ -393,14 +486,6 @@ export function GinRummyTable(p:Props) {
     {error&&<p className="gin-arena-error" role="alert">{error}</p>}
       </div>
     </ArenaStage>
-    {modal&&<dialog ref={dialog} className={"gin-dialog"+(modal==="rules"?" rule-book-dialog":"")} aria-labelledby="gin-dialog-title" onCancel={e=>{if(busy)e.preventDefault();else setModal(null);}}>
-      <header><h2 id="gin-dialog-title">{modal==="leave"?"Leave game?":modal==="rules"?"Gin Rummy rule book":"Game Settings"}</h2>
-        <Button variant="ghost" aria-label="Close dialog" disabled={busy} onClick={()=>setModal(null)}><X size={20}/></Button></header>
-      {modal==="rules"?<RuleBook game="gin"/>
-        :modal==="settings"?<><SettingToggle icon={Music} label="Background Music" enabled={settings.music} onChange={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}/>{info}</>
-        :<><p>{p.online?"Leaving forfeits this match.":"Your current hand will be lost."}</p>
-          <footer><Button variant="secondary" disabled={busy} onClick={()=>setModal(null)}>Cancel</Button><Button variant="danger" loading={busy} onClick={()=>run(async()=>{await p.onLeave?.();router.push("/play");})}>Leave Game</Button></footer></>}
-      {error&&<p role="alert">{error}</p>}
-    </dialog>}
+    {dialogs}
   </>;
 }

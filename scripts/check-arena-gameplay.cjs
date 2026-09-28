@@ -56,7 +56,10 @@ async function main(){
     assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true);
     if(await page.getByRole('button',{name:'View Melds',exact:true}).getAttribute('aria-pressed')!=='true')await page.getByRole('button',{name:'View Melds',exact:true}).click();
     assert.equal(await page.locator('.gin-arena-melds>span').count(),4);
-    for(const [width,height] of [[1920,1080],[1440,900],[844,390],[390,844],[320,700]]){
+    // 844x390 is left out on purpose: a phone held sideways gets PGin, the
+    // 844x390 composition, not this board (design/arena/MOBILE.md "Tables fit
+    // what is visible"). It has its own section further down.
+    for(const [width,height] of [[1920,1080],[1440,900],[390,844],[320,700]]){
       await page.setViewportSize({width,height});await page.waitForTimeout(150);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Horizontal overflow '+width);
       assert.ok(await page.locator('.gin-hand button').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})),'Clipped cards '+width);
@@ -75,7 +78,7 @@ async function main(){
     await load('?red');
     assert.equal(await page.locator('.gin-arena-scene').getAttribute('data-skin'),'tt_red');
     assert.equal(await page.locator('.gin-rival-hand>div>div').first().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(58, 14, 14)','Opponent skin lost');
-    await page.setViewportSize({width:844,height:390});
+    // Touch, and the WebGL fallback, on the composition that has a canvas.
     await page.getByRole('button',{name:/Draw from discard pile/}).tap();
     await page.getByRole('button',{name:'K of diamonds',exact:true}).tap();
     assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true,'Touch selection failed');
@@ -84,11 +87,38 @@ async function main(){
     await page.locator('.gin-arena-scene[data-renderer=fallback]').waitFor();
     assert.equal(await page.getByRole('button',{name:'Discard & win',exact:true}).isEnabled(),true);
     await page.emulateMedia({reducedMotion:'reduce'});
-    await page.screenshot({path:path.join(output,'gin-fallback-phone.png')});
-    await page.getByRole('button',{name:'Discard & win',exact:true}).tap();
+    await page.screenshot({path:path.join(output,'gin-fallback-desktop.png')});
+
+    // ---- held sideways: PGin (design/arena/boards/PGin.dc.html) -----------
+    // A different artboard, not this one shrunk, so the seats, the piles and
+    // the hand are all somewhere else. What has to survive the swap is the
+    // game: the same hand, the same melds, the same taps.
+    await page.emulateMedia({reducedMotion:null});
+    await load('?red');
+    await page.setViewportSize({width:844,height:390});
+    await page.waitForTimeout(400);
+    const pgin=page.locator('.arena-pgin');
+    assert.equal(await pgin.isVisible(),true,'PGin takes over sideways');
+    assert.equal(await page.locator('.gin-arena-board').count(),0,'and the wide board steps aside');
+    assert.equal(await pgin.locator('.hc').count(),10,'The same ten cards');
+    assert.equal(await pgin.locator('.gtag').count()>0,true,'with a bracket over each meld');
+    // The whole composition is scaled to fit the VISIBLE viewport, so nothing
+    // - least of all the hand or the action button - hangs off the screen.
+    for(const selector of ['.hc','.ar-btn','.who']){
+      assert.ok(await pgin.locator(selector).evaluateAll(nodes=>nodes.every(n=>{
+        const r=n.getBoundingClientRect();
+        return r.left>=-1&&r.right<=innerWidth+1&&r.top>=-1&&r.bottom<=innerHeight+1;
+      })),'Clipped '+selector+' sideways');
+    }
+    await page.screenshot({path:path.join(output,'pgin-844.png')});
+    // Drawing and discarding, by touch, on the phone composition.
+    await pgin.getByRole('button',{name:/Take the .* from the discard pile/}).tap();
+    assert.equal(await pgin.locator('.hc').count(),11,'The drawn card joins the hand');
+    await pgin.getByRole('button',{name:'K of diamonds',exact:true}).tap();
+    await pgin.getByRole('button',{name:/Discard & win/}).tap();
     await page.getByRole('heading',{name:/You won|Gin!/i}).waitFor();
     assert.deepEqual(errors,[]);
-    console.log('Arena passed: Mindi mouse select/play, Gin phase guards, mouse/touch discard, actual winning layout, skins, five viewports, nonblank interactive WebGL, context-loss fallback, failure retry.');
+    console.log('Arena passed: Mindi mouse select/play, Gin phase guards, mouse/touch discard, actual winning layout, skins, four wide viewports, PGin sideways with nothing clipped, nonblank interactive WebGL, context-loss fallback, failure retry.');
   }finally{await browser.close();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

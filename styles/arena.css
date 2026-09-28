@@ -342,7 +342,11 @@ h1, h2, h3 {
    The wrapper for a scaled artboard (see components/game/ArenaStage.tsx).
    The canvas keeps its true pixel size and is scaled as a whole, so the
    composition is identical at every viewport instead of reflowing. */
-.arena-frame { position: fixed; inset: 0; display: grid; grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr); place-items: center; overflow: hidden; background: #000; }
+/* `inset: 0` covers the layout viewport; on a phone the browser's own bars
+   sit over the bottom of that. --arena-vh is the visual viewport's height,
+   set by ArenaStage where the browser reports one; 100dvh is the fallback
+   and 100% keeps a desktop window exactly as it was. */
+.arena-frame { position: fixed; left: 0; top: 0; right: 0; height: var(--arena-vh, 100dvh); display: grid; grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr); place-items: center; overflow: hidden; background: #000; }
 .arena-canvas { position: relative; flex: none; transform-origin: 50% 50%; }
 
 /* ---- the stage ----------------------------------------------------------

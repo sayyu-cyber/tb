@@ -51,6 +51,13 @@ import "@/styles/arena-phome.css";
 // serves both states. MRotate is the gate over a table held upright.
 import "@/styles/arena-mplay.css";
 import "@/styles/arena-mrotate.css";
+// The four the phone gets held sideways: the Play lobby, the two tables and
+// the hand result, each an 844x390 composition scaled to the visible
+// viewport by components/game/ArenaStage.
+import "@/styles/arena-plobby.css";
+import "@/styles/arena-pmindi.css";
+import "@/styles/arena-pgin.css";
+import "@/styles/arena-presult.css";
 import "@/styles/arena-phone-shell.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
 // screens (design/arena/WORKSPLIT.md). Imported here, empty, so that agent
