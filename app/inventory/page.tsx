@@ -10,6 +10,7 @@ import type { CosmeticCategory } from "@/types/economy";
 import RoomCardManager from "@/components/roomcards/RoomCardManager";
 import { Meter } from "@/components/arena";
 import { LoadoutSlot, CategoryChips, CosmeticTile, type TileAction } from "@/components/inventory/InventoryPieces";
+import { PhoneInventory } from "@/components/inventory/phone/PhoneInventory";
 
 /**
  * Inventory — design/arena/screens/app/app-03-inventory.jpg, from the
@@ -103,7 +104,35 @@ export default function InventoryPage() {
     };
   }
 
+  const readyCards = state.profile.roomCards.filter((card) => !card.activated).length;
+
   return (
+    <>
+    <div className="portrait-view">
+      <PhoneInventory
+        title={t("page_inventory")}
+        collected={collected}
+        catalogue={catalogue}
+        tab={tab}
+        onTab={setTab}
+        cosmeticsLabel={t("inventory_cosmetics")}
+        roomCardsLabel={t("inventory_roomCards")}
+        readyCards={readyCards}
+        slots={SLOTS.map(({ key, label }) => ({
+          key, label, item: ALL_COSMETICS.find((item) => item.id === equipped[key]),
+        }))}
+        chips={chips}
+        category={category}
+        onCategory={setCategory}
+        query={query}
+        onQuery={setQuery}
+        items={items}
+        owned={owned}
+        actionFor={actionFor}
+        initial={initial}
+      />
+    </div>
+    <div className="landscape-view">
     <div className="arena-inventory ar-page" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div className="phead">
         <div>
@@ -134,9 +163,7 @@ export default function InventoryPage() {
         </button>
         <button type="button" aria-pressed={tab === "roomCards"} onClick={() => setTab("roomCards")} data-flat>
           <Ticket aria-hidden="true" />{t("inventory_roomCards")}
-          {state.profile.roomCards.filter((card) => !card.activated).length > 0 && (
-            <span className="n">{state.profile.roomCards.filter((card) => !card.activated).length}</span>
-          )}
+          {readyCards > 0 && <span className="n">{readyCards}</span>}
         </button>
       </div>
 
@@ -193,5 +220,7 @@ export default function InventoryPage() {
         <RoomCardManager />
       )}
     </div>
+    </div>
+    </>
   );
 }
