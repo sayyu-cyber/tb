@@ -215,9 +215,25 @@ async function run() {
     assert.equal(await page.getByRole('dialog').count(), 0, 'Escape closes it');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
     await page.screenshot({ path: path.join(output, 'mshop-390.png'), fullPage: true });
+
+    // ── Held upright: MShopVip ──────────────────────────────────────────
+    // design/arena/boards/MShopVip.dc.html. The VIP tab is already this
+    // screen's own column at both sizes - `.viphero`, the six perks, the two
+    // `.plan` buttons, and the coin packs as `.prow` rows rather than the
+    // featured tab's cards. The balance strip is the one thing the board
+    // leaves out here, and the wide screen already leaves it out too.
+    await page.getByRole('button', { name: /VIP Pass/ }).first().click();
+    await page.locator('.viphero').waitFor();
+    assert.equal(await page.locator('.bal').count(), 0, 'No balance strip on the VIP tab');
+    assert.equal(await page.locator('.perk').count(), 6, 'All six perks');
+    assert.equal(await page.locator('.plan').count(), 2, 'Weekly and Monthly');
+    assert.ok(await page.locator('.prow').count() > 0, 'and the coin packs as rows');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow on VIP at 390');
+    await page.screenshot({ path: path.join(output, 'mshopvip-390.png'), fullPage: true });
+
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Shop: MShop, MShopBuy and MShopShort held upright, board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero and plan pick, pending top-up, seven widths and accessibility passed.');
+    console.log('Shop: MShop, MShopBuy, MShopShort and MShopVip held upright, board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero and plan pick, pending top-up, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
