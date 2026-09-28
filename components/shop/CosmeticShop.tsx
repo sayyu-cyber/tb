@@ -180,36 +180,53 @@ export default function CosmeticShop() {
     );
   }
 
+  const balance = (
+    <div className="bal">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: phone ? '1 1 0' : undefined }}>
+        <span className="lbl">Your Balance</span>
+        <b><CoinGem />{state.economy.coins.toLocaleString()}</b>
+      </div>
+      <button
+        type="button"
+        className="ar-btn sm"
+        aria-label="Get coins"
+        style={{ width: '48px', padding: 0 }}
+        onClick={() => setActiveTab('coins')}
+      >
+        <Plus aria-hidden="true" />
+      </button>
+    </div>
+  );
+
   return (
-    <div className="arena-shop arena-shopvip ar-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div className="phead">
-        <div>
+    <div
+      /* MShop and MShopVip are the same page at phone size: the board's own
+         item cards, coin packs, VIP strip and plan buttons are all a size
+         down from the wide screen's, and they live in these two generated
+         sheets. */
+      className={phone ? 'arena-mshop arena-mshopvip mpage' : 'arena-shop arena-shopvip ar-page'}
+      style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+    >
+      {/* The wide screen sets the title and the balance side by side in a
+          `.phead`; the board stacks them, so the balance strip becomes a
+          full-width row of its own under the heading. */}
+      <div className={phone ? undefined : 'phead'}>
+        <div className={phone ? 'mh' : undefined}>
           <span className="lbl dash" style={{ color: '#C6FF33' }}>
             {activeTab === 'vip' ? t('page_shop') : 'Premium cosmetics and coin packs'}
           </span>
-          <h1 className="disp chrome ar-h1">{activeTab === 'vip' ? t('vip_pass') : t('page_shop')}</h1>
+          <h1 className={phone ? 'disp chrome' : 'disp chrome ar-h1'}>{activeTab === 'vip' ? t('vip_pass') : t('page_shop')}</h1>
           {activeTab !== 'vip' && (
             <p className="sub">Customize your table, cards, and experience. Stand out in every game.</p>
           )}
         </div>
-        {activeTab !== 'vip' && <div className="bal">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span className="lbl">Your Balance</span>
-            <b><CoinGem />{state.economy.coins.toLocaleString()}</b>
-          </div>
-          <button
-            type="button"
-            className="ar-btn sm"
-            aria-label="Get coins"
-            style={{ width: '48px', padding: 0 }}
-            onClick={() => setActiveTab('coins')}
-          >
-            <Plus aria-hidden="true" />
-          </button>
-        </div>}
+        {activeTab !== 'vip' && !phone && balance}
       </div>
+      {activeTab !== 'vip' && phone && balance}
 
-      <div className="tabs" style={{ alignSelf: 'flex-start' }} role="group" aria-label={t('page_shop')}>
+      {/* The board's tabs fill the row at 390px rather than hugging their
+          labels; the shared phone layer does that, given the chance. */}
+      <div className="tabs" style={phone ? undefined : { alignSelf: 'flex-start' }} role="group" aria-label={t('page_shop')}>
         {([
           { id: 'featured', label: t('shop_tabFeatured'), Icon: Sparkles },
           { id: 'permanent', label: t('shop_tabPermanent'), Icon: Layers },
@@ -222,20 +239,25 @@ export default function CosmeticShop() {
         ))}
       </div>
 
+      {/* Wide, the crown, the copy and the button share one row. The board
+          turns the strip into a column, so the crown and the copy pair up
+          and the button goes full width under them. */}
       <div className="vipstrip">
-        <span className="cr" aria-hidden="true"><Crown /></span>
-        <div style={{ flexGrow: 1, minWidth: 0 }}>
-          <b className="disp" style={{ fontSize: '17px' }}>
-            {vipActive ? 'VIP Active' : 'VIP Exclusive: +1 Featured cosmetic available'}
-          </b>
-          <p className="muted" style={{ margin: '5px 0 0' }}>
-            {vipActive
-              ? 'Your extra weekly cosmetic slot is unlocked.'
-              : 'Upgrade to VIP Pass to unlock an extra featured item every week.'}
-          </p>
+        <div style={phone ? { display: 'flex', alignItems: 'center', gap: '12px' } : { display: 'contents' }}>
+          <span className="cr" aria-hidden="true"><Crown /></span>
+          <div style={{ flexGrow: 1, minWidth: 0 }}>
+            <b className="disp" style={{ fontSize: phone ? '15px' : '17px', lineHeight: phone ? 1.1 : undefined }}>
+              {vipActive ? 'VIP Active' : 'VIP Exclusive: +1 Featured cosmetic available'}
+            </b>
+            <p className="muted" style={{ margin: '5px 0 0', fontSize: phone ? '12.5px' : undefined, lineHeight: phone ? 1.35 : undefined }}>
+              {vipActive
+                ? 'Your extra weekly cosmetic slot is unlocked.'
+                : 'Upgrade to VIP Pass to unlock an extra featured item every week.'}
+            </p>
+          </div>
         </div>
         {!vipActive && (
-          <button type="button" className="ar-btn blue sm" onClick={() => setActiveTab('vip')}>
+          <button type="button" className={`ar-btn blue sm${phone ? ' full' : ''}`} onClick={() => setActiveTab('vip')}>
             View VIP Plans<ArrowRight aria-hidden="true" />
           </button>
         )}
@@ -300,6 +322,7 @@ export default function CosmeticShop() {
 
       {activeTab === 'vip' && (
         <VipPanel
+          phone={phone}
           plans={VIP_PLANS}
           selected={selectedVipPlan}
           onSelect={setSelectedVipPlan}

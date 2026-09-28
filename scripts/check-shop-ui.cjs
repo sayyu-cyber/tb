@@ -191,21 +191,36 @@ async function run() {
 
     assert.deepEqual(errors, []);
     // ── Held upright: MShop, MShopBuy, MShopShort ───────────────────────
-    // MShop is this screen's own column - same balance strip, same tabs,
-    // same VIP strip, same sections in the same order - so only the two
-    // grids narrow to two columns and the purchase confirm becomes a bottom
-    // sheet. MShopBuy and MShopShort are that sheet in its two states, and
-    // their stylesheets came out byte-identical to MShop's because they are
-    // MShop with it open.
+    // MShop keeps this screen's order - balance strip, tabs, VIP strip, the
+    // same sections - but every piece in it is a size down, and those sizes
+    // live in styles/arena-mshop.css. So the page swaps namespace: the two
+    // grids narrow to two columns, the balance strip leaves the heading for
+    // a row of its own, the VIP strip becomes a column, and the purchase
+    // confirm becomes a bottom sheet. MShopBuy and MShopShort are that
+    // sheet in its two states, and their stylesheets came out
+    // byte-identical to MShop's because they are MShop with it open.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(350);
+    assert.equal(await page.locator('.arena-shop').count(), 0, 'The wide namespace steps aside');
+    assert.equal(await page.locator('.arena-mshop.arena-mshopvip').count(), 1, 'and the board sheets take over');
     assert.equal(await page.locator('.shop-grid').count(), 0, 'The six-across grid steps aside');
     assert.ok(await page.locator('.item').count() > 0, 'and the items are still here');
     assert.equal(await page.locator('.bal').count(), 1, 'The balance strip stays');
+    assert.equal(await page.locator('.phead').count(), 0, 'out of the wide heading');
+    // The board's sizes are reaching the markup, not just its class names.
+    assert.equal(
+      await page.locator('.vipstrip').evaluate(node => getComputedStyle(node).flexDirection),
+      'column', 'The VIP strip is the board\'s column, not the wide row');
+    assert.equal(
+      await page.locator('.bal b').evaluate(node => getComputedStyle(node).fontSize),
+      '28px', 'and the balance reads at the board\'s 28px');
     // The buy confirm is a sheet, not a dialog element.
     await page.locator('.item .buy').first().click();
     await page.getByRole('dialog').waitFor();
     assert.equal(await page.locator('dialog.dlg[open]').count(), 0, 'No <dialog> at this size');
+    assert.equal(
+      await page.locator('.sart').evaluate(node => getComputedStyle(node).width),
+      '92px', 'The sheet carries the board namespace, so its art square is styled');
     const sheet = await page.getByRole('dialog').innerText();
     assert.ok(sheet.includes('Price'), 'The sheet keeps the price row');
     assert.ok(sheet.includes('Current balance'), 'the balance row');
@@ -217,16 +232,18 @@ async function run() {
     await page.screenshot({ path: path.join(output, 'mshop-390.png'), fullPage: true });
 
     // ── Held upright: MShopVip ──────────────────────────────────────────
-    // design/arena/boards/MShopVip.dc.html. The VIP tab is already this
-    // screen's own column at both sizes - `.viphero`, the six perks, the two
-    // `.plan` buttons, and the coin packs as `.prow` rows rather than the
-    // featured tab's cards. The balance strip is the one thing the board
-    // leaves out here, and the wide screen already leaves it out too.
+    // design/arena/boards/MShopVip.dc.html. Same pieces as the wide screen -
+    // `.viphero`, the six perks, the two `.plan` buttons, and the coin packs
+    // as `.prow` rows rather than the featured tab's cards - at the board's
+    // sizes, with the plans moved out of the hero onto the page under it.
+    // The balance strip is the one thing the board leaves out here, and the
+    // wide screen already leaves it out too.
     await page.getByRole('button', { name: /VIP Pass/ }).first().click();
     await page.locator('.viphero').waitFor();
     assert.equal(await page.locator('.bal').count(), 0, 'No balance strip on the VIP tab');
     assert.equal(await page.locator('.perk').count(), 6, 'All six perks');
     assert.equal(await page.locator('.plan').count(), 2, 'Weekly and Monthly');
+    assert.equal(await page.locator('.viphero .plan').count(), 0, 'held outside the hero, as the board draws them');
     assert.ok(await page.locator('.prow').count() > 0, 'and the coin packs as rows');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow on VIP at 390');
     await page.screenshot({ path: path.join(output, 'mshopvip-390.png'), fullPage: true });

@@ -103,7 +103,9 @@ export function ShopItemDialog({
      item's own art beside its name. Their stylesheets came out identical to
      MShop's, because they ARE MShop with this open. */
   if (phone) return (
-    <Sheet open onClose={onClose} label={buying ? `Buy ${item.name}?` : item.name} headingId="shop-sheet-title">
+    /* The sheet portals to <body>, so the board namespace its art square
+       (`.sart`) is scoped under has to travel with it. */
+    <Sheet open onClose={onClose} label={buying ? `Buy ${item.name}?` : item.name} headingId="shop-sheet-title" namespace="arena-mshop">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <span className="sart" style={{ ["--rg" as string]: colour }}>
           <ShopArt item={item} initial={initial} />
