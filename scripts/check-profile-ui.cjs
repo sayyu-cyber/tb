@@ -48,7 +48,9 @@ async function run() {
     await page.route('**/profile-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -132,7 +134,9 @@ async function run() {
     // ── Accessibility ───────────────────────────────────────────────────
     await page.goto(BASE + '/profile-test/');
     await page.getByRole('heading', { name: 'Sayyu' }).waitFor();
-    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    // Two are in the DOM - the wide screen's and MProfile's - and CSS hides
+    // one; the accessibility tree must only ever see the one on screen.
+    assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 6, 'Meters report their value');
     assert.equal(await page.locator('.wr[role=img][aria-label]').count(), 2, 'The rings are labelled');
     const unlabelled = await page.locator('button').evaluateAll(
@@ -141,7 +145,25 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only button has an aria-label');
 
     assert.deepEqual(errors, []);
-    console.log('Profile: board structure, board figures, masked address, tabs, edit/Escape/copy, seven widths, error/empty/admin/savefail states and accessibility passed.');
+    // ── Held upright: MProfile ──────────────────────────────────────────
+    // design/arena/boards/MProfile.dc.html. The same seven sections, with
+    // the five tabs as a scrolling chip row and the history table as a row
+    // per match.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(350);
+    assert.equal(await page.locator('.arena-profile.ar-page').isVisible(), false, 'The wide screen steps aside');
+    const phone = page.locator('.arena-mprofile');
+    assert.equal(await phone.isVisible(), true, 'and MProfile takes over');
+    assert.equal(await phone.locator('.chips > *').count(), 5, 'All five tabs, as a chip row');
+    assert.equal(await phone.locator('.tile').count() >= 4, true, 'The four statistics tiles');
+    assert.equal(await phone.locator('.game').count(), 2, 'Both games');
+    assert.ok(await phone.locator('.hrow').count() > 0, 'and the match history as rows');
+    assert.ok((await phone.innerText()).includes('Member since'), 'The player card keeps its meta');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'mprofile-390.png'), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    console.log('Profile: board structure, MProfile held upright, board figures, masked address, tabs, edit/Escape/copy, seven widths, error/empty/admin/savefail states and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

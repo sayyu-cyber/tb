@@ -16,6 +16,7 @@ import {
   AchievementsPreview, ProfileGameStats, ProfileHistory, ProfileMilestones,
   ProfileSkeleton, ProfileStatsGrid, metric,
 } from "@/components/profile/ProfileSections";
+import { PhoneProfile } from "@/components/profile/phone/PhoneProfile";
 
 /**
  * Profile — design/arena/screens/app/app-02-profile.jpg, from the Profile
@@ -26,6 +27,12 @@ import {
  * links: same tray, same look, but middle-click and open-in-new-tab work,
  * which they would not on a button. `.tabs a` is given `.tabs button`'s own
  * values in styles/arena-screens.css.
+ *
+ * Held upright a phone gets MProfile (design/arena/boards/MProfile.dc.html):
+ * the same seven sections, with the tabs as a scrolling chip row and the
+ * history table as a row per match. Both are in the DOM and CSS decides
+ * which is on screen, and the page owns the profile, the history and the
+ * achievements, so the two compositions read one of each.
  */
 export default function ProfilePage() {
   const { user, playerStats, profileLoading, profileError, retryProfile } = useAuth();
@@ -80,7 +87,35 @@ export default function ProfilePage() {
     ? `${user.email[0]}••••@${user.email.split("@")[1] ?? ""}`
     : null;
 
+  const editModal = editing && (
+    <EditProfileModal
+      isOpen
+      onClose={() => setEditing(false)}
+      currentName={user.displayName || ""}
+      currentAvatar={playerStats?.avatarPreset}
+      currentBanner={playerStats?.bannerPreset}
+    />
+  );
+
   return (
+    <>
+    <div className="portrait-view">
+      <PhoneProfile
+        name={name}
+        tier={tier}
+        stats={playerStats}
+        history={history}
+        achievements={achievements}
+        maskedEmail={maskedEmail}
+        memberSince={user.createdAt ?? null}
+        admin={admin}
+        tab={tab}
+        onTab={setTab}
+        onEdit={() => setEditing(true)}
+        onCopyId={copyId}
+      />
+    </div>
+    <div className="landscape-view">
     <div className="arena-profile ar-page" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
       <div className="phead">
         <div>
@@ -180,15 +215,11 @@ export default function ProfilePage() {
         </>
       )}
 
-      {editing && (
-        <EditProfileModal
-          isOpen
-          onClose={() => setEditing(false)}
-          currentName={user.displayName || ""}
-          currentAvatar={playerStats?.avatarPreset}
-          currentBanner={playerStats?.bannerPreset}
-        />
-      )}
     </div>
+    </div>
+    {/* One modal for both compositions: it is a dialog, so a second copy in
+        the hidden view would be a second focus trap in the DOM. */}
+    {editModal}
+    </>
   );
 }
