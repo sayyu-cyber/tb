@@ -1,0 +1,98 @@
+/* GENERATED from design/arena/boards/MAchievements.dc.html by scripts/port-board.mjs.
+   Do not edit by hand - re-run the script instead.
+
+   Three changes from the board, and only three: every selector is
+   namespaced under .arena-machievements so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.
+
+   435 rules this board shares byte for byte with the phone set's common layer
+   were dropped: they are already in styles/arena-phone.css,
+   ported once. A rule the board changed, however slightly, was kept. */
+
+
+/* arena backdrop */
+
+/* table */
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+
+/* player frames */
+
+/* HUD panels */
+
+/* controls */
+
+/* hand */
+
+/* popovers */
+
+/* ================= app shell (blue edition) ================= */
+
+/* sidebar: collapsed rail (default in the app) */
+
+/* sidebar: expanded panel */
+
+/* small avatars */
+
+/* top bar */
+
+/* rank badge */
+
+/* page frame */
+
+/* rarity */
+
+/* mini card-back art, sized by font-size (7.2em x 10.08em) */
+
+/* table theme swatch */
+
+/* ================= mobile shell: portrait phone, 390 wide ================= */
+/* stage: fixed to the viewport in the app (position: fixed), drawn once at the top here */
+
+/* top bar: sticky in the app, 60px + safe-area-inset-top */
+
+/* bottom tab bar: fixed in the app, 62px + safe-area-inset-bottom (22 here) */
+/* the raised Play diamond */
+
+/* page */
+
+/* buttons at phone size: 52 / 44 tall, full-width where they lead a card */
+
+/* tabs: equal-width segments that fill the row */
+
+/* horizontal scrollers bleed to the screen edge */
+
+/* list rows */
+
+/* bottom sheet */
+
+/* toast */
+
+/* chip tabs: a scrolling row when the labels don't fit as equal segments */
+
+/* one phone viewport, for sheets and dialogs on a long board (in the app: position fixed, inset 0) */
+
+.arena-machievements .arow{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:start;gap:12px;padding:14px;border-radius:14px;background:linear-gradient(180deg,rgba(20,20,26,.9),rgba(9,9,12,.9));box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.arena-machievements .arow.done{box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.55),0 0 30px -12px rgba(198,255,51,.5)}
+.arena-machievements .aic{display:flex;align-items:center;justify-content:center;width:48px;height:54px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.arena-machievements .aic svg{width:21px;height:21px}
+.arena-machievements .aic.gp{background:linear-gradient(160deg,#E4FF8C,#C6FF33 55%,#8FC20F);color:#0A0A0A}
+.arena-machievements .aic.rk{background:linear-gradient(160deg,#FFFFFF,#B9C2C9 55%,#6F7B84);color:#1A1F24}
+.arena-machievements .aic.co{background:linear-gradient(160deg,#4FE3EC,#00BCC8 55%,#00727A);color:#00191B}
+.arena-machievements .aic.sp{background:linear-gradient(160deg,#FFE58A,#E0B52E 55%,#9A7512);color:#2A1F04}
+.arena-machievements .aic.off{filter:grayscale(1) brightness(.45)}
+.arena-machievements .arow h3{margin:2px 0 0;font-family:var(--font-display), sans-serif;font-weight:700;font-size:15px;line-height:1.1;letter-spacing:-.01em;text-transform:uppercase}
+.arena-machievements .arow p{margin:5px 0 10px;font-size:12.5px;line-height:1.35;font-weight:500;color:#BEBECA}
+.arena-machievements .prog{grid-column:2 / 4;display:flex;align-items:center;gap:10px;margin-top:-4px}
+.arena-machievements .prog .meter{flex-grow:1}
+.arena-machievements .prog span{font-family:var(--font-display), sans-serif;font-weight:700;font-size:12px;color:#D4D4DC;font-variant-numeric:tabular-nums;white-space:nowrap}
+.arena-machievements .rwd{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:2px}
+.arena-machievements .rwd .amt{display:flex;align-items:center;gap:7px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:15px;white-space:nowrap}
+.arena-machievements .state{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.arena-machievements .state svg{width:13px;height:13px}
+.arena-machievements .state.on{color:#C6FF33}.arena-machievements .state.off{color:#8E8E9C}
+.arena-machievements .chips button .ct{opacity:.75}
+

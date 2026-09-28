@@ -1,0 +1,108 @@
+/* GENERATED from design/arena/boards/MLeaderboard.dc.html by scripts/port-board.mjs.
+   Do not edit by hand - re-run the script instead.
+
+   Three changes from the board, and only three: every selector is
+   namespaced under .arena-mleaderboard so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.
+
+   435 rules this board shares byte for byte with the phone set's common layer
+   were dropped: they are already in styles/arena-phone.css,
+   ported once. A rule the board changed, however slightly, was kept. */
+
+
+/* arena backdrop */
+
+/* table */
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+
+/* player frames */
+
+/* HUD panels */
+
+/* controls */
+
+/* hand */
+
+/* popovers */
+
+/* ================= app shell (blue edition) ================= */
+
+/* sidebar: collapsed rail (default in the app) */
+
+/* sidebar: expanded panel */
+
+/* small avatars */
+
+/* top bar */
+
+/* rank badge */
+
+/* page frame */
+
+/* rarity */
+
+/* mini card-back art, sized by font-size (7.2em x 10.08em) */
+
+/* table theme swatch */
+
+/* ================= mobile shell: portrait phone, 390 wide ================= */
+/* stage: fixed to the viewport in the app (position: fixed), drawn once at the top here */
+
+/* top bar: sticky in the app, 60px + safe-area-inset-top */
+
+/* bottom tab bar: fixed in the app, 62px + safe-area-inset-bottom (22 here) */
+/* the raised Play diamond */
+
+/* page */
+
+/* buttons at phone size: 52 / 44 tall, full-width where they lead a card */
+
+/* tabs: equal-width segments that fill the row */
+
+/* horizontal scrollers bleed to the screen edge */
+
+/* list rows */
+
+/* bottom sheet */
+
+/* toast */
+
+/* chip tabs: a scrolling row when the labels don't fit as equal segments */
+
+/* one phone viewport, for sheets and dialogs on a long board (in the app: position fixed, inset 0) */
+
+.arena-mleaderboard .podium{position:relative;height:328px;overflow:hidden;border-radius:18px;background:radial-gradient(260px 160px at 50% 105%,rgba(0,188,200,.42),rgba(0,188,200,0) 70%),linear-gradient(180deg,#0A0D10,#040506);border:1px solid rgba(255,255,255,.1)}
+.arena-mleaderboard .podium::before{content:"";position:absolute;left:-30%;right:-30%;bottom:-2px;height:120px;background-image:linear-gradient(rgba(0,188,200,.35) 1.5px,rgba(0,0,0,0) 1.5px),linear-gradient(90deg,rgba(0,188,200,.35) 1.5px,rgba(0,0,0,0) 1.5px);background-size:40px 40px;background-position:center bottom;transform:perspective(300px) rotateX(58deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(0deg,#000,rgba(0,0,0,0));mask-image:linear-gradient(0deg,#000,rgba(0,0,0,0))}
+.arena-mleaderboard .spot{position:absolute;top:-30px;left:50%;width:150px;height:300px;margin-left:-75px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 80%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);filter:blur(8px)}
+.arena-mleaderboard .pl{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center;gap:7px;width:112px}
+.arena-mleaderboard .pl .who{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.arena-mleaderboard .pl .who b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.arena-mleaderboard .pl .rank{font-size:9.5px;letter-spacing:.12em}
+.arena-mleaderboard .pl .tro{display:flex;align-items:center;gap:5px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:17px}
+.arena-mleaderboard .pl .tro svg{width:15px;height:15px;color:#C6FF33}
+.arena-mleaderboard .pl .wrt{font-size:11px;font-weight:600;color:#A4A4B2}
+.arena-mleaderboard .plinth{width:100px;display:flex;align-items:flex-start;justify-content:center;padding-top:9px;border-radius:10px 10px 0 0;font-family:var(--font-display), sans-serif;font-weight:700;font-size:32px;line-height:1}
+.arena-mleaderboard .plinth.p1{height:74px;background:linear-gradient(180deg,#FFE58A,#E0B52E 40%,#7A5C10);color:#2A1F04;box-shadow:0 0 30px rgba(255,201,64,.35)}
+.arena-mleaderboard .plinth.p2{height:52px;background:linear-gradient(180deg,#FFFFFF,#B9C2C9 45%,#4F5A63);color:#1A1F24}
+.arena-mleaderboard .plinth.p3{height:40px;background:linear-gradient(180deg,#F0B587,#B0703A 45%,#4E2A10);color:#2A1406}
+.arena-mleaderboard .bigava{position:relative;display:flex;align-items:center;justify-content:center;border-radius:14px;font-family:var(--font-display), sans-serif;font-weight:700;color:#0A0A0A}
+.arena-mleaderboard .lrow{display:grid;grid-template-columns:26px 36px minmax(0,1fr) auto;align-items:center;gap:12px;height:58px;padding:0 12px;border-radius:12px}
+.arena-mleaderboard .lrow:nth-child(even){background:rgba(255,255,255,.025)}
+.arena-mleaderboard .lrow .pos{font-family:var(--font-display), sans-serif;font-weight:700;font-size:15px;color:#A4A4B2;text-align:center}
+.arena-mleaderboard .lrow .nm3{display:flex;flex-direction:column;gap:6px;min-width:0}
+.arena-mleaderboard .lrow .nm3 b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.arena-mleaderboard .lrow .nm3 > span{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:#A4A4B2;white-space:nowrap}
+.arena-mleaderboard .lrow .t{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:16px}
+.arena-mleaderboard .lrow .t svg{width:15px;height:15px;color:#C6FF33}
+.arena-mleaderboard .lrow.me{background:rgba(198,255,51,.08);box-shadow:inset 0 0 0 1.5px #C6FF33}
+.arena-mleaderboard .lrow.me .pos{color:#C6FF33}
+.arena-mleaderboard .rw{display:flex;align-items:center;gap:12px;height:48px;padding:0 12px;border-radius:10px}
+.arena-mleaderboard .rw.cur{background:rgba(198,255,51,.08);box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.6)}
+.arena-mleaderboard .rw b{flex-grow:1;font-family:var(--font-display), sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.arena-mleaderboard .rw .amt{display:flex;align-items:center;gap:8px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:16px}
+.arena-mleaderboard .soon{margin-left:2px}
+

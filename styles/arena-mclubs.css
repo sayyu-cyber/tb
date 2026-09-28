@@ -1,0 +1,100 @@
+/* GENERATED from design/arena/boards/MClubs.dc.html by scripts/port-board.mjs.
+   Do not edit by hand - re-run the script instead.
+
+   Three changes from the board, and only three: every selector is
+   namespaced under .arena-mclubs so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.
+
+   435 rules this board shares byte for byte with the phone set's common layer
+   were dropped: they are already in styles/arena-phone.css,
+   ported once. A rule the board changed, however slightly, was kept. */
+
+
+/* arena backdrop */
+
+/* table */
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+
+/* player frames */
+
+/* HUD panels */
+
+/* controls */
+
+/* hand */
+
+/* popovers */
+
+/* ================= app shell (blue edition) ================= */
+
+/* sidebar: collapsed rail (default in the app) */
+
+/* sidebar: expanded panel */
+
+/* small avatars */
+
+/* top bar */
+
+/* rank badge */
+
+/* page frame */
+
+/* rarity */
+
+/* mini card-back art, sized by font-size (7.2em x 10.08em) */
+
+/* table theme swatch */
+
+/* ================= mobile shell: portrait phone, 390 wide ================= */
+/* stage: fixed to the viewport in the app (position: fixed), drawn once at the top here */
+
+/* top bar: sticky in the app, 60px + safe-area-inset-top */
+
+/* bottom tab bar: fixed in the app, 62px + safe-area-inset-bottom (22 here) */
+/* the raised Play diamond */
+
+/* page */
+
+/* buttons at phone size: 52 / 44 tall, full-width where they lead a card */
+
+/* tabs: equal-width segments that fill the row */
+
+/* horizontal scrollers bleed to the screen edge */
+
+/* list rows */
+
+/* bottom sheet */
+
+/* toast */
+
+/* chip tabs: a scrolling row when the labels don't fit as equal segments */
+
+/* one phone viewport, for sheets and dialogs on a long board (in the app: position fixed, inset 0) */
+
+.arena-mclubs .crest{flex:none;display:flex;align-items:center;justify-content:center;width:50px;height:56px;clip-path:polygon(50% 0,100% 18%,100% 70%,50% 100%,0 70%,0 18%)}
+.arena-mclubs .crest svg{width:23px;height:23px}
+.arena-mclubs .crest.t1{background:linear-gradient(160deg,#E4FF8C,#C6FF33 60%,#8FC20F);color:#0A0A0A}
+.arena-mclubs .crest.t2{background:linear-gradient(160deg,#4FE3EC,#00BCC8 60%,#00727A);color:#00191B}
+.arena-mclubs .crest.t3{background:linear-gradient(160deg,#FFFFFF,#D9D9E2);color:#E0213A}
+.arena-mclubs .crest.t4{background:linear-gradient(160deg,#2E2E38,#15151A);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
+.arena-mclubs .club{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:linear-gradient(180deg,rgba(20,20,26,.92),rgba(9,9,12,.92));box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.arena-mclubs .club h3{margin:0;font-family:var(--font-display), sans-serif;font-weight:700;font-size:18px;letter-spacing:-.01em;text-transform:uppercase}
+.arena-mclubs .club p{margin:0;font-size:13px;line-height:1.45;font-weight:500;color:#BEBECA}
+.arena-mclubs .tag{font-family:var(--font-display), sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.14em;color:#8E8E9C}
+.arena-mclubs .cap{display:flex;align-items:center;gap:10px}
+.arena-mclubs .cap .meter{flex-grow:1}
+.arena-mclubs .mem{display:grid;grid-template-columns:22px 34px minmax(0,1fr) 46px 48px;align-items:center;gap:10px;height:50px;padding:0 8px;border-radius:10px}
+.arena-mclubs .mem:nth-child(odd){background:rgba(255,255,255,.03)}
+.arena-mclubs .mem .pos{font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;color:#8E8E9C;text-align:center}
+.arena-mclubs .mem b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+.arena-mclubs .mem b svg{flex:none;width:14px;height:14px;color:#FFC940}
+.arena-mclubs .kick{height:30px;padding:0 8px;border:0;border-radius:7px;background:rgba(255,255,255,.06);color:#FF6B80;font-family:var(--font-display), sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.arena-mclubs .cb2{max-width:85%;padding:9px 12px;border-radius:12px;font-size:13.5px;line-height:1.4;font-weight:500}
+.arena-mclubs .cb2.them{align-self:flex-start;background:#15151B;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.arena-mclubs .cb2.them small{display:block;margin-bottom:3px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#00BCC8}
+.arena-mclubs .cb2.me{align-self:flex-end;background:#C6FF33;color:#0A0A0A;font-weight:600}
+

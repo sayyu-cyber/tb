@@ -54,7 +54,9 @@ async function run() {
     await page.route('**/home/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -108,13 +110,33 @@ async function run() {
       await page.screenshot({ path: path.join(output, 'home-' + width + '.png'), fullPage: true });
     }
 
+    // ── Held upright: MHome ─────────────────────────────────────────────
+    // design/arena/boards/MHome.dc.html. The same ten sections in the same
+    // order, recomposed for 390px - nothing dropped. Both compositions are in
+    // the DOM and CSS decides, so the check is that exactly one is on screen
+    // and it is the right one.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(350);
+    assert.equal(await page.locator('.arena-home.ar-page').isVisible(), false, 'The wide screen steps aside');
+    const phone = page.locator('.arena-mhome');
+    assert.equal(await phone.isVisible(), true, 'and MHome takes over');
+    assert.equal(await phone.locator('.mhero .cardw').count(), 4, "The hero's four Tens");
+    assert.equal(await phone.locator('.mstat').count(), 6, 'Six stat tiles');
+    assert.equal(await phone.locator('.cover').count(), 2, 'Both game covers');
+    assert.equal(await phone.locator('.sc').count(), 9, 'All nine shortcuts, as on the wide screen');
+    assert.ok(await phone.locator('.news').count() > 0, 'and the updates scroller');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'mhome-390.png'), fullPage: true });
+
     // ── Accessibility ───────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
     const unlabelled = await page.locator('button:not([aria-label]):not(:has-text(""))').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
     assert.equal(unlabelled, 0, 'Every icon-only button has an aria-label');
-    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    // Two are in the DOM - the wide screen's and MHome's - and CSS hides
+    // one; the accessibility tree must only ever see the one on screen.
+    assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 2, 'Meters report their value');
     // The one looping animation on this screen stops for reduced motion.
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -127,7 +149,7 @@ async function run() {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
 
     assert.deepEqual(errors, []);
-    console.log('Home: board structure, board figures, lock-bar state, cover routing incl. guest, seven widths, accessibility and reduced motion passed.');
+    console.log('Home: board structure, board figures, lock-bar state, cover routing incl. guest, seven widths, MHome held upright, accessibility and reduced motion passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
