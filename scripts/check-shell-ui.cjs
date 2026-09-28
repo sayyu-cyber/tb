@@ -84,6 +84,13 @@ async function run(){
  assert.ok(Math.abs(rail.width-76)<2,`The rail is 76px (got ${Math.round(rail.width)})`);
  assert.ok(rail.x<2&&Math.abs(rail.height-390)<2,'down the left, full height');
  assert.equal(await page.locator('.mtab').isVisible(),false,'and the bar is put away');
+ // The rail is shell chrome, so no page namespace reaches it - it has to be
+ // drawn by the shell's own sheet. Geometry alone would not notice.
+ assert.notEqual(await page.locator('.mrail').evaluate(n=>getComputedStyle(n).backgroundImage),'none',
+  'The rail is drawn, not just sized');
+ assert.equal(await page.locator('.mrail a[aria-current=page] .ti').evaluate(n=>getComputedStyle(n).backgroundColor),
+  'rgb(198, 255, 51)','and the slot you are on wears the lime chip');
+ assert.ok(await page.locator('.mrail .pw .fc').count()===1,'with the raised Play diamond standing in it');
  assert.ok(Math.abs((await page.locator('.mtop').boundingBox()).height-52)<2,'The top bar shortens to 52px');
  // Every destination is reachable by name even though no label is drawn.
  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(250);
