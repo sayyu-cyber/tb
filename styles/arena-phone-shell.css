@@ -130,6 +130,30 @@
     padding-right: max(16px, env(safe-area-inset-right));
   }
 
+  /* ── The chat thread (MChat) ───────────────────────────────────────
+     design/arena/MOBILE.md "Thread": "The chat is its own screen: it slides
+     in (`slideIn` .32s), hides the tab bar and pins the composer to the
+     bottom." The board draws it `position:absolute; inset:0` inside its own
+     390x844 box; on a real phone that is the viewport, the notch and the
+     home indicator. The tab bar goes because the thread covers it - one
+     `:has()` rather than state passed up to the shell. */
+  .arena-mchat .chat {
+    position: fixed;
+    inset: 0;
+    padding-top: env(safe-area-inset-top);
+  }
+  .arena-mchat .composer {
+    padding-bottom: calc(30px + env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .arena-mchat .chead {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  body:has(.arena-mchat .chat) .mtab,
+  body:has(.arena-mchat .chat) .mtop { display: none; }
+
   /* The rail is the sideways shape only. */
   .arena-phone .mrail { display: none; }
 }

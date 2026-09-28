@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Send, MessageCircle, RefreshCw, Gamepad2, User, ArrowLeft } from "lucide-react";
+import { Send, MessageCircle, RefreshCw, Gamepad2, User, ArrowLeft, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -16,6 +16,8 @@ import {
 } from "@/lib/messages";
 import { Avatar, RankLabel } from "@/components/arena";
 import { getRankFromTrophies } from "@/constants/ranks";
+import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { PhoneMessages } from "./phone/PhoneMessages";
 
 /**
  * Messages — design/arena/screens/app/app-05-messages.jpg, from the
@@ -31,6 +33,16 @@ import { getRankFromTrophies } from "@/constants/ranks";
  *
  * Under 900px there is no room for two panes, so it falls back to one at a
  * time with a back arrow, which is the behaviour it had before.
+ *
+ * Held upright a phone gets MMessages and MChat
+ * (design/arena/boards/MMessages.dc.html, MChat.dc.html): the list is the
+ * whole screen and the thread slides in over it, hiding the tab bar, with
+ * the composer pinned to the bottom (MOBILE.md "Thread").
+ *
+ * This is one of the few screens that picks its composition in JavaScript
+ * rather than CSS, and the reason is the thread: it holds a live message
+ * subscription and marks the conversation read, so exactly one of it may
+ * exist. Mounting both and hiding one would double both.
  */
 
 const MAX = 500;
@@ -40,6 +52,7 @@ export function MessagesClient() {
   const router = useRouter();
   const { user, isGuest } = useAuth();
   const t = useTranslation();
+  const phone = usePhonePortrait();
   const myUid = user?.uid ?? "";
   const myName = user?.displayName ?? "Player";
 
@@ -87,6 +100,39 @@ export function MessagesClient() {
           <p className="muted" style={{ marginTop: "12px" }}>{t("messages_signInPrompt")}</p>
         </section>
       </div>
+    );
+  }
+
+  if (phone) {
+    // The thread is its own screen: it covers the list rather than sitting
+    // beside it, so only one of the two is rendered at a time.
+    return openUid ? (
+      <ChatView
+        key={openUid}
+        phone
+        myUid={myUid}
+        myName={myName}
+        otherUid={openUid}
+        otherName={openName}
+        onBack={() => router.replace("/messages", { scroll: false })}
+      />
+    ) : (
+      <PhoneMessages
+        title={t("page_messages")}
+        conversations={conversations}
+        loaded={loaded}
+        loadError={loadError}
+        loadErrorText={t("messages_loadError")}
+        retryText={t("error_tryAgain")}
+        emptyText={t("messages_noConversationsYet")}
+        youPrefix={t("messages_youPrefix")}
+        noMessagesText={t("messages_noMessagesYet")}
+        myUid={myUid}
+        otherOf={other}
+        when={when}
+        onOpen={open}
+        onRetry={() => setRetryKey(k => k + 1)}
+      />
     );
   }
 
@@ -176,13 +222,15 @@ function when(timestamp: number) {
 }
 
 function ChatView({
-  myUid, myName, otherUid, otherName, onBack,
+  myUid, myName, otherUid, otherName, onBack, phone = false,
 }: {
   myUid: string;
   myName: string;
   otherUid: string;
   otherName: string;
   onBack: () => void;
+  /** Draw MChat's full-screen thread instead of the wide screen's pane. */
+  phone?: boolean;
 }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<DmMessage[]>([]);
@@ -257,6 +305,81 @@ function ChatView({
   }, [messages]);
 
   const trophies = profile?.trophies ?? 0;
+
+  /* MChat: the thread is its own screen. It comes in on `slideIn`, covers
+     the tab bar and pins the composer to the bottom - MOBILE.md "Thread" -
+     so the back arrow is the only way out, as the board draws it. The state
+     above is shared with the wide pane: the same subscription, the same
+     read marking, the same invite, the same day grouping. */
+  if (phone) return (
+    <section className="arena-mchat chat" aria-label={`Chat with ${otherName}`}>
+      <div className="bg2" aria-hidden="true" />
+      <header className="chead">
+        <button type="button" className="ibtn" aria-label={t("a11y_goBack")} onClick={onBack} data-flat>
+          <ChevronLeft aria-hidden="true" />
+        </button>
+        <Avatar name={otherName} src={profile?.photoURL} seed={otherUid} size={42} radius={11}
+          presence={online ? "online" : "offline"} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 0", minWidth: 0 }}>
+          <b className="disp" style={{ fontSize: 17, letterSpacing: ".02em" }}>{otherName}</b>
+          <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span className={`st ${online ? "on" : ""}`.trim()}>
+              <i aria-hidden="true" />{online ? "Online" : "Offline"}
+            </span>
+            {profile && <RankLabel tier={getRankFromTrophies(trophies)} />}
+          </span>
+        </div>
+        <a className="ibtn" aria-label={`View ${otherName}'s profile`} href={`/player?uid=${encodeURIComponent(otherUid)}`}>
+          <User aria-hidden="true" />
+        </a>
+      </header>
+
+      <div className="inv">
+        <button type="button" className="ar-btn blue sm full" onClick={invite} disabled={inviting} data-flat>
+          <Gamepad2 aria-hidden="true" />Invite to Mindi
+        </button>
+      </div>
+
+      {error && <p role="alert" className="msg-error">{error}</p>}
+
+      <div className="msgs">
+        {messages.length === 0 && (
+          <p className="muted2" style={{ alignSelf: "center", marginTop: 20 }}>
+            {t("messages_sayHelloTo").replace("{name}", otherName)}
+          </p>
+        )}
+        {days.map((group) => (
+          <div key={group.label} style={{ display: "contents" }}>
+            <span className="day">{group.label}</span>
+            {group.items.map((message) => (
+              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id}>
+                {message.text}
+              </div>
+            ))}
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="composer">
+        <label className="field">
+          <input
+            aria-label={t("messages_placeholder")}
+            value={text}
+            onChange={(event) => setText(event.target.value.slice(0, MAX))}
+            onKeyDown={(event) => { if (event.key === "Enter") handleSend(); }}
+            placeholder={t("messages_placeholder")}
+            maxLength={MAX}
+          />
+          <span className="counter" aria-hidden="true">{text.length} / {MAX}</span>
+        </label>
+        <button type="button" className="ar-btn" style={{ height: 48, width: 52, padding: 0 }}
+          aria-label={t("a11y_sendMessage")} onClick={handleSend} disabled={!text.trim()} data-flat>
+          <Send aria-hidden="true" />
+        </button>
+      </div>
+    </section>
+  );
 
   return (
     <section className="panel msg-chat" aria-label={`Chat with ${otherName}`}>

@@ -42,7 +42,9 @@ async function run() {
     await page.route('**/messages/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -138,7 +140,9 @@ async function run() {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(BASE + '/messages/');
     await page.waitForTimeout(300);
-    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
+    // Two are in the DOM - the wide screen's and MMessages's - and CSS
+    // hides one; the accessibility tree must only see the one on screen.
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
@@ -146,7 +150,32 @@ async function run() {
     assert.equal(await page.locator('input[aria-label="Message…"]').count(), 1, 'The composer is labelled');
 
     assert.deepEqual(errors, []);
-    console.log('Messages: both panes, five conversations with the unread dot, the board\'s six-message thread and day separator, the 500-character counter, sending, switching, Invite to Mindi, empty/guest/error states, seven widths, the narrow fallback and accessibility passed.');
+    // ── Held upright: MMessages and MChat ───────────────────────────────
+    // design/arena/boards/MMessages.dc.html and MChat.dc.html. The list is
+    // the whole screen; the thread covers it rather than sitting beside it,
+    // which is also why exactly one ChatView exists at a time.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE + '/messages-test/');
+    await page.locator('.arena-mmessages').waitFor();
+    const list = page.locator('.arena-mmessages');
+    assert.equal(await page.locator('.msg-page').count(), 0, 'The two-pane screen steps aside');
+    assert.ok(await list.locator('.conv').count() > 0, 'The conversations are here');
+    assert.ok(await list.locator('.cdiv').count() > 0, 'separated by the hairlines');
+    assert.equal(await page.locator('.arena-mchat').count(), 0, 'and no thread until one is picked');
+    await page.screenshot({ path: path.join(output, 'mmessages-390.png'), fullPage: true });
+
+    await list.locator('.conv').first().click();
+    await page.locator('.arena-mchat .chat').waitFor();
+    assert.equal(await page.locator('.arena-mmessages').count(), 0, 'The thread replaces the list');
+    assert.equal(await page.locator('.arena-mchat .composer').count(), 1, 'with the composer pinned');
+    assert.ok((await page.locator('.arena-mchat').innerText()).includes('Invite to Mindi'), 'and the invite');
+    await page.screenshot({ path: path.join(output, 'mchat-390.png') });
+    await page.locator('.arena-mchat .chead .ibtn').first().click();
+    await page.locator('.arena-mmessages').waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    console.log('Messages: MMessages and MChat held upright, both panes, five conversations with the unread dot, the board\'s six-message thread and day separator, the 500-character counter, sending, switching, Invite to Mindi, empty/guest/error states, seven widths, the narrow fallback and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
