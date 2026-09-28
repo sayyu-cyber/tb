@@ -42,7 +42,9 @@ async function run() {
     await page.route('**/friends/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -137,7 +139,9 @@ async function run() {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.getByRole('heading', { name: 'Friends', exact: true }).waitFor();
     await page.waitForTimeout(250);
-    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
+    // Two are in the DOM - the wide screen's and MFriends's - and CSS
+    // hides one; the accessibility tree must only see the one on screen.
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
@@ -145,7 +149,35 @@ async function run() {
     assert.equal(await page.locator('[role=switch][aria-checked]').count(), 1, 'The switch reports its state');
 
     assert.deepEqual(errors, []);
-    console.log('Friends: board structure and counts, the more-menu, filter/search/sort, the Requests tab with all three sections, the add dialog, empty/guest/error states, seven widths and accessibility passed.');
+    // ── Held upright: MFriends ──────────────────────────────────────────
+    // design/arena/boards/MFriends.dc.html, with the actions sheet from
+    // phone-04c. One column instead of two, and the row's more-menu opens
+    // the shared bottom sheet rather than a dropdown that would cover the
+    // row it belongs to.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(350);
+    assert.equal(await page.locator('.arena-friends.ar-page').isVisible(), false, 'The wide screen steps aside');
+    const phone = page.locator('.arena-mfriends');
+    assert.equal(await phone.isVisible(), true, 'and MFriends takes over');
+    assert.equal(await phone.locator('.sbtn').count(), 3, 'The three stat buttons');
+    assert.equal(await phone.locator('.tabs > *').count(), 3, 'Friends, Requests and the disabled Blocked');
+    assert.ok(await phone.locator('.fr').count() > 0, 'and the roster');
+    // The more button opens a sheet, not a dropdown.
+    await phone.locator('.fr .acts .ibtn').last().click();
+    await page.getByRole('dialog').waitFor();
+    assert.equal(await page.locator('.menu').count(), 0, 'No dropdown at this size');
+    const sheet = await page.getByRole('dialog').innerText();
+    for (const label of ['View Profile', 'Invite to Mindi', 'Invite to Gin Rummy', 'Remove Friend']) {
+      assert.ok(sheet.includes(label), `The sheet offers ${label}`);
+    }
+    await page.screenshot({ path: path.join(output, 'mfriends-actions-390.png') });
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getByRole('dialog').count(), 0, 'Escape closes it');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'mfriends-390.png'), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    console.log('Friends: MFriends held upright with its actions sheet, board structure and counts, the more-menu, filter/search/sort, the Requests tab with all three sections, the add dialog, empty/guest/error states, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
