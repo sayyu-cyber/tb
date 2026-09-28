@@ -21,7 +21,7 @@ const TABS = [
 ];
 
 /** "1d 14h", "14h 20m", "20m" - the board's form, to the sensible unit. */
-function until(timestamp: number) {
+export function until(timestamp: number) {
   const ms = timestamp - Date.now();
   if (ms <= 0) return "soon";
   const days = Math.floor(ms / 86_400_000);
