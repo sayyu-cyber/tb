@@ -40,7 +40,9 @@ async function run() {
     await page.route('**/hall-of-fame/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div id="test-root"></div>`
+        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
 
@@ -98,14 +100,33 @@ async function run() {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(BASE + '/hall-of-fame/');
     await page.waitForTimeout(250);
-    assert.equal(await page.locator('h1').count(), 1, 'One h1');
+    assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
+    // Two are in the DOM - the wide screen's and MHallOfFame's - and CSS
+    // hides one; the accessibility tree must only see the one on screen.
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    console.log('Hall of Fame: the three podium cards in board order with their peaks and computed win rates, the ranked list numbered on from the podium with your row marked, the two-legend/empty/error states, seven widths and accessibility passed.');
+    // ── Held upright: MHallOfFame ───────────────────────────────────────
+    // design/arena/boards/MHallOfFame.dc.html. First place takes the full
+    // width, second and third go two-up under it, and the table's five
+    // columns fold into a row per player - so the header row goes with them.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(350);
+    assert.equal(await page.locator('.arena-halloffame.ar-page').count(), 0, 'The wide screen steps aside');
+    const phone = page.locator('.arena-mhalloffame');
+    assert.equal(await phone.isVisible(), true, 'and MHallOfFame takes over');
+    assert.equal(await phone.locator('.legend').count(), 3, 'The three legends');
+    assert.equal(await phone.locator('.legend.g1').count(), 1, 'first place on its own');
+    assert.ok(await phone.locator('.hrow').count() > 0, 'and the rest as rows');
+    assert.equal(await phone.locator('.hrow.head').count(), 0, 'with no column header left to label');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await page.screenshot({ path: path.join(output, 'mhalloffame-390.png'), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    console.log('Hall of Fame: MHallOfFame held upright, the three podium cards in board order with their peaks and computed win rates, the ranked list numbered on from the podium with your row marked, the two-legend/empty/error states, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
