@@ -59,11 +59,11 @@ async function run() {
 
     // ── The podium (lobby-01) ───────────────────────────────────────────
     assert.equal(await page.locator('.lob-board .deck').count(), 2, 'Two deck boxes');
-    assert.equal(await page.locator('.landscape-view .deck.vio.on').count(), 1, 'Mindi is the lit deck');
-    assert.equal(await page.locator('.landscape-view .deck.blk.off').count(), 1, 'Gin Rummy is dimmed');
-    assert.equal(await page.locator('.landscape-view .apron').count(), 10, 'Ten stacked aprons');
-    assert.equal(await page.locator('.landscape-view .leds ellipse').count(), 4, 'The four LED rings');
-    assert.equal(await page.locator('.landscape-view .mote').count(), 4, 'Four drifting motes');
+    assert.equal(await page.locator('.deck.vio.on').count(), 1, 'Mindi is the lit deck');
+    assert.equal(await page.locator('.deck.blk.off').count(), 1, 'Gin Rummy is dimmed');
+    assert.equal(await page.locator('.apron').count(), 10, 'Ten stacked aprons');
+    assert.equal(await page.locator('.leds ellipse').count(), 4, 'The four LED rings');
+    assert.equal(await page.locator('.mote').count(), 4, 'Four drifting motes');
     assert.equal(await page.locator('.lob-board .beam').count(), 2, 'Two spotlight beams');
     assert.ok((await page.locator('.lob-title-block').innerText()).toUpperCase().includes('PICK A GAME'));
 
@@ -104,8 +104,8 @@ async function run() {
 
     // ── Gin Rummy (lobby-02) ────────────────────────────────────────────
     await page.getByRole('button', { name: /^Gin Rummy/ }).click();
-    assert.equal(await page.locator('.landscape-view .deck.blk.on').count(), 1, 'The Gin deck lights');
-    assert.equal(await page.locator('.landscape-view .deck.vio.off').count(), 1, 'and Mindi dims');
+    assert.equal(await page.locator('.deck.blk.on').count(), 1, 'The Gin deck lights');
+    assert.equal(await page.locator('.deck.vio.off').count(), 1, 'and Mindi dims');
     text = await modes.textContent();
     assert.ok(text.toUpperCase().includes('TWO PLAYERS'), 'Gin kicker');
     assert.ok(text.includes('There is no knocking.'), 'Gin rules line');
@@ -150,12 +150,12 @@ async function run() {
     assert.equal(await page.locator('body').getAttribute('data-queue'), 'off');
 
     // ── Accessibility ───────────────────────────────────────────────────
-    assert.equal(await page.locator('.landscape-view .deck[aria-pressed]').count(), 2, 'Decks say which is chosen');
+    assert.equal(await page.locator('.deck[aria-pressed]').count(), 2, 'Decks say which is chosen');
     assert.equal(await page.locator('.lob-modes .mode[aria-pressed]').count(), 5);
     assert.equal(await page.locator('.lob-rank .xp[role=progressbar]').count(), 1, 'The bar is a progressbar');
     // Every loop the board runs forever can be switched off.
-    const loops = await page.locator('.landscape-view .mote, .landscape-view .deck, .landscape-view .chase').count();
-    assert.equal(await page.locator('.landscape-view .mote[data-ar-loop], .landscape-view .deck[data-ar-loop], .landscape-view .chase[data-ar-loop]').count(), loops,
+    const loops = await page.locator('.mote, .deck, .chase').count();
+    assert.equal(await page.locator('.mote[data-ar-loop], .deck[data-ar-loop], .chase[data-ar-loop]').count(), loops,
       'Every loop carries data-ar-loop for prefers-reduced-motion');
 
     // ── The scene scales, the chrome does not ───────────────────────────
@@ -242,9 +242,16 @@ async function run() {
     await page.goto(BASE + '/play-test/');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(300);
-    assert.equal(await page.locator('.lob-frame').isVisible(), false, 'The wide board steps aside');
+    assert.equal(await page.locator('.lob-frame').count(), 0, 'The wide board steps aside');
     const phone = page.locator('.arena-mplay');
     assert.equal(await phone.isVisible(), true, 'and MPlay takes over');
+    // One composition mounted, never two. Each of the three is a lit 3D
+    // podium; hiding the others in CSS cost a phone two scenes at once and
+    // a third while turning, which is what was crashing iOS Safari on the
+    // turn to play.
+    assert.equal(
+      await page.locator('.lob-frame, .arena-plobby, .arena-mplay').count(), 1,
+      'Exactly one lobby composition is in the DOM');
     assert.equal(await phone.locator('.deck').count(), 2, 'Two deck boxes on the podium');
     assert.equal(await phone.locator('.apron').count(), 7, "The board's seven aprons");
     assert.equal(await phone.locator('.leds ellipse').count(), 3, 'and its three LED rings');

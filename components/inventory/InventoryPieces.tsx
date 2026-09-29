@@ -84,11 +84,14 @@ export function CosmeticTile({
   owned,
   action,
   initial,
+  phone = false,
 }: {
   item: CosmeticItem;
   owned: boolean;
   action: TileAction;
   initial: string;
+  /** The board's three-column tile: smaller art, a shorter art band. */
+  phone?: boolean;
 }) {
   const equipped = action.kind === "equipped";
   return (
@@ -96,8 +99,8 @@ export function CosmeticTile({
       {!owned && (
         <span className="lk" aria-hidden="true"><Lock /></span>
       )}
-      <span className="tile-art" style={{ margin: "6px 0 4px" }}>
-        <CosmeticArt item={item} initial={initial} />
+      <span className="tile-art" style={{ margin: phone ? "4px 0 2px" : "6px 0 4px" }}>
+        <CosmeticArt item={item} size={phone ? "phone" : "grid"} initial={initial} />
       </span>
       <b>{item.name}</b>
       <span className={`rar ${item.rarity.toLowerCase()}`}>{item.rarity}</span>

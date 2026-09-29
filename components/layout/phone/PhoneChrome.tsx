@@ -53,7 +53,7 @@ export function PhoneChrome() {
     <>
       <div className="mstage" aria-hidden="true" />
       <PhoneTopBar notifications={requests.length + unread} />
-      <PhoneNav onMore={() => setMore(true)} requests={requests.length} />
+      <PhoneNav onMore={() => setMore(true)} moreOpen={more} requests={requests.length} />
       <MoreSheet open={more} onClose={() => setMore(false)} unread={unread} />
     </>
   );

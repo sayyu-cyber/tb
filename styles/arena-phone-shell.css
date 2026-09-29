@@ -68,13 +68,85 @@
     padding-bottom: max(22px, env(safe-area-inset-bottom));
   }
   /* More is a button here, not the board's `<a href="#more">`: it opens a
-     sheet rather than navigating. Same pixels, honest semantics. */
+     sheet rather than navigating. Same pixels, honest semantics - which
+     means the button has to be given the slot recipe the generated sheet
+     writes for `a`, not just a reset. Value for value from
+     `.arena-phone .mtab a` in styles/arena-phone.css; a button resets its
+     own border, background, font and cursor, so those are set back. */
   .arena-phone .mtab button,
   .arena-phone .mrail button {
     border: 0;
     background: none;
     cursor: pointer;
   }
+  .arena-phone .mtab button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 9px 0 0;
+    color: #8E8E9C;
+    font-family: var(--font-display), sans-serif;
+    font-weight: 700;
+    font-size: 9.5px;
+    line-height: 1;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .arena-phone .mtab button .ti {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 30px;
+    border-radius: 9px;
+    transition: background .2s, color .2s;
+  }
+  .arena-phone .mtab button svg { width: 20px; height: 20px; }
+  .arena-phone .mtab button[aria-current="page"] { color: #fff; }
+  .arena-phone .mtab button[aria-current="page"] .ti {
+    color: #0A0A0A;
+    background: #C6FF33;
+    box-shadow: 0 0 18px rgba(198, 255, 51, .35);
+  }
+  .arena-phone .mtab button:focus-visible { outline: none; }
+  .arena-phone .mtab button:focus-visible .ti { box-shadow: 0 0 0 2px #fff; }
+
+  /* The same in reverse for the chip rows: the generated sheet writes them
+     as `button`, because a board's chips only ever switch a section. On
+     Profile two of the five go somewhere - Achievements and Settings are
+     routes - so they are links, and a link needs the chip recipe too.
+     Value for value from `.arena-phone .chips button`. */
+  .arena-phone .chips a {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, .04);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+    color: #BEBECA;
+    text-decoration: none;
+    font-family: var(--font-display), sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .arena-phone .chips a svg { width: 15px; height: 15px; }
+  .arena-phone .chips a[aria-current="page"] {
+    background: #C6FF33;
+    color: #0A0A0A;
+    box-shadow: none;
+  }
+  .arena-phone .chips a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
   /* The page clears both bars. The board's own 78/110 padding assumes its
      flat 60 and 84; these add the insets. */
@@ -194,7 +266,8 @@
      nothing. These are that sheet's rail rules, value for value, under
      the class the shell does carry. Only the box changes - fixed rather
      than absolute, and the safe area added - because the board draws it
-     inside its own 844x390 frame. */
+     inside its own 844x390 frame, and `a` becomes `:is(a, button)` because
+     the More slot opens a sheet rather than navigating. */
   .arena-phone .mrail {
     display: flex;
     position: fixed;
@@ -227,7 +300,7 @@
     box-shadow: 0 0 0 1.5px #C6FF33, 0 0 14px rgba(198, 255, 51, .35);
   }
   .arena-phone .mrail .logo svg { width: 16px; height: 16px; }
-  .arena-phone .mrail a {
+  .arena-phone .mrail :is(a, button) {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -235,6 +308,9 @@
     gap: 4px;
     width: 76px;
     padding: 5px 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
     color: #8E8E9C;
     text-decoration: none;
     font-family: var(--font-display), sans-serif;
@@ -244,7 +320,7 @@
     letter-spacing: .12em;
     text-transform: uppercase;
   }
-  .arena-phone .mrail a .ti {
+  .arena-phone .mrail :is(a, button) .ti {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -252,15 +328,15 @@
     height: 30px;
     border-radius: 9px;
   }
-  .arena-phone .mrail a svg { width: 19px; height: 19px; }
-  .arena-phone .mrail a[aria-current="page"] { color: #fff; }
-  .arena-phone .mrail a[aria-current="page"] .ti {
+  .arena-phone .mrail :is(a, button) svg { width: 19px; height: 19px; }
+  .arena-phone .mrail :is(a, button)[aria-current="page"] { color: #fff; }
+  .arena-phone .mrail :is(a, button)[aria-current="page"] .ti {
     color: #0A0A0A;
     background: #C6FF33;
     box-shadow: 0 0 18px rgba(198, 255, 51, .35);
   }
-  .arena-phone .mrail a:focus-visible { outline: none; }
-  .arena-phone .mrail a:focus-visible .ti { box-shadow: 0 0 0 2px #fff; }
+  .arena-phone .mrail :is(a, button):focus-visible { outline: none; }
+  .arena-phone .mrail :is(a, button):focus-visible .ti { box-shadow: 0 0 0 2px #fff; }
   .arena-phone .mrail .bdg {
     position: absolute;
     left: calc(50% + 8px);
@@ -369,12 +445,22 @@
     position: fixed;
     inset: 0;
     z-index: 999;
-    /* The board draws its own table and blurs it with
-       `.stage { filter: blur(5px) brightness(.62) }`. Here the live table is
-       genuinely behind the gate, so the board's two values are applied to it
-       as a backdrop instead - same picture, real hand. */
-    -webkit-backdrop-filter: blur(5px) brightness(.62);
-    backdrop-filter: blur(5px) brightness(.62);
+    /* A scrim, not a backdrop filter. The board's two values still do the
+       blurring, but on the table itself, below - which is where the board
+       puts them (`.stage { filter: blur(5px) brightness(.62) }`).
+       `backdrop-filter` over a full, live, animated viewport re-composites
+       the whole screen every frame on a phone, and blurring the layer once
+       is the same picture for a fraction of the work. */
+    background: rgba(6, 6, 9, .42);
+  }
+  /* The live table behind the gate, blurred at the board's own values.
+     `.arena-frame` is the match stage and is already `position: fixed` with
+     its own insets, so filtering it neither moves it nor traps anything
+     else's fixed positioning - and it rasterises once instead of per
+     frame. */
+  body:has(.rotate-gate) .app-shell-match .arena-frame {
+    filter: blur(5px) brightness(.62);
+    pointer-events: none;
   }
   /* The board's 18/16/34, plus the notch and the home indicator. */
   .arena-mrotate .gate {

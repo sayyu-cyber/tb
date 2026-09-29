@@ -172,6 +172,16 @@ async function run() {
     assert.equal(await phone.locator('.hs .slot').count(), 5, 'Five loadout slots, as a side-scroller');
     assert.equal(await phone.locator('.chips > button').count(), 7, 'All seven categories');
     assert.ok(await phone.locator('.tile').count() > 0, 'and the collection grid');
+    // A card back is laid out in `em` and sized by font-size, so it only
+    // takes a width inside a block formatting context. Counting the tiles
+    // would not notice the art collapsing to nothing.
+    assert.ok(
+      await phone.locator('.tile .cb').first().evaluate(node => node.getBoundingClientRect().width > 40),
+      'Each tile draws its cosmetic, not just the crown');
+    // Every tile the same height, whatever the description runs to.
+    const heights = await phone.locator('.tile').evaluateAll(
+      nodes => [...new Set(nodes.map(n => Math.round(n.getBoundingClientRect().height)))]);
+    assert.equal(heights.length, 1, `Every tile is the same height (got ${heights.join(', ')})`);
     assert.ok(await phone.locator('.rc').count() > 0, 'Room Cards are still here');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
     await page.screenshot({ path: path.join(output, 'minventory-390.png'), fullPage: true });

@@ -48,24 +48,30 @@ export function CosmeticArt({
   initial = "S",
 }: {
   item: CosmeticItem;
-  /** "grid" is the tile size, "slot" the larger loadout size. */
-  size?: "grid" | "slot";
+  /**
+   * "grid" is the wide tile, "slot" the larger loadout size, "phone" the
+   * board's three-column tile - MInventory draws a card back there at
+   * `font-size: 9px`, which is 65px wide, and every other category is
+   * scaled to sit in the same 92px band.
+   */
+  size?: "grid" | "slot" | "phone";
   /** The player's initial, for the frame preview. */
   initial?: string;
 }) {
   const big = size === "slot";
+  const small = size === "phone";
 
   if (item.category === "cardBack") {
-    return <CardBackArt id={item.id} width={big ? 65 : 79} />;
+    return <CardBackArt id={item.id} width={small ? 65 : big ? 65 : 79} />;
   }
 
   if (item.category === "tableTheme") {
-    return <TableSwatch id={item.id} width={big ? 124 : 100} />;
+    return <TableSwatch id={item.id} width={small ? 88 : big ? 124 : 100} />;
   }
 
   if (item.category === "profileFrame") {
     const ring = FRAME_RING[item.id] ?? "rgba(255,255,255,.7)";
-    const box = big ? 70 : 58;
+    const box = small ? 50 : big ? 70 : 58;
     return (
       <span
         className="ava"
@@ -88,8 +94,8 @@ export function CosmeticArt({
       <span
         aria-hidden="true"
         style={{
-          width: big ? 150 : 108,
-          height: big ? 64 : 48,
+          width: small ? 92 : big ? 150 : 108,
+          height: small ? 41 : big ? 64 : 48,
           borderRadius: "12px",
           background: BANNER_ART[item.id] ?? BANNER_ART.bn_default,
           boxShadow: "inset 0 0 0 1px rgba(255,255,255,.2)",
@@ -99,5 +105,6 @@ export function CosmeticArt({
   }
 
   const Icon = item.category === "emote" ? Smile : item.category === "sticker" ? Sticker : Sparkles;
-  return <Icon aria-hidden="true" style={{ width: big ? 44 : 34, height: big ? 44 : 34, color: "#C6FF33" }} />;
+  const iconBox = small ? 30 : big ? 44 : 34;
+  return <Icon aria-hidden="true" style={{ width: iconBox, height: iconBox, color: "#C6FF33" }} />;
 }

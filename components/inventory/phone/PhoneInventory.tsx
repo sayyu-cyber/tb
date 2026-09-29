@@ -125,6 +125,7 @@ export function PhoneInventory(p: PhoneInventoryProps) {
                     owned={p.owned.has(item.id)}
                     action={p.actionFor(item)}
                     initial={p.initial}
+                    phone
                   />
                 ))}
               </div>

@@ -22,14 +22,17 @@ import { getLeagueWindow } from "@/lib/weekendLeague";
  * chosen game's modes. Picking a deck swaps the whole mode panel; picking a
  * mode changes where PLAY goes.
  *
- * ONE STATE, THREE COMPOSITIONS. The lobby is not a responsive layout, it is
- * three artboards: Lobby at 1440x900 for a desktop, PLobby at 844x390 for a
- * phone held sideways, and MPlay at 390 wide for one held upright. CSS picks
- * upright from sideways-or-wide (`.portrait-view` / `.landscape-view` in
- * styles/arena-phone-shell.css) and hooks/usePhoneTable picks which of the two
- * landscape boards, since mounting both 3D podiums to hide one would be waste.
- * Everything that can be chosen or searched for lives here instead, so
- * turning the phone mid-search changes the picture and nothing else: the
+ * ONE STATE, THREE COMPOSITIONS, ONE MOUNTED. The lobby is not a responsive
+ * layout, it is three artboards: Lobby at 1440x900 for a desktop, PLobby at
+ * 844x390 for a phone held sideways, and MPlay at 390 wide for one held
+ * upright. Each is a lit 3D podium - a rotateX table over seven translateZ
+ * aprons, blurred LED rings, motes on infinite loops - so only the one on
+ * screen is mounted. Hiding the others in CSS cost a phone two of these
+ * scenes at once, and turning the phone made it build a third while tearing
+ * one down; that is what was crashing iOS Safari on the turn.
+ *
+ * Everything that can be chosen or searched for lives here instead of in the
+ * compositions, so turning the phone swaps the picture and nothing else: the
  * queue keeps running, as design/arena/MOBILE.md requires.
  *
  * The busy state (lobby-02) is a real queue, not a mock. Casual Online is
@@ -137,14 +140,11 @@ export default function PlayPage() {
 
   return (
     <>
-      <div className="landscape-view">
-        {sideways
+      {portrait
+        ? <PhoneLobby game={game} onPickGame={pickGame} {...shared} />
+        : sideways
           ? <PhoneLobbyBoard game={game} onPickGame={pickGame} {...shared} />
           : <LobbyBoard game={game} onPickGame={pickGame} {...shared} />}
-      </div>
-      <div className="portrait-view">
-        <PhoneLobby game={game} onPickGame={pickGame} {...shared} />
-      </div>
       <RotateToPlaySheet
         open={portrait && finding}
         onStop={stop}

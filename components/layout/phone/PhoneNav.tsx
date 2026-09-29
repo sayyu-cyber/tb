@@ -20,9 +20,10 @@ import { PHONE_TABS, activeTab, type PhoneTab } from "./phoneTabs";
  *
  * One departure from the board's markup, and only one: it writes More as
  * `<a href="#more">` with a click handler. More opens a sheet rather than
- * going anywhere, so here it is a real <button> with aria-expanded, and
- * styles/arena-phone-shell.css adds `button` beside `a` in the two rules
- * that style a slot. Same pixels, honest semantics.
+ * going anywhere, so here it is a real <button> carrying the sheet's open
+ * state on aria-expanded. The board's CSS styles a slot by element - `a` -
+ * so styles/arena-phone-shell.css gives the button the same recipe in both
+ * shapes. Same pixels, honest semantics.
  */
 
 function slotContent(tab: PhoneTab, label: string, badge: number) {
@@ -44,7 +45,7 @@ function slotContent(tab: PhoneTab, label: string, badge: number) {
   );
 }
 
-function Slots({ current, onMore, requests }: { current: string | null; onMore: () => void; requests: number }) {
+function Slots({ current, onMore, moreOpen, requests }: { current: string | null; onMore: () => void; moreOpen: boolean; requests: number }) {
   const t = useTranslation();
   return (
     <>
@@ -61,7 +62,7 @@ function Slots({ current, onMore, requests }: { current: string | null; onMore: 
               key={tab.href}
               onClick={onMore}
               aria-current={active ? "page" : undefined}
-              aria-expanded={false}
+              aria-expanded={moreOpen}
               data-flat
             >
               {slotContent(tab, label, badge)}
@@ -84,7 +85,7 @@ function Slots({ current, onMore, requests }: { current: string | null; onMore: 
   );
 }
 
-export function PhoneNav({ onMore, requests = 0 }: { onMore: () => void; requests?: number }) {
+export function PhoneNav({ onMore, moreOpen = false, requests = 0 }: { onMore: () => void; moreOpen?: boolean; requests?: number }) {
   const pathname = usePathname();
   const t = useTranslation();
   const current = activeTab(pathname);
@@ -92,7 +93,7 @@ export function PhoneNav({ onMore, requests = 0 }: { onMore: () => void; request
   return (
     <>
       <nav className="mtab" aria-label={t("nav_moreTitle")}>
-        <Slots current={current} onMore={onMore} requests={requests} />
+        <Slots current={current} onMore={onMore} moreOpen={moreOpen} requests={requests} />
       </nav>
       <nav className="mrail" aria-label={t("nav_moreTitle")}>
         <span className="logo" aria-hidden="true">
@@ -101,7 +102,7 @@ export function PhoneNav({ onMore, requests = 0 }: { onMore: () => void; request
               d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7ZM5 21h14" />
           </svg>
         </span>
-        <Slots current={current} onMore={onMore} requests={requests} />
+        <Slots current={current} onMore={onMore} moreOpen={moreOpen} requests={requests} />
       </nav>
     </>
   );
