@@ -43,6 +43,7 @@ functions/node_modules/
 firebase-debug.log
 artifacts/friends-test/component.js
 artifacts/rewards-test/component.js
+artifacts/inventory-test/component.js
 artifacts/play-test/component.js
 artifacts/home-test/component.js
 artifacts/room-test/component.js
