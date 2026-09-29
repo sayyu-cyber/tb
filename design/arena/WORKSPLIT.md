@@ -142,6 +142,22 @@ buttons, states and animations must all be the same.
   3. Save the screenshot and the reference side by side in `artifacts/compare/<screen>.png`. Don't commit these.
   4. Fix every difference you can see, then attach the comparison images to the phase 1 summary.
 
+## Phone layouts
+
+The phone designs are in `MOBILE.md`, `boards/M*.dc.html`, `boards/P*.dc.html` and `screens/phone/*.jpg`.
+
+- **Claude builds the whole phone version** on the branch `phone/claude`:
+  - the shell: the top bar, the tab bar with the Play diamond, the More sheet, the sheets, and the rail when the phone is held sideways
+  - the rotate handling in MOBILE.md "Turning the phone"
+  - the four landscape table screens
+  - every portrait screen, including ChatGPT's desktop screens
+- **ChatGPT reviews** the branch once it's done (PROMPTS.md, prompt 7), then Sayyu merges it.
+- **Checks.**
+  - Each portrait screen matches its `screens/phone/*.jpg` at 390 × 844, and still works at 360 and 430 wide.
+  - The landscape screens match at 844 × 390.
+  - The desktop checks still pass at 768 and up.
+  - The "Exact match" rules above apply to every phone screen.
+
 ## Phase 2: review and merge
 
 - Claude reviews `arena/codex-screens` and ChatGPT reviews `arena/claude-screens`. Each checks against the references and this file's ownership rules, and lists problems without fixing the other's code.

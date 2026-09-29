@@ -6,8 +6,9 @@ Use them in this order:
 2. **Both, in parallel.** Paste prompt 2 into ChatGPT (Codex), and reply `start phase 1` to Claude.
 3. **Reviews.** When both have finished, run prompt 3 in Claude and prompt 4 in ChatGPT. Send each list of problems back to the agent that owns the code.
 4. **Merge.** Run prompt 5 in Claude, then push `main` yourself.
+5. **Phone.** Once the desktop work is on `main`, paste prompt 6 into Claude. When it finishes, run prompt 7 in ChatGPT and send the problems back to Claude. Then run prompt 8, and push `main` yourself.
 
-The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md`.
+The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md` (desktop) and `MOBILE.md` (phone).
 
 ## 1. Claude: phase 0, then phase 1
 
@@ -155,5 +156,134 @@ Both reviews are done and fixed. Merge as design/arena/WORKSPLIT.md phase 2 says
    Resolve any conflicts so that both sides keep their intent. Then run npm run verify and every check-*-ui script.
 3. If ChatGPT built local stand-ins for things on its "Needs from Claude" list, switch them to the shared pieces in a separate commit.
 4. Remove the worktree: git worktree remove ..\thaasbai-codex
+Don't push. Tell me when main is ready and I'll push.
+```
+
+## 6. Claude: the phone version (after the desktop work is merged)
+
+Paste this into the Thaasbai project session. Claude builds the whole phone version on the branch `phone/claude`.
+
+```text
+Finish and commit whatever you're in the middle of first, so the phone work starts from a clean main. Then read this.
+
+We're building the phone version of Thaasbai, and it must be an exact copy of the phone artboards. You build all of it; ChatGPT only reviews at the end.
+
+READ FIRST, all of it, before any code
+- design/arena/MOBILE.md: the phone spec (orientations, the phone shell, patterns, "Turning the phone", the screens table, shortened copy, build notes).
+- design/arena/boards/M*.dc.html (portrait) and P*.dc.html (the landscape tables, and PHome, the app held sideways) hold the exact values. Their {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime: read them for structure and behaviour, but don't copy them.
+- design/arena/screens/phone/*.jpg: the pixel references, at 2×.
+- design/arena/WORKSPLIT.md, "How every screen is checked" and "Exact match". Both apply to the phone too.
+
+WHERE
+git switch -c phone/claude (from main). Make one commit per step below, "Phone: <step>", naming the references it matches.
+
+1. THE PHONE SHELL
+- It applies below 768 px wide, and on a phone held sideways: (orientation: landscape) and (max-height: 500px) and (pointer: coarse). Desktop at 768 and up stays exactly as it is.
+- Build:
+  - the 60 px top bar
+  - the 5-slot bottom tab bar with the raised Play diamond
+  - the More sheet
+  - one shared bottom-sheet component
+  - held sideways (PHome): the 76 px rail, the 52 px top bar, the centred 560 px column, and sheets as side panels
+- The tab bar replaces the current phone bar that scrolls through all ten icons. Update scripts/check-shell-ui.cjs:
+  - At 390×844 the bar holds exactly Home, Friends, Play, Shop and More, and every other destination is in the More sheet.
+  - At 844×390 the rail holds the same five.
+  - The desktop assertions stay.
+
+2. TURNING THE PHONE (MOBILE.md "Turning the phone"; boards MPlay, MPlayFind, MRotate)
+- In public/manifest.json, change "orientation": "portrait" to "any".
+- Only match screens need landscape. Take /play out of needsLandscape in components/layout/AppShell.tsx. The Play lobby is MPlay in portrait and PLobby held sideways.
+- Play in the portrait lobby starts looking for a table at once and opens the rotate sheet (MPlayFind). Vs AI and Pass & Play show "Your table is ready" instead, and start only once the phone is sideways.
+- Where screen.orientation.lock exists, the same tap requests fullscreen and locks landscape. Unlock and leave fullscreen when the player leaves the match. If either call fails, fall back to the sheet with no error. "Go landscape" shows only where the lock exists.
+- Rebuild RotateDeviceGate as MRotate:
+  - It covers the live table, which shows blurred behind it, and the match keeps running.
+  - It shows the live turn status with the countdown ring.
+  - Leave table goes through the existing leave flow, and the lock hint stays.
+  - It stays a pure CSS media query and disappears the moment the phone turns.
+- Copy: reuse rotate_title and rotate_lockHint, replace rotate_body, and add i18n keys in all four languages for every new string MOBILE.md lists.
+
+3. THE TABLES HELD SIDEWAYS: PLobby, PMindi, PGin, PResult
+- Each is an 844×390 composition. On a phone held sideways, scale it evenly to fit the visible viewport (100dvh / visualViewport), and never crop the hand or the action button.
+- Keep the game logic as it is: this step is layout and look only.
+
+4. THE PORTRAIT SCREENS, one commit each
+- Home, with the More sheet
+- Profile
+- Inventory
+- Friends, with the actions sheet
+- Messages and the chat thread
+- Clubs
+- Leaderboard
+- Achievements
+- Weekend League
+- Hall of Fame
+- Shop, with the buy sheet and not-enough-coins
+- VIP and coin packs
+- Rewards and Missions
+- Settings
+
+EXACT MATCH
+- Port each board's CSS value for value with scripts/port-board.mjs. The phone boards are already blue, so there is nothing to recolour.
+- Keep, from each board:
+  - the structure and class names
+  - the buttons, with their press depth and shine
+  - every animation at the same timing, including playglow, sheetUp, scrimIn, sideIn, slideIn, pop, hurry and turnPhone
+  - the interactions
+- The only allowed differences are:
+  - real data and strings in place of the sample data
+  - fluid width from 360 to 430
+  - loops that stop under reduced motion
+- If a board element has no real data or feature behind it, don't drop it and don't fake it. List it and ask me.
+- Desktop must not change: every desktop check still passes, and the desktop screens still match screens/app/*.jpg.
+
+PROOF, for every screen and state
+1. Feed the board's sample data into the screen's test fixture (scripts/*-test-services, never app code).
+2. Screenshot it in the same state as each reference: 390×844 full page for portrait, 844×390 for landscape.
+3. Save the screenshot beside the reference in artifacts/compare/phone-<screen>.png. Don't commit these.
+4. Fix every visible difference, then check 360 and 430 wide as well.
+Test the rotate flow in Chrome's device emulation, turning between portrait and landscape. In your summary, say what you couldn't test for real (iPhone Safari, and the Android lock on a real phone).
+
+RULES
+- Never push to GitHub and never run firebase deploy. I push after the review.
+- Stage files by path, not with git add -A.
+- When you finish, give me a summary:
+  - screens done
+  - the compare images
+  - checks run and their results
+  - anything that still differs from its board, and why
+  - your questions for me
+```
+
+## 7. ChatGPT reviews the phone branch
+
+```text
+Review Claude's branch phone/claude against design/arena/MOBILE.md and the references in design/arena/screens/phone/*.jpg. This is a review only: don't edit, commit or switch branches in any existing folder.
+1. In C:\Users\Sayyu\thaasbai, run git diff main...phone/claude --stat. This and the next step leave that folder's files alone.
+2. Make a temporary review copy:
+   git worktree add --detach ..\thaasbai-review phone/claude
+   cd ..\thaasbai-review
+   copy ..\thaasbai\.env.local .env.local
+   npm ci
+   npm run verify
+   npm run dev -- -p 3002
+3. In Chrome's device emulation, compare each portrait screen at 390×844 (and at 360 and 430) and each landscape screen at 844×390 with its reference: layout, spacing, sizes, colours, type, icons, buttons, states and animations. Open the board's .dc.html to check the exact values.
+4. Check the rotate flow:
+   - Play in the portrait lobby opens the rotate sheet and keeps looking.
+   - A table held upright shows the gate, with the live turn status and Leave table.
+   - The gate goes as soon as the phone turns.
+   - App screens held sideways use the rail.
+   - manifest.json has "orientation": "any".
+   - Desktop at 1280 and 1440 is unchanged.
+5. Stop the server and remove the copy: git worktree remove ..\thaasbai-review
+Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
+```
+
+## 8. Claude merges the phone branch
+
+```text
+The phone review is done and its problems are fixed. In C:\Users\Sayyu\thaasbai:
+1. git switch main
+2. git merge --no-ff phone/claude
+3. Run npm run verify and every check-*-ui script, at desktop and phone sizes.
 Don't push. Tell me when main is ready and I'll push.
 ```

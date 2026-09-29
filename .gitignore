@@ -42,6 +42,7 @@ functions/node_modules/
 *.tsbuildinfo
 firebase-debug.log
 artifacts/friends-test/component.js
+artifacts/rewards-test/component.js
 artifacts/play-test/component.js
 artifacts/home-test/component.js
 artifacts/room-test/component.js
