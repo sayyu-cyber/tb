@@ -66,6 +66,8 @@ import "@/styles/arena-pdeal.css";
 import "@/styles/arena-deal-app.css";
 import "@/styles/arena-rooms.css";
 import "@/styles/arena-mrooms.css";
+import "@/styles/arena-roomlobby.css";
+import "@/styles/arena-mroomlobby.css";
 // The portrait screens. MShopBuy and MShopShort came out byte-identical to
 // MShop - they are MShop with a sheet open - so one sheet serves all three.
 import "@/styles/arena-mprofile.css";

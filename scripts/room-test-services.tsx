@@ -1,7 +1,8 @@
 import React from "react";
 import type { RoomDoc } from "@/lib/rooms";
 const params = new URLSearchParams(location.search);
-const w = window as typeof window & { roomCall?: unknown; destination?: string; toast?: string; emitRoom?: (room: RoomDoc | null) => void; failRoom?: () => void; calls?: unknown[] };
+const w = window as typeof window & { roomCall?: unknown; destination?: string; toast?: string; emitRoom?: (room: RoomDoc | null) => void; failRoom?: () => void; calls?: unknown[]; startedState?: unknown };
+let liveRoom: RoomDoc | null = null, roomWatches = 0;
 const uid = "sayyu";
 const router = { push: (value: string) => { w.destination = value; }, replace: (value: string) => { w.destination = value; } };
 export function useRouter() { return router; }
@@ -28,6 +29,7 @@ export async function createRoom(...args: unknown[]) { record(...args); return "
 export function sampleRoom(code = "TF2GRQ"): RoomDoc {
   const full = params.has("full") || code === "FULL23" || code === "D3LK9V" || code === "76MTJX";
   const gin = code === "X9FDGC" || code === "P4W8ZN" || code === "LOCK23" || params.has("gin");
+  if(params.has("code") && (params.has("gin") || params.has("duel"))) return {code,ownerUid:"sayyu",playerNames:{sayyu:"Sayyu",hussain:"Hussain",ibrahim:"Ibrahim"},players:gin?["sayyu","hussain"]:["sayyu","ibrahim"],seatOrder:gin?["sayyu","hussain"]:["sayyu","ibrahim"],maxPlayers:2,gameType:gin?"gin_rummy":"mindi",mindiMode:"ffa1v1",mode:"casual",status:"waiting",password:null,createdAt:Date.now(),matchId:null};
   return { code, ownerUid: (params.has("guest-lobby") || (!params.has("code") && code === "TF2GRQ")) ? "mariyam" : gin ? "hussain" : "sayyu", playerNames: {sayyu:"Sayyu", mariyam:"Mariyam", ibrahim:"Ibrahim", aishath:"Aishath", hussain:"Hussain"}, players: gin ? ["hussain"] : code === "K7Q2MX" ? ["mariyam","ibrahim"] : full ? ["sayyu","ibrahim","mariyam","aishath"] : ["sayyu","ibrahim","mariyam"], seatOrder: gin ? ["hussain"] : full ? ["sayyu","ibrahim","mariyam","aishath"] : ["sayyu","ibrahim","mariyam"], maxPlayers: gin ? 2 : 4, gameType: gin ? "gin_rummy" : "mindi", mindiMode: "team2v2", mode: "casual", status: code === "76MTJX" || code === "START2" ? "started" : code === "Z4C3EF" || params.has("closed") ? "closed" : "waiting", password: code === "TF2GRQ" || code === "LOCK23" ? "mindi2026" : null, createdAt: Date.now(), matchId: null };
 }
 export async function getRoom(code: string) {
@@ -40,9 +42,9 @@ export async function getRoom(code: string) {
 export async function joinRoom(code: string, user: string, name: string, password: string) { if ((code === "LOCK23" || code === "TF2GRQ") && password !== "secret") throw new Error("Incorrect room password"); record(code,user,name,password); }
 export function watchRoom(code: string, callback: (value: RoomDoc | null) => void, error?: () => void) {
   if (params.has("code") && code === params.get("code")) {
-    w.emitRoom = callback; w.failRoom = error;
-    if (params.has("load-error")) error?.();
-    else if (!params.has("loading")) callback(params.has("not-found") ? null : sampleRoom(code));
+    w.emitRoom = room => { liveRoom = room; callback(room); }; w.failRoom = error;
+    if (params.has("load-error") && roomWatches++ === 0) error?.();
+    else if (!params.has("loading")) w.emitRoom(params.has("not-found") ? null : sampleRoom(code));
   } else { void getRoom(code).then(callback); }
   return () => {};
 }
@@ -52,5 +54,5 @@ export async function banPlayer(...args: unknown[]) { record("ban", ...args); }
 export async function setSeatOrder(...args: unknown[]) { record("order", ...args); }
 export async function leaveRoom(...args: unknown[]) { record("leave", ...args); }
 export async function sendRoomInvite(...args: unknown[]) { record("invite", ...args); }
-export async function startRoomMatch(code: string, user: string, build: (players: string[]) => unknown) { const room = sampleRoom(code); record("start", code,user); w.emitRoom?.({...room,status:"started",matchId:"match-test"}); return build(room.players); }
+export async function startRoomMatch(code: string, user: string, build: (players: string[]) => unknown) { const room = liveRoom ?? sampleRoom(code); record("start", code,user); const state = build(room.players); w.startedState = state; w.emitRoom?.({...room,status:"started",matchId:"match-test"}); return state; }
 export default function Link({href, children, onClick, prefetch, ...props}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) { return <a href={href} {...props} onClick={event => { event.preventDefault(); onClick?.(event); router.push(String(href)); }}>{children}</a>; }

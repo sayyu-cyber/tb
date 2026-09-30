@@ -61,8 +61,56 @@ async function run() {
     await pasted.getByRole('button',{name:'Paste code',exact:true}).click();await pasted.waitForFunction(()=>document.querySelector('.code input').value==='TF2GRQ');assert.equal(await pasted.locator('.code i.on').count(),6);
     await pasted.locator('.room-invites .inv').first().getByRole('button',{name:'Join',exact:true}).click();await pasted.waitForFunction(()=>window.calls?.some(call=>call[0]==='dismiss'&&call[1]==='iv1'));assert.equal(await pasted.evaluate(()=>window.destination),'/play/mindi/room?code=K7Q2MX');await pasted.close();
     const phoneNoCard=await fixture('?no-card',390,844);await shot(phoneNoCard,'phone-no-room-card');await phoneNoCard.getByRole('link',{name:'Get one'}).click();assert.equal(await phoneNoCard.evaluate(()=>window.destination),'/room-cards');await phoneNoCard.close();
+    const lobby=await fixture('?code=TF2GRQ',1440,900);
+    await lobby.locator('.seat').first().waitFor();
+    assert.equal(await lobby.getByRole('button',{name:/Waiting for players/}).isDisabled(),true);
+    await shot(lobby,'rooms-waiting','app/app-16-room-waiting');
+    await lobby.getByRole('button',{name:'Swap partners',exact:true}).click();
+    assert.deepEqual(await lobby.evaluate(()=>window.roomCall),['order','TF2GRQ','sayyu',['sayyu','mariyam','ibrahim']]);
+    await lobby.getByRole('button',{name:'Options for Ibrahim',exact:true}).click();await shot(lobby,'rooms-seat-options','app/app-16c-seat-options');
+    await lobby.getByRole('menuitem',{name:'Remove from room'}).click();assert.equal(await lobby.evaluate(()=>window.roomCall[0]),'kick');
+    await lobby.getByRole('button',{name:'Options for Ibrahim',exact:true}).click();await lobby.getByRole('menuitem',{name:'Ban from room'}).click();assert.equal(await lobby.evaluate(()=>window.roomCall[0]),'ban');
+    await lobby.getByRole('button',{name:'Options for Mariyam',exact:true}).click();await lobby.getByRole('menuitem',{name:'View profile'}).click();assert.equal(await lobby.evaluate(()=>window.destination),'/player?uid=mariyam');
+    await lobby.getByRole('textbox',{name:'Search friends'}).fill('Aishath');await lobby.locator('.frow').getByRole('button',{name:'Invite',exact:true}).click();assert.equal(await lobby.locator('.frow').getByRole('button',{name:'Sent',exact:true}).isDisabled(),true);
+    await lobby.evaluate(()=>{const r={code:'TF2GRQ',gameType:'mindi',ownerUid:'sayyu',password:null,maxPlayers:4,players:['sayyu','ibrahim','mariyam','aishath'],seatOrder:['sayyu','ibrahim','mariyam','aishath'],playerNames:{sayyu:'Sayyu',ibrahim:'Ibrahim',mariyam:'Mariyam',aishath:'Aishath'},status:'waiting',createdAt:Date.now(),matchId:null};window.emitRoom(r);});
+    await lobby.getByRole('button',{name:'Start match',exact:true}).waitFor();assert.equal(await lobby.getByRole('button',{name:'Start match',exact:true}).isDisabled(),false);assert.equal(await lobby.locator('.frow').getByRole('button',{name:'Joined',exact:true}).count(),1);
+    await shot(lobby,'rooms-full','app/app-16b-room-full');await lobby.getByRole('button',{name:'Start match',exact:true}).click();await lobby.waitForFunction(()=>window.destination==='/play/mindi/ranked/live?m=match-test');await lobby.close();
+    const guestLobby=await fixture('?code=TF2GRQ&guest-lobby',1440,900);await guestLobby.getByText('Waiting for Mariyam to start',{exact:true}).first().waitFor();assert.equal(await guestLobby.getByRole('button',{name:'Start match',exact:true}).count(),0);assert.equal(await guestLobby.getByRole('button',{name:'Swap partners',exact:true}).count(),0);await shot(guestLobby,'rooms-guest','app/app-16d-room-guest');await guestLobby.close();
+    for(const state of ['loading','not-found','load-error','closed','removed','banned']) {
+      const panel=await fixture('?code=TF2GRQ&'+(state==='removed'||state==='banned'?'':state),1440,900);
+      if(state==='removed'||state==='banned') await panel.evaluate(state=>{window.emitRoom({code:'TF2GRQ',gameType:'mindi',ownerUid:'mariyam',password:null,maxPlayers:4,players:['mariyam'],playerNames:{mariyam:'Mariyam'},status:'waiting',createdAt:0,matchId:null,bannedUids:state==='banned'?['sayyu']:[]});},state);
+      await panel.locator('.room-state').waitFor();await shot(panel,'rooms-'+state);
+      if(state==='load-error'){await panel.getByRole('button',{name:/Try again/i}).click();await panel.locator('.seat').first().waitFor();assert.equal(await panel.locator('.room-state').count(),0);}
+      await panel.close();
+    }
+    const phoneLobby=await fixture('?code=TF2GRQ',390,844);await shot(phoneLobby,'phone-room-waiting','phone/phone-18-room-waiting');await phoneLobby.getByRole('button',{name:'Ibrahim, Silver · 31',exact:true}).click();await phoneLobby.getByRole('dialog').waitFor();await shot(phoneLobby,'phone-seat-options','phone/phone-18b-seat-options');await phoneLobby.getByRole('button',{name:'Cancel',exact:true}).click();await phoneLobby.close();
+    for(const state of ['loading','not-found','load-error','closed','removed','banned']) {
+      const panel=await fixture('?code=TF2GRQ&'+(state==='removed'||state==='banned'?'':state),390,844);
+      if(state==='removed'||state==='banned') await panel.evaluate(state=>window.emitRoom({code:'TF2GRQ',gameType:'mindi',ownerUid:'mariyam',password:null,maxPlayers:4,players:['mariyam'],playerNames:{mariyam:'Mariyam'},status:'waiting',createdAt:0,matchId:null,bannedUids:state==='banned'?['sayyu']:[]}),state);
+      await panel.locator('.room-state').waitFor();await shot(panel,'phone-room-'+state);await panel.close();
+    }
+    const sharing=await fixture('?code=TF2GRQ',390,844);
+    await sharing.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.copiedValue=value;}}});Object.defineProperty(navigator,'share',{configurable:true,value:undefined});});
+    await sharing.getByRole('button',{name:'Copy code',exact:true}).click();await sharing.waitForFunction(()=>window.copiedValue==='TF2GRQ');
+    await sharing.getByRole('button',{name:'Share link',exact:true}).last().click();await sharing.waitForFunction(()=>window.copiedValue.endsWith('/play/mindi/room?code=TF2GRQ'));
+    await sharing.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('Denied');}}}));await sharing.getByRole('button',{name:'Copy code',exact:true}).click();await sharing.waitForFunction(()=>window.toast?.startsWith("Couldn't copy"));await sharing.close();
+    for(const guestView of [false,true]){
+      const p=await fixture('?code=TF2GRQ&full'+(guestView?'&guest-lobby':''),390,844);
+      if(!guestView) await p.getByRole('button',{name:'Start match',exact:true}).click();
+      else await p.evaluate(()=>window.emitRoom({code:'TF2GRQ',gameType:'mindi',ownerUid:'mariyam',password:null,maxPlayers:4,players:['sayyu','ibrahim','mariyam','aishath'],playerNames:{sayyu:'Sayyu',ibrahim:'Ibrahim',mariyam:'Mariyam',aishath:'Aishath'},status:'started',createdAt:0,matchId:'guest-match'}));
+      await p.getByRole('dialog',{name:'Rotate your phone'}).waitFor();assert.equal(await p.evaluate(()=>window.destination||''),'');
+      if(!guestView) await shot(p,'phone-room-full-rotate','phone/phone-18c-room-full-rotate');
+      await p.setViewportSize({width:844,height:390});await p.waitForFunction(()=>window.destination?.includes('/ranked/live?m='));await p.close();
+    }
+    const android=await fixture('?code=TF2GRQ&full&android',390,844);await android.getByRole('button',{name:'Start match',exact:true}).click();await android.getByRole('dialog',{name:'Rotate your phone'}).waitFor();assert.equal(await android.evaluate(()=>window.fullscreenRequested),true);assert.deepEqual(await android.evaluate(()=>window.orientationCalls),['landscape']);await android.close();
+    for(const width of [1280,360,430]) {const p=await fixture('?code=TF2GRQ',width,width>767?900:844);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Lobby overflow '+width);await shot(p,'room-lobby-width-'+width);await p.close();}
+    for(const variant of ['gin','duel']) {
+      const p=await fixture('?code=TF2GRQ&'+variant,1440,900);assert.equal(await p.locator('.seat').count(),2);assert.equal(await p.getByRole('button',{name:'Swap partners',exact:true}).count(),0);await shot(p,'rooms-'+variant+'-two-seats');
+      await p.getByRole('button',{name:'Start match',exact:true}).click();await p.waitForFunction(()=>!!window.startedState);
+      const sizes=await p.evaluate(variant=>Object.values(variant==='gin'?window.startedState.hands:window.startedState.handsByUid).map(cards=>cards.length),variant);assert.deepEqual(sizes,[variant==='gin'?10:26,variant==='gin'?10:26]);await p.close();
+    }
     assert.deepEqual(errors,[]);
-    console.log('PASS: private room boards, desktop/phone sizes, game and seats, password validation, invites, recents, clipboard and Room Card gating.');
+    console.log('PASS: room setup and waiting boards; desktop, 1280, 768 and phones 360/390/430; validation, passwords, Room Cards, invites/recents, host/guest controls, swap seats 1/2, kick/ban/profile, full/start, six failure states and host/guest rotation before navigation.');
   } finally { await browser.close(); }
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
