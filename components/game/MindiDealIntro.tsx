@@ -381,7 +381,10 @@ export function OpeningCards({ deal, geo, variant, piles }: { deal: OpeningDeal;
     });
 
     const td = t - T.fly;
-    const dealt = Array.from({ length: n }, (_, j) => {
+    // Phone Safari otherwise allocates all 52 future card layers while the
+    // cut is running. Flights have explicit keyframes, so they can mount at
+    // the deal without changing their starting positions or timing.
+    const dealt = Array.from({ length: variant === "phone" && ph !== "deal" && ph !== "ready" ? 0 : n }, (_, j) => {
       const seat = seats[j % m], r = Math.floor(j / m), P = geo.pile[seat.spot];
       const jx = (((r * 37) % 5) - 2) * 0.9, jy = (((r * 53) % 5) - 2) * 0.9, jr = (((r * 29) % 7) - 3) * 1.3;
       const from = flat(geo, DD, 1 + (gin ? NDECK : 0) + (n - j) * 0.5, drz);
@@ -416,7 +419,7 @@ export function OpeningCards({ deal, geo, variant, piles }: { deal: OpeningDeal;
     // The layer only changes with the moment being drawn; counts ticking up
     // re-render the plates, not these 80-odd cards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setup.key, ph, live, deal.reduced, ph === "deal" && !live ? t : 0, geo, piles?.stock.x, piles?.upcard.x]);
+  }, [setup.key, ph, live, deal.reduced, ph === "deal" && !live ? t : 0, geo, variant, piles?.stock.x, piles?.upcard.x]);
 
   const style = (tf: string, extra: Vars, delay?: { dl?: number; ad?: number }) => ({
     transform: tf, ...(delay?.dl ? { transitionDelay: `${delay.dl}ms` } : null), ...(delay?.ad ? { animationDelay: `${delay.ad}ms` } : null), ...extra,

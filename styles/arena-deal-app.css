@@ -14,6 +14,29 @@
 .arena-deal .halo,
 .arena-pdeal .halo { animation: none; }
 
+/* Phone Safari has a small graphics budget. Animated cards get temporary
+   layers from their animations; hidden cards must not reserve them too. */
+.arena-pdeal .cc { will-change: auto; }
+.arena-pdeal .cc.hid { visibility: hidden; }
+
+/* The phone floor is the desktop's 4000 x 1900 bitmap at half scale.
+   Halve its dimensions and background lengths, then double its scale:
+   the same projection, centre, grid and gradients with a quarter of the
+   masked surface area. Keep this scoped to the two phone match boards. */
+.arena-phone :is(.arena-pmindi, .arena-pgin) .floor {
+  left: -578px;
+  top: -297px;
+  width: 2000px;
+  height: 950px;
+  transform: rotateX(50deg) translateZ(-420px);
+  background-image:
+    radial-gradient(320px 200px at 50% 50%, rgba(0,0,0,.95), rgba(0,0,0,0) 75%),
+    radial-gradient(450px 280px at 50% 50%, rgba(0,188,200,.55), rgba(0,188,200,0) 72%),
+    linear-gradient(rgba(0,188,200,.5) 1px, rgba(0,0,0,0) 1px),
+    linear-gradient(90deg, rgba(0,188,200,.5) 1px, rgba(0,0,0,0) 1px);
+  background-size: auto, auto, 55px 55px, 55px 55px;
+}
+
 /* ── Reduced motion (design/arena/DEAL_AND_ROOMS.md "Reduced motion") ──
    No riffle, no spread, no flights: the cut cards fade in face up where
    they lie (200 ms), the winner gets its ring in place, and after 900 ms
