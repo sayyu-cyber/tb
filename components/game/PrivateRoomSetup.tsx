@@ -1,44 +1,60 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Users, Plus, Lock, Hash, ClipboardPaste, Eye, EyeOff, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Lock, Hash, ClipboardPaste, Eye, EyeOff, X, Check, Info, ChevronLeft, ChevronRight, CircleAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { useToast } from "@/contexts/ToastContext";
-import { Button } from "@/components/ui/Button";
-import { createRoom, getRoom, joinRoom } from "@/lib/rooms";
+import { useTranslation } from "@/hooks/useTranslation";
+import { createRoom, getRoom, joinRoom, watchRoom, type RoomDoc } from "@/lib/rooms";
+import { watchRoomInvites, dismissRoomInvite, type RoomInviteDoc } from "@/lib/friends";
 import { rememberRoom } from "@/lib/roomHistory";
+import { Sheet } from "@/components/layout/phone/Sheet";
+import { ArenaSprite } from "./ArenaSprite";
 import { RecentRooms } from "./RecentRooms";
+import { RoomCardBadge, RoomDeck, SeatGlyph, useRoomPhone } from "./RoomBoardParts";
 
 const games = [{ id: "mindi", name: "Mindi", type: "mindi" }, { id: "gin-rummy", name: "Gin Rummy", type: "gin_rummy" }] as const;
 const normalize = (code: string) => code.replace(/\s/g, "").toUpperCase();
 const validCode = (code: string) => /^[A-Z2-9]{6}$/.test(code);
 const message = (error: unknown) => error instanceof Error ? error.message : "Your connection was interrupted. Please try again.";
 
+/** Rooms / MRooms / MRoomsCreate, with one live set of room subscriptions. */
 export function PrivateRoomSetup({ gameId }: { gameId: string }) {
-  const router = useRouter();
+  const router = useRouter(), t = useTranslation(), phone = useRoomPhone();
   const { user, isGuest } = useAuth();
   const { getActiveRoomCards } = useEconomy();
   const { showToast } = useToast();
-  const [selected, setSelected] = useState(gameId);
-  const [players, setPlayers] = useState("4");
-  const [protectedRoom, setProtected] = useState(false);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [code, setCode] = useState("");
-  const [joinPassword, setJoinPassword] = useState("");
-  const [promptCode, setPromptCode] = useState<string | null>(null);
+  const [selected, setSelected] = useState(gameId), [tab, setTab] = useState<"join" | "create">("join");
+  const [players, setPlayers] = useState("4"), [protectedRoom, setProtected] = useState(false);
+  const [password, setPassword] = useState(""), [showPassword, setShowPassword] = useState(false);
+  const [code, setCode] = useState(""), [joinPassword, setJoinPassword] = useState(""), [joinEye, setJoinEye] = useState(false);
+  const [prompt, setPrompt] = useState<{ code: string; host: string } | null>(null);
   const [error, setError] = useState<{ area: "create" | "join"; text: string } | null>(null);
   const [busy, setBusy] = useState<"create" | "join" | null>(null);
-  const pending = useRef(false);
-  const modal = useRef<HTMLDialogElement>(null);
-  const canHost = !isGuest && !!user && getActiveRoomCards().length > 0;
+  const pending = useRef(false), modal = useRef<HTMLDialogElement>(null), codeInput = useRef<HTMLInputElement>(null);
+  const pasteTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [invites, setInvites] = useState<RoomInviteDoc[]>([]), [inviteRooms, setInviteRooms] = useState<Record<string, RoomDoc | null>>({});
+  const [inviteError, setInviteError] = useState(false), [inviteAttempt, setInviteAttempt] = useState(0);
+  const uid = !isGuest ? user?.uid ?? "" : "";
+  const card = uid ? getActiveRoomCards()[0] : undefined, canHost = !!uid && !!card, gin = selected === "gin-rummy";
   useEffect(() => { setSelected(gameId); }, [gameId]);
   useEffect(() => {
-    if (promptCode) modal.current?.showModal();
+    if (!phone && prompt) { modal.current?.showModal(); modal.current?.querySelector<HTMLInputElement>("input")?.focus(); }
     else modal.current?.close();
-  }, [promptCode]);
+  }, [prompt, phone]);
+  useEffect(() => {
+    setInvites([]); setInviteError(false);
+    if (!uid) return;
+    return watchRoomInvites(uid, setInvites, () => setInviteError(true));
+  }, [uid, inviteAttempt]);
+  useEffect(() => {
+    setInviteRooms({});
+    const stops = [...new Set(invites.map(item => item.code))].map(value => watchRoom(value, room => setInviteRooms(old => ({ ...old, [value]: room })), () => setInviteRooms(old => ({ ...old, [value]: null }))));
+    return () => stops.forEach(stop => stop());
+  }, [invites]);
+  useEffect(() => () => pasteTimers.current.forEach(clearTimeout), []);
   const enter = (roomCode: string, type: string) => {
     rememberRoom(user!.uid, roomCode);
     router.push(`/play/${type === "mindi" ? "mindi" : "gin-rummy"}/room?code=${roomCode}`);
@@ -48,8 +64,8 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
     pending.current = true; setBusy("create"); setError(null);
     try {
       const game = games.find(item => item.id === selected) || games[0];
-      const roomCode = await createRoom(user!.uid, user!.displayName || "Player", game.type, protectedRoom ? password : null, "casual", players === "2" ? "ffa1v1" : "team2v2");
-      showToast("Room created", "success"); enter(roomCode, game.type);
+      const roomCode = await createRoom(user!.uid, user!.displayName || "Player", game.type, protectedRoom ? password : null, "casual", !gin && players === "4" ? "team2v2" : "ffa1v1");
+      showToast(t("room_created"), "success"); enter(roomCode, game.type);
     } catch (err) { setError({ area: "create", text: message(err) }); }
     finally { pending.current = false; setBusy(null); }
   }
@@ -67,51 +83,73 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
       if (room.status !== "waiting") throw new Error("This game has already started or the room has closed.");
       if (room.bannedUids?.includes(user.uid)) throw new Error("You cannot join this room.");
       if (room.players.length >= room.maxPlayers && !room.players.includes(user.uid)) throw new Error("This room is full.");
-      if (room.password && !suppliedPassword) { setPromptCode(roomCode); setJoinPassword(""); return; }
+      if (room.password && !suppliedPassword) { setPrompt({ code: roomCode, host: room.playerNames[room.ownerUid] || t("room_host") }); setJoinPassword(""); setJoinEye(false); return; }
       await joinRoom(roomCode, user.uid, user.displayName || "Player", suppliedPassword);
-      setPromptCode(null); showToast("Joined room", "success"); enter(roomCode, room.gameType);
+      await Promise.allSettled(invites.filter(item => item.code === roomCode).map(item => dismissRoomInvite(item.id)));
+      setPrompt(null); showToast(t("room_joined"), "success"); enter(roomCode, room.gameType);
     } catch (err) { setError({ area: "join", text: message(err) }); }
     finally { pending.current = false; setBusy(null); }
   }
   async function paste() {
-    try { setCode(normalize(await navigator.clipboard.readText()).slice(0, 6)); }
-    catch { showToast("Clipboard unavailable. Paste your code into the field.", "error"); }
+    try {
+      const value = normalize(await navigator.clipboard.readText()).slice(0, 6);
+      setCode(""); setError(null); pasteTimers.current.forEach(clearTimeout);
+      pasteTimers.current = Array.from(value, (_, i) => setTimeout(() => setCode(value.slice(0, i + 1)), (i + 1) * 70));
+      codeInput.current?.focus();
+    } catch { showToast(t("room_clipboardUnavailable"), "error"); }
   }
-  return <div className="private-room-page">
-    <Link href="/play" className="private-back"><ArrowLeft size={19} />Back to Play</Link>
-    <header className="private-heading"><Users size={43} /><h1>Private Room</h1><p>Play with friends using a room code</p><small>Create your own room or join an existing one. Play your way, with your people.</small></header>
-    <div className="private-actions">
-      <form id="create-room" className="private-action private-create" onSubmit={event => { event.preventDefault(); void create(); }}>
-        <header><span><Plus size={34} /></span><div><h2>Create a Room</h2><p>Set your game, invite friends, and play on your own terms.</p></div></header>
-        <fieldset disabled={!!busy}><div className="private-fields">
-          <label>Select Game<select value={selected} onChange={event => setSelected(event.target.value)}>{games.map(game => <option value={game.id} key={game.id}>{game.name}</option>)}</select></label>
-          <label>Max Players<select value={selected === "mindi" ? players : "2"} onChange={event => setPlayers(event.target.value)}>{selected === "mindi" && <option value="4">4 - Teams</option>}<option value="2">2 - Head to head</option></select></label>
-        </div>
-        <label className="private-password-toggle"><Lock size={17} /><span>Password <small>Optional</small></span><input type="checkbox" role="switch" checked={protectedRoom} onChange={event => { setProtected(event.target.checked); setPassword(""); }} aria-label="Protect room with password" /></label>
-        {protectedRoom && <div className="private-password-field"><input aria-label="Room password" type={showPassword ? "text" : "password"} placeholder="Enter room password" maxLength={32} value={password} onChange={event => setPassword(event.target.value)} required autoComplete="new-password" /><button type="button" title={showPassword ? "Hide password" : "Show password"} aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>}
-        </fieldset>
-        {!canHost && <p className="private-notice">{isGuest || !user ? <Link href="/login">Sign in to create private rooms.</Link> : <>An active Room Card is required to host. <Link href="/room-cards">Manage Room Cards</Link></>}</p>}
-        {error?.area === "create" && <p className="private-error" role="alert">{error.text}</p>}
-        <Button fullWidth type="submit" loading={busy === "create"} disabled={!!busy || !canHost || (protectedRoom && !password.trim())}>{busy === "create" ? "Creating Room..." : "Create Room"}<ArrowRight size={18} /></Button>
-      </form>
-      <form className="private-action private-join" onSubmit={event => { event.preventDefault(); void join(); }}>
-        <header><span><Users size={33} /></span><div><h2>Join with a Code</h2><p>Enter a room code to join your friends&apos; game.</p></div></header>
-        <label htmlFor="room-code">Room Code</label>
-        <div className="private-code-field"><Hash size={25} /><input id="room-code" placeholder="Enter code (e.g. ABC234)" value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" spellCheck={false} onChange={event => setCode(normalize(event.target.value))} disabled={!!busy} /><button type="button" onClick={paste} aria-label="Paste room code" title="Paste room code" disabled={!!busy}><ClipboardPaste size={20} /></button></div>
-        {error?.area === "join" && !promptCode && <p className="private-error" role="alert">{error.text}</p>}
-        {isGuest && <p className="private-notice"><Link href="/login">Sign in to join private rooms.</Link></p>}
-        <Button fullWidth type="submit" variant="secondary" disabled={!!busy || isGuest || !user} loading={busy === "join"}>{busy === "join" ? "Joining..." : "Join Room"}<ArrowRight size={18} /></Button>
-      </form>
+  const closePrompt = useCallback(() => { if (!pending.current) { setPrompt(null); setError(null); } }, []);
+  const title = (create: boolean) => <div className="room-panel-title"><span className={`itile ${create ? "" : "b"}`}>{create ? <Plus aria-hidden="true" /> : <Hash aria-hidden="true" />}</span><div><h2 className="disp">{t(create ? "room_create" : "room_joinCode")}</h2><p className="muted">{t(create ? "room_pickGame" : "room_askCode")}</p></div></div>;
+  const createForm = <form id="create-room" className="panel tick room-form" onSubmit={event => { event.preventDefault(); void create(); }}>
+    {title(true)}
+    <div className="stack3"><span className="flabel">{t("room_game")}</span><div className="room-game-grid" role="group" aria-label={t("room_game")}>
+      {games.map(game => <button type="button" className="gtile" aria-pressed={selected === game.id} disabled={!!busy} onClick={() => { setSelected(game.id); if (game.id === "gin-rummy") setPlayers("2"); }} key={game.id}><RoomDeck gin={game.id === "gin-rummy"} /><span className="tx"><b>{game.name}</b>{!phone && <span className="thaana" lang="dv" dir="rtl" style={{ alignSelf: "flex-start", fontSize: 15 }}>{game.id === "mindi" ? "މިންޑި" : "ޖިން ރަމީ"}</span>}<span>{t(game.id === "mindi" ? phone ? "room_mindiSeatsShort" : "room_mindiSeats" : "room_ginSeats")}</span></span><span className="ck"><Check aria-hidden="true" /></span></button>)}
+    </div></div>
+    <div className="stack3"><span className="flabel">{t("room_seats")}</span><div className="tabs seats" role="group" aria-label={t("room_seats")}>
+      <button type="button" aria-pressed={!gin && players === "4"} disabled={!!busy || gin} onClick={() => setPlayers("4")}><SeatGlyph four />{t(phone ? "room_fourShort" : "room_four")}</button>
+      <button type="button" aria-pressed={gin || players === "2"} disabled={!!busy} onClick={() => setPlayers("2")}><SeatGlyph four={false} />{t(phone ? "room_twoShort" : "room_two")}</button>
+    </div><p className="help">{t(gin ? "room_ginHelp" : players === "4" ? "room_teamHelp" : "room_duelHelp")}</p></div>
+    <div className="stack3"><span className="flabel">{t("room_password")}<span style={{ letterSpacing: ".1em", color: "#6E6E7C" }}>{t("room_optional")}</span></span>
+      <div className={`pwrow ${protectedRoom ? "on" : ""}`}><span className="ti"><Lock aria-hidden="true" /></span><div className="tx" style={{ flex: "1 1 0" }}><b>{t("room_lock")}</b><span>{t(protectedRoom ? "room_passwordOnly" : "room_anyoneCode")}</span></div><button type="button" className="sw" role="switch" aria-checked={protectedRoom} aria-label={t("room_protect")} disabled={!!busy} onClick={() => { setProtected(!protectedRoom); setPassword(""); setShowPassword(false); }} /></div>
+      {protectedRoom && <div className="pwf"><input aria-label={t("room_password")} type={showPassword ? "text" : "password"} placeholder={t("room_enterPassword")} maxLength={32} value={password} onChange={event => setPassword(event.target.value)} required autoComplete="new-password" disabled={!!busy} /><button type="button" className="ibtn" aria-label={t(showPassword ? "room_hidePassword" : "room_showPassword")} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button></div>}
     </div>
-    <RecentRooms uid={isGuest ? "" : user?.uid || ""} busy={!!busy} onJoin={value => { void join(value); }} />
-    <dialog ref={modal} className="private-modal" onCancel={event => { if (busy) event.preventDefault(); else { setPromptCode(null); setError(null); } }} aria-labelledby="room-password-title">
-      <form onSubmit={event => { event.preventDefault(); void join(promptCode!, joinPassword); }}>
-        <button type="button" className="private-modal-close" aria-label="Close password prompt" disabled={!!busy} onClick={() => { setPromptCode(null); setError(null); }}><X size={20} /></button>
-        <Lock size={29} /><h2 id="room-password-title">Room Password</h2><p>This room is protected.</p>
-        <input autoFocus aria-label="Join room password" type="password" autoComplete="current-password" placeholder="Enter room password" value={joinPassword} maxLength={32} onChange={event => setJoinPassword(event.target.value)} required disabled={!!busy} />
-        {error?.area === "join" && <p role="alert" className="private-error">{error.text}</p>}
-        <div className="private-modal-actions"><Button variant="secondary" type="button" disabled={!!busy} onClick={() => { setPromptCode(null); setError(null); }}>Cancel</Button><Button type="submit" loading={busy === "join"} disabled={!!busy || !joinPassword}>Join Room</Button></div>
-      </form>
-    </dialog>
-  </div>;
+    {error?.area === "create" && <p className="err" role="alert">{error.text}</p>}
+    <div className="stack3" style={{ gap: 12 }}><button className="ar-btn full" type="submit" disabled={!!busy || !canHost || (protectedRoom && !password.trim())}>{busy === "create" && <i className="spin" />}{t(busy === "create" ? "room_creating" : "room_create")}{!busy && <ArrowRight aria-hidden="true" />}</button><p className="help room-card-note"><Info aria-hidden="true" /><span>{!uid ? <Link href="/login">Sign in to create private rooms.</Link> : t(card ? "room_covered" : "room_activateCard")}</span></p></div>
+  </form>;
+  const joinForm = <form className="panel tick b room-form room-join-form" onSubmit={event => { event.preventDefault(); void join(); }}>
+    {title(false)}
+    <div className={`code ${error?.area === "join" && error.text.startsWith("Room not found") ? "bad" : ""}`} role="group" aria-label={t("room_code")}>
+      {Array.from({ length: 6 }, (_, i) => <i key={`${i}-${code[i] || ""}`} className={code[i] ? "on" : i === code.length ? "cur" : ""} aria-hidden="true">{code[i] || ""}</i>)}
+      <input ref={codeInput} aria-label={t("room_code")} value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" spellCheck={false} onChange={event => { pasteTimers.current.forEach(clearTimeout); setCode(normalize(event.target.value).slice(0,6)); setError(null); }} disabled={!!busy} />
+    </div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: phone ? 10 : 12, marginTop: phone ? -4 : -6 }}><button type="button" className="lnk" onClick={paste} disabled={!!busy}><ClipboardPaste aria-hidden="true" />{t("room_paste")}</button><span className="muted2" style={phone ? { fontSize: 11.5 } : undefined}>{t(phone ? "room_codeHintShort" : "room_codeHint")}</span></div>
+    {error?.area === "join" && !prompt && <p className="err" role="alert"><CircleAlert aria-hidden="true" />{error.text}</p>}
+    {!uid && <p className="help"><Link href="/login">Sign in to join private rooms.</Link></p>}
+    <button className="ar-btn blue full" type="submit" disabled={!!busy || !uid || code.length < 6}>{t(busy === "join" ? "room_joining" : "room_join")}<ArrowRight aria-hidden="true" /></button>
+  </form>;
+  const invitePanel = <section className={`${phone ? "sec" : "panel"} room-invites`} aria-label={t("room_invites")}>
+    <div className={phone ? "sech" : "ph"}><h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>{t("room_invites")}<span className="pill blue" style={{ height: phone ? 20 : 22 }}>{invites.length}</span></h2><Link className="link b" href="/friends">{t("nav_friends")}{!phone && <ChevronRight aria-hidden="true" />}</Link></div>
+    {inviteError ? <div role="alert"><p>{t("room_inviteLoadError")}</p><button className="minib blue" onClick={() => setInviteAttempt(n => n + 1)}>{t("error_tryAgain")}</button></div> : !invites.length ? <p className="muted2">{t("room_noInvites")}</p> : <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{invites.map(invite => {
+      const room = inviteRooms[invite.code], loaded = room !== undefined;
+      const full = !!room && room.players.length >= room.maxPlayers;
+      const disabled = !loaded || !room || room.status !== "waiting" || full || room.bannedUids?.includes(uid);
+      const age = Math.max(0, Math.floor((Date.now() - invite.createdAt) / 60000));
+      const line = `${invite.gameType === "mindi" ? "Mindi" : "Gin Rummy"} · ${full ? t("room_tableFull").toLowerCase() : room ? t(phone ? "room_inviteSeatsShort" : "room_inviteSeats").replace("{n}", String(room.players.length)).replace("{max}", String(room.maxPlayers)) : t("room_unavailable")} · ${t("room_minutesAgo").replace("{n}", String(age))}`;
+      return <div className="inv" key={invite.id}><span className={`av ${invite.gameType === "gin_rummy" ? "them" : ""}`}>{invite.fromName[0]}</span><div className="tx"><b>{t("room_invitedYou").replace("{name}", invite.fromName)}</b><span>{line}</span></div><button className={`minib ${disabled ? "dim" : "lime"}`} disabled={!!disabled || !!busy} onClick={() => { void join(invite.code); }}>{t(full ? "room_full" : disabled ? "room_unavailable" : "room_joinShort")}</button></div>;
+    })}</div>}
+  </section>;
+  const passwordBody = <form onSubmit={event => { event.preventDefault(); if (prompt) void join(prompt.code, joinPassword); }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}><span className="itile" style={{ width: phone ? 44 : 52, height: phone ? 44 : 52 }}><Lock aria-hidden="true" /></span><div><h2 id="room-password-title" className="disp" style={{ margin: 0, fontSize: phone ? 24 : 28 }}>{t("room_passwordTitle")}</h2><p className="muted2" style={{ margin: "5px 0 0" }}>{t("room_lockedAsk").replace("{code}", prompt?.code ?? "").replace("{host}", prompt?.host ?? "")}</p></div></div>
+    <div className="pwf"><input tabIndex={0} aria-label={t("room_joinPassword")} type={joinEye ? "text" : "password"} autoComplete="current-password" placeholder={t("room_enterPassword")} value={joinPassword} maxLength={32} onChange={event => setJoinPassword(event.target.value)} required disabled={!!busy} /><button type="button" className="ibtn" aria-label={t(joinEye ? "room_hidePassword" : "room_showPassword")} onClick={() => setJoinEye(!joinEye)}>{joinEye ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button></div>
+    {error?.area === "join" && <p role="alert" className="err">{error.text}</p>}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: phone ? 10 : 12, marginTop: phone ? 0 : 8 }}><button className={`ar-btn ghost ${phone ? "full" : "sm"}`} type="button" disabled={!!busy} onClick={closePrompt}>{t("common_cancel")}</button><button className={`ar-btn blue ${phone ? "full" : "sm"}`} type="submit" disabled={!!busy || !joinPassword}>{t("room_join")}</button></div>
+  </form>;
+  return <><ArenaSprite /><div className={`arena-app arena-phone arena-rooms ${phone ? "arena-mrooms" : ""}`}>
+    {phone && <header className="mtop room-top"><Link href="/play" className="ibtn mback" aria-label={t("roomlobby_backToPlay")}><ChevronLeft aria-hidden="true" /></Link><span className="ttl">{t("nav_play")}</span><div className="tr" /></header>}
+    <main className={`room-page ${phone ? "m mpage" : "ar-page"}`}>
+    <div className={phone ? "mh" : "phead"}><div>{!phone && <Link href="/play" className="back2"><ArrowLeft aria-hidden="true" />{t("roomlobby_backToPlay")}</Link>}<span className="lbl dash" style={{ display: "flex", color: "#C6FF33" }}>{t("room_people")}</span><h1 className="disp chrome" style={phone ? { fontSize: 42 } : undefined}>{t("room_title")}</h1><p className={phone ? "sub muted" : "sub2"}>{t("room_intro")}</p></div>{!phone && <RoomCardBadge card={card} phone={false} />}</div>
+    {phone && <><RoomCardBadge card={card} phone /><div className="tabs room-tabs" role="tablist" aria-label={t("room_title")}><button role="tab" aria-selected={tab === "join"} onClick={() => setTab("join")}><Hash aria-hidden="true" />{t("room_joinTab")}</button><button role="tab" aria-selected={tab === "create"} onClick={() => setTab("create")}><Plus aria-hidden="true" />{t("room_create")}</button></div></>}
+    {phone ? tab === "create" ? createForm : <>{joinForm}{invitePanel}<RecentRooms uid={uid} busy={!!busy} onJoin={value => { void join(value); }} phone /></> : <><div className="room-setup-grid">{createForm}<div style={{ display: "flex", flexDirection: "column", gap: 20 }}>{joinForm}{invitePanel}</div></div><RecentRooms uid={uid} busy={!!busy} onJoin={value => { void join(value); }} /></>}
+    {!phone && <dialog ref={modal} className="dlg room-password" onCancel={event => { if (busy) event.preventDefault(); else closePrompt(); }} aria-labelledby="room-password-title"><button type="button" className="ibtn" aria-label={t("common_close")} disabled={!!busy} onClick={closePrompt} style={{ position: "absolute", right: 16, top: 16, width: 38, height: 38 }}><X aria-hidden="true" /></button>{passwordBody}</dialog>}
+  </main></div><Sheet open={phone && !!prompt} onClose={closePrompt} label={t("room_passwordTitle")} headingId="room-password-title" namespace="arena-rooms arena-mrooms room-password" className="m qsheet tick">{passwordBody}</Sheet></>;
 }

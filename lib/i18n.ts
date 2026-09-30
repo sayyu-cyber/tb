@@ -1,3 +1,5 @@
+import { ROOM_STRINGS } from "./roomStrings";
+
 // lib/i18n.ts
 //
 // Language switch (GDD "Add language switch option for full app -
@@ -1052,5 +1054,6 @@ export const TRANSLATIONS: Record<string, Translations> = {
 };
 
 export function translate(key: string, lang: LanguageCode): string {
-  return TRANSLATIONS[key]?.[lang] ?? TRANSLATIONS[key]?.en ?? key;
+  const entry = TRANSLATIONS[key] ?? (ROOM_STRINGS as Record<string, Record<LanguageCode, string>>)[key];
+  return entry?.[lang] ?? entry?.en ?? key;
 }
