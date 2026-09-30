@@ -35,7 +35,13 @@ export const PHONE_PORTRAIT = "(max-width: 767px) and (orientation: portrait)";
 function subscribe(onChange: () => void) {
   const query = window.matchMedia(PHONE_PORTRAIT);
   query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
+  // Re-read after a viewport resize even if WebKit delays the query event
+  // while turning the phone with the Play sheet open.
+  window.addEventListener("resize", onChange);
+  return () => {
+    query.removeEventListener("change", onChange);
+    window.removeEventListener("resize", onChange);
+  };
 }
 
 export function usePhonePortrait(): boolean {

@@ -7,6 +7,7 @@ import type { ArenaSeatData } from "../GameArena";
 import { CountBadge, OpeningCards, OpeningSkip, PhoneOpeningCut, PhoneOpeningSteps, openingPlate, type OpeningDeal } from "../MindiDealIntro";
 import { GEO_PHONE, type Spot } from "../dealGeometry";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PhoneTableSurface } from "./PhoneTableSurface";
 
 /**
  * The Mindi table on a phone held sideways —
@@ -48,20 +49,6 @@ const TRICK_SPOT = [
   { x: 546, y: 172, rot: 3 },    // across
   { x: 712, y: 284, rot: -6 },   // right
 ];
-
-/** The board's aprons, front to back. */
-const APRONS: [number, string][] = [
-  [-60, "#030305"], [-50, "#07070B"], [-40, "#0B0B11"], [-30, "#100F18"],
-  [-20, "#16151F"], [-14, "#063A40"], [-10, "#00BCC8"], [-7, "#1E1D28"],
-];
-
-/** Felt colours, keyed by the table-theme cosmetic (data/cosmetics.ts). */
-const FELT: Record<string, string> = {
-  tt_default: "#06323A",
-  tt_red: "#4A1119",
-  tt_blue: "#0E2C4E",
-  tt_black: "#101214",
-};
 
 const SUIT_NAMES: Record<string, string> = { S: "Spades", H: "Hearts", D: "Diamonds", C: "Clubs" };
 
@@ -112,7 +99,6 @@ export interface PhoneMindiBoardProps {
 export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
   const t = useTranslation();
   const duel = !p.left && !p.right;
-  const felt = FELT[p.tableSkin ?? "tt_default"] ?? FELT.tt_default;
   const chosen = p.hand.find((card) => cardId(card) === p.selected) ?? null;
 
   /**
@@ -152,27 +138,10 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
     <ArenaStage width={844} height={390} className="arena-pmindi arena-pdeal">
       <div className={rootClass} style={{ position: "relative", width: 844, height: 390, overflow: "hidden", background: "#000" }}>
         <ArenaSprite />
-        <div className="bg" />
+        <PhoneTableSurface game="mindi" skin={p.tableSkin} />
 
         <div className="stage" aria-hidden="true">
-          <div className="floor" />
           <div className="table">
-            {APRONS.map(([z, colour]) => (
-              <div key={z} className="apron" style={{ transform: `translateZ(${z}px)`, background: colour }} />
-            ))}
-            <div className="felt" style={{ backgroundColor: felt }} />
-            <div className="rail" />
-            <svg className="leds" viewBox="0 0 1200 740">
-              <defs>
-                <filter id="pmindi-led-glow" x="-10%" y="-10%" width="120%" height="120%">
-                  <feGaussianBlur stdDeviation="8" />
-                </filter>
-              </defs>
-              <ellipse cx="600" cy="370" rx="565" ry="335" fill="none" stroke="#6FE9F0" strokeOpacity=".8" strokeWidth="7" strokeLinecap="round" strokeDasharray="3 27" />
-              <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#C6FF33" strokeWidth="16" strokeOpacity=".7" filter="url(#pmindi-led-glow)" />
-              <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#DFFF85" strokeWidth="5" />
-            </svg>
-
             {opening && !opening.settled && <OpeningCards deal={opening} geo={GEO_PHONE} variant="phone" />}
 
             {p.trick.map((play) => {

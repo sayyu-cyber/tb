@@ -7,6 +7,7 @@ import type { ArenaSeatData } from "../GameArena";
 import { CountBadge, OpeningCards, OpeningSkip, PhoneOpeningCut, PhoneOpeningSteps, openingPlate, type OpeningDeal, type OpeningPiles } from "../MindiDealIntro";
 import { GEO_PHONE } from "../dealGeometry";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PhoneTableSurface } from "./PhoneTableSurface";
 
 /**
  * The Gin Rummy table on a phone held sideways —
@@ -27,12 +28,6 @@ import { useTranslation } from "@/hooks/useTranslation";
  * board when the phone is sideways - so tap-to-pick, tap-again-to-discard and
  * the 15-second clock are one implementation, not two.
  */
-
-/** The board's aprons, front to back. */
-const APRONS: [number, string][] = [
-  [-60, "#030305"], [-50, "#07070B"], [-40, "#0B0B11"], [-30, "#0F1116"],
-  [-20, "#14161C"], [-14, "#063A40"], [-10, "#00BCC8"], [-7, "#1C1E26"],
-];
 
 /** The five card-thicknesses the board stacks under the stock. */
 const STOCK_LAYERS = [-4.4, -2.4, -0.4, 1.6, 3.6];
@@ -144,29 +139,16 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
     <ArenaStage width={844} height={390} className="arena-pgin arena-pdeal">
       <div className={rootClass} style={{ position: "relative", width: 844, height: 390, overflow: "hidden", background: "#000" }}>
         <ArenaSprite />
-        <div className="bg" />
+        <PhoneTableSurface game="gin" />
 
         <div className="stage" aria-hidden="true">
-          <div className="floor" />
           <div className="table">
-            {APRONS.map(([z, colour]) => (
-              <div key={z} className="apron" style={{ transform: `translateZ(${z}px)`, background: colour }} />
-            ))}
-            <div className="felt gin" />
             <div className="spot" style={{ left: 430, top: 286 }} />
             <div className="spot" style={{ left: 646, top: 286 }} />
             <div className="printed" style={{ left: 392, top: 470 }}>Stock · {p.stock}</div>
             <div className="printed" style={{ left: 608, top: 470 }}>Discard</div>
-            <div className="rail" />
             <svg className="leds" viewBox="0 0 1200 740">
-              <defs>
-                <filter id="pgin-led-glow" x="-10%" y="-10%" width="120%" height="120%">
-                  <feGaussianBlur stdDeviation="8" />
-                </filter>
-              </defs>
               <ellipse cx="600" cy="370" rx="565" ry="335" fill="none" stroke="#C6FF33" strokeOpacity=".65" strokeWidth="7" strokeLinecap="round" strokeDasharray="3 27" className="chase" data-ar-loop />
-              <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#00BCC8" strokeWidth="16" strokeOpacity=".8" filter="url(#pgin-led-glow)" />
-              <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#9FF2F7" strokeWidth="5" />
             </svg>
             {/* The stock's thickness. Only as many layers as there are cards
                 to justify them, so an almost-empty stock looks almost empty.

@@ -34,7 +34,13 @@ export const PHONE_TABLE = "(orientation: landscape) and (max-height: 500px) and
 function subscribe(onChange: () => void) {
   const query = window.matchMedia(PHONE_TABLE);
   query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
+  // WebKit can delay a media-query change during rotation. A resize must
+  // also re-read the snapshot so the previous composition cannot linger.
+  window.addEventListener("resize", onChange);
+  return () => {
+    query.removeEventListener("change", onChange);
+    window.removeEventListener("resize", onChange);
+  };
 }
 
 export function usePhoneTable(): boolean {
