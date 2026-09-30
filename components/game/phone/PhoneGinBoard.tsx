@@ -4,6 +4,9 @@ import { ArenaStage } from "../ArenaStage";
 import { ArenaSprite, Suit, Icon } from "../ArenaSprite";
 import { cardId, rankLabel, type Card } from "@/lib/ginRummyEngine";
 import type { ArenaSeatData } from "../GameArena";
+import { CountBadge, OpeningCards, OpeningSkip, PhoneOpeningCut, PhoneOpeningSteps, openingPlate, type OpeningDeal, type OpeningPiles } from "../MindiDealIntro";
+import { GEO_PHONE } from "../dealGeometry";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * The Gin Rummy table on a phone held sideways —
@@ -60,7 +63,7 @@ export interface PhoneGinBoardProps {
   secondsLeft: number | null;
   turnSeconds: number;
   /** The meld reading top-left: "Ready · 4 · 3 · 3" or "Not out · 3 · 3". */
-  reading: { title: string; big: string; ready: boolean };
+  reading: { title: string; big: string; ready: boolean; fresh?: boolean };
   deadwoodValue: number;
   /**
    * The one line the board prints mid-table: what picking this card would
@@ -79,9 +82,30 @@ export interface PhoneGinBoardProps {
   onMenu: () => void;
   /** True when the picked discard would go out - the board's "go" button. */
   selectedWins: boolean;
+  /** The opening deal while it plays on this table (PCutGin.dc.html), else null. */
+  opening?: OpeningDeal | null;
+  /** Nobody has moved yet: the plates read as the deal leaves them. */
+  firstTurn?: boolean;
 }
 
+/**
+ * The board's two piles (a `.tc` at 438,294 and 654,294, the discard's top
+ * card turned 2 degrees), so the deal's stock and upcard land on them.
+ */
+const PILES: OpeningPiles = {
+  stock: { x: 492, y: 369.5, rz: 0, s: 1.125 },
+  upcard: { x: 708, y: 369.5, rz: -2, s: 1.125 },
+};
+
 export function PhoneGinBoard(p: PhoneGinBoardProps) {
+  const t = useTranslation();
+  const opening = p.opening ?? null;
+  const ceremony = !!opening && opening.step < 4;
+  const pilesShown = !opening || opening.settled;
+  const selfPlate = opening && ceremony ? openingPlate(opening, "S", t) : null;
+  const oppPlate = opening && ceremony ? openingPlate(opening, "N", t) : null;
+  const rootClass = ["ar", opening?.frozen ? "frozen" : "", opening?.reduced ? "deal-reduced" : ""].filter(Boolean).join(" ");
+  const appear = opening ? "appear" : "";
   const canDraw = p.myTurn && p.phase === "draw" && !p.busy;
   const canDiscard = p.myTurn && p.phase === "discard" && !!p.selected && !p.busy;
   const readColor = p.reading.ready ? "#C6FF33" : "#BEBECA";
@@ -117,8 +141,8 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
   const angles = backs > 1 ? Array.from({ length: backs }, (_, i) => -22.5 + (45 / (backs - 1)) * i) : [0];
 
   return (
-    <ArenaStage width={844} height={390} className="arena-pgin">
-      <div className="ar" style={{ position: "relative", width: 844, height: 390, overflow: "hidden", background: "#000" }}>
+    <ArenaStage width={844} height={390} className="arena-pgin arena-pdeal">
+      <div className={rootClass} style={{ position: "relative", width: 844, height: 390, overflow: "hidden", background: "#000" }}>
         <ArenaSprite />
         <div className="bg" />
 
@@ -145,10 +169,13 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
               <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#9FF2F7" strokeWidth="5" />
             </svg>
             {/* The stock's thickness. Only as many layers as there are cards
-                to justify them, so an almost-empty stock looks almost empty. */}
-            {STOCK_LAYERS.slice(0, Math.max(0, Math.min(5, p.stock - 1))).map((z) => (
+                to justify them, so an almost-empty stock looks almost empty.
+                While the opening deal runs its own stock and upcard stand in
+                for the piles, and land exactly where these lie. */}
+            {pilesShown && STOCK_LAYERS.slice(0, Math.max(0, Math.min(5, p.stock - 1))).map((z) => (
               <div key={z} className="layer" style={{ left: 438, top: 294, transform: `translateZ(${z}px)` }} />
             ))}
+            {opening && !opening.settled && <OpeningCards deal={opening} geo={GEO_PHONE} variant="phone" piles={PILES} />}
           </div>
         </div>
 
@@ -158,7 +185,7 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
             this second 3D context places them without covering the hand. */}
         <div className="stage" style={{ pointerEvents: "none" }}>
           <div className="table">
-            {p.stock > 0 && (
+            {pilesShown && p.stock > 0 && (
               <button
                 type="button"
                 className="tc"
@@ -171,9 +198,11 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
                 <div className="back"><i><Icon name="i-crown" /></i></div>
               </button>
             )}
-            <div className="tc" style={{ left: 654, top: 294, ["--z" as string]: "-4.2px", ["--rot" as string]: "-9deg" }}><div className="blank" /></div>
-            <div className="tc" style={{ left: 654, top: 294, ["--z" as string]: "-3.6px", ["--rot" as string]: "6deg" }}><div className="blank" /></div>
-            {p.discard && (
+            {pilesShown && <>
+              <div className="tc" style={{ left: 654, top: 294, ["--z" as string]: "-4.2px", ["--rot" as string]: "-9deg" }}><div className="blank" /></div>
+              <div className="tc" style={{ left: 654, top: 294, ["--z" as string]: "-3.6px", ["--rot" as string]: "6deg" }}><div className="blank" /></div>
+            </>}
+            {pilesShown && p.discard && (
               <button
                 type="button"
                 className="tc"
@@ -192,75 +221,87 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
           </div>
         </div>
 
-        {/* The opponent: their ten backs, and who they are. */}
-        <div className="ofan" aria-hidden="true">
+        {/* The opponent: their ten backs, and who they are. The backs wait for
+            the deal - until then those cards are its pile. */}
+        <div className={`ofan ${ceremony ? "off" : ""}`.trim()} aria-hidden="true">
           {angles.map((angle, i) => (
             <div key={i} className="ob" style={{ ["--a" as string]: `${angle}deg` }}>
               <div className="back"><i><Icon name="i-crown" /></i></div>
             </div>
           ))}
         </div>
-        <div className="who" style={{ left: 422, top: 62, transform: "translateX(-50%)" }}>
-          <div className="av them">{p.opponent.name.slice(0, 1).toUpperCase()}<span className="ct">{p.opponent.cardCount}</span></div>
+        <div className={`who ${oppPlate?.first || (p.firstTurn && !ceremony && !p.myTurn) ? "first" : ""}`.trim()} style={{ left: 422, top: 62, transform: "translateX(-50%)" }}>
+          <div className="av them">{p.opponent.name.slice(0, 1).toUpperCase()}
+            {oppPlate ? <CountBadge count={oppPlate.count} shown={oppPlate.countShown} /> : <span className="ct">{p.opponent.cardCount}</span>}</div>
           <div>
-            <b>{p.opponent.name}</b>
+            <b>{p.opponent.name}{oppPlate?.dealer && <span className="dtag">{t("deal_dealer")}</span>}</b>
             <span className="st">
-              <i className={`dot them ${p.myTurn ? "" : "live"}`.trim()} {...(p.myTurn ? {} : { "data-ar-loop": true })} />
-              {p.myTurn ? "Waiting" : p.phase === "draw" ? "Drawing" : "Discarding"}
+              <i className={`dot them ${!ceremony && !p.myTurn ? "live" : ""}`.trim()} {...(!ceremony && !p.myTurn ? { "data-ar-loop": true } : {})} />
+              {oppPlate ? <>{oppPlate.line}{oppPlate.suit && <Suit suit={oppPlate.suit} className={oppPlate.red ? "red" : undefined} />}</>
+                : p.firstTurn ? (p.myTurn ? t("mindi_opponent") : t("deal_leads"))
+                : p.myTurn ? "Waiting" : p.phase === "draw" ? "Drawing" : "Discarding"}
             </span>
           </div>
         </div>
 
-        {/* Top left: leave, the meld reading and the deadwood. */}
+        {/* Top left: leave, then the deal's step while it runs - or the meld
+            reading and the deadwood. */}
         <div style={{ position: "absolute", left: 48, top: 8, display: "flex", alignItems: "center", gap: 8 }}>
           <button type="button" className="ibtn" aria-label="Leave game" onClick={p.onLeave} data-flat>
             <Icon name="i-back" />
           </button>
-          <div className="bar" style={{ padding: "0 12px", gap: 10 }} aria-label="Your melds">
-            <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span className="tag" style={{ color: readColor }}>{p.reading.title}</span>
-              <b className="disp" style={{ fontSize: 16, color: readColor }}>{p.reading.big}</b>
-            </span>
-            <span style={{ width: 1, height: 24, background: "rgba(255,255,255,.14)" }} />
-            <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-              <b className="num" style={{ fontSize: 16, lineHeight: 1 }}>{p.deadwoodValue}</b>
-              <span className="tag" style={{ fontSize: 8 }}>Deadwood</span>
-            </span>
-          </div>
+          {ceremony && opening ? <PhoneOpeningSteps deal={opening} /> : (
+            <div className={`bar ${appear}`.trim()} style={{ padding: "0 12px", gap: 10 }} aria-label="Your melds">
+              <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span className="tag" style={p.reading.fresh ? undefined : { color: readColor }}>{p.reading.title}</span>
+                <b className="disp" style={{ fontSize: 16, color: p.reading.fresh ? undefined : readColor }}>{p.reading.big}</b>
+              </span>
+              <span style={{ width: 1, height: 24, background: "rgba(255,255,255,.14)" }} />
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <b className="num" style={{ fontSize: 16, lineHeight: 1 }}>{p.deadwoodValue}</b>
+                <span className="tag" style={{ fontSize: 8 }}>Deadwood</span>
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Top right: the clock, whose turn it is, and the menu. The ring is
-            drawn only while a clock is actually running. */}
+        {/* Top right: the cut while the deal runs, then the clock and whose
+            turn it is, and the menu. The ring is drawn only while a clock is
+            actually running. */}
         <div style={{ position: "absolute", right: 48, top: 8, display: "flex", alignItems: "center", gap: 8 }}>
-          <div className="bar" style={{ padding: "0 12px 0 6px", gap: 9 }}>
-            {p.secondsLeft !== null && (
-              <div className="clock">
-                <svg viewBox="0 0 34 34" aria-hidden="true">
-                  <circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="3.5" />
-                  <circle className="arc" cx="17" cy="17" r="14" fill="none" stroke="#C6FF33" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="88" strokeDashoffset={clockOff} />
-                </svg>
-                <b>{p.secondsLeft}</b>
-              </div>
-            )}
-            <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span className="tag">{p.myTurn ? "Your turn" : p.opponent.name}</span>
-              <span className="disp" style={{ fontSize: 14, whiteSpace: "nowrap" }}>
-                {p.busy ? "Working…" : p.myTurn ? (p.phase === "draw" ? "Draw a card" : "Discard a card") : (p.phase === "draw" ? "Drawing" : "Discarding")}
+          {ceremony && opening ? <PhoneOpeningCut deal={opening} /> : (
+            <div className={`bar ${appear}`.trim()} style={{ padding: "0 12px 0 6px", gap: 9 }} aria-label="Turn">
+              {p.secondsLeft !== null && (
+                <div className="clock">
+                  <svg viewBox="0 0 34 34" aria-hidden="true">
+                    <circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="3.5" />
+                    <circle className="arc" cx="17" cy="17" r="14" fill="none" stroke="#C6FF33" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="88" strokeDashoffset={clockOff} />
+                  </svg>
+                  <b>{p.secondsLeft}</b>
+                </div>
+              )}
+              <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span className="tag">{p.myTurn ? "Your turn" : p.opponent.name}</span>
+                <span className="disp" style={{ fontSize: 14, whiteSpace: "nowrap" }}>
+                  {p.busy ? "Working…" : p.myTurn ? (p.phase === "draw" ? "Draw a card" : "Discard a card") : (p.phase === "draw" ? "Drawing" : "Discarding")}
+                </span>
               </span>
-            </span>
-          </div>
+            </div>
+          )}
           <button type="button" className="ibtn" aria-label="Menu" onClick={p.onMenu} data-flat>
             <Icon name="i-menu" />
           </button>
         </div>
 
-        <span className="hint" role="status">
-          {p.myTurn && <i className="dot live" data-ar-loop />}
-          {p.hint}
-        </span>
+        {!ceremony && (
+          <span className="hint" role="status">
+            {p.myTurn && <i className="dot live" data-ar-loop />}
+            {p.hint}
+          </span>
+        )}
 
-        <section className="hand" aria-label="Your hand">
-          {p.hand.map((card, index) => {
+        <section className={`hand ${opening && !ceremony ? "hand-rise" : ""}`.trim()} aria-label="Your hand">
+          {!ceremony && p.hand.map((card, index) => {
             const id = cardId(card);
             const slot = position.get(id);
             if (!slot) return null;
@@ -295,7 +336,7 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
           })}
         </section>
 
-        {spans.map(({ a, b, group }) => (
+        {!ceremony && spans.map(({ a, b, group }) => (
           <div
             key={group.ids.join("")}
             className={`gtag ${group.deadwood ? "dw" : ""}`.trim()}
@@ -305,30 +346,34 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
           </div>
         ))}
 
-        <div className={`who ${p.myTurn ? "turn" : ""}`.trim()} style={{ left: 48, bottom: 16 }}>
-          <div className="av">{p.name.slice(0, 1).toUpperCase()}<span className="ct">{p.hand.length}</span></div>
+        <div className={`who ${selfPlate?.first ? "first" : !ceremony && p.myTurn ? "turn" : ""}`.trim()} style={{ left: 48, bottom: 16 }}>
+          <div className="av">{p.name.slice(0, 1).toUpperCase()}
+            {selfPlate ? <CountBadge count={selfPlate.count} shown={selfPlate.countShown} /> : <span className="ct">{p.hand.length}</span>}</div>
           <div>
-            <b>{p.myTurn ? "Your turn" : p.name}</b>
+            <b>{!ceremony && p.myTurn && !p.firstTurn ? "Your turn" : p.name}{selfPlate?.dealer && <span className="dtag">{t("deal_dealer")}</span>}</b>
             <span className="st">
-              <i className={`dot ${p.myTurn ? "live" : ""}`.trim()} {...(p.myTurn ? { "data-ar-loop": true } : {})} />
-              {p.myTurn ? (p.phase === "draw" ? "Draw or take" : "Discard one") : "Waiting"}
+              <i className={`dot ${!ceremony && p.myTurn ? "live" : ""}`.trim()} {...(!ceremony && p.myTurn ? { "data-ar-loop": true } : {})} />
+              {selfPlate ? <>{selfPlate.line}{selfPlate.suit && <Suit suit={selfPlate.suit} className={selfPlate.red ? "red" : undefined} />}</>
+                : p.myTurn ? (p.firstTurn ? "Your turn" : p.phase === "draw" ? "Draw or take" : "Discard one") : "Waiting"}
             </span>
           </div>
         </div>
 
         <div style={{ position: "absolute", right: 48, bottom: 18 }}>
-          <button
-            type="button"
-            className={`ar-btn ${p.selectedWins ? "go" : ""}`.trim()}
-            style={{ width: 176 }}
-            disabled={!canDiscard}
-            onClick={p.onDiscard}
-            data-flat
-          >
-            <Icon name="i-discard" />
-            {p.actionLabel}
-            {p.selected && !p.selectedWins && <Suit suit={p.selected.suit} style={{ width: 15, height: 15 }} />}
-          </button>
+          {ceremony && opening ? <OpeningSkip deal={opening} compact /> : (
+            <button
+              type="button"
+              className={`ar-btn ${p.selectedWins ? "go" : ""} ${appear}`.replace(/\s+/g, " ").trim()}
+              style={{ width: 176 }}
+              disabled={!canDiscard}
+              onClick={p.onDiscard}
+              data-flat
+            >
+              <Icon name="i-discard" />
+              {p.actionLabel}
+              {p.selected && !p.selectedWins && <Suit suit={p.selected.suit} style={{ width: 15, height: 15 }} />}
+            </button>
+          )}
         </div>
       </div>
     </ArenaStage>

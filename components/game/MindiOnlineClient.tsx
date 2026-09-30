@@ -1,6 +1,6 @@
 "use client";
 import { MindiTable } from "./MindiTable";
-import { MindiDealIntro } from "./MindiDealIntro";
+import { mindiOpening, useOpeningDeal } from "./MindiDealIntro";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { RefreshCw } from "lucide-react";
@@ -108,6 +108,28 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const legalForMe = state ? getLegalPlays(myHand, ledSuit) : [];
 
   const opponentProfiles = useOpponentProfiles(match?.players.filter((p) => p !== myUid) ?? []);
+
+  // The opening deal replays the draw stored on the match, on this table,
+  // from its first frame. Only at the very start of a hand: a player who
+  // reloads mid-match rejoins straight into play rather than re-watching the
+  // opening, and matches created before firstDraw existed start without it.
+  const openingActive = !!state?.firstDraw && state.tricksPlayed === 0 && state.trick.length === 0 && !state.outcome;
+  const openingNames = match?.players.map((uid, seat) => uid === myUid
+    ? user?.displayName ?? t("mindi_you")
+    : opponentProfiles[uid]?.displayName ?? seatLabelFor(seat as SeatIndex)) ?? [];
+  const openingSetup = useMemo(() => openingActive && state?.firstDraw ? mindiOpening({
+    draw: state.firstDraw, viewer: mySeat,
+    // openMindiHand deals from seat 3, openMindiHandFFA1v1 from seat 1.
+    dealer: numPlayers === 2 ? 1 : 3,
+    seats: numPlayers === 2 ? [0, 1] : [0, 1, 2, 3],
+    names: Object.fromEntries(openingNames.map((name, seat) => [seat, name])),
+    roles: Object.fromEntries((numPlayers === 2 ? [0, 1] : [0, 1, 2, 3]).map(seat => [seat,
+      seat === mySeat ? t("mindi_you") : numPlayers !== 2 && teamOf(seat as SeatIndex) === myTeam ? t("mindi_partner") : t("mindi_opponent")])),
+    handSize: numPlayers === 2 ? 26 : 13,
+    cardBack: economyState.profile.equipped.cardBack,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }) : null, [openingActive, state?.firstDraw, mySeat, numPlayers, openingNames.join("|")]);
+  const opening = useOpeningDeal(openingSetup, { onReady: () => setIntroSeen(true) });
 
   function seatLabelFor(seat: SeatIndex): string {
     if (numPlayers === 2) return t("mindi_opponent");
@@ -340,31 +362,10 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const myProfile = { name: t("mindi_you"), avatarPreset: playerStats?.avatarPreset };
   const activeTableTheme = tableThemeForUid(match.players[0]);
 
-  // Only at the very start of a hand: a player who reloads mid-match rejoins
-  // straight into play rather than re-watching the opening. Matches created
-  // before firstDraw existed have no draw to show, so they skip it too.
-  const showIntro =
-    !introSeen && !!state.firstDraw && state.tricksPlayed === 0 && state.trick.length === 0 && !state.outcome;
-  const introSeats: SeatIndex[] = isDuel ? [0, 1] : [0, 1, 2, 3];
-  const introNames = introSeats.reduce((acc, seat) => {
-    acc[seat] = seat === mySeat ? user?.displayName ?? t("mindi_you") : seatDataFor(seat).name;
-    return acc;
-  }, {} as Record<SeatIndex, string>);
-
-  // The ceremony replaces the table rather than sitting on top of it. Rendered
-  // together, the table paints first and the dialog only opens on the effect
-  // after it, so the player sees the table flash before the cut.
-  if (showIntro && state.firstDraw) {
-    return <MindiDealIntro draw={state.firstDraw} names={introNames}
-      seats={introSeats} viewer={mySeat} handSize={isDuel ? 26 : 13} tableSkin={activeTableTheme}
-      cardBacks={Object.fromEntries(introSeats.map(seat => [seat, seatDataFor(seat).cardBackId]))}
-      onDone={() => setIntroSeen(true)}/>;
-  }
-
   return <MindiTable hand={myHand} legal={legalForMe} viewer={mySeat} top={topSeat} left={leftSeat} right={rightSeat}
-    name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} active={isMyTurn}
+    name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} active={isMyTurn && (introSeen || !openingActive)}
     trump={state.trumpSuit} trick={state.trick} lastTrick={state.lastTrick} tens={state.tensCaptured} tricks={state.tricksWon}
     mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
-    tableSkin={activeTableTheme} tenCaptures={state.tenCaptures ?? []} online
+    tableSkin={activeTableTheme} tenCaptures={state.tenCaptures ?? []} online opening={opening}
     onPlay={handlePlayCard} onLeave={handleForfeit}/>;
 }

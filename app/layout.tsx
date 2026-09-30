@@ -58,6 +58,12 @@ import "@/styles/arena-plobby.css";
 import "@/styles/arena-pmindi.css";
 import "@/styles/arena-pgin.css";
 import "@/styles/arena-presult.css";
+// The opening deal: the Cut and PCut boards' own layer, on top of the
+// tables above (so they come after them), and the hand-written half that
+// joins that layer to the tables (reduced motion, the hand rising).
+import "@/styles/arena-deal.css";
+import "@/styles/arena-pdeal.css";
+import "@/styles/arena-deal-app.css";
 // The portrait screens. MShopBuy and MShopShort came out byte-identical to
 // MShop - they are MShop with a sheet open - so one sheet serves all three.
 import "@/styles/arena-mprofile.css";

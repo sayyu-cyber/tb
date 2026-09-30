@@ -214,3 +214,23 @@
 @media(prefers-reduced-motion:reduce) {
   .gin-arena *, .gin-arena *::before, .gin-arena *::after { animation:none!important;transition:none!important; }
 }
+/* The Gin table (design/arena/boards/Gin.dc.html): a card's place is its
+   transform, so it must survive the shared button hover/press transform in
+   styles/buttons.css - the hand's cards and the two piles you draw from. */
+.arena-gin-board button.hc:hover:not(:disabled),
+.arena-gin-board button.hc:active:not(:disabled) {
+  transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(8deg);
+}
+.arena-gin-board button.tc:hover:not(:disabled),
+.arena-gin-board button.tc:active:not(:disabled) {
+  transform:translateZ(var(--z)) rotate(var(--rot));
+}
+/* styles/arena-phone.css, the phone boards' shared layer, repeats the Main
+   board's 132x185 hand card (`.hc`), and the app shell puts .arena-phone on
+   every screen, after the table sheets - so on the Gin table it would win
+   over the Gin board's own smaller cards. These are the Gin board's hand
+   rules from styles/arena-gin-board.css, value for value, one step more
+   specific. */
+.arena-canvas.arena-gin-board .hc{width:108px;height:151px;border-radius:9px;font-size:15px;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(8deg);transition:transform .5s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s;animation-delay:calc(var(--i) * 45ms + 150ms)}
+.arena-canvas.arena-gin-board .hc:hover:not(:disabled){translate:0 -14px}
+.arena-canvas.arena-gin-board .hc.sel,.arena-canvas.arena-gin-board .hc.sel:hover{translate:0 -34px}

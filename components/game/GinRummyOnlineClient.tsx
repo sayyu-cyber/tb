@@ -16,13 +16,13 @@ import {
   findGinLayout,
   replenishStock,
   randomDiscard,
+  rankLabel,
   scoreGin,
   TURN_SECONDS,
 } from "@/lib/ginRummyEngine";
 import { GinResultScreen } from "./GinResultScreen";
-import { MindiDealIntro } from "./MindiDealIntro";
+import { ginOpening, useOpeningDeal } from "./MindiDealIntro";
 import type { CutCard } from "@/lib/openingCut";
-import type { FirstPlayerDraw, SeatIndex } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { sortHand } from "@/lib/cardSort";
 import { useToast } from "@/contexts/ToastContext";
@@ -86,6 +86,22 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const state = match?.state;
   const myHand = useMemo(() => state?.hands[myUid] ?? [], [state, myUid]);
   const isMyTurn = state?.turn === myUid;
+
+  // The opening deal replays the stored cut on this table from its first
+  // frame. Only at the very start: reload mid-match and you rejoin straight
+  // into play rather than re-watching it, and matches created before the cut
+  // was stored start without it. The first player's clock waits for it.
+  const openingActive = !!state?.firstCut && !state.result && state.phase === "draw"
+    && state.turn === state.firstCut.winner && state.discard.length === 1 && state.stock.length === 31;
+  const openingSetup = useMemo(() => openingActive && state?.firstCut && opponentUid ? ginOpening({
+    cut: state.firstCut, you: myUid, opponent: opponentUid,
+    names: { [myUid]: user?.displayName ?? t("mindi_you"), [opponentUid]: opponentProfile?.displayName ?? t("gin_opponent") },
+    roles: { [myUid]: t("mindi_you"), [opponentUid]: t("mindi_opponent") },
+    upcard: state.discard[0] ? { rank: rankLabel(state.discard[0].rank), suit: state.discard[0].suit } : null,
+    cardBack: economyState.profile.equipped.cardBack,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }) : null, [openingActive, state?.firstCut, myUid, opponentUid, opponentProfile?.displayName, user?.displayName]);
+  const opening = useOpeningDeal(openingSetup, { onReady: () => setIntroSeen(true) });
   const topDiscard = state && state.discard.length > 0 ? state.discard[state.discard.length - 1] : null;
 
   const sortedHand = useMemo(() => sortHand(myHand), [myHand]);
@@ -316,32 +332,10 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const activeTableTheme =
     match.players[0] === myUid ? economyState.profile.equipped.tableTheme : opponentProfile?.tableTheme || "tt_default";
 
-  // Only at the very start: reload mid-match and you rejoin straight into
-  // play rather than re-watching the cut. Seat 0 is always the local player,
-  // so the ceremony reads the same way for both of them.
-  const showIntro = !introSeen && !!state.firstCut && state.discard.length <= 1
-    && (state.hands[myUid]?.length ?? 0) === 10;
-  const cut = state.firstCut;
-  const cutDraw = cut && {
-    cards: { 0: cut.cards[myUid], 1: cut.cards[opponentUid] },
-    winner: (cut.winner === myUid ? 0 : 1) as SeatIndex,
-  };
-
-  // The ceremony replaces the table rather than sitting on top of it. Rendered
-  // together, the table paints first and the dialog only opens on the effect
-  // after it, so the player sees the table flash before the cut.
-  if (showIntro && cutDraw) {
-    return <MindiDealIntro game="gin" draw={cutDraw as FirstPlayerDraw}
-      names={{ 0: user?.displayName ?? "You", 1: opponentSeat.name, 2: "", 3: "" }}
-      seats={[0, 1]} viewer={0} handSize={10}
-      cardBacks={{ 0: economyState.profile.equipped.cardBack, 1: opponentProfile?.cardBack }}
-      tableSkin={activeTableTheme} onDone={() => setIntroSeen(true)} />;
-  }
-
   return <GinRummyTable hand={sortedHand} selected={selectedDiscard} opponent={opponentSeat}
     name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} stock={state.stock.length} discard={topDiscard}
-    phase={state.phase} myTurn={isMyTurn} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
+    phase={state.phase} myTurn={isMyTurn && (introSeen || !openingActive)} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
     deadline={state.turnDeadline ?? null} reshuffles={state.reshuffles ?? 0}
-    tableSkin={activeTableTheme} cardBack={economyState.profile.equipped.cardBack} online
+    tableSkin={activeTableTheme} cardBack={economyState.profile.equipped.cardBack} online opening={openingActive ? opening : null}
     onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} onLeave={handleForfeit}/>;
 }

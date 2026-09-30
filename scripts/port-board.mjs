@@ -267,6 +267,37 @@ const minusSharedAt = positional.indexOf("--minus-shared");
 const minusShared = minusSharedAt !== -1;
 if (minusShared) positional.splice(minusSharedAt, 1);
 
+// A layer that sits ON another board: the opening deal (boards Cut, PCut)
+// plays on the match's own table, so only its own section of the sheet is
+// ported and the table keeps its CSS.
+//
+//   --from "<text>"      port the board's CSS from the first occurrence of
+//                        <text> onwards (the section's heading comment).
+//   --table A,B          the table boards the layer sits on. A rule either
+//                        of them already has byte for byte is dropped, and so
+//                        is a rule that restyles one of their selectors - the
+//                        table's own design wins - unless it is named in
+//   --keep "a|b"         (a selector, exactly as the board writes it).
+//   --rename "a=b"       rewrite a selector token before comparing, for a
+//                        state the table board never drew (PCut's grey `.hx`
+//                        is the not-set trump; PMindi's is a set one).
+// The dropped restylings are printed, so the choice is visible every time.
+function takeOption(flag) {
+  const at = positional.indexOf(flag);
+  if (at === -1) return null;
+  const value = positional[at + 1];
+  positional.splice(at, 2);
+  return value;
+}
+const fromText = takeOption("--from");
+const tableBoards = (takeOption("--table") || "").split(",").filter(Boolean);
+const keepSelectors = new Set((takeOption("--keep") || "").split("|").map(s => s.trim()).filter(Boolean));
+const renames = [];
+for (let value = takeOption("--rename"); value; value = takeOption("--rename")) {
+  const [from, to] = value.split("=");
+  renames.push([from.trim(), to.trim()]);
+}
+
 const [board, name] = positional;
 if (!board || !name) {
   console.error("usage: node scripts/port-board.mjs <Board> <name> [--minus <file.css>]");
@@ -280,9 +311,14 @@ const source = cssMode
   ? join(root, "design", "arena", board)
   : join(root, "design", "arena", "boards", `${board}.dc.html`);
 const text = readFileSync(source, "utf8");
-const raw = cssMode
+let raw = cssMode
   ? text
   : [...text.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join("\n");
+if (fromText) {
+  const at = raw.indexOf(fromText);
+  if (at === -1) { console.error(`✗ --from: "${fromText}" is not in ${source}`); process.exit(1); }
+  raw = raw.slice(at);
+}
 if (!raw.trim()) { console.error(`No CSS found in ${source}`); process.exit(1); }
 
 const ns = `.arena-${name}`;
@@ -296,6 +332,41 @@ if (stray.length) {
 }
 
 const out = postcss.parse(recoloured);
+
+const tokenPattern = token => new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\w-])", "g");
+if (renames.length) {
+  out.walkRules(rule => {
+    if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
+    for (const [from, to] of renames) rule.selector = rule.selector.replace(tokenPattern(from), to);
+  });
+}
+
+// --table: what each table board already says, by selector and by
+// fingerprint. The layer's sheet goes on every one of those tables, so a
+// rule is only dropped as a duplicate when EVERY table already has it; one
+// that some table lacks stays, or that table would go without it.
+const tables = tableBoards.map(other => {
+  const sheet = { prints: new Set(), selectors: new Set() };
+  postcss.parse(boardCss(other)).walkRules(rule => {
+    if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
+    sheet.prints.add(fingerprint(rule));
+    sheet.selectors.add(rule.selector.replace(/\s+/g, " ").trim());
+  });
+  return sheet;
+});
+const restyled = [];
+let sameAsTable = 0;
+if (tableBoards.length) {
+  out.walkRules(rule => {
+    if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
+    const selector = rule.selector.replace(/\s+/g, " ").trim();
+    const print = fingerprint(rule);
+    if (tables.every(sheet => sheet.prints.has(print))) { rule.remove(); sameAsTable += 1; return; }
+    const differs = tables.some(sheet => sheet.selectors.has(selector) && !sheet.prints.has(print));
+    if (differs && !keepSelectors.has(selector)) { restyled.push(selector); rule.remove(); }
+  });
+  if (restyled.length) console.log(`  left to the table board (${tableBoards.join(", ")}): ${restyled.join("  ")}`);
+}
 
 // Rules the board shares verbatim with --minus's stylesheet. Keyed on the
 // selector and the declarations together, so a board that restyles a shared
@@ -366,6 +437,21 @@ const header = `/* GENERATED from ${origin} by scripts/port-board.mjs.
    ${dropped} rules this board shares byte for byte with ${minusFile || "the phone set's common layer"}
    were dropped: they are already in ${minusFile ? "styles/arena-app.css" : "styles/arena-phone.css"},
    ported once. A rule the board changed, however slightly, was kept.`
+    : ""
+}${
+  tableBoards.length
+    ? `
+
+   Only the board's own section is here (from "${fromText}"): it is a
+   layer on the match table, whose own sheet already carries the rest.
+   ${sameAsTable} rules the table board${tableBoards.length > 1 ? "s" : ""} (${tableBoards.join(", ")}) already had were
+   dropped, and so were these restylings of the table's own selectors,
+   which stay as the table board draws them:
+     ${restyled.join("  ") || "none"}${
+      keepSelectors.size ? `
+   Kept on purpose: ${[...keepSelectors].join("  ")}` : ""}${
+      renames.length ? `
+   Renamed, for a state the table board never drew: ${renames.map(([a, b]) => `${a} -> ${b}`).join("  ")}` : ""}`
     : ""
 } */\n\n`;
 

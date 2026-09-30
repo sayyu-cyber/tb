@@ -1,6 +1,6 @@
 "use client";
 import { MindiTable } from "./MindiTable";
-import { MindiDealIntro } from "./MindiDealIntro";
+import { mindiOpening, useOpeningDeal } from "./MindiDealIntro";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
@@ -84,6 +84,19 @@ function MindiHand({mode,onReplay}:MindiGameClientProps&{onReplay:()=>void}) {
   const [firstDraw] = useState(() => drawForFirstPlayer());
   const [deal] = useState(() => dealMindiHand(3, firstDraw.winner));
   const [introDone, setIntroDone] = useState(false);
+  // The ceremony plays ON the table from its first frame; nothing moves until
+  // it has dealt (introDone), so the first bot cannot play behind it.
+  const botNames = botNamesRef.current;
+  const openingSetup = useMemo(() => mindiOpening({
+    draw: firstDraw, viewer: 0, dealer: 3, seats: [0, 1, 2, 3], handSize: 13,
+    names: mode === "ai"
+      ? { 0: user?.displayName ?? seatNames[0], 1: botNames[1], 2: botNames[2], 3: botNames[3] }
+      : { 0: seatNames[0], 1: seatNames[1], 2: seatNames[2], 3: seatNames[3] },
+    roles: { 0: t("mindi_you"), 1: t("mindi_opponent"), 2: t("mindi_partner"), 3: t("mindi_opponent") },
+    cardBack: economyState.profile.equipped.cardBack,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [firstDraw, mode, user?.displayName]);
+  const opening = useOpeningDeal(openingSetup, { onReady: () => setIntroDone(true) });
   const [hands, setHands] = useState(() => deal.hands);
   const [turnSeat, setTurnSeat] = useState<SeatIndex>(deal.leader);
   // Null until someone cannot follow suit. Trump is no longer dealt - the
@@ -259,27 +272,10 @@ function MindiHand({mode,onReplay}:MindiGameClientProps&{onReplay:()=>void}) {
   const selfHand = mode === "ai" ? yourHand : sortHand(hands[selfSeat] ?? []);
   const selfCanAct = introDone && isHuman(turnSeat) && (mode === "ai" || revealedSeat === turnSeat) && !resolvingTrick;
 
-  const introNames = {
-    0: mode === "ai" ? user?.displayName ?? seatNames[0] : seatNames[0],
-    1: mode === "ai" ? botNamesRef.current[1] : seatNames[1],
-    2: mode === "ai" ? botNamesRef.current[2] : seatNames[2],
-    3: mode === "ai" ? botNamesRef.current[3] : seatNames[3],
-  } as Record<SeatIndex, string>;
-
-  // The ceremony replaces the table rather than sitting on top of it. Rendered
-  // together, the table paints first and the dialog only opens on the effect
-  // after it, so the player sees the table flash before the cut.
-  if (!introDone) {
-    return <MindiDealIntro draw={firstDraw} names={introNames} seats={[0,1,2,3]}
-      viewer={selfSeat} handSize={13} tableSkin={economyState.profile.equipped.tableTheme}
-      cardBacks={{0:botSeatData(0).cardBackId,1:botSeatData(1).cardBackId,2:botSeatData(2).cardBackId,3:botSeatData(3).cardBackId}}
-      onDone={()=>setIntroDone(true)}/>;
-  }
-
   return <MindiTable hand={selfHand} legal={legalForYou} viewer={selfSeat}
     top={botSeatData(((selfSeat+2)%4) as SeatIndex)} left={botSeatData(((selfSeat+1)%4) as SeatIndex)} right={botSeatData(((selfSeat+3)%4) as SeatIndex)}
     name={mode === "ai" ? user?.displayName ?? "You" : seatNames[selfSeat]} avatar={playerStats?.avatarPreset}
     active={selfCanAct} trump={trumpSuit} trick={trick} lastTrick={lastTrick} tens={tensCaptured} tricks={tricksWon}
     mode={mode === "ai" ? "Casual" : "Pass & Play"} tableSkin={economyState.profile.equipped.tableTheme}
-    tenCaptures={tenCaptures} onPlay={handleCardSelect}/>;
+    tenCaptures={tenCaptures} opening={tricksPlayed===0&&trick.length===0?opening:null} onPlay={handleCardSelect}/>;
 }

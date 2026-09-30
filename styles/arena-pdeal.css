@@ -1,0 +1,143 @@
+/* GENERATED from design/arena/boards/PCut.dc.html by scripts/port-board.mjs.
+   Do not edit by hand - re-run the script instead.
+
+   Three changes from the board, and only three: every selector is
+   namespaced under .arena-pdeal so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.
+
+   Only the board's own section is here (from "/* ================= the opening deal"): it is a
+   layer on the match table, whose own sheet already carries the rest.
+   17 rules the table boards (PMindi, PGin) already had were
+   dropped, and so were these restylings of the table's own selectors,
+   which stay as the table board draws them:
+     .bg  .table  .felt  .cf .ix  .cf .ix b  .cf .mid  .hand  .hc  .btn  .clock b
+   Kept on purpose: .tag  .who  .who b  .who .st  .hint  .btn.ghost
+   Renamed, for a state the table board never drew: .hx -> .hx.q */
+
+/* ================= the opening deal: cut for first play, then the deal ================= */
+/* card layer inside .table: everything below is laid out in table space (1200 x 740) */
+.arena-pdeal .ccl{position:absolute;left:0;top:0;width:1200px;height:740px;transform-style:preserve-3d;pointer-events:none}
+.arena-pdeal .cc{position:absolute;left:0;top:0;transform-style:preserve-3d;transform-origin:50% 100%;opacity:1;transition:transform .6s cubic-bezier(.25,.8,.25,1),opacity 0s linear;will-change:transform}
+.arena-pdeal .cc.sm{width:96px;height:134px;font-size:13.333px}
+.arena-pdeal .cc.lg{width:120px;height:168px;font-size:16.667px}
+.arena-pdeal .cc > .back,.arena-pdeal .cc > .fr{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.arena-pdeal .cc > .fr{position:absolute;inset:0}
+.arena-pdeal .cc.lg > .back{transform:rotateY(180deg)}
+.arena-pdeal .cc.sm > .back{box-shadow:0 1.5px 0 #D9D9E2,0 2.5px 0 #9A9AA8,0 6px 10px -4px rgba(0,0,0,.55)}
+.arena-pdeal .cc.lg > .back{box-shadow:0 2px 0 #D9D9E2,0 3px 0 #9A9AA8,0 16px 22px -10px rgba(0,0,0,.7)}
+.arena-pdeal .cc .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 18px 26px -10px rgba(0,0,0,.8);transition:box-shadow .35s,filter .35s}
+.arena-pdeal .cc.hid{opacity:0}
+.arena-pdeal .cc.win .face{box-shadow:0 1px 0 #D5D5DE,0 2px 0 #B5B5C2,0 0 0 4px #C6FF33,0 0 46px 12px rgba(198,255,51,.5)}
+.arena-pdeal .cc.dim .face{filter:brightness(.6) saturate(.75)}
+/* the riffle: halves split, then drop back in one at a time */
+.arena-pdeal .cc.rif{animation:rsplit .28s cubic-bezier(.3,.7,.3,1) both,rdrop .16s cubic-bezier(.5,0,.75,.6) forwards;animation-delay:0s,var(--dd)}
+@keyframes rsplit{from{transform:var(--from)}to{transform:var(--side)}}
+@keyframes rdrop{from{transform:var(--side)}to{transform:var(--to)}}
+/* dealt cards arc off the deck and land on the seat's pile */
+.arena-pdeal .cc.go{animation:fly .33s cubic-bezier(.3,.6,.35,1) both}
+@keyframes fly{0%{transform:var(--from)}45%{transform:var(--mid)}100%{transform:var(--to)}}
+.arena-pdeal .cc.flip{animation:flip .52s cubic-bezier(.3,.6,.3,1) both}
+@keyframes flip{0%{transform:var(--from)}50%{transform:var(--mid)}100%{transform:var(--to)}}
+.arena-pdeal .cc.pick{animation:pick .42s cubic-bezier(.3,.6,.4,1) forwards}
+@keyframes pick{from{transform:var(--to);opacity:1}to{transform:var(--gone);opacity:0}}
+.arena-pdeal .cc.fade{opacity:0;transition:opacity .35s ease-out}
+/* the upcard (gin) turns over beside the stock */
+.arena-pdeal .frozen .cc,.arena-pdeal .reset .cc,.arena-pdeal .reset .hc,.arena-pdeal .reset .swap > *{transition:none !important;animation:none !important}
+/* the winner's glow on the felt, and a standee over the card */
+.arena-pdeal .halo{position:absolute;left:0;top:0;width:320px;height:320px;margin:-160px 0 0 -160px;border-radius:50%;background:radial-gradient(closest-side,rgba(198,255,51,.42),rgba(198,255,51,.12) 55%,rgba(198,255,51,0));transform:translateZ(.8px) scale(.4);opacity:0;transition:opacity .45s,transform .6s cubic-bezier(.2,.9,.3,1)}
+.arena-pdeal .halo.on{opacity:1;transform:translateZ(.8px) scale(1)}
+.arena-pdeal .stand{position:absolute;left:50%;top:-44px;height:30px;padding:0 12px 0 9px;display:flex;align-items:center;gap:6px;border-radius:8px;white-space:nowrap;background:#C6FF33;color:#0A0A0A;box-shadow:0 0 24px rgba(198,255,51,.55),0 10px 16px -8px rgba(0,0,0,.9);font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;line-height:1;transform:translateX(-50%);animation:standPop .45s cubic-bezier(.3,1.5,.5,1) both;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.arena-pdeal .stand svg{width:15px;height:15px}
+@keyframes standPop{from{transform:translate(-50%,10px) scale(.6);opacity:0}to{transform:translateX(-50%);opacity:1}}
+
+/* seat plates during the ceremony */
+.arena-pdeal .pf .ct{transition:transform .2s}
+.arena-pdeal .pf .ct.off{visibility:hidden}
+.arena-pdeal .pf .ct.bump{animation:tick .22s ease-out}
+@keyframes tick{0%{transform:scale(1.5);background:#C6FF33}100%{transform:none}}
+.arena-pdeal .pf .nm > span svg{width:12px;height:12px;flex:none}
+.arena-pdeal .pf .nm > span .red{color:#FF5C73}
+.arena-pdeal .dtag{display:inline-flex;align-items:center;justify-content:center;height:18px;padding:0 6px;margin-left:8px;border-radius:5px;background:rgba(0,188,200,.18);color:#8AF0F5;box-shadow:inset 0 0 0 1px rgba(0,188,200,.5);font-family:var(--font-display), sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;vertical-align:1px}
+.arena-pdeal .pf.first{border-color:#C6FF33;box-shadow:0 0 0 4px rgba(198,255,51,.14),0 0 32px rgba(198,255,51,.28)}
+.arena-pdeal .pf.first .nm > span{color:#C6FF33}
+.arena-pdeal .pf,.arena-pdeal .fan{transition:opacity .4s}
+.arena-pdeal .fan.off{opacity:0}
+
+/* HUD panels swap from the ceremony to the table */
+.arena-pdeal .swap > *{transition:opacity .35s ease-out .22s,transform .35s ease-out .22s}
+.arena-pdeal .swap{overflow:hidden;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.arena-pdeal .swap > .out{position:absolute;top:var(--pt);left:var(--pl);right:var(--pr);opacity:0;transform:translateY(-6px);pointer-events:none;visibility:hidden;transition:opacity .2s,transform .2s,visibility 0s .2s}
+.arena-pdeal .ctitle{margin:4px 0 0;min-height:62px;font-size:30px;line-height:1.02;display:flex;align-items:flex-end}
+.arena-pdeal .csub{margin:0;font-size:13.5px;line-height:1.45;font-weight:600;color:#BEBECA;text-wrap:pretty}
+.arena-pdeal .steps{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.arena-pdeal .steps li{display:flex;flex-direction:column;gap:7px;font-family:var(--font-display), sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6E6E7C}
+.arena-pdeal .steps li i{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;position:relative}
+.arena-pdeal .steps li i::after{content:"";position:absolute;inset:0;border-radius:2px;background:#C6FF33;transform:scaleX(0);transform-origin:0 50%}
+.arena-pdeal .steps li.done{color:#8AF0F5}
+.arena-pdeal .steps li.done i::after{background:#00BCC8;transform:none}
+.arena-pdeal .steps li.now{color:#fff}
+.arena-pdeal .steps li.now i::after{transform:none;animation:stepfill 1.2s ease-out both}
+@keyframes stepfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.arena-pdeal .cutrow{display:flex;align-items:center;gap:12px;height:40px;padding:0 10px 0 6px;border-radius:10px;transition:background .3s,box-shadow .3s}
+.arena-pdeal .cutrow .av{width:30px;height:30px;border-radius:8px;font-size:13px}
+.arena-pdeal .cutrow b{flex:1 1 0;min-width:0;font-family:var(--font-display), sans-serif;font-weight:700;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase}
+.arena-pdeal .cutrow .rs{font-size:12.5px;font-weight:600;color:#A4A4B2;white-space:nowrap}
+.arena-pdeal .cutrow.win{background:rgba(198,255,51,.08);box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.55)}
+.arena-pdeal .cutrow.win .rs{color:#C6FF33}
+.arena-pdeal .cutrow .mini{flex:none}
+.arena-pdeal .cutrow .mini.q{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);color:#6E6E7C}
+.arena-pdeal .cutrow .mini.pop{animation:miniPop .4s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes miniPop{from{transform:scale(.4) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+.arena-pdeal .skipb{width:250px}
+
+/* phone: the same table at half scale, as on the phone table boards */
+/* cards in table space are drawn at twice their screen size */
+.arena-pdeal .cc.lg{width:124px;height:174px;font-size:17.2px}
+.arena-pdeal .cc .cf{border-radius:14px}
+.arena-pdeal .cc .cf .ix{left:10px;top:10px;gap:5px}
+.arena-pdeal .cc .cf .ix b{font-size:44px}
+.arena-pdeal .cc .cf .ix svg{width:26px;height:26px}
+.arena-pdeal .cc .cf .mid{width:54px;height:54px;right:11px;bottom:11px}
+.arena-pdeal .cc.win .cf{box-shadow:0 2px 0 #B5B5C2,0 0 0 7px #C6FF33,0 0 70px 20px rgba(198,255,51,.5)}
+.arena-pdeal .cc.dim .cf{filter:brightness(.6) saturate(.75)}
+.arena-pdeal .cc .cf{box-shadow:0 2px 0 #D5D5DE,0 4px 0 #9A9AA8,0 24px 30px -10px rgba(0,0,0,.75);transition:box-shadow .35s,filter .35s}
+.arena-pdeal .stand{top:-68px;height:52px;padding:0 20px 0 16px;gap:10px;border-radius:14px;font-size:22px;box-shadow:0 0 40px rgba(198,255,51,.55),0 16px 24px -12px rgba(0,0,0,.9)}
+.arena-pdeal .stand svg{width:26px;height:26px}
+.arena-pdeal .halo{width:420px;height:420px;margin:-210px 0 0 -210px}
+
+/* compact faces */
+
+/* hand */
+
+/* compact chrome */
+.arena-pdeal .mini.q{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);color:#6E6E7C}
+.arena-pdeal .mini.pop{animation:miniPop .4s cubic-bezier(.3,1.6,.5,1) both}
+.arena-pdeal .tag{font-family:var(--font-display), sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:5px;color:#A4A4B2;white-space:nowrap}
+.arena-pdeal .hx.q{flex:none;width:32px;height:36px;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#2B2B35 0%,#16161D 100%)}
+.arena-pdeal .hx.q b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:16px;color:#fff}
+.arena-pdeal .who{position:absolute;display:flex;align-items:center;gap:9px;height:44px;padding:0 12px 0 4px;border-radius:11px;background:rgba(10,10,14,.92);border:1px solid rgba(255,255,255,.12);transition:border-color .3s,box-shadow .3s}
+.arena-pdeal .who .ct.off{visibility:hidden}
+.arena-pdeal .who b{display:flex;align-items:center;font-family:var(--font-display), sans-serif;font-weight:700;font-size:12px;line-height:1;letter-spacing:.05em;text-transform:uppercase}
+.arena-pdeal .who .st{display:flex;align-items:center;gap:5px;margin-top:4px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#A4A4B2;line-height:1;white-space:nowrap}
+.arena-pdeal .who .st svg{width:10px;height:10px}
+.arena-pdeal .who .st .red{color:#FF5C73}
+.arena-pdeal .who.first{border-color:#C6FF33;box-shadow:0 0 0 3px rgba(198,255,51,.14),0 0 20px rgba(198,255,51,.24)}
+.arena-pdeal .who.first .st{color:#C6FF33}
+.arena-pdeal .who .dtag{height:15px;padding:0 5px;margin-left:6px;font-size:8.5px;border-radius:4px}
+.arena-pdeal .hint{position:absolute;left:422px;top:236px;transform:translateX(-50%);height:30px;padding:0 12px 0 10px;border-radius:8px;display:flex;align-items:center;gap:7px;white-space:nowrap;background:rgba(8,8,11,.92);box-shadow:inset 3px 0 0 #C6FF33,inset 0 0 0 1px rgba(255,255,255,.12);font-size:12px;font-weight:600;animation:hintIn .4s ease-out both}
+@keyframes hintIn{from{opacity:0}to{opacity:1}}
+.arena-pdeal .ar-btn.ghost{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2),0 4px 0 #000}
+.arena-pdeal .sdots{display:flex;gap:3px}
+.arena-pdeal .sdots i{width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.arena-pdeal .sdots i.done{background:#00BCC8}
+.arena-pdeal .sdots i.now{background:#C6FF33}
+.arena-pdeal .cchip{display:flex;align-items:center;gap:4px;padding:3px 4px 3px 3px;border-radius:8px;transition:background .3s,box-shadow .3s}
+.arena-pdeal .cchip .av{width:20px;height:20px;border-radius:5px;font-size:10px}
+.arena-pdeal .cchip.win{background:rgba(198,255,51,.1);box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.6)}
+.arena-pdeal .appear{animation:fade .4s ease-out both}
+.arena-pdeal .clock{position:relative;flex:none;width:34px;height:34px}
+.arena-pdeal .clock svg{position:absolute;inset:0;width:34px;height:34px;transform:rotate(-90deg)}
+

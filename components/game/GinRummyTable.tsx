@@ -1,10 +1,10 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Settings, X, Layers, ArrowDownToLine, Music, BookOpen, Volume2, VolumeX } from "lucide-react";
+import { X, Music } from "lucide-react";
 import { Card, cardId, rankLabel, bestMeldArrangement, winningDiscard, findGinLayout, TURN_SECONDS } from "@/lib/ginRummyEngine";
-import { PlayingCard, suitFromLetter } from "./PlayingCard";
-import { Avatar, ArenaSeatData } from "./GameArena";
+import { suitFromLetter } from "./PlayingCard";
+import { ArenaSeatData, TABLE_THEME_STYLES } from "./GameArena";
 import { Button } from "@/components/ui/Button";
 import { SettingToggle } from "@/components/settings/SettingToggle";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -14,14 +14,13 @@ import { usePhoneTable } from "@/hooks/usePhoneTable";
 import { useSecondsLeft } from "@/components/layout/phone/TurnRing";
 import { PhoneGinBoard, type PhoneGinGroup } from "./phone/PhoneGinBoard";
 import { sortHand } from "@/lib/cardSort";
-import { HandTools, HandOrder, navigateHand } from "./HandTools";
+import { HandOrder, navigateHand } from "./HandTools";
 import { RuleBook } from "./RuleBook";
-import { TurnClock } from "./TurnClock";
 import { ArenaStage } from "./ArenaStage";
 import { ArenaFace } from "./ArenaCard";
-import { ArenaSprite, Suit } from "./ArenaSprite";
-import { GinArenaScene } from "./GinArenaScene";
-import { IconButton } from "@/components/ui/IconButton";
+import { ArenaSprite, Suit, Icon } from "./ArenaSprite";
+import { CardBack, CountBadge, OpeningCards, OpeningCut, OpeningSkip, OpeningSteps, openingPlate, openingWords, type OpeningDeal, type OpeningPiles } from "./MindiDealIntro";
+import { GEO_DESKTOP } from "./dealGeometry";
 
 interface Props {
   hand:Card[]; selected:Card|null; opponent:ArenaSeatData; name:string; avatar?:string;
@@ -33,6 +32,10 @@ interface Props {
   reshuffles?:number;
   onDraw:(source:"stock"|"discard")=>void|Promise<void>; onSelect:(card:Card)=>void;
   onDiscard:()=>void|Promise<void>; onLeave?:()=>void|Promise<void>;
+  /* The opening deal, while it plays on this table (MindiDealIntro.tsx),
+     and until the first card is drawn - the table reads as the Cut board
+     leaves it until then. Null once play has begun. */
+  opening?:OpeningDeal|null;
 }
 
 export function GinRummyTable(p:Props) {
@@ -55,6 +58,10 @@ export function GinRummyTable(p:Props) {
   const suppressClick=useRef(false);
   const lastTap=useRef<{id:string;at:number}|null>(null);
   const previousHand=useRef(p.hand.map(cardId));
+  /* The cards the hand was dealt with rise in one after another (the board's
+     handIn, 45 ms apart); a card drawn later rises at once rather than
+     waiting its turn in that stagger. */
+  const dealtIds=useRef(new Set(p.hand.map(cardId)));
   /* Stable, because the gate keeps whatever it was last given: a new closure
      on every render would have it republishing for no reason. */
   const askToLeave=useCallback(()=>setModal("leave"),[]);
@@ -62,13 +69,8 @@ export function GinRummyTable(p:Props) {
   // Which pile the card came from, so the status line can say so the way the
   // board does ("You drew the 3 of spades from the stock").
   const [drawnFrom,setDrawnFrom]=useState<"stock"|"discard"|null>(null);
-  const [compact,setCompact]=useState(false);
-  useEffect(()=>{
-    const query=window.matchMedia("(max-height:600px) and (min-aspect-ratio:3/2)");
-    const update=()=>setCompact(query.matches);
-    update();query.addEventListener("change",update);
-    return()=>query.removeEventListener("change",update);
-  },[]);
+  /** Nobody has moved yet: the table is as the opening deal left it. */
+  const firstTurn=!!p.opening;
 
   const arrangement=useMemo(()=>bestMeldArrangement(p.hand),[p.hand]);
   const selectedCard=p.hand.find(card=>p.selected&&cardId(card)===cardId(p.selected));
@@ -207,7 +209,9 @@ export function GinRummyTable(p:Props) {
   // The arrangement belongs to the cards that were in the hand when it was
   // made; a fresh deal is a different set entirely.
   useEffect(()=>{if(p.hand.length===0)setManual(null);},[p.hand.length]);
-  useEffect(()=>{
+  // Before paint, so the frame after a draw already says "You drew…" and
+  // tags the card New, rather than flashing "Choose a card to discard.".
+  useLayoutEffect(()=>{
     const ids=p.hand.map(cardId);
     const added=ids.filter(id=>!previousHand.current.includes(id));
     if(ids.length===11&&previousHand.current.length===10&&added.length===1)setDrawnId(added[0]);
@@ -232,23 +236,23 @@ export function GinRummyTable(p:Props) {
 
   function handleHandKeys(event:React.KeyboardEvent<HTMLDivElement>) {
     if(event.altKey&&(event.key==="ArrowLeft"||event.key==="ArrowRight")) {
-      const id=(event.target as HTMLElement).closest<HTMLElement>(".gin-fan-slot")?.dataset.cardId;
+      const id=(event.target as HTMLElement).closest<HTMLElement>(".hc")?.dataset.cardId;
       if(!id)return;
       event.preventDefault();
       const from=displayedHand.findIndex(card=>cardId(card)===id);
       reorder(from,from+(event.key==="ArrowRight"?1:-1));
-      requestAnimationFrame(()=>handRef.current?.querySelector<HTMLButtonElement>(`[data-card-id="${id}"] button`)?.focus({preventScroll:true}));
+      requestAnimationFrame(()=>handRef.current?.querySelector<HTMLButtonElement>(`button[data-card-id="${id}"]`)?.focus({preventScroll:true}));
       return;
     }
     navigateHand(event);
   }
 
-  function dragStart(event:React.PointerEvent<HTMLDivElement>,id:string) {
+  function dragStart(event:React.PointerEvent<HTMLElement>,id:string) {
     if(!p.myTurn||p.phase!=="discard"||busy||(event.pointerType==="mouse"&&event.button!==0))return;
     suppressClick.current=false;
     drag.current={id,x:event.clientX,active:false};
   }
-  function dragMove(event:React.PointerEvent<HTMLDivElement>) {
+  function dragMove(event:React.PointerEvent<HTMLElement>) {
     const state=drag.current;
     if(!state)return;
     // Past a threshold only, so a tap - and therefore double-tap-to-discard -
@@ -258,7 +262,7 @@ export function GinRummyTable(p:Props) {
       state.active=true;setDragId(state.id);
       event.currentTarget.setPointerCapture(event.pointerId);
     }
-    const slots=Array.from(handRef.current?.querySelectorAll<HTMLElement>(".gin-fan-slot")??[]);
+    const slots=Array.from(handRef.current?.querySelectorAll<HTMLElement>(".hc")??[]);
     let nearest=-1,best=Infinity;
     slots.forEach((slot,i)=>{
       const rect=slot.getBoundingClientRect();
@@ -267,7 +271,7 @@ export function GinRummyTable(p:Props) {
     });
     reorder(displayedHand.findIndex(card=>cardId(card)===state.id),nearest);
   }
-  function dragEnd(event:React.PointerEvent<HTMLDivElement>) {
+  function dragEnd(event:React.PointerEvent<HTMLElement>) {
     const state=drag.current;
     drag.current=null;
     if(!state?.active)return;
@@ -309,9 +313,9 @@ export function GinRummyTable(p:Props) {
      not fit. The preview arrangement is the same one the desktop brackets
      are drawn from, so the two never disagree about what a discard leaves. */
   const phoneStatus=!p.myTurn
-    ? `${p.opponent.name} to ${p.phase==="draw"?"draw":"discard"}`
+    ? firstTurn?t("deal_leadsFirstTrick").replace("{name}",p.opponent.name):`${p.opponent.name} to ${p.phase==="draw"?"draw":"discard"}`
     : p.phase==="draw"
-      ? "Draw from the stock, or take the discard."
+      ? firstTurn&&p.discard?t("table_ginTakeOrDraw").replace("{rank}",rankLabel(p.discard.rank)):"Draw from the stock, or take the discard."
       : selectedCard
         ? selectedWins
           ? `Throw the ${rankLabel(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)}: that is Gin.`
@@ -320,7 +324,8 @@ export function GinRummyTable(p:Props) {
           ? `You drew the ${rankLabel(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}. Now discard.`
           : "Pick a discard.";
   const phoneAction=!p.myTurn
-    ? "Discarded"
+    ? firstTurn?t("table_wait"):"Discarded"
+    : p.phase==="draw"?t("table_drawFirst")
     : selectedCard
       ? selectedWins ? "Discard & win" : `Discard ${rankLabel(selectedCard.rank)}`
       : "Pick a card";
@@ -351,141 +356,320 @@ export function GinRummyTable(p:Props) {
       phase={p.phase} myTurn={p.myTurn} name={p.name} opponent={p.opponent}
       stock={p.stock} discard={p.discard}
       secondsLeft={secondsLeft} turnSeconds={TURN_SECONDS}
-      reading={{title:outCard?"Ready":"Not out",big:meldSizes.length?meldSizes.join(" · "):"—",ready:!!outCard}}
+      reading={meldSizes.length
+        ?{title:outCard?"Ready":"Not out",big:meldSizes.join(" · "),ready:!!outCard}
+        :{title:t("table_yourHand"),big:t("table_noMeldsYet"),ready:false,fresh:true}}
       deadwoodValue={arrangement.deadwoodValue}
       hint={phoneStatus} actionLabel={phoneAction} drawnId={drawnId} busy={busy} selectedWins={selectedWins}
       onDraw={source=>{if(canDraw)run(()=>p.onDraw(source));}}
       onActivate={activateCard}
       onDiscard={()=>{if(canDiscard)run(p.onDiscard);}}
       onLeave={askToLeave} onMenu={()=>setModal("settings")}
+      opening={p.opening??null} firstTurn={firstTurn}
     />
     {dialogs}
   </>;
 
+  /* ── The desktop table: design/arena/boards/Gin.dc.html ─────────────────
+     The board's CSS 3D table (styles/arena-gin-board.css), with the stock
+     and the discard lying on its felt, the opponent's fan over their plate,
+     the two HUD panels, the pill at y 600, the hand in its meld groups with
+     the brackets under it, and View melds / Discard in the corner. The
+     opening deal (MindiDealIntro) plays on this same table first. */
+  const opening=p.opening??null;
+  const ceremony=!!opening&&opening.step<4;
+  const words=opening&&ceremony?openingWords(opening,t):null;
+  const selfPlate=opening&&ceremony?openingPlate(opening,"S",t):null;
+  const oppPlate=opening&&ceremony?openingPlate(opening,"N",t):null;
+  const handShown=!opening||opening.step===4;
+  const pilesShown=!opening||opening.settled;
+  const handOver:React.CSSProperties|undefined=opening?{animation:"fade .4s ease-out both"}:undefined;
+  const rootClass=["ar",opening?.frozen?"frozen":"",opening?.reduced?"deal-reduced":""].filter(Boolean).join(" ");
+  const felt=!p.tableSkin||p.tableSkin==="tt_default"?"#0A2429":(TABLE_THEME_STYLES[p.tableSkin]??TABLE_THEME_STYLES.tt_default).base;
+  const rivalBacks=Math.min(Math.max(p.opponent.cardCount,0),10);
+  const noMelds=arrangement.melds.length===0;
+  const clockOff=secondsLeft===null?194.8:194.8*(1-Math.max(0,Math.min(1,secondsLeft/TURN_SECONDS)));
+
+  /* The board lays the hand out group by group, a wider gap between groups
+     (step 58, gap 34, cards 108 wide, centred on 720), in a shallow arc. */
+  const handLayout=(()=>{
+    const step=58,gap=34,w=108;
+    const at=new Map<string,{x:number;k:number}>();
+    const spans:{a:number;b:number;group:PhoneGinGroup}[]=[];
+    let x=-step-gap,k=0;
+    for(const group of phoneGroups){
+      x+=gap;
+      const a=x+step;
+      for(const id of group.ids){x+=step;at.set(id,{x,k:k++});}
+      spans.push({a,b:x+w,group});
+    }
+    const total=x+w,left0=720-total/2;
+    return {at,left0,count:k,brackets:spans.map((span,i)=>({
+      key:`${i}-${span.group.ids[0]}`,left:Math.round(left0+span.a+6),width:Math.round(span.b-span.a-12),
+      deadwood:span.group.deadwood,label:desktopGroupLabel(span.group,arrangement.deadwoodValue),
+    }))};
+  })();
+
+  /* The board's button words: what the tap would do, or why it can't. */
+  const discardLabel=!p.myTurn
+    ? firstTurn?t("table_waitFor").replace("{name}",p.opponent.name):"Discarded"
+    : p.phase==="draw"?t("table_drawFirst")
+    : selectedCard?(selectedWins?"Discard & win":`Discard ${rankLabel(selectedCard.rank)}`):t("table_pickACard");
+
   return <>
-    <ArenaStage height={compact?660:900} className={"arena-gin-board gin-arena"+(compact?" gin-compact":"")}>
-      <div className="ar gin-arena-board">
+    <ArenaStage className="arena-gin-board arena-deal">
+      <div className={rootClass} style={{position:"relative",width:1440,height:900,overflow:"hidden",background:"#000"}}>
         <ArenaSprite/>
-        <div className="bg" aria-hidden="true"/><div className="bigword" aria-hidden="true">GIN</div>
-        <div className="beam gin-beam-left" aria-hidden="true"/><div className="beam gin-beam-right" aria-hidden="true"/>
-        <div className="stage" aria-hidden="true"><div className="floor"/></div>
-        <GinArenaScene skin={p.tableSkin}/>
-        <header className="gin-arena-header">
-          <IconButton aria-label="Exit Game" title="Exit Game" onClick={()=>setModal("leave")}><ArrowLeft/></IconButton>
-          <div className="gin-arena-heading">
-            <h1 className="disp chrome">Gin Rummy<span className="thaana" lang="dv" dir="rtl">ޖިން ރަމީ</span></h1>
-            <p><span>{p.mode}</span>Melds of 4, 3 and 3 win · No knocking</p>
+        <div className="bg"/>
+        <div className="bigword" aria-hidden="true">GIN</div>
+        <div className="beam" style={{left:60,transform:"rotate(-16deg)"}}/>
+        <div className="beam" style={{left:860,transform:"rotate(16deg)"}}/>
+
+        <div className="stage" aria-hidden="true">
+          <div className="floor"/>
+          <div className="table">
+            {APRONS.map(([z,colour])=><div key={z} className="apron" style={{transform:`translateZ(${z}px)`,background:colour}}/>)}
+            <div className="felt gin" style={{backgroundColor:felt}} data-skin={p.tableSkin??"tt_default"}/>
+            <div className="spot" style={{left:430,top:286}}/>
+            <div className="spot" style={{left:646,top:286}}/>
+            <div className="printed" style={{left:392,top:470}}>Stock · {p.stock}</div>
+            <div className="printed" style={{left:608,top:470}}>Discard</div>
+            <div className="rail"/>
+            <svg className="leds" viewBox="0 0 1200 740">
+              <defs><filter id="gin-glow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="5"/></filter></defs>
+              <ellipse cx="600" cy="370" rx="591" ry="361" fill="none" stroke="#FFFFFF" strokeOpacity=".16" strokeWidth="1.5"/>
+              <ellipse cx="600" cy="370" rx="565" ry="335" fill="none" stroke="#C6FF33" strokeOpacity=".6" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="2 22" className="chase"/>
+              <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#00BCC8" strokeWidth="9" strokeOpacity=".8" filter="url(#gin-glow)"/>
+              <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#9FF2F7" strokeWidth="3"/>
+            </svg>
+            {pilesShown&&STOCK_LAYERS.slice(0,Math.max(0,Math.min(STOCK_LAYERS.length,p.stock-1))).map(z=>
+              <div key={z} className="layer" style={{left:438,top:294,transform:`translateZ(${z}px)`}}/>)}
+            {pilesShown&&p.discard&&<>
+              <div className="tc" style={{left:654,top:294,["--z" as string]:"-4.2px",["--rot" as string]:"-9deg"}}><div className="blank"/></div>
+              <div className="tc" style={{left:654,top:294,["--z" as string]:"-3.6px",["--rot" as string]:"6deg"}}><div className="blank"/></div>
+            </>}
+            {opening&&!opening.settled&&<OpeningCards deal={opening} geo={GEO_DESKTOP} variant="desktop" piles={GIN_PILES}/>}
           </div>
-          {/* The board's three: sound, the rule book, and settings. Game Info
-              is the app's own, so it lives inside the settings dialog rather
-              than adding a fourth button the board does not draw. */}
-          <div className="gin-arena-utilities">
-            <IconButton aria-label={settings.music?"Mute music":"Enable music"} title={settings.music?"Mute music":"Enable music"} aria-pressed={settings.music} onClick={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}>{settings.music?<Volume2/>:<VolumeX/>}</IconButton>
-            <IconButton aria-label="Rule book" title="Rule book" onClick={()=>setModal("rules")}><BookOpen/></IconButton>
-            <IconButton aria-label="Game settings" title="Game settings" onClick={()=>setModal("settings")}><Settings/></IconButton>
+        </div>
+
+        {/* The two piles are how you draw, so they sit on the same table in a
+            second stage that is not hidden from assistive tech, with
+            pointer-events only on the piles themselves. */}
+        <div className="stage" style={{pointerEvents:"none"}}>
+          <div className="table">
+            {pilesShown&&p.stock>0&&<button type="button" className="tc" data-flat
+              style={{left:438,top:294,["--z" as string]:"7.6px",["--rot" as string]:"0deg",padding:0,border:0,background:"none",cursor:canDraw?"pointer":"default",pointerEvents:"auto"}}
+              aria-label={"Draw from stock, "+p.stock+" cards"} disabled={!canDraw} onClick={()=>{setDrawnFrom("stock");run(()=>p.onDraw("stock"));}}>
+              <CardBack id={p.cardBack}/>
+            </button>}
+            {pilesShown&&p.discard&&<button type="button" className="tc" data-flat
+              style={{left:654,top:294,["--z" as string]:"-3px",["--rot" as string]:"-2deg",padding:0,border:0,background:"none",cursor:canDraw?"pointer":"default",pointerEvents:"auto"}}
+              aria-label={`Draw from discard pile, the ${rankLabel(p.discard.rank)} of ${suitFromLetter(p.discard.suit)}`} disabled={!canDraw}
+              onClick={()=>{setDrawnFrom("discard");run(()=>p.onDraw("discard"));}}>
+              <ArenaFace key={cardId(p.discard)} rank={rankLabel(p.discard.rank)} suit={p.discard.suit}/>
+            </button>}
+          </div>
+        </div>
+
+        {[[230,640,0],[1180,600,1.4],[1050,720,2.8],[330,760,4.1],[150,560,3.4]].map(([x,y,d],i)=>
+          <i key={i} className={"mote"+(i%2?" v":"")} style={{left:x,top:y,animationDelay:`${d}s`}}/>)}
+
+        <div className={"fan"+(ceremony?" off":"")} style={{left:720,top:178}} aria-hidden="true">
+          {Array.from({length:rivalBacks},(_,i)=>(i-(rivalBacks-1)/2)*5).map((a,i)=>
+            <div key={i} className="fb" style={{["--a" as string]:`${a}deg`}}><CardBack id={p.opponent.cardBackId}/></div>)}
+        </div>
+        <div className={"pf"+(oppPlate?.first?" first":!ceremony&&!p.myTurn?" turn":"")} style={{left:720,top:176,transform:"translateX(-50%)"}}>
+          <div className="av them">{p.opponent.name.slice(0,1).toUpperCase()}
+            {oppPlate?<CountBadge count={oppPlate.count} shown={oppPlate.countShown}/>:<span className="ct">{p.opponent.cardCount}</span>}</div>
+          <div className="nm"><b>{p.opponent.name}{oppPlate?.dealer&&<span className="dtag">{t("deal_dealer")}</span>}</b>
+            <span><i className={"dot them"+(!ceremony&&!p.myTurn?" live":"")}/>
+              {oppPlate?<>{oppPlate.line}{oppPlate.suit&&<Suit suit={oppPlate.suit} className={oppPlate.red?"red":undefined}/>}</>
+                :firstTurn?(p.myTurn?t("mindi_opponent"):t("deal_leads"))
+                :p.myTurn?"Waiting":p.phase==="draw"?"Drawing":"Discarding"}</span></div>
+        </div>
+
+        <header style={{position:"absolute",left:36,right:36,top:26,height:56,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:18}}>
+            <button type="button" className="ibtn" aria-label="Leave game" onClick={()=>setModal("leave")}><Icon name="i-back"/></button>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:12}}>
+                <h1 className="disp chrome" style={{margin:0,fontSize:36}}>Gin Rummy</h1>
+                <span className="thaana" lang="dv" dir="rtl" style={{fontSize:17}}>ޖިން ރަމީ</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                {/weekend/i.test(p.mode)?<span className="chip live"><i/>{p.mode}</span>:<span className="chip blue">{p.mode}</span>}
+                <span className="lbl">{ceremony?t("deal_openingDeal"):"Melds of 4, 3 and 3 win · No knocking"}</span>
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button type="button" className="ibtn" aria-label={settings.music?"Mute sound":"Enable sound"} aria-pressed={settings.music}
+              onClick={()=>{try{updateSettings({music:!settings.music});}catch{setError("Could not save music preference.");}}}><Icon name="i-sound"/></button>
+            <button type="button" className="ibtn" aria-label="Rule book" onClick={()=>setModal("rules")}><Icon name="i-book"/></button>
+            <button type="button" className="ibtn" aria-label="Game settings" onClick={()=>setModal("settings")}><Icon name="i-sliders"/></button>
           </div>
         </header>
-        {/* The board's left panel: whether the hand is out, the melds it
-            actually holds, its deadwood, and one line of why. */}
-        <section className="hud gin-arena-meld-hud" aria-label="Hand assessment">
-          <div className="gin-assessment-title">
-            <span className="lbl dash" data-ready={outCard?"true":undefined}>{outCard?"Ready":"Not out"}</span>
-            <span className="lbl">Deadwood</span>
-          </div>
-          <div className="gin-assessment-sizes">
-            <strong className="disp">{meldSizes.length?meldSizes.join(" · "):"—"}</strong>
-            <span className="num">{preview?.deadwoodValue??arrangement.deadwoodValue}</span>
-          </div>
-          <p>{readLine}</p>
-        </section>
-        <section className="hud gin-arena-turn-hud" aria-label="Turn status">
-          <TurnClock deadline={p.deadline??null} seconds={TURN_SECONDS} active={p.myTurn}/>
-          <div>
-            <span className="lbl dash">{p.myTurn?"Your turn":p.opponent.name}</span>
-            <strong>{busy?"Working...":p.myTurn?(p.phase==="draw"?"Draw a card":"Discard a card"):(p.phase==="draw"?"Drawing":"Discarding")}</strong>
-            <small>{TURN_SECONDS} seconds a turn</small>
-          </div>
-        </section>
-        <div className="gin-arena-rival">
-          <div className={"gin-player"+(!p.myTurn?" active":"")}><Avatar name={p.opponent.name} presetId={p.opponent.avatarPreset} count={p.opponent.cardCount}/><div><strong>{p.opponent.name}</strong><small>{p.myTurn?"Waiting":p.phase==="draw"?"Drawing":"Discarding"}</small></div></div>
-          <div className="gin-rival-hand" aria-label={p.opponent.cardCount+" face-down cards"}>
-            {Array.from({length:p.opponent.cardCount},(_,i)=><div key={i} style={{"--fan":(i-(p.opponent.cardCount-1)/2)} as React.CSSProperties}><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={p.opponent.cardBackId}/></div>)}
-          </div>
-        </div>
-        <div className="gin-arena-piles">
-          <button type="button" data-flat aria-label={"Draw from stock, "+p.stock+" cards"} disabled={!canDraw} onClick={()=>{setDrawnFrom("stock");run(()=>p.onDraw("stock"));}}>
-            <div className="gin-pile-card gin-stock-card"><PlayingCard rank="" suit="spades" size="lg" faceDown cardBackId={p.cardBack}/></div><span className="printed">Stock · {p.stock}</span>
-          </button>
-          <button type="button" data-flat aria-label="Draw from discard pile" disabled={!canDraw||!p.discard} onClick={()=>{setDrawnFrom("discard");run(()=>p.onDraw("discard"));}}>
-            <div className="gin-pile-card">{p.discard&&<ArenaFace key={cardId(p.discard)} rank={rankLabel(p.discard.rank)} suit={p.discard.suit}/>}</div><span className="printed">Discard</span>
-          </button>
-        </div>
+
+        {(()=>{
+          /* The board's left panel. Before the hand holds a meld it is the Cut
+             board's "Your hand · No melds yet"; after, the Gin board's
+             reading: the melds held, the deadwood, and one line of why. */
+          const reading=noMelds
+            ? <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span className="lbl dash" style={{color:"#fff"}}>{t("table_yourHand")}</span><span className="lbl">Deadwood</span></div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <span className="disp" style={{fontSize:27,letterSpacing:"-.01em",whiteSpace:"nowrap"}}>{t("table_noMeldsYet")}</span>
+                  <span className="num" style={{fontSize:34,lineHeight:1}}>{preview?.deadwoodValue??arrangement.deadwoodValue}</span>
+                </div>
+                <p className="muted" style={{margin:0,lineHeight:1.45}}>{t("table_ginStartLine")}</p>
+              </div>
+            : <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span className="lbl dash" style={{color:"#fff"}}>{outCard?"Ready":"Not out"}</span><span className="lbl">Deadwood</span></div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <span className="disp" style={{fontSize:40,letterSpacing:"-.01em",color:outCard?"#C6FF33":"#FFFFFF"}}>{meldSizes.join(" · ")}</span>
+                  <span className="num" style={{fontSize:34,lineHeight:1}}>{preview?.deadwoodValue??arrangement.deadwoodValue}</span>
+                </div>
+                <p className="muted" style={{margin:0,lineHeight:1.45,textWrap:"pretty"} as React.CSSProperties}>{readLine}</p>
+              </div>;
+          if(!opening) return <section className="hud" aria-label="Your melds" style={{left:36,top:106,width:320,padding:"16px 20px 18px"}}>{reading}</section>;
+          return <section className="hud swap" aria-label={ceremony?t("deal_openingDeal"):"Your melds"}
+            style={{left:36,top:106,width:320,padding:"16px 20px 18px",["--pt" as string]:"16px",["--pl" as string]:"20px",["--pr" as string]:"20px"}}>
+            <OpeningSteps deal={opening} className={ceremony?undefined:"out"}/>
+            <div className={ceremony?"out":undefined}>{reading}</div>
+          </section>;
+        })()}
+
+        {(()=>{
+          const turn=<div style={{display:"flex",alignItems:"center",gap:18}}>
+            <div className="clock">
+              <svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="31" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="5"/>
+                <circle className="arc" cx="36" cy="36" r="31" fill="none" stroke="#C6FF33" strokeWidth="5" strokeLinecap="round" strokeDasharray="194.8"
+                  strokeDashoffset={p.myTurn&&firstTurn&&secondsLeft===null?0:clockOff} data-ar-loop/></svg>
+              <b>{secondsLeft!==null?secondsLeft:p.myTurn&&firstTurn?TURN_SECONDS:"–"}</b>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              <span className="lbl dash">{p.myTurn?"Your turn":p.opponent.name}</span>
+              <span className="disp" style={{fontSize:23,whiteSpace:"nowrap"}}>{busy?"Working...":p.myTurn?(p.phase==="draw"?"Draw a card":"Discard a card"):(p.phase==="draw"?"Drawing":"Discarding")}</span>
+              <span className="muted">{TURN_SECONDS} seconds a turn</span>
+            </div>
+          </div>;
+          if(!opening) return <section className="hud" aria-label="Turn" style={{right:36,top:106,width:320,padding:"16px 20px"}}>{turn}</section>;
+          return <section className="hud swap" aria-label={ceremony?t("deal_theCut"):"Turn"}
+            style={{right:36,top:106,width:320,height:ceremony?140:116,padding:"16px 16px 16px 20px",["--pt" as string]:"16px",["--pl" as string]:"20px",["--pr" as string]:"16px"}}>
+            <OpeningCut deal={opening} className={ceremony?undefined:"out"}/>
+            <div className={ceremony?"out":undefined}>{turn}</div>
+          </section>;
+        })()}
+
         {/* The board narrates what just happened rather than labelling the
             phase, and carries a live dot while the turn is yours. */}
-        <p className="gin-arena-status" role="status">
+        <div className="status" role="status" style={{left:720,top:600}}>
+          {words?<><i className="dot them"/>{words.status}</>:<>
           {p.myTurn&&<i className="dot live" aria-hidden="true"/>}
           {p.myTurn
             ? p.phase==="draw"
-              ? "Your turn. Draw from the stock or the discard."
+              ? firstTurn&&p.discard?t("table_ginTakeOrDraw").replace("{rank}",rankLabel(p.discard.rank)):"Your turn. Draw from the stock or the discard."
               : drawnCard
                 ? `You drew the ${rankLabel(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}${drawnFrom?` from the ${drawnFrom}`:""}. Now discard.`
                 : selectedCard
                   ? `${rankLabel(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)} selected${selectedWins?" — this one goes out":""}.`
                   : "Choose a card to discard."
-            : `${p.opponent.name} to ${p.phase==="draw"?"draw":"discard"}`}
-        </p>
-      <div ref={handRef} className="gin-hand" role="group"
-        aria-label="Your cards" onKeyDown={handleHandKeys}>
-        {displayedHand.map((card,i)=>{
-          const offset=i-(p.hand.length-1)/2;
-          const id=cardId(card);
-          const selected=!!p.selected && cardId(p.selected)===id;
-          return <div key={id} data-card-id={id}
-            className={"gin-fan-slot"+(selected?" is-selected":"")+(dragId===id?" is-dragging":"")}
-            onPointerDown={event=>dragStart(event,id)} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd}
-            style={{"--angle":offset*2+"deg","--curve":offset*offset*.9+"px","--offset":offset*Math.min(80,850/Math.max(1,p.hand.length-1))+"px",zIndex:selected?30:i} as React.CSSProperties}>
-            <button type="button" data-flat aria-label={`${rankLabel(card.rank)} of ${suitFromLetter(card.suit)}`} aria-pressed={selected}
-              disabled={!p.myTurn||p.phase!=="discard"||busy} onClick={()=>activateCard(card)}>
+            : firstTurn?t("deal_leadsFirstTrick").replace("{name}",p.opponent.name)
+            : `${p.opponent.name} to ${p.phase==="draw"?"draw":"discard"}`}</>}
+        </div>
+
+        <section ref={handRef} className="hand" aria-label="Your cards" onKeyDown={handleHandKeys}>
+          {handShown&&displayedHand.map((card,i)=>{
+            const id=cardId(card);
+            const slot=handLayout.at.get(id);
+            if(!slot) return null;
+            const offset=slot.k-(handLayout.count-1)/2;
+            const selected=!!p.selected&&cardId(p.selected)===id;
+            const off=!p.myTurn||p.phase!=="discard"||busy;
+            return <button key={id} type="button" data-card-id={id} data-flat
+              className={"hc"+(selected||dragId===id?" sel":"")+(off?" wait":"")}
+              style={{["--x" as string]:`${Math.round(handLayout.left0+slot.x)}px`,["--y" as string]:`${Math.round(676+offset*offset*1.1)}px`,
+                ["--r" as string]:`${+(offset*1.2).toFixed(2)}deg`,["--i" as string]:dealtIds.current.has(id)?i:0,zIndex:10+slot.k}}
+              aria-label={`${rankLabel(card.rank)} of ${suitFromLetter(card.suit)}`} aria-pressed={selected} disabled={off}
+              onPointerDown={event=>dragStart(event,id)} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd}
+              onClick={()=>activateCard(card)}>
+              {drawnId===id&&<span className="newtag">New</span>}
               <ArenaFace rank={rankLabel(card.rank)} suit={card.suit}/>
-              {drawnId===id&&<span className="gin-new-card">New</span>}
-            </button>
-          </div>;
-        })}
-      </div>
-      {melds&&<div className="gin-arena-melds" aria-label="Meld breakdown">
-        {brackets.map(bracket=>(
-          <div className={"bracket"+(bracket.deadwood?" dw":"")} key={bracket.key} style={{left:bracket.left,width:bracket.width}}>
-            <span>{bracket.label}</span>
-          </div>
-        ))}
-      </div>}
-    <footer className="gin-arena-controls">
-      {/* The board carries the card count as a badge on the avatar and the
-          state as a line under the name, the same shape as the rival frame. */}
-      <div className={"gin-player gin-player-self"+(p.myTurn?" active":"")}><Avatar name={p.name} presetId={p.avatar} count={p.hand.length}/><div><strong>{p.name}</strong><small>{p.myTurn?(p.phase==="draw"?"Your turn":"Discard one"):"Discarded"}</small></div></div>
-      <HandTools order={manual?"custom":order} custom={!!manual} melds rank
-        onChange={value=>{if(value==="custom")return;setManual(null);setOrder(value);if(value==="melds")setMelds(true);}} />
-      {/* The board's two: a ghost toggle for the brackets, and a discard
-          button that says what the discard will do. With the turn spent it
-          reads "Discarded" rather than offering an action there isn't. */}
-      <div className="gin-actions">
-        <Button variant="secondary" aria-pressed={melds} onClick={()=>setMelds(v=>!v)}><Layers size={18}/>View Melds</Button>
-        <Button variant="primary" disabled={!canDiscard} loading={busy} onClick={()=>run(p.onDiscard)}>
-          <ArrowDownToLine size={18}/>
-          {p.myTurn?(selectedWins?"Discard & win":"Discard"):"Discarded"}
-          {selectedCard&&selectedWins&&<Suit suit={selectedCard.suit} className="gin-discard-suit"/>}
-        </Button>
-      </div>
-      {/* Under these rules a hand has no fixed end: if the cards each player
-          still needs are in the other's hand, it can never finish. Rather
-          than ending it, say so, so a long hand does not look like a bug. */}
-      {(p.reshuffles??0)>=8&&<p className="gin-stalemate" role="status">
-        The deck has been recycled {p.reshuffles} times — neither hand may be completable. You can keep playing or exit.
-      </p>}
-    </footer>
-    {error&&<p className="gin-arena-error" role="alert">{error}</p>}
+            </button>;
+          })}
+        </section>
+        {melds&&handShown&&<>
+          {handLayout.brackets.map(bracket=>(
+            <div className={"bracket"+(bracket.deadwood?" dw":"")} key={bracket.key} style={{left:bracket.left,width:bracket.width}}>
+              <span>{bracket.label}</span>
+            </div>
+          ))}
+        </>}
+
+        <div className={"pf"+(selfPlate?.first?" first":!ceremony&&p.myTurn?" turn":"")} style={{left:36,top:800}}>
+          <div className="av">{p.name.slice(0,1).toUpperCase()}
+            {selfPlate?<CountBadge count={selfPlate.count} shown={selfPlate.countShown}/>:<span className="ct">{p.hand.length}</span>}</div>
+          <div className="nm"><b>{p.name}{selfPlate?.dealer&&<span className="dtag">{t("deal_dealer")}</span>}</b>
+            <span><i className={"dot"+(!ceremony&&p.myTurn?" live":"")}/>
+              {selfPlate?<>{selfPlate.line}{selfPlate.suit&&<Suit suit={selfPlate.suit} className={selfPlate.red?"red":undefined}/>}</>
+                :p.myTurn?(p.phase==="draw"?"Your turn":"Discard one"):"Waiting"}</span></div>
+        </div>
+
+        {ceremony&&opening
+          ? <div style={{position:"absolute",right:36,top:806}}><OpeningSkip deal={opening}/></div>
+          : <>
+            <div style={{position:"absolute",right:36,top:722,display:"flex",alignItems:"center",gap:14,...handOver}}>
+              <div className="seg" role="group" aria-label="Sort hand">
+                <button type="button" aria-pressed={!manual&&order==="melds"} onClick={()=>{setManual(null);setOrder("melds");setMelds(true);}}>Melds</button>
+                <button type="button" aria-pressed={!manual&&order==="rank"} onClick={()=>{setManual(null);setOrder("rank");}}>Rank</button>
+              </div>
+              <button type="button" className="btn ghost sm" aria-pressed={melds} onClick={()=>setMelds(v=>!v)}><Icon name="i-layers"/>View melds</button>
+            </div>
+            <div style={{position:"absolute",right:36,top:806,...handOver}}>
+              <button type="button" className={"btn"+(selectedWins&&canDiscard?" go":"")} style={{width:250}} disabled={!canDiscard} onClick={()=>run(p.onDiscard)}>
+                <Icon name="i-discard"/>{discardLabel}
+                {selectedCard&&!selectedWins&&p.myTurn&&p.phase==="discard"&&<Suit suit={selectedCard.suit} style={{width:17,height:17}}/>}
+              </button>
+            </div>
+          </>}
+
+        {/* Under these rules a hand has no fixed end: if the cards each player
+            still needs are in the other's hand, it can never finish. Rather
+            than ending it, say so, so a long hand does not look like a bug. */}
+        {(p.reshuffles??0)>=8&&<p className="gin-stalemate" role="status" style={{position:"absolute",right:36,top:664,margin:0,maxWidth:250}}>
+          The deck has been recycled {p.reshuffles} times — neither hand may be completable. You can keep playing or exit.
+        </p>}
+        {error&&<p className="gin-arena-error" role="alert">{error}</p>}
       </div>
     </ArenaStage>
     {dialogs}
   </>;
+}
+
+/** The board's aprons: the stacked rim under the table, front to back. */
+const APRONS: [number,string][] = [
+  [-50,"#030305"],[-46,"#050508"],[-42,"#07070B"],[-38,"#09090E"],[-34,"#0B0B11"],
+  [-30,"#0D0D14"],[-26,"#100F18"],[-22,"#13121C"],[-18,"#16151F"],[-14,"#1A1924"],
+  [-11,"#063A40"],[-9,"#00BCC8"],[-7,"#1E1D28"],
+];
+
+/** The stock's thickness under its top card, as the board stacks it. */
+const STOCK_LAYERS=[-4.4,-3.2,-2,-.8,.4,1.6,2.8,4,5.2,6.4];
+
+/**
+ * Where the board's two piles lie (a 108x151 `.tc` at 438,294 and 654,294),
+ * so the opening deal's stock and upcard land exactly on them: the stock
+ * square, the discard's top card turned 2 degrees. The deal's cards are
+ * 96x134, hence the scale.
+ */
+const GIN_PILES: OpeningPiles = {
+  stock: { x: 492, y: 369.5, rz: 0, s: 1.125 },
+  upcard: { x: 708, y: 369.5, rz: -2, s: 1.125 },
+};
+
+/** "Run of 3", "Set of 4", "Deadwood 10" - the board's bracket labels. */
+function desktopGroupLabel(group:PhoneGinGroup,deadwood:number):string {
+  if(group.deadwood) return `Deadwood ${deadwood}`;
+  const [kind]=group.label.split(" ");
+  return `${kind} of ${group.ids.length}`;
 }

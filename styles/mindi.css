@@ -159,77 +159,6 @@
 .game-sort-menu button:hover { background:#ffffff14;color:#fff; }
 .game-sort-menu button svg:last-child { margin-left:auto; }
 .mindi-room .gin-dialog { border-color:#b2935a;box-shadow:inset 0 1px #ffdf9440,0 18px 60px #000c; }
-/* Full-bleed opening ceremony, with DOM results when WebGL is unavailable. */
-.mindi-cut { position:fixed;inset:0;z-index:60;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;overflow:hidden;color:#f5f1e8;letter-spacing:0;background:linear-gradient(#03080bd9,#03080b50 40%,#03080bcc),url('/images/mindi-lounge.webp') center/cover; }
-.mindi-cut[open] { display:grid;place-items:stretch;grid-template-rows:auto minmax(0,1fr) auto; }
-.mindi-cut::backdrop { background:#05090d; }
-.mindi-cut-heading { position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:20px;text-align:left;padding:28px 24px 18px; }
-.mindi-cut-emblem { display:grid;place-items:center;width:64px;height:70px;color:#ffdc8a;background:linear-gradient(150deg,#263742,#060c12);border:1px solid #c79e56;border-radius:8px;box-shadow:inset 0 2px 2px #fce1a955,0 4px 0 #594120,0 8px 20px #0008; }
-.mindi-cut-emblem svg { width:34px;height:34px; }
-.mindi-cut-eyebrow { color:#dcc084;font-size:11px;font-weight:700;margin-bottom:5px; }
-.mindi-cut-eyebrow span { color:#697b83;padding:0 10px; }
-.mindi-cut h2 { color:#fff0cd;font:600 34px/1.15 Georgia,serif;text-shadow:0 2px 4px #000; }
-.mindi-cut .mindi-intro-sub { color:#b9cbd1;font-size:14px;min-height:22px;margin-top:8px; }
-.mindi-cut-stage { position:relative;min-width:0;min-height:0; }
-.mindi-cut-scene { position:absolute;inset:0; }
-.mindi-cut-scene canvas { width:100%;height:100%;display:block; }
-.mindi-cut-scene[data-renderer=fallback] canvas { visibility:hidden; }
-.mindi-cut .mindi-intro-draw { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:24px;margin:0;padding:20px;list-style:none; }
-.mindi-cut .mindi-intro-draw li { position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:160px;max-width:40%;padding:12px 8px;border:1px solid #62757966;border-radius:8px;background:linear-gradient(#19272e,#060d12);box-shadow:inset 0 1px #ffffff0d,0 5px 0 #020609,0 10px 22px #0007;text-align:center; }
-.mindi-cut[data-three=true] .mindi-intro-draw { display:block;pointer-events:none; }
-.mindi-cut[data-three=true] .mindi-intro-draw li { position:absolute;left:var(--cut-label-x);top:var(--cut-label-y);width:clamp(105px,11.1%,160px);transform:translateX(-50%);opacity:var(--cut-label-opacity,0);padding:8px; }
-.mindi-cut .mindi-intro-draw li[data-winner=true] { border-color:#f5cd72;background:linear-gradient(#493b20,#151a18);box-shadow:inset 0 1px #ffe5a955,0 4px #594120,0 10px 25px #0009; }
-.mindi-cut .mindi-cut-name { display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0; }
-.mindi-cut .mindi-cut-name strong { color:#f2f0e9;font-size:14px;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
-.mindi-cut-name small { color:#8ecbbf;font-size:10px;flex-shrink:0; }
-.mindi-cut .mindi-cut-result { display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;color:#9cadb5;min-height:18px; }
-.mindi-cut .mindi-intro-draw li[data-winner=true] .mindi-cut-result { color:#ffe096; }
-.mindi-cut-fallback-card { padding:8px 0 14px; }
-.mindi-cut-fallback-card>div { width:92px;height:129px; }
-.mindi-cut[data-three=true] .mindi-cut-fallback-card { display:none; }
-.mindi-cut-footer { z-index:2;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:20px max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));background:linear-gradient(#071018b3,#03080bf5);border-top:1px solid #ad874a66;box-shadow:0 -10px 35px #0005; }
-.mindi-cut-footer .game-button { min-width:120px; }
-.mindi-cut-steps { display:flex;gap:32px;align-items:center;list-style:none;padding:0;margin:0; }
-.mindi-cut-steps li { display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:#9aaab3; }
-.mindi-cut-steps li>span { width:26px;height:26px;display:grid;place-items:center;border-radius:50%;border:1px solid #4a5a62;background:#0c151c; }
-.mindi-cut-steps li[aria-current] { color:#ffdc88; }
-.mindi-cut-steps li[aria-current]>span { color:#17150c;border-color:#ffe091;background:linear-gradient(#ffe6a1,#c49339);box-shadow:0 2px #68451e; }
-.mindi-cut-steps li[data-complete=true]>span { border-color:#59988b;color:#8ad2bb; }
-@media(max-width:650px) {
-  .mindi-cut-heading { padding:22px 16px 12px;gap:12px;align-items:flex-start; }
-  .mindi-cut h2 { font-size:25px; }
-  .mindi-cut-emblem { width:42px;height:50px;flex-shrink:0; }
-  .mindi-cut-emblem svg { width:24px;height:24px; }
-  .mindi-cut-eyebrow { font-size:9px; }
-  .mindi-cut .mindi-intro-sub { font-size:12px;min-height:36px; }
-  .mindi-cut .mindi-intro-draw { flex-wrap:wrap;align-content:center;gap:16px; }
-  .mindi-cut .mindi-intro-draw li { width:132px;padding:8px 6px;gap:4px; }
-  .mindi-cut[data-three=true] .mindi-intro-draw li { width:132px;padding:8px 6px; }
-  .mindi-cut .mindi-cut-name strong { font-size:12px; }
-  .mindi-cut .mindi-cut-result { font-size:11px; }
-  .mindi-cut-fallback-card>div { width:64px;height:90px; }
-  .mindi-cut-footer { flex-wrap:wrap;gap:18px;justify-content:center;padding:16px 12px max(20px,env(safe-area-inset-bottom)); }
-  .mindi-cut-steps { width:100%;justify-content:space-between;gap:8px; }
-  .mindi-cut-steps li { font-size:10px;gap:5px; }
-  .mindi-cut-steps li>span { width:22px;height:22px; }
-}
-@media(max-height:520px) and (min-width:651px) {
-  .mindi-cut-heading { padding:10px 16px;gap:12px; }
-  .mindi-cut h2 { font-size:23px; }
-  .mindi-cut-emblem { width:42px;height:48px; }
-  .mindi-cut-eyebrow { display:none; }
-  .mindi-cut .mindi-intro-sub { margin-top:3px;font-size:12px; }
-  .mindi-cut-footer { padding:10px 20px; }
-  .mindi-cut .mindi-cut-name strong { font-size:12px; }
-  .mindi-cut .mindi-cut-result { font-size:10px; }
-}
-@media(max-height:650px) and (max-width:650px) {
-  .mindi-cut-heading { padding:14px 12px 8px;gap:10px; }
-  .mindi-cut h2 { font-size:22px; }
-  .mindi-cut-emblem { width:36px;height:42px; }
-  .mindi-cut .mindi-intro-sub { margin-top:6px;min-height:32px;font-size:11px; }
-  .mindi-cut-footer { gap:10px;padding:12px 12px max(14px,env(safe-area-inset-bottom)); }
-}
 .mindi-room .gin-dialog .game-button-icon { width:40px;height:40px;min-height:40px; }
 @media(min-width:1600px) { .mindi-room { --card-width:108px;--card-height:153px; }.mindi-trick-zone { width:410px;height:270px; }.mindi-trick-zone .trick-slot { width:76px;height:108px; }.mindi-seat-left,.mindi-seat-right { top:31%; }.mindi-seat-left .mindi-hidden-hand,.mindi-seat-right .mindi-hidden-hand { width:330px; } }
 @media(max-width:1100px) {
@@ -284,9 +213,9 @@
 @media(prefers-reduced-motion:reduce) {
   .mindi-room .game-button,.mindi-card-slot { transition:none; }.mindi-room .game-button:hover { transform:none; }.game-button-spinner { animation:none; }
 }
-/* Card position must survive the shared button hover/press transform. */
-.arena-mindi button.hc { width:108px;height:151px;font-size:15px; }
-.arena-mindi .status { top:560px; }
+/* Card position must survive the shared button hover/press transform. The
+   cards themselves are the board's 132x185 and the pill sits at the Cut
+   board's y 600 (design/arena/boards/Cut.dc.html), so neither is restyled. */
 .arena-mindi button.hc:hover:not(:disabled),
 .arena-mindi button.hc:active:not(:disabled) {
   transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(9deg);

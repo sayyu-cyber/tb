@@ -4,6 +4,9 @@ import { ArenaStage } from "../ArenaStage";
 import { ArenaSprite, Suit, Icon } from "../ArenaSprite";
 import { cardId, rankLabel, isTen, type Card, type SeatIndex, type Suit as SuitLetter, type TrickPlay } from "@/lib/mindiEngine";
 import type { ArenaSeatData } from "../GameArena";
+import { CountBadge, OpeningCards, OpeningSkip, PhoneOpeningCut, PhoneOpeningSteps, openingPlate, type OpeningDeal } from "../MindiDealIntro";
+import { GEO_PHONE, type Spot } from "../dealGeometry";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * The Mindi table on a phone held sideways —
@@ -100,38 +103,54 @@ export interface PhoneMindiBoardProps {
   onPlay: () => void;
   onLeave: () => void;
   onMenu: () => void;
+  /** The opening deal while it plays on this table (PCut.dc.html), else null. */
+  opening?: OpeningDeal | null;
+  /** Nobody has played yet: the seat that opens trick 1 reads "Leads", lime-ringed, as the deal leaves it. */
+  firstTrick?: boolean;
 }
 
 export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
+  const t = useTranslation();
   const duel = !p.left && !p.right;
   const felt = FELT[p.tableSkin ?? "tt_default"] ?? FELT.tt_default;
   const chosen = p.hand.find((card) => cardId(card) === p.selected) ?? null;
 
   /**
-   * The hand's arc. The board draws five cards 51px apart at y=285 with a
-   * 1.75x offset-squared drop and 5 degrees of rotation per step, and those
-   * are the numbers below - a five-card hand lands on the board's own
-   * pixels. A full thirteen would be 674px wide at that spacing and would
-   * run under the chip and the button in the bottom corners, so the spacing
-   * closes to fit the 440px between them and the drop is capped, which keeps
-   * the whole hand on the felt at every size. The same thing the desktop
-   * board does with `Math.min(112, 980/(n-1))`.
+   * The hand's arc. PMindi draws five cards 51px apart at y=285 with a 1.75x
+   * offset-squared drop capped at 10 and 5 degrees a step; PCut deals
+   * thirteen into centre 391, 28 apart, y 294, a .45 drop and 1.8 degrees a
+   * step (its LAY.hand). A hand between the two slides from one set of
+   * numbers to the other, so the fan the deal leaves is PCut's own and a hand
+   * of five is still PMindi's - and a full thirteen still fits the 440px
+   * between the chip and the button in the bottom corners.
    */
   const n = p.hand.length;
-  const spacing = Math.min(51, n > 1 ? 378 / (n - 1) : 0);
+  const spacing = Math.min(51, n > 1 ? 336 / (n - 1) : 0);
+  const k = Math.max(0, Math.min(1, (n - 5) / 8));
   const layout = p.hand.map((card, i) => {
     const offset = n === 1 ? 0 : i - (n - 1) / 2;
     return {
       card,
-      x: 422 - 31 + offset * spacing,
-      y: 285 + Math.min(offset * offset * 1.75, 10),
-      r: offset * 5,
+      i,
+      x: 391 + offset * spacing,
+      y: 285 + 9 * k + Math.min(offset * offset * (1.75 - 1.3 * k), 10 + 6 * k),
+      r: offset * (5 - 3.2 * k),
     };
   });
 
+  /* While the opening deal runs (PCut.dc.html) the table keeps its bars, but
+     they carry the ceremony: the step and its short title top left, the cut
+     top right, no hint, and a compact Skip where Play goes. */
+  const opening = p.opening ?? null;
+  const ceremony = !!opening && opening.step < 4;
+  const plate = (spot: Spot) => opening && ceremony ? openingPlate(opening, spot, t) : null;
+  const rootClass = ["ar", opening?.frozen ? "frozen" : "", opening?.reduced ? "deal-reduced" : ""].filter(Boolean).join(" ");
+  const appear = opening ? "appear" : "";
+  const self = plate("S");
+
   return (
-    <ArenaStage width={844} height={390} className="arena-pmindi">
-      <div className="ar" style={{ position: "relative", width: 844, height: 390, overflow: "hidden", background: "#000" }}>
+    <ArenaStage width={844} height={390} className="arena-pmindi arena-pdeal">
+      <div className={rootClass} style={{ position: "relative", width: 844, height: 390, overflow: "hidden", background: "#000" }}>
         <ArenaSprite />
         <div className="bg" />
 
@@ -154,6 +173,8 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
               <ellipse cx="600" cy="370" rx="533" ry="303" fill="none" stroke="#DFFF85" strokeWidth="5" />
             </svg>
 
+            {opening && !opening.settled && <OpeningCards deal={opening} geo={GEO_PHONE} variant="phone" />}
+
             {p.trick.map((play) => {
               const spot = TRICK_SPOT[(play.seat - p.viewer + 4) % 4];
               const won = p.winner === play.seat;
@@ -173,38 +194,42 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
           </div>
         </div>
 
-        {/* Top left: leave, the Tens racks and the trick count. */}
+        {/* Top left: leave, then the ceremony's step - or the Tens racks and
+            the trick count once the deal is done. */}
         <div style={{ position: "absolute", left: 48, top: 10, display: "flex", alignItems: "center", gap: 8 }}>
           <button type="button" className="ibtn" aria-label="Leave game" onClick={p.onLeave} data-flat>
             <Icon name="i-back" />
           </button>
-          <div className="bar" style={{ padding: "0 12px", gap: 9 }} aria-label="Tens and tricks">
-            <span className="tag" style={{ color: "#fff" }}>Tens</span>
-            <span className="tag" style={{ color: "#D4D4DC" }}><i className="dot" />{duel ? "You" : "Us"}</span>
-            <TenRack suits={p.tenSuits.us} />
-            <span className="tag" style={{ color: "#D4D4DC" }}><i className="dot them" />{duel ? "They" : "Them"}</span>
-            <TenRack suits={p.tenSuits.them} />
-            <span style={{ width: 1, height: 22, background: "rgba(255,255,255,.14)" }} />
-            <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-              <b className="num" style={{ fontSize: 15, lineHeight: 1, color: "#C6FF33" }}>{p.tricks.us}–{p.tricks.them}</b>
-              <span className="tag" style={{ fontSize: 8.5, color: "#A4A4B2" }}>Tricks</span>
-            </span>
-          </div>
+          {ceremony && opening ? <PhoneOpeningSteps deal={opening} /> : (
+            <div className={`bar ${appear}`.trim()} style={{ padding: "0 12px", gap: 9 }} aria-label="Tens and tricks">
+              <span className="tag" style={{ color: "#fff" }}>Tens</span>
+              <span className="tag" style={{ color: "#D4D4DC" }}><i className="dot" />{duel ? "You" : "Us"}</span>
+              <TenRack suits={p.tenSuits.us} none={t("table_none")} />
+              <span className="tag" style={{ color: "#D4D4DC" }}><i className="dot them" />{duel ? "They" : "Them"}</span>
+              <TenRack suits={p.tenSuits.them} none={t("table_none")} />
+              <span style={{ width: 1, height: 22, background: "rgba(255,255,255,.14)" }} />
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <b className="num" style={{ fontSize: 15, lineHeight: 1, color: "#C6FF33" }}>{p.tricks.us}–{p.tricks.them}</b>
+                <span className="tag" style={{ fontSize: 8.5 }}>Tricks</span>
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Top right: trump and the menu. The board's badge is drawn with a
-            suit in it; before a renege there is no trump yet, so the hexagon
-            stays but goes quiet rather than showing a suit nobody chose. */}
+        {/* Top right: the cut while the deal runs, then trump - a grey "?"
+            until somebody cannot follow and sets it - and the menu. */}
         <div style={{ position: "absolute", right: 48, top: 10, display: "flex", alignItems: "center", gap: 8 }}>
-          <div className="bar" style={{ padding: "0 14px 0 6px", gap: 9 }}>
-            <div className="hx" style={p.trump ? undefined : { filter: "grayscale(1) brightness(.6)" }}>
-              {p.trump ? <Suit suit={p.trump} /> : <Icon name="i-crown" />}
+          {ceremony && opening ? <PhoneOpeningCut deal={opening} /> : (
+            <div className={`bar ${appear}`.trim()} style={{ padding: "0 14px 0 6px", gap: 9 }} aria-label="Trump">
+              {p.trump
+                ? <div className="hx"><Suit suit={p.trump} /></div>
+                : <div className="hx q"><b>?</b></div>}
+              <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span className="tag" style={{ fontSize: 8.5 }}>Trump</span>
+                <span className="disp" style={{ fontSize: 15 }}>{p.trump ? SUIT_NAMES[p.trump] : t("table_notSet")}</span>
+              </span>
             </div>
-            <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span className="tag" style={{ fontSize: 8.5, color: "#A4A4B2" }}>Trump</span>
-              <span className="disp" style={{ fontSize: 15 }}>{p.trump ? SUIT_NAMES[p.trump] : "Not set"}</span>
-            </span>
-          </div>
+          )}
           <button type="button" className="ibtn" aria-label="Menu" onClick={p.onMenu} data-flat>
             <Icon name="i-menu" />
           </button>
@@ -212,17 +237,19 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
 
         {/* The three other seats. In the 1v1 room variant there is only one,
             and the board's own centre position is where it belongs. */}
-        <Who seat={p.top} partner={!duel} style={{ left: 422, top: 62, transform: "translateX(-50%)" }} />
-        {p.left && <Who seat={p.left} partner={false} style={{ left: 48, top: 150 }} />}
-        {p.right && <Who seat={p.right} partner={false} style={{ right: 48, top: 150 }} />}
+        <Who seat={p.top} partner={!duel} style={{ left: 422, top: 62, transform: "translateX(-50%)" }} plate={plate("N")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.top.active} t={t} />
+        {p.left && <Who seat={p.left} partner={false} style={{ left: 48, top: 150 }} plate={plate("W")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.left.active} t={t} />}
+        {p.right && <Who seat={p.right} partner={false} style={{ right: 48, top: 150 }} plate={plate("E")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.right.active} t={t} />}
 
-        <span className="hint" role="status">
-          {p.active && <i className="dot live" data-ar-loop />}
-          {p.hint}
-        </span>
+        {!ceremony && (
+          <span className="hint" role="status">
+            {p.active && <i className="dot live" data-ar-loop />}
+            {p.hint}
+          </span>
+        )}
 
-        <section aria-label="Your hand">
-          {layout.map(({ card, x, y, r }) => {
+        <section aria-label="Your hand" className={opening && !ceremony ? "hand-rise" : undefined}>
+          {!ceremony && layout.map(({ card, x, y, r, i }) => {
             const id = cardId(card);
             const playable = p.legal.has(id);
             const red = card.suit === "H" || card.suit === "D";
@@ -231,7 +258,7 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
                 type="button"
                 key={id}
                 className={`hc ${p.selected === id ? "sel" : ""} ${p.active && !playable ? "no" : ""}`.replace(/\s+/g, " ").trim()}
-                style={{ left: x, top: y, transform: `rotate(${r}deg)` }}
+                style={{ left: x, top: y, transform: `rotate(${r}deg)`, ["--i" as string]: i }}
                 aria-label={`${rankLabel(card.rank)} of ${SUIT_NAMES[card.suit].toLowerCase()}${p.active && !playable ? ", can't play" : ""}`}
                 aria-pressed={p.selected === id}
                 disabled={p.active && !playable}
@@ -250,28 +277,32 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
         {/* You, bottom left. The board writes the lime ring inline on the
             turn it is yours, so it is written inline here too. */}
         <div
-          className="who"
+          className={`who ${self?.first ? "first" : ""}`.trim()}
           style={{
             left: 48, bottom: 18,
-            ...(p.active ? { borderColor: "#C6FF33", boxShadow: "0 0 0 3px rgba(198,255,51,.14), 0 0 20px rgba(198,255,51,.22)" } : null),
+            ...(!ceremony && p.active ? { borderColor: "#C6FF33", boxShadow: "0 0 0 3px rgba(198,255,51,.14), 0 0 20px rgba(198,255,51,.22)" } : null),
           }}
         >
-          <div className="av">{p.you.name.slice(0, 1).toUpperCase()}<span className="ct">{p.you.cards}</span></div>
+          <div className="av">{p.you.name.slice(0, 1).toUpperCase()}
+            {self ? <CountBadge count={self.count} shown={self.countShown} /> : <span className="ct">{p.you.cards}</span>}</div>
           <div>
-            <b>{p.active ? "Your turn" : p.you.name}</b>
+            <b>{!ceremony && p.active ? "Your turn" : p.you.name}{self?.dealer && <span className="dtag">{t("deal_dealer")}</span>}</b>
             <span className="st">
-              <i className={`dot ${p.active ? "live" : ""}`.trim()} {...(p.active ? { "data-ar-loop": true } : {})} />
-              {p.active ? shortHint(p.trick) : "Waiting"}
+              <i className={`dot ${!ceremony && p.active ? "live" : ""}`.trim()} {...(!ceremony && p.active ? { "data-ar-loop": true } : {})} />
+              {self ? <>{self.line}{self.suit && <Suit suit={self.suit} className={self.red ? "red" : undefined} />}</>
+                : p.active ? shortHint(p.trick) : "Waiting"}
             </span>
           </div>
         </div>
 
         <div style={{ position: "absolute", right: 48, bottom: 22 }}>
-          <button type="button" className="ar-btn" disabled={!p.canPlay} onClick={p.onPlay} data-flat>
-            <Icon name="i-play" />
-            {p.actionLabel}
-            {chosen && <Suit suit={chosen.suit} />}
-          </button>
+          {ceremony && opening ? <OpeningSkip deal={opening} compact /> : (
+            <button type="button" className={`ar-btn ${appear}`.trim()} disabled={!p.canPlay} onClick={p.onPlay} data-flat>
+              <Icon name="i-play" />
+              {p.actionLabel}
+              {chosen && <Suit suit={chosen.suit} />}
+            </button>
+          )}
         </div>
       </div>
     </ArenaStage>
@@ -279,8 +310,8 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
 }
 
 /** One side's Tens, as the board's 20x28 foil minis. */
-function TenRack({ suits }: { suits: SuitLetter[] }) {
-  if (suits.length === 0) return <span className="tag" style={{ fontSize: 8.5, color: "#6E6E7B" }}>None</span>;
+function TenRack({ suits, none }: { suits: SuitLetter[]; none: string }) {
+  if (suits.length === 0) return <span className="tag" style={{ color: "#6E6E7C" }}>{none}</span>;
   return (
     <div style={{ display: "flex", gap: 3 }}>
       {suits.map((suit) => (
@@ -292,25 +323,30 @@ function TenRack({ suits }: { suits: SuitLetter[] }) {
   );
 }
 
-/** A seated player, as the board's `.who` chip. */
-function Who({ seat, partner, style }: { seat: ArenaSeatData; partner: boolean; style: React.CSSProperties }) {
+/** A seated player, as the board's `.who` chip - carrying the deal while it runs. */
+function Who({ seat, partner, style, plate, ceremony, leads, firstTrick, t }: {
+  seat: ArenaSeatData; partner: boolean; style: React.CSSProperties;
+  plate: ReturnType<typeof openingPlate> | null; ceremony: boolean; leads: boolean; firstTrick: boolean; t: (key: string) => string;
+}) {
+  const live = !ceremony && seat.active;
   return (
-    <div className="who" style={style}>
+    <div className={`who ${plate?.first || leads ? "first" : ""}`.trim()} style={style}>
       <div className={`av ${partner ? "" : "them"}`.trim()}>
-        {seat.name.slice(0, 1).toUpperCase()}<span className="ct">{seat.cardCount}</span>
+        {seat.name.slice(0, 1).toUpperCase()}
+        {plate ? <CountBadge count={plate.count} shown={plate.countShown} /> : <span className="ct">{seat.cardCount}</span>}
       </div>
       <div>
-        <b>{seat.name}</b>
+        <b>{seat.name}{plate?.dealer && <span className="dtag">{t("deal_dealer")}</span>}</b>
         <span className="st">
-          <i className={`dot ${partner ? "" : "them"} ${seat.active ? "live" : ""}`.replace(/\s+/g, " ").trim()}
-             {...(seat.active ? { "data-ar-loop": true } : {})} />
-          {seat.active ? "Playing" : partner ? "Partner" : "Waiting"}
+          <i className={`dot ${partner ? "" : "them"} ${live ? "live" : ""}`.replace(/\s+/g, " ").trim()}
+             {...(live ? { "data-ar-loop": true } : {})} />
+          {plate ? <>{plate.line}{plate.suit && <Suit suit={plate.suit} className={plate.red ? "red" : undefined} />}</>
+            : leads ? t("deal_leads") : seat.active ? "Playing" : partner ? "Partner" : firstTrick ? t("mindi_opponent") : "Waiting"}
         </span>
       </div>
     </div>
   );
 }
-
 /** "Follow spades" or "Lead any card" - what the board's chip says. */
 function shortHint(trick: TrickPlay[]): string {
   if (trick.length === 0) return "Lead any card";

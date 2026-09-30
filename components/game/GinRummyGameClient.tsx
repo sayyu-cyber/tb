@@ -24,9 +24,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { sortHand } from "@/lib/cardSort";
 import { ArenaSeatData } from "@/components/game/GameArena";
 import { GinResultScreen } from "./GinResultScreen";
-import { MindiDealIntro } from "./MindiDealIntro";
+import { ginOpening, useOpeningDeal } from "./MindiDealIntro";
 import { cutForFirstPlay } from "@/lib/openingCut";
-import type { FirstPlayerDraw, SeatIndex } from "@/lib/mindiEngine";
+import type { SeatIndex } from "@/lib/mindiEngine";
 
 interface GinRummyGameClientProps {
   /** "ai": you vs a bot. "passplay": two local players alternating with a pass-the-device screen. */
@@ -68,7 +68,8 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
   const [discard, setDiscard] = useState<Card[]>(() => initialDeal.discard);
   const [reshuffles, setReshuffles] = useState(0);
 
-  const [turn, setTurn] = useState<Side>(() => (cut.winner === 0 ? "player" : "opponent"));
+  const firstSide: Side = cut.winner === 0 ? "player" : "opponent";
+  const [turn, setTurn] = useState<Side>(firstSide);
   const [phase, setPhase] = useState<Phase>("draw");
   const [selectedDiscard, setSelectedDiscard] = useState<Card | null>(null);
   const [result, setResult] = useState<GinHandResult | null>(null);
@@ -76,6 +77,26 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
   // changes; `result` is the engine's truth the moment the hand is decided.
   const [resultReady, setResultReady] = useState(false);
   const [deadline, setDeadline] = useState<number | null>(null);
+
+  // The opening deal plays ON the table from its first frame, and nothing
+  // moves until it has dealt (introDone). In Pass & Play the seat at the
+  // bottom is whoever starts, so the ceremony is drawn from their side.
+  const bottom: Side = mode === "ai" ? "player" : firstSide;
+  const sideName = (side: Side) => mode === "ai"
+    ? side === "player" ? user?.displayName ?? t("mindi_you") : t("gin_opponent")
+    : side === "player" ? t("offline_player1") : t("offline_player2");
+  const openingSetup = useMemo(() => ginOpening({
+    cut: { cards: { player: cut.cards[0], opponent: cut.cards[1] }, winner: firstSide },
+    you: bottom, opponent: bottom === "player" ? "opponent" : "player",
+    names: { player: sideName("player"), opponent: sideName("opponent") },
+    roles: { [bottom]: t("mindi_you"), [bottom === "player" ? "opponent" : "player"]: t("mindi_opponent") },
+    upcard: initialDeal.discard[0] ? { rank: rankLabel(initialDeal.discard[0].rank), suit: initialDeal.discard[0].suit } : null,
+    cardBack: economyState.profile.equipped.cardBack,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [cut, initialDeal, mode, user?.displayName]);
+  const opening = useOpeningDeal(openingSetup, { onReady: () => setIntroDone(true) });
+  /** Nobody has moved yet: the first player has not drawn. */
+  const untouched = !result && turn === firstSide && phase === "draw" && discard.length === 1 && stock.length === initialDeal.stock.length;
 
   // Pass & Play: whose turn is currently revealed on screen.
   const [revealedSide, setRevealedSide] = useState<Side | null>(mode === "ai" ? "player" : null);
@@ -245,23 +266,6 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
   };
   const selfName = mode === "ai" ? user?.displayName ?? t("mindi_you") : turn === "player" ? t("offline_player1") : t("offline_player2");
 
-  // Seat 0 is always the local player, so they read on the left of the cut.
-  const cutNames: Record<SeatIndex, string> = {
-    0: mode === "ai" ? user?.displayName ?? t("mindi_you") : t("offline_player1"),
-    1: mode === "ai" ? t("gin_opponent") : t("offline_player2"),
-    2: "", 3: "",
-  };
-
-  // The ceremony replaces the table rather than sitting on top of it. Rendered
-  // together, the table paints first and the dialog only opens on the effect
-  // after it, so the player sees the table flash before the cut.
-  if (!introDone) {
-    return <MindiDealIntro game="gin" draw={cut as FirstPlayerDraw} names={cutNames}
-      seats={[0, 1]} viewer={0} handSize={10}
-      cardBacks={{ 0: economyState.profile.equipped.cardBack, 1: LOCAL_SIDE_DECK_SKINS.opponent }}
-      tableSkin={economyState.profile.equipped.tableTheme} onDone={() => setIntroDone(true)} />;
-  }
-
   return <>
     {/* The winning card, held on screen before the result takes over. */}
     {result && !resultReady && topDiscard && (
@@ -278,6 +282,7 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
       phase={phase} myTurn={isMyTurn} mode={mode === "ai" ? "Casual" : "Pass & Play"}
       deadline={deadline} reshuffles={reshuffles}
       tableSkin={economyState.profile.equipped.tableTheme} cardBack={economyState.profile.equipped.cardBack}
+      opening={untouched ? opening : null}
       onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} />
   </>;
 }
