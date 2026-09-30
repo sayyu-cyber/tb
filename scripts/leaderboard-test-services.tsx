@@ -34,7 +34,7 @@ const ROWS = [
 ].map((row, index) => ({ ...row, rank: index + 1 }));
 
 export const useAuth = () => ({
-  user: flag('guest') ? null : { uid: flag('nome') ? 'stranger' : flag('first') ? 'nashid' : ME, displayName: 'Sayyu' },
+  user: { uid: flag('guest') ? 'anonymous-guest' : flag('nome') ? 'stranger' : flag('first') ? 'nashid' : ME, displayName: 'Sayyu' },
   isGuest: flag('guest'),
   // 33 trophies is Silver under constants/ranks.ts (0/25/50/75).
   playerStats: { trophies: 33 },

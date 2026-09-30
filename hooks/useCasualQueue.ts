@@ -83,7 +83,7 @@ export interface CasualQueue {
 
 export function useCasualQueue(gameId: string, active: boolean): CasualQueue {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [matchFound, setMatchFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigatedRef = useRef(false);
@@ -92,7 +92,7 @@ export function useCasualQueue(gameId: string, active: boolean): CasualQueue {
   const { gameType, neededPlayers, label } = gameConfig(gameId);
 
   useEffect(() => {
-    if (!active || !user?.uid) return;
+    if (!active || !user?.uid || isGuest) return;
 
     const uid = user.uid;
     let cancelled = false;
@@ -160,7 +160,7 @@ export function useCasualQueue(gameId: string, active: boolean): CasualQueue {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, user?.uid, gameType, neededPlayers, gameId]);
+  }, [active, user?.uid, isGuest, gameType, neededPlayers, gameId]);
 
   return { matchFound, error, label, neededPlayers };
 }

@@ -5,7 +5,6 @@ import React, { createContext, useContext, useReducer, useCallback, useEffect, u
 import { useAuth } from './AuthContext';
 import { GameLoading } from '@/components/system/GameLoading';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { updateProfileCosmetics } from '@/lib/supabase/data';
 import { usePathname } from 'next/navigation';
 import { useToast } from './ToastContext';
 import { loadWallet, mutateWallet, type WalletSnapshot } from '@/lib/wallet';
@@ -374,9 +373,9 @@ async function hydrateSupabaseEconomy(base: EconomyState, uid: string): Promise<
 
 async function saveSupabaseEconomy(uid: string, state: EconomyState): Promise<void> {
   const supabase = getSupabaseBrowserClient();
-  const [{ error: equippedError }] = await Promise.all([
-    supabase.from('equipped_cosmetics').upsert({
-      user_id: uid,
+  // handle_new_user creates this row. Upsert requires an INSERT policy,
+  // while the owner is intentionally permitted to SELECT/UPDATE only.
+  const { error: equippedError } = await supabase.from('equipped_cosmetics').update({
       card_back: state.profile.equipped.cardBack || 'cb_default',
       table_theme: state.profile.equipped.tableTheme || 'tt_default',
       profile_frame: state.profile.equipped.profileFrame || 'pf_default',
@@ -384,14 +383,8 @@ async function saveSupabaseEconomy(uid: string, state: EconomyState): Promise<vo
       victory_animation: state.profile.equipped.victoryAnimation || 'va_default',
       banner: state.profile.equipped.banner || 'bn_default',
       updated_at: new Date().toISOString(),
-    }),
-  ]);
+    }).eq('user_id', uid);
   if (equippedError) throw equippedError;
-  await updateProfileCosmetics(
-    uid,
-    state.profile.equipped.cardBack || 'cb_default',
-    state.profile.equipped.tableTheme || 'tt_default'
-  );
 }
 
 // ─── REDUCER ─────────────────────────────────────────

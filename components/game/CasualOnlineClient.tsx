@@ -24,18 +24,23 @@ import { Search, X, Users2 } from "lucide-react";
 import Link from "next/link";
 import { useCasualQueue, gameConfig } from "@/hooks/useCasualQueue";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/contexts/AuthContext";
+import { GuestOnlineNotice } from "./GuestOnlineNotice";
 
 export function CasualOnlineClient({ gameId }: { gameId: string }) {
   const [dots, setDots] = useState("");
   const t = useTranslation();
+  const { isGuest } = useAuth();
 
   const { gameType } = gameConfig(gameId);
-  const { matchFound, error: debugError, label } = useCasualQueue(gameId, true);
+  const { matchFound, error: debugError, label } = useCasualQueue(gameId, !isGuest);
 
   useEffect(() => {
     const interval = setInterval(() => setDots((prev) => (prev.length >= 3 ? "" : prev + ".")), 500);
     return () => clearInterval(interval);
   }, []);
+
+  if (isGuest) return <GuestOnlineNotice title="Casual Online" gameId={gameId} />;
 
   if (matchFound) {
     return (

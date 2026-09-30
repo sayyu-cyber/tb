@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
   const [queryText, setQueryText] = useState("");
   const [howItWorks, setHowItWorks] = useState(false);
 
-  const { user, playerStats } = useAuth();
+  const { user, playerStats, isGuest } = useAuth();
   const t = useTranslation();
   const phone = usePhonePortrait();
 
@@ -47,8 +47,8 @@ export default function LeaderboardPage() {
   const friendUids = useMemo(() => {
     const ids = friends.map((f) => f.uid);
     // The player belongs on their own friends board.
-    return user?.uid ? Array.from(new Set([...ids, user.uid])) : ids;
-  }, [friends, user?.uid]);
+    return user?.uid && !isGuest ? Array.from(new Set([...ids, user.uid])) : ids;
+  }, [friends, user?.uid, isGuest]);
 
   const { entries, loading, error, refresh, meta } = useLeaderboard(period, friendUids);
 
@@ -88,7 +88,7 @@ export default function LeaderboardPage() {
         currentEntry={currentEntry}
         entryAbove={entryAbove}
         myUid={user?.uid}
-        signedIn={Boolean(user)}
+        signedIn={Boolean(user) && !isGuest}
         fallbackTrophies={playerStats?.trophies}
         loading={loading}
         error={error}
@@ -144,9 +144,9 @@ export default function LeaderboardPage() {
             <>
               <Users size={30} aria-hidden="true" />
               <h2>{t("leaderboard_emptyFriends")}</h2>
-              <Link href="/friends" className="lb-ghost-button">
+              <Link href={isGuest ? "/login" : "/friends"} className="lb-ghost-button">
                 <UserPlus size={15} aria-hidden="true" />
-                {t("leaderboard_findFriends")}
+                {t(isGuest ? "login_signIn" : "leaderboard_findFriends")}
               </Link>
             </>
           ) : (
@@ -162,7 +162,7 @@ export default function LeaderboardPage() {
           <div className="lb-grid">
             {searching ? <div /> : <Podium topThree={topThree} currentUid={user?.uid} />}
             <aside className="lb-side">
-              <CurrentRankCard entry={currentEntry} above={entryAbove} signedIn={Boolean(user)} />
+              <CurrentRankCard entry={currentEntry} above={entryAbove} signedIn={Boolean(user) && !isGuest} />
               {/* The tier the player is actually paid from comes from their
                   own trophies, not from profile.rank (code issue 8). */}
               <RewardsCard trophies={currentEntry?.trophies ?? playerStats?.trophies} />

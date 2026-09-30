@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Settings as SettingsIcon, Bell, Volume2, Music, Shield, HelpCircle, LayoutDashboard,
+  Settings as SettingsIcon, Bell, Music, Shield, HelpCircle, LayoutDashboard,
   Languages, User, Palette, Moon, Activity, ChevronRight, ChevronDown, Gamepad2, Ban,
   Smartphone, Lock, Flag, BadgeCheck, Pencil,
 } from "lucide-react";
@@ -31,10 +31,8 @@ import { getRankFromTrophies } from "@/constants/ranks";
  * which is what the board's layout implies: every section is on the page at
  * once.
  *
- * Two rows are drawn disabled on the board, and both are honest: push
- * notifications and game sound effects have no delivery behind them yet.
- * They stay switched off and unusable rather than becoming toggles that
- * remember a preference nothing reads.
+ * Push notifications and game sound effects have no implementation yet,
+ * so their controls are omitted until a preference can actually take effect.
  *
  * Both compositions build the same five section bodies and only frame them
  * differently - the rail becomes a chip row, the About card moves to the
@@ -160,20 +158,6 @@ export default function SettingsPage() {
       id: "preferences", title: "Game Preferences", Icon: Gamepad2, tone: "l" as const, mtone: "l" as const,
       body: (
         <>
-          <ToggleRow
-            Icon={Bell}
-            label={t("settings_notifications")}
-            description="Push delivery is not connected yet."
-            checked={false}
-            disabled
-          />
-          <ToggleRow
-            Icon={Volume2}
-            label={t("settings_sound")}
-            description="Game sound effects are not connected yet."
-            checked={false}
-            disabled
-          />
           <ToggleRow
             Icon={Music}
             label={t("settings_music")}

@@ -114,8 +114,8 @@ export function PhoneLeaderboard(p: PhoneLeaderboardProps) {
             <>
               <Users aria-hidden="true" style={{ width: 30, height: 30, color: "#3A3A46" }} />
               <h2 className="disp" style={{ margin: "12px 0" }}>{p.t("leaderboard_emptyFriends")}</h2>
-              <Link href="/friends" className="ar-btn ghost sm">
-                <UserPlus aria-hidden="true" />{p.t("leaderboard_findFriends")}
+              <Link href={p.signedIn ? "/friends" : "/login"} className="ar-btn ghost sm">
+                <UserPlus aria-hidden="true" />{p.t(p.signedIn ? "leaderboard_findFriends" : "login_signIn")}
               </Link>
             </>
           ) : (
@@ -138,7 +138,7 @@ export function PhoneLeaderboard(p: PhoneLeaderboardProps) {
                 if (!entry) return null;
                 const tier = entry.currentRank || getRankFromTrophies(entry.trophies);
                 return (
-                  <div className="pl" key={place} style={{ left: "50%", marginLeft: `${offset}px` }}>
+                  <div className={`pl place-${place}`} key={place} style={{ left: "50%", marginLeft: `${offset}px` }}>
                     <div className="who">
                       {place === 1 && <Crown aria-hidden="true" className="podium-crown" />}
                       <span

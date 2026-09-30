@@ -121,6 +121,7 @@ export async function updateProfileCosmetics(uid: string, cardBack: string, tabl
   const supabase = getSupabaseBrowserClient();
   const { error } = await supabase
     .from("equipped_cosmetics")
-    .upsert({ user_id: uid, card_back: cardBack, table_theme: tableTheme, updated_at: nowIso() });
+    .update({ card_back: cardBack, table_theme: tableTheme, updated_at: nowIso() })
+    .eq("user_id", uid);
   if (error) throw error;
 }

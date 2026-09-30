@@ -3,11 +3,8 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { motion } from "framer-motion";
 import { GameLoading } from "@/components/system/GameLoading";
 import { rememberRoomReturn, takeRoomReturn } from "@/lib/authReturn";
-
-const guestRestrictedPaths = ["/leaderboard"];
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, isGuest } = useAuth();
@@ -23,12 +20,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       if (destination) router.replace(destination);
     }
   }, [user, loading, router, pathname, isGuest]);
-
-  useEffect(() => {
-    if (isGuest && pathname && guestRestrictedPaths.includes(pathname.replace(/\/$/, ''))) {
-      router.push("/home");
-    }
-  }, [isGuest, pathname, router]);
 
   if (loading) {
     return <GameLoading />;

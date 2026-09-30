@@ -17,7 +17,7 @@ const mocks = path.join(__dirname, 'messages-test-services.tsx');
 const alias = Object.fromEntries([
   '@/contexts/AuthContext', '@/contexts/ToastContext', '@/contexts/HomeSocialContext',
   'next/navigation', '@/lib/messages', '@/lib/presence', '@/lib/rooms', '@/lib/friends',
-  '@/hooks/useTranslation',
+  '@/hooks/useTranslation', 'next/link',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
 
@@ -61,7 +61,7 @@ async function run() {
     assert.equal(await page.locator('.msg-chat').isVisible(), true, 'and the open chat, side by side');
     // With no ?with= the newest conversation opens, so the pane is never blank.
     assert.equal(await page.locator('.conv[aria-current="true"]').count(), 1, 'One conversation is current');
-    assert.ok((await page.locator('.msg-chat-head').innerText()).includes('Mariyam'));
+    assert.ok((await page.locator('.msg-chat-head').innerText()).toLowerCase().includes('mariyam'));
 
     // ── The board's thread ──────────────────────────────────────────────
     assert.equal(await page.locator('.bub').count(), 6, 'Six messages');
@@ -90,7 +90,7 @@ async function run() {
     // ── Switching conversation swaps the pane, no navigation ────────────
     await page.locator('.conv').nth(1).click();
     await page.waitForTimeout(200);
-    assert.ok((await page.locator('.msg-chat-head').innerText()).includes('Hussain'));
+    assert.ok((await page.locator('.msg-chat-head').innerText()).toLowerCase().includes('hussain'));
     assert.ok((await page.locator('body').getAttribute('data-opened') || '').includes('with=hussain'));
     // A conversation with no messages says so rather than showing nothing.
     await page.locator('.conv').nth(4).click();
@@ -113,6 +113,7 @@ async function run() {
     await page.getByText('Conversations could not be loaded.').waitFor();
     await page.goto(BASE + '/messages/?guest');
     await page.getByText('Sign in to message your friends.').waitFor();
+    assert.equal(await page.getByRole('link', { name: /^Sign In$/i }).getAttribute('href'), '/login');
 
     // ── Widths ──────────────────────────────────────────────────────────
     for (const state of ['', '?empty']) {
@@ -168,7 +169,7 @@ async function run() {
     await page.locator('.arena-mchat .chat').waitFor();
     assert.equal(await page.locator('.arena-mmessages').count(), 0, 'The thread replaces the list');
     assert.equal(await page.locator('.arena-mchat .composer').count(), 1, 'with the composer pinned');
-    assert.ok((await page.locator('.arena-mchat').innerText()).includes('Invite to Mindi'), 'and the invite');
+    assert.ok((await page.locator('.arena-mchat').innerText()).toLowerCase().includes('invite to mindi'), 'and the invite');
     await page.screenshot({ path: path.join(output, 'mchat-390.png') });
     await page.locator('.arena-mchat .chead .ibtn').first().click();
     await page.locator('.arena-mmessages').waitFor();

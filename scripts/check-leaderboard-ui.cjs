@@ -60,12 +60,12 @@ async function run() {
     assert.equal(await page.locator('.lrow:not(.head)').count(), 9, 'The table lists the rest');
     assert.equal(await page.locator('.lrow.me').count(), 1, 'Your row is marked');
     assert.equal(await page.locator('#lb-current-user').count(), 1, 'and can be scrolled to');
-    assert.ok((await page.locator('.lrow.me').innerText()).includes('You'));
+    assert.ok((await page.locator('.lrow.me').innerText()).toLowerCase().includes('you'));
 
     // ── Your Rank ───────────────────────────────────────────────────────
-    const rank = await page.locator('.lb-rank').innerText();
+    const rank = (await page.locator('.lb-rank').innerText()).toLowerCase();
     assert.ok(rank.includes('#10'), 'Your placement');
-    assert.ok(rank.includes('33 Trophies'), 'and your trophies');
+    assert.ok(rank.includes('33 trophies'), 'and your trophies');
     assert.ok(rank.includes('2 trophies') && rank.includes('to the next place.'),
       'and the gap to the player above (35 - 33)');
 
@@ -73,16 +73,16 @@ async function run() {
     // profile.rank is Bronze in the fixture, as the app leaves it; the
     // player has 33 trophies, which is Silver. The card must say Silver.
     assert.equal(await page.locator('.rw.cur').count(), 1, 'Exactly one tier is marked as yours');
-    const mine = await page.locator('.rw.cur').innerText();
-    assert.ok(mine.includes('Silver'), `Your tier comes from trophies, not profile.rank (got: ${mine.replace(/\n/g, ' ')})`);
+    const mine = (await page.locator('.rw.cur').innerText()).toLowerCase();
+    assert.ok(mine.includes('silver'), `Your tier comes from trophies, not profile.rank (got: ${mine.replace(/\n/g, ' ')})`);
     assert.ok(mine.includes('150'), 'and it shows Silver\'s payout');
-    assert.ok(!(await page.locator('.rw').first().innerText()).includes('You'), 'Bronze is not marked');
+    assert.ok(!(await page.locator('.rw').first().innerText()).toLowerCase().includes('you'), 'Bronze is not marked');
     assert.equal(await page.locator('.rw').count(), 4, 'All four tiers are listed');
 
     // ── Tabs ────────────────────────────────────────────────────────────
     assert.equal(await page.getByRole('button', { name: /^Monthly/ }).isDisabled(), true,
       'Monthly stays disabled - there is no monthly board');
-    assert.ok((await page.locator('.lb-tabrow').innerText()).includes('Resets in'), 'The weekly reset counts down');
+    assert.ok((await page.locator('.lb-tabrow').innerText()).toLowerCase().includes('resets in'), 'The weekly reset counts down');
     await page.getByRole('button', { name: /^All Time/ }).click();
     await page.waitForTimeout(150);
     assert.equal(await page.locator('.lb-reset').count(), 0, 'and the countdown is weekly-only');
@@ -128,7 +128,7 @@ async function run() {
         assert.equal(
           await page.locator('.pl,.lrow,.rw').evaluateAll(
             nodes => nodes.every(n => { const r = n.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; })
-          ), true, `Clipping ${state} ${width}`);
+          ), true, `Clipping ${state} ${width}: ${JSON.stringify(await page.locator('.pl,.lrow,.rw').evaluateAll(nodes => nodes.map(n => ({ class: n.className, left: n.getBoundingClientRect().left, right: n.getBoundingClientRect().right })).filter(n => n.left < -1 || n.right > innerWidth + 1)))}`);
         await page.screenshot({ path: path.join(output, `${state ? 'empty' : 'board'}-${width}.png`), fullPage: true });
       }
     }
@@ -158,7 +158,7 @@ async function run() {
     assert.equal(await phone.isVisible(), true, 'and MLeaderboard takes over');
     assert.equal(await phone.locator('.chips > button').count(), 4, 'All four periods');
     assert.equal(await phone.locator('.chips > button:disabled').count(), 1, 'Monthly stays disabled');
-    assert.ok((await phone.innerText()).includes('Soon'), 'and says so');
+    assert.ok((await phone.innerText()).toLowerCase().includes('soon'), 'and says so');
     assert.equal(await phone.locator('.plinth').count(), 3, 'The three plinths');
     assert.ok(await phone.locator('.lrow').count() > 0, 'and the standings as rows');
     assert.ok(await phone.locator('.rw').count() > 0, 'Weekly rewards are still here');

@@ -48,6 +48,7 @@ export const useTranslation = () => (key: string) => ({
   messages_noConversationsYet: 'No conversations yet',
   messages_loadError: 'Conversations could not be loaded.',
   messages_signInPrompt: 'Sign in to message your friends.',
+  login_signIn: 'Sign In',
   messages_sayHelloTo: 'Say hello to {name}',
   error_tryAgain: 'Try again',
   a11y_sendMessage: 'Send message',
@@ -77,3 +78,7 @@ export const markConversationRead = async () => {};
 export const conversationIdFor = (a: string, b: string) => [a, b].sort().join('_');
 export const createRoom = async () => 'TEST01';
 export const sendRoomInvite = async () => { document.body.dataset.invited = 'yes'; };
+
+export default function Link({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return <a href={href} {...props}>{children}</a>;
+}

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { SpotlightField } from "@/components/auth/SpotlightField";
+import { useRouter } from "next/navigation";
 
 export function LoginForm() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -17,8 +18,9 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInAsGuest } = useAuth();
+  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail, signInAsGuest } = useAuth();
   const t = useTranslation();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +54,8 @@ export function LoginForm() {
   const handleGuestMode = async () => {
     setLoading(true);
     try {
-      await signInAsGuest();
+      if (!user?.isGuest) await signInAsGuest();
+      router.push("/home");
     } catch (err: any) {
       setError(err.message || "Guest mode failed");
     } finally {

@@ -75,10 +75,10 @@ async function run() {
     // ── The board's numbers, from the board's sample data ───────────────
     const strip = await page.locator('.hudstrip').innerText();
     for (const value of ['Sayyu', 'Gold', '58', '96', '54', '12', 'Season 9']) {
-      assert.ok(strip.includes(value), `Stats strip shows ${value} (got: ${strip.replace(/\n/g, ' | ')})`);
+      assert.ok(strip.toLowerCase().includes(value.toLowerCase()), `Stats strip shows ${value} (got: ${strip.replace(/\n/g, ' | ')})`);
     }
     // Gold's weekly payout, from RANK_CONFIGS - the point of code issue 3.
-    assert.ok((await page.locator('.panel.tick').first().innerText()).includes('350'), 'Gold weekly reward is 350');
+    assert.ok((await page.locator('.lower .panel.tick').first().innerText()).includes('350'), 'Gold weekly reward is 350');
 
     // ── States ──────────────────────────────────────────────────────────
     assert.equal(await page.locator('.lockbar').count(), 0, 'No lock bar outside the league window');
@@ -112,12 +112,11 @@ async function run() {
 
     // ── Held upright: MHome ─────────────────────────────────────────────
     // design/arena/boards/MHome.dc.html. The same ten sections in the same
-    // order, recomposed for 390px - nothing dropped. Both compositions are in
-    // the DOM and CSS decides, so the check is that exactly one is on screen
-    // and it is the right one.
+    // order, recomposed for 390px - nothing dropped. Only one composition
+    // mounts, so hidden controls and subscriptions are not duplicated.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-home.ar-page').isVisible(), false, 'The wide screen steps aside');
+    assert.equal(await page.locator('.arena-home.ar-page').count(), 0, 'The wide screen is unmounted');
     const phone = page.locator('.arena-mhome');
     assert.equal(await phone.isVisible(), true, 'and MHome takes over');
     assert.equal(await phone.locator('.mhero .cardw').count(), 4, "The hero's four Tens");
@@ -130,12 +129,14 @@ async function run() {
 
     // ── Accessibility ───────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('.arena-home.ar-page').waitFor();
+    assert.equal(await page.locator('.arena-mhome').count(), 0, 'The phone screen is unmounted');
     const unlabelled = await page.locator('button:not([aria-label]):not(:has-text(""))').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
     assert.equal(unlabelled, 0, 'Every icon-only button has an aria-label');
-    // Two are in the DOM - the wide screen's and MHome's - and CSS hides
-    // one; the accessibility tree must only ever see the one on screen.
+    // Both the DOM and accessibility tree have one page heading.
+    assert.equal(await page.locator('h1').count(), 1, 'One h1 in the DOM');
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 2, 'Meters report their value');
     // The one looping animation on this screen stops for reduced motion.

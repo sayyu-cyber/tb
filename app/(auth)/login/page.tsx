@@ -6,16 +6,15 @@ import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { ScatteredCards } from "@/components/auth/ScatteredCards";
 import { useAuth } from "@/contexts/AuthContext";
-import { takeRoomReturn, hasRoomReturn } from "@/lib/authReturn";
+import { takeRoomReturn } from "@/lib/authReturn";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
-      if (user.isGuest && hasRoomReturn()) return;
-      router.push(user.isGuest ? "/home" : takeRoomReturn() || "/home");
+    if (!loading && user && !user.isGuest) {
+      router.push(takeRoomReturn() || "/home");
     }
   }, [user, loading, router]);
 

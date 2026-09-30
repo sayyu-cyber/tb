@@ -5,6 +5,7 @@ export function generateStaticParams() {
   return [
     { game: "mindi" },
     { game: "gin-rummy" },
+    { game: "gin" },
   ];
 }
 

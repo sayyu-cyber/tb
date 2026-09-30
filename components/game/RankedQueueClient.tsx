@@ -18,6 +18,7 @@ import { isQualified } from "@/lib/weekendLeague";
 import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import { useTranslation } from "@/hooks/useTranslation";
+import { GuestOnlineNotice } from "./GuestOnlineNotice";
 
 function gameConfig(gameId: string): { gameType: GameType; neededPlayers: number; label: string } {
   if (gameId === "mindi") return { gameType: "mindi", neededPlayers: 4, label: "Mindi" };
@@ -64,7 +65,7 @@ function buildInitialState(gameType: GameType, players: string[]): MindiOnlineSt
 
 export function RankedQueueClient({ gameId }: { gameId: string }) {
   const router = useRouter();
-  const { playerStats, user } = useAuth();
+  const { playerStats, user, isGuest } = useAuth();
   const { isLocked, isWeekendLeague } = useRankLock();
   const matchLimits = useMatchLimits(user?.uid);
   const [dots, setDots] = useState("");
@@ -99,7 +100,7 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
   }, []);
 
   useEffect(() => {
-    if (!canQueue || !user?.uid) return;
+    if (!canQueue || !user?.uid || isGuest) return;
 
     const uid = user.uid;
     let cancelled = false;
@@ -146,7 +147,9 @@ export function RankedQueueClient({ gameId }: { gameId: string }) {
       if (!navigatedRef.current) leaveQueue(uid);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canQueue, pool, user?.uid, gameType, neededPlayers, gameId]);
+  }, [canQueue, pool, user?.uid, isGuest, gameType, neededPlayers, gameId]);
+
+  if (isGuest) return <GuestOnlineNotice title="Ranked" gameId={gameId} />;
 
   if (outOfMatches) {
     const reason = matchLimits.weeklyRemaining <= 0 ? "weekly" : "daily";

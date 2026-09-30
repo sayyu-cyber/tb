@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Send, MessageCircle, RefreshCw, Gamepad2, User, ArrowLeft, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -98,6 +99,7 @@ export function MessagesClient() {
         <section className="panel tick" style={{ padding: "40px", textAlign: "center" }}>
           <MessageCircle aria-hidden="true" style={{ width: "34px", height: "34px", color: "#3A3A46" }} />
           <p className="muted" style={{ marginTop: "12px" }}>{t("messages_signInPrompt")}</p>
+          <Link href="/login" className="ar-btn sm" style={{ marginTop: 16 }}>{t("login_signIn")}</Link>
         </section>
       </div>
     );

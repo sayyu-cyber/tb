@@ -53,19 +53,17 @@ async function run() {
     // ── The board's structure ───────────────────────────────────────────
     assert.equal(await page.locator('.sec').count(), 5, 'Five sections');
     assert.equal(await page.locator('.snav').count(), 4, 'Four category buttons');
-    assert.equal(await page.locator('.toggle').count(), 3, 'Three switches');
+    assert.equal(await page.locator('.toggle').count(), 1, 'Only implemented preferences have switches');
     assert.equal(await page.locator('.langs button').count(), 4, 'Four languages');
     assert.equal(await page.locator('.faq').count(), 3, 'Three FAQs');
-    assert.ok((await page.locator('.set-about').innerText()).includes('Version 1.0.0'));
+    assert.ok((await page.locator('.set-about').innerText()).toLowerCase().includes('version 1.0.0'));
 
-    // ── The two rows that are honestly disabled ─────────────────────────
-    assert.equal(await page.getByRole('switch', { name: 'Notifications' }).isDisabled(), true,
-      'Notifications has no delivery behind it');
-    assert.equal(await page.getByRole('switch', { name: 'Sound Effects' }).isDisabled(), true,
-      'and neither do sound effects');
+    // Unimplemented features do not expose unusable preference controls.
+    assert.equal(await page.getByRole('switch', { name: 'Notifications' }).count(), 0);
+    assert.equal(await page.getByRole('switch', { name: 'Sound Effects' }).count(), 0);
     assert.equal(await page.getByRole('switch', { name: 'Background Music' }).isDisabled(), false,
       'but music is real');
-    assert.equal(await page.locator('.srow.off').count(), 2, 'Both dim their label');
+    assert.equal(await page.locator('.srow.off').count(), 0, 'No disconnected settings rows');
 
     // ── Music, and language ─────────────────────────────────────────────
     assert.equal(await page.getByRole('switch', { name: 'Background Music' }).getAttribute('aria-checked'), 'true');
@@ -128,7 +126,7 @@ async function run() {
     assert.equal(await phone.locator('.chips > button').count(), 4, 'Four categories, as chips');
     assert.equal(await phone.locator('.sec2').count(), 5, 'Every section is still on the page');
     assert.equal(await phone.locator('.panel.tick.sec2').count(), 1, 'The board ticks the first panel only');
-    assert.equal(await phone.locator('[role=switch]').count(), 3, 'The same three switches');
+    assert.equal(await phone.locator('[role=switch]').count(), 1, 'The same implemented switch');
     assert.equal(await phone.locator('.langs button').count(), 4, 'and the four languages');
     // The language control takes a line of its own at 390.
     assert.equal(
@@ -162,7 +160,7 @@ async function run() {
     // ── Accessibility ───────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
     assert.equal(await page.locator('h1').count(), 1, 'One h1');
-    assert.equal(await page.locator('[role=switch][aria-checked][aria-label]').count(), 3,
+    assert.equal(await page.locator('[role=switch][aria-checked][aria-label]').count(), 1,
       'Every switch reports its state and says what it switches');
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
@@ -170,7 +168,7 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    console.log('Settings: five sections, the category rail that scrolls rather than swaps, three switches with two honestly disabled, the four-language control with the right-to-left note, a failed save, the masked address, admin/guest/blocked states, FAQs, MSettings held upright with its chip row and footed About card, seven widths and accessibility passed.');
+    console.log('Settings: sections, category navigation, working music preference, unimplemented controls omitted, languages, failed save, masked address, admin/guest/blocked states, FAQs, seven widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -26,6 +26,24 @@
    also takes the hidden one out of the accessibility tree, so a screen
    reader is never offered two navigations. */
 .phone-chrome { display: none; }
+/* The phone podium's fixed 358px composition needs smaller columns on
+   narrow phones; the reference-size positions stay intact above 360px. */
+@media (max-width: 360px) {
+  .arena-mleaderboard .podium .pl {
+    width: calc((100% - 10px) / 3);
+    margin-left: 0 !important;
+  }
+  .arena-mleaderboard .podium .place-2 { left: 0 !important; }
+  .arena-mleaderboard .podium .place-1 {
+    margin-left: calc((10px - 100%) / 6) !important;
+  }
+  .arena-mleaderboard .podium .place-3 { left: auto !important; right: 0; }
+  .arena-mleaderboard .podium .who { width: 100%; }
+  .arena-mleaderboard .podium .who b {
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .arena-mleaderboard .podium .plinth { width: calc(100% - 12px); }
+}
 .app-shell .app-sidebar,
 .app-shell .app-shell-toolbar { display: revert; }
 

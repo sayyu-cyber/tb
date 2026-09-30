@@ -18,6 +18,7 @@ import type { MindiOnlineState } from "@/components/game/MindiOnlineClient";
 import type { GinOnlineState } from "@/components/game/GinRummyOnlineClient";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useToast } from "@/contexts/ToastContext";
+import { GuestOnlineNotice } from "./GuestOnlineNotice";
 
 function gameTypeFor(gameId: string): GameType {
   return gameId === "mindi" ? "mindi" : "gin_rummy";
@@ -60,8 +61,10 @@ function buildInitialState(gameType: GameType, players: string[]): MindiOnlineSt
 
 export function RankedDuoClient({ gameId }: { gameId: string }) {
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const code = searchParams.get("code");
+
+  if (isGuest) return <GuestOnlineNotice title="Ranked Duo" gameId={gameId} />;
 
   if (!code) {
     return <PartyChooser gameId={gameId} />;

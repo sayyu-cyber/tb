@@ -9,6 +9,7 @@ import {
   ArenaRankCard, ArenaLeagueCard, ArenaShortcuts, ArenaUpdates, ArenaHomeFooter,
 } from "@/components/home/arena/ArenaHomeLower";
 import { PhoneHome } from "@/components/home/phone/PhoneHome";
+import { usePhonePortrait } from "@/hooks/usePhonePortrait";
 
 /**
  * Home — design/arena/screens/app/app-01-home.jpg, from the Home board.
@@ -21,23 +22,27 @@ import { PhoneHome } from "@/components/home/phone/PhoneHome";
  * ArenaSprite mounts the suit symbols the fanned cards reference. It is a
  * <defs>-only SVG, so it takes no space.
  *
- * TWO COMPOSITIONS, ONE PAGE. Held upright a phone gets MHome
+ * ONE MOUNTED COMPOSITION. Held upright a phone gets MHome
  * (design/arena/boards/MHome.dc.html): the same ten sections in the same
- * order, recomposed for 390px. Both are in the DOM and CSS decides which is
- * on screen (`.portrait-view` / `.landscape-view` in
- * styles/arena-phone-shell.css), so there is no breakpoint in JavaScript and
- * no flash of the wrong one. Everything either draws reads the same hooks,
- * so the two cannot disagree about the same player.
+ * order, recomposed for 390px. The shared portrait hook selects one tree,
+ * avoiding duplicate headings, controls and data subscriptions. Mode stays
+ * in this page so rotating preserves the player's choice.
  */
 export default function HomePage() {
   // The board draws a static "All Modes" select. The app has a casual and a
   // ranked pool per game, so the choice is real and changes where the two
   // covers send you.
   const [mode, setMode] = useState<"casual" | "ranked">("casual");
+  const phone = usePhonePortrait();
 
   return (
     <>
       <ArenaSprite />
+      {phone ? (
+        <div className="portrait-view">
+          <PhoneHome mode={mode} onMode={setMode} />
+        </div>
+      ) : (
       <div className="landscape-view">
         <div className="arena-home ar-page" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
           <ArenaHomeHero />
@@ -53,9 +58,7 @@ export default function HomePage() {
           <ArenaHomeFooter />
         </div>
       </div>
-      <div className="portrait-view">
-        <PhoneHome mode={mode} onMode={setMode} />
-      </div>
+      )}
     </>
   );
 }
