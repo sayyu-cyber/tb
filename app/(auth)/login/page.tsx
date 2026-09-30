@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { ScatteredCards } from "@/components/auth/ScatteredCards";
 import { useAuth } from "@/contexts/AuthContext";
+import { takeRoomReturn, hasRoomReturn } from "@/lib/authReturn";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -13,7 +14,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/home");
+      if (user.isGuest && hasRoomReturn()) return;
+      router.push(user.isGuest ? "/home" : takeRoomReturn() || "/home");
     }
   }, [user, loading, router]);
 

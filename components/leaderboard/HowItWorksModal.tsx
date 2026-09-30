@@ -15,7 +15,7 @@ import { useTranslation } from "@/hooks/useTranslation";
  * Every claim in the copy is checked against the code: trophy values come
  * from lib/trophyUpdates.ts, tier thresholds from RANK_CONFIGS, and the
  * weekly behaviour from getWeekStartKey's lazy reset. Notably it does NOT
- * state a tie-break rule, because none is implemented - Firestore returns
+ * state a tie-break rule, because none is implemented - the database returns
  * equal-trophy players in unspecified order, and claiming otherwise would be
  * inventing a rule.
  */

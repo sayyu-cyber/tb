@@ -14,8 +14,7 @@
 // For now, standings are a live leaderboard of this week's qualified
 // players, which is a fair proxy for "who's winning" during the window.
 
-import { collection, getDocs, limit, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const QUALIFYING_RANKS = ["Silver", "Gold", "Platinum"];
 
@@ -32,19 +31,20 @@ export function isQualified(rank: string): boolean {
 
 /** Live standings among qualified (Silver+) players this week, highest weeklyTrophies first. */
 export async function getWeeklyStandings(limitCount = 50): Promise<WeeklyStanding[]> {
-  const q = // Standings only ever render a leaderboard-sized page.
-    query(collection(db, "players"), where("currentRank", "in", QUALIFYING_RANKS), limit(100));
-  const snap = await getDocs(q);
-  return snap.docs
-    .map((d) => {
-      const data = d.data();
-      return {
-        uid: d.id,
-        displayName: data.displayName || "Player",
-        weeklyTrophies: data.weeklyTrophies || 0,
-        currentRank: data.currentRank || "Silver",
-      };
-    })
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id,display_name,ranked_progress(weekly_trophies,current_rank)")
+    .limit(100);
+  if (error) throw error;
+  return ((data ?? []) as any[])
+    .map((row) => ({
+      uid: row.id,
+      displayName: row.display_name || "Player",
+      weeklyTrophies: row.ranked_progress?.weekly_trophies || 0,
+      currentRank: row.ranked_progress?.current_rank || "Silver",
+    }))
+    .filter((row) => isQualified(row.currentRank))
     .sort((a, b) => b.weeklyTrophies - a.weeklyTrophies)
     .slice(0, limitCount);
 }

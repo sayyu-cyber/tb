@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ACHIEVEMENTS } from "@/data/cosmetics";
 
 /**
- * Stand-ins for what Profile reads, so the screen renders without Firebase.
+ * Stand-ins for what Profile reads, so the screen renders without live backend services.
  *
  * The figures are the Profile board's own sample data
  * (design/arena/boards/Profile.dc.html): Sayyu, Gold, 58 trophies, 96

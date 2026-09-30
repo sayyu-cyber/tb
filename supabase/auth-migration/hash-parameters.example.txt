@@ -1,0 +1,8 @@
+hash_config {
+  algorithm: SCRYPT,
+  base64_signer_key: DO_NOT_COMMIT_REAL_VALUE,
+  base64_salt_separator: DO_NOT_COMMIT_REAL_VALUE,
+  rounds: 8,
+  mem_cost: 14,
+}
+

@@ -1,117 +1,106 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { collection, documentId, getDocs, limit, orderBy, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getWeekStartKey } from "@/lib/trophyUpdates";
 import type { LeaderboardEntry, LeaderboardMeta, LeaderboardPeriod } from "@/types";
 
 const LEADERBOARD_SIZE = 50;
-/** Firestore caps an `in` filter at 30 values, so friend lookups are chunked. */
-const IN_CHUNK = 30;
 
-/**
- * Leaderboard data.
- *
- * Every figure here is read straight from `players/{uid}` - the same document
- * lib/trophyUpdates.ts writes after each ranked match. Nothing is recomputed
- * or re-derived on the client, so the board cannot drift from the
- * authoritative ranking.
- *
- * Fields used: `trophies` (lifetime), `weeklyTrophies` + `weekStart` (the
- * lazy weekly counter), `totalMatches`, `wins`, `winPercentage`,
- * `currentRank`, `displayName`, `photoURL`, `avatarPreset`.
- */
+type LeaderboardRow = {
+  id: string;
+  display_name: string | null;
+  photo_url: string | null;
+  avatar_preset: string | null;
+  player_stats?: {
+    total_matches: number | null;
+    wins: number | null;
+    win_percentage: number | null;
+  } | null;
+  ranked_progress?: {
+    trophies: number | null;
+    weekly_trophies: number | null;
+    week_start: string | null;
+    current_rank: string | null;
+  } | null;
+};
 
-type PlayerDoc = Record<string, unknown>;
+function one<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
 
 function num(value: unknown): number {
   return typeof value === "number" ? value : 0;
 }
 
-function str(value: unknown): string | undefined {
-  return typeof value === "string" && value ? value : undefined;
-}
-
-/** Shared projection so every period produces identically shaped rows. */
-function toEntry(uid: string, data: PlayerDoc, rankingValue: number, rank: number): LeaderboardEntry {
+function toEntry(row: LeaderboardRow, rankingValue: number, rank: number): LeaderboardEntry {
   return {
     rank,
-    uid,
-    username: str(data.displayName) || "Player",
+    uid: row.id,
+    username: row.display_name || "Player",
     trophies: rankingValue,
-    avatar: str(data.photoURL),
-    avatarPreset: str(data.avatarPreset),
-    currentRank: str(data.currentRank),
-    totalMatches: num(data.totalMatches),
-    wins: num(data.wins),
-    winPercentage: num(data.winPercentage),
+    avatar: row.photo_url ?? undefined,
+    avatarPreset: row.avatar_preset ?? undefined,
+    currentRank: one(row.ranked_progress)?.current_rank ?? undefined,
+    totalMatches: num(one(row.player_stats)?.total_matches),
+    wins: num(one(row.player_stats)?.wins),
+    winPercentage: num(one(row.player_stats)?.win_percentage),
   };
 }
 
-/** Local-time instant at which getWeekStartKey() next changes value. */
 function nextMondayMidnight(from: Date = new Date()): number {
   const d = new Date(from);
   d.setHours(0, 0, 0, 0);
-  // (day + 6) % 7 is days since Monday; 7 minus that is days until the next.
   const daysUntilMonday = 7 - ((d.getDay() + 6) % 7);
   d.setDate(d.getDate() + daysUntilMonday);
   return d.getTime();
+}
+
+async function loadRows(ids?: string[]): Promise<LeaderboardRow[]> {
+  const supabase = getSupabaseBrowserClient();
+  let query = supabase
+    .from("profiles")
+    .select("id,display_name,photo_url,avatar_preset,player_stats(total_matches,wins,win_percentage),ranked_progress(trophies,weekly_trophies,week_start,current_rank)");
+  if (ids?.length) query = query.in("id", ids);
+  const { data, error } = await query.limit(Math.max(LEADERBOARD_SIZE, ids?.length ?? 0) || LEADERBOARD_SIZE);
+  if (error) throw error;
+  return (data ?? []) as unknown as LeaderboardRow[];
 }
 
 export function useLeaderboard(period: LeaderboardPeriod = "weekly", friendUids: string[] = []) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Stable primitive so the effect does not re-run on every parent render just
-  // because the friends array was rebuilt with the same contents.
   const friendKey = friendUids.join(",");
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let results: LeaderboardEntry[] = [];
-
-      if (period === "allTime") {
-        const snap = await getDocs(
-          query(collection(db, "players"), orderBy("trophies", "desc"), limit(LEADERBOARD_SIZE))
-        );
-        results = snap.docs.map((d, i) => toEntry(d.id, d.data(), num(d.data().trophies), i + 1));
-      } else if (period === "weekly") {
-        const thisWeek = getWeekStartKey();
-        const snap = await getDocs(
-          query(collection(db, "players"), orderBy("weeklyTrophies", "desc"), limit(LEADERBOARD_SIZE))
-        );
-        // The weekly reset is lazy: a player who has not played since the week
-        // rolled over still carries LAST week's figure until their next match.
-        // Filtering on the stored week key is what makes this board honestly
-        // "this week" rather than "whenever each player last played".
-        results = snap.docs
-          .filter((d) => d.data().weekStart === thisWeek)
-          .map((d, i) => toEntry(d.id, d.data(), num(d.data().weeklyTrophies), i + 1));
-      } else {
+      let rows: LeaderboardRow[];
+      if (period === "friends") {
         const uids = friendKey ? friendKey.split(",") : [];
-        if (uids.length === 0) {
+        if (!uids.length) {
           setEntries([]);
           return;
         }
-        const chunks: string[][] = [];
-        for (let i = 0; i < uids.length; i += IN_CHUNK) chunks.push(uids.slice(i, i + IN_CHUNK));
-        const snaps = await Promise.all(
-          chunks.map((chunk) =>
-            getDocs(query(collection(db, "players"), where(documentId(), "in", chunk)))
-          )
-        );
-        results = snaps
-          .flatMap((snap) => snap.docs)
-          .map((d) => ({ uid: d.id, data: d.data(), value: num(d.data().trophies) }))
-          .sort((a, b) => b.value - a.value)
-          .map((row, i) => toEntry(row.uid, row.data, row.value, i + 1));
+        rows = await loadRows(uids);
+      } else {
+        rows = await loadRows();
       }
 
-      setEntries(results);
+      const thisWeek = getWeekStartKey();
+      const ranked = rows
+        .filter((row) => period !== "weekly" || one(row.ranked_progress)?.week_start === thisWeek)
+        .map((row) => ({
+          row,
+          value: period === "weekly" ? num(one(row.ranked_progress)?.weekly_trophies) : num(one(row.ranked_progress)?.trophies),
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, LEADERBOARD_SIZE)
+        .map(({ row, value }, index) => toEntry(row, value, index + 1));
+
+      setEntries(ranked);
     } catch (err) {
       console.error("Failed to load leaderboard:", err);
       setError("Couldn't load the leaderboard. Please try again.");

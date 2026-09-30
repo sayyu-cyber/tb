@@ -7,6 +7,7 @@ import { RARITY_COLORS } from "@/data/cosmetics";
 import { Sheet } from "@/components/layout/phone/Sheet";
 import { categoryLabel } from "./categoryLabel";
 import { ShopArt } from "./ShopItemCard";
+import { formatCoins } from "@/lib/wallet";
 
 /**
  * The purchase dialog — design/arena/screens/app/app-11b-shop-buy-dialog.jpg
@@ -66,7 +67,7 @@ export function ShopItemDialog({
       </div>
       <div className="dl">
         <span>Current balance</span>
-        <b><CoinGem small />{balance.toLocaleString()}</b>
+        <b><CoinGem small />{formatCoins(balance)}</b>
       </div>
       <div className="dl" style={{ borderBottom: 0 }}>
         <span>{short ? "More coins needed" : "After purchase"}</span>

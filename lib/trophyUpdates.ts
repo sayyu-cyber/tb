@@ -1,6 +1,6 @@
-import { doc, updateDoc, increment, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "./firebase";
 import { TROPHY_WIN, TROPHY_LOSS, getRankFromTrophies } from "@/constants/ranks";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { nowIso } from "@/lib/supabase/data";
 
 export interface MatchResult {
   newTrophies: number;
@@ -9,16 +9,9 @@ export interface MatchResult {
   oldRank: string;
 }
 
-/**
- * ISO-ish week key (Monday date, YYYY-MM-DD) used to lazily reset each
- * player's weekly Weekend League standing the next time THEY play, rather
- * than needing a scheduled Cloud Function to reset everyone in lockstep at
- * a fixed instant. A small trade-off (a player's "week" only resets when
- * they next play) for a Firestore-only backend.
- */
 export function getWeekStartKey(date: Date = new Date()): string {
   const d = new Date(date);
-  const day = d.getDay(); // 0 = Sunday
+  const day = d.getDay();
   const diffToMonday = (day + 6) % 7;
   d.setDate(d.getDate() - diffToMonday);
   d.setHours(0, 0, 0, 0);
@@ -31,88 +24,56 @@ export async function updateMatchResult(
   gameType: "mindi" | "gin-rummy",
   trophyMultiplier = 1
 ): Promise<MatchResult> {
-  const playerRef = doc(db, "players", userId);
+  const supabase = getSupabaseBrowserClient();
   const trophyChange = (isWin ? TROPHY_WIN : TROPHY_LOSS) * trophyMultiplier;
+  const thisWeek = getWeekStartKey();
 
-  try {
-    const snap = await getDoc(playerRef);
+  const [{ data: stats, error: statsError }, { data: ranked, error: rankedError }] = await Promise.all([
+    supabase.from("player_stats").select("*").eq("user_id", userId).maybeSingle(),
+    supabase.from("ranked_progress").select("*").eq("user_id", userId).maybeSingle(),
+  ]);
+  if (statsError) throw statsError;
+  if (rankedError) throw rankedError;
 
-    const thisWeek = getWeekStartKey();
+  const oldTrophies = ranked?.trophies ?? 0;
+  const newTrophies = Math.max(0, oldTrophies + trophyChange);
+  const oldRank = ranked?.current_rank ?? "Bronze";
+  const newRank = getRankFromTrophies(newTrophies);
+  const rankOrder = ["Bronze", "Silver", "Gold", "Platinum"];
+  const highestRank = ranked?.highest_rank ?? stats?.highest_rank ?? oldRank;
+  const newHighestRank = rankOrder.indexOf(newRank) > rankOrder.indexOf(highestRank) ? newRank : highestRank;
+  const totalMatches = (stats?.total_matches ?? 0) + 1;
+  const wins = (stats?.wins ?? 0) + (isWin ? 1 : 0);
+  const losses = (stats?.losses ?? 0) + (isWin ? 0 : 1);
+  const weeklyBase = ranked?.week_start === thisWeek ? ranked?.weekly_trophies ?? 0 : 0;
+  const weeklyTrophies = Math.max(0, weeklyBase + trophyChange);
+  const peakTrophies = Math.max(stats?.peak_trophies ?? 0, newTrophies);
+  const favoriteGame = gameType === "mindi" ? "Mindi" : "Gin Rummy";
 
-    if (!snap.exists()) {
-      const initialTrophies = Math.max(0, trophyChange);
-      const initialRank = getRankFromTrophies(initialTrophies);
+  const [{ error: statsUpsertError }, { error: rankedUpsertError }] = await Promise.all([
+    supabase.from("player_stats").upsert({
+      user_id: userId,
+      total_matches: totalMatches,
+      wins,
+      losses,
+      win_percentage: Math.round((wins / totalMatches) * 100),
+      favorite_game: favoriteGame,
+      peak_trophies: peakTrophies,
+      highest_rank: newHighestRank,
+      updated_at: nowIso(),
+    }),
+    supabase.from("ranked_progress").upsert({
+      user_id: userId,
+      trophies: newTrophies,
+      weekly_trophies: weeklyTrophies,
+      week_start: thisWeek,
+      current_rank: newRank,
+      highest_rank: newHighestRank,
+      updated_at: nowIso(),
+    }),
+  ]);
+  if (statsUpsertError) throw statsUpsertError;
+  if (rankedUpsertError) throw rankedUpsertError;
 
-      await setDoc(playerRef, {
-        trophies: initialTrophies,
-        wins: isWin ? 1 : 0,
-        losses: isWin ? 0 : 1,
-        totalMatches: 1,
-        currentRank: initialRank,
-        highestRank: initialRank,
-        favoriteGame: gameType,
-        weeklyTrophies: Math.max(0, trophyChange),
-        weekStart: thisWeek,
-        peakTrophies: initialTrophies,
-        updatedAt: serverTimestamp(),
-      });
-
-      return {
-        newTrophies: initialTrophies,
-        rankChanged: true,
-        newRank: initialRank,
-        oldRank: "Unranked",
-      };
-    }
-
-    const data = snap.data();
-    const currentTrophies = (data.trophies || 0) + trophyChange;
-    const newTrophies = Math.max(0, currentTrophies);
-    const oldRank = data.currentRank || "Bronze";
-    const newRank = getRankFromTrophies(newTrophies);
-    const rankChanged = oldRank !== newRank;
-
-    const highestRank = data.highestRank || oldRank;
-    const rankOrder = ["Bronze", "Silver", "Gold", "Platinum"];
-    const newHighestRank = rankOrder.indexOf(newRank) > rankOrder.indexOf(highestRank)
-      ? newRank
-      : highestRank;
-
-    const totalMatches = (data.totalMatches || 0) + 1;
-    const wins = (data.wins || 0) + (isWin ? 1 : 0);
-
-    // Lazy weekly reset: if this player's last recorded week differs from
-    // the current one, their weekly count starts fresh from this match.
-    const isNewWeek = data.weekStart !== thisWeek;
-    const newWeeklyTrophies = Math.max(0, (isNewWeek ? 0 : data.weeklyTrophies || 0) + trophyChange);
-
-    // peakTrophies only ever ratchets up - it's the permanent "best ever"
-    // record used by the Hall of Fame, unlike `trophies` which can drop
-    // after losses.
-    const newPeakTrophies = Math.max(data.peakTrophies || 0, newTrophies);
-
-    await updateDoc(playerRef, {
-      trophies: increment(trophyChange),
-      wins: increment(isWin ? 1 : 0),
-      losses: increment(isWin ? 0 : 1),
-      totalMatches: increment(1),
-      currentRank: newRank,
-      highestRank: newHighestRank,
-      winPercentage: Math.round((wins / totalMatches) * 100),
-      weeklyTrophies: newWeeklyTrophies,
-      weekStart: thisWeek,
-      peakTrophies: newPeakTrophies,
-      updatedAt: serverTimestamp(),
-    });
-
-    return { 
-      newTrophies, 
-      rankChanged, 
-      newRank,
-      oldRank,
-    };
-  } catch (error) {
-    console.error("Failed to update match result:", error);
-    throw error;
-  }
+  return { newTrophies, rankChanged: oldRank !== newRank, newRank, oldRank };
 }

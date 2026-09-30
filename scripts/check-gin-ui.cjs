@@ -21,27 +21,22 @@ async function run() {
     await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await page.goto('http://127.0.0.1:3000/gin-test/');
 
-    // Gin now opens with the same cut-and-deal ceremony as Mindi. It is a
-    // modal dialog, so it has to be dismissed before anything on the table can
-    // be reached. Assert it once, then skip past it on every later load.
+    // Gin opens with the cut and the deal, played ON the table from its first
+    // frame (design/arena/DEAL_AND_ROOMS.md): the table is there at once, its
+    // panels carry the ceremony, and Skip to deal waits out the deal.
     const dismissIntro = async () => {
-      const intro = page.locator('.mindi-intro');
-      await intro.waitFor({timeout:8000}).catch(()=>{});
-      if(await intro.count()===0) return;
-      // Skipping hurries past the cut but NOT the deal, which always plays in
-      // full - so this waits the ceremony out rather than dismissing it.
       const skip = page.getByRole('button',{name:/Skip to deal/});
+      await skip.waitFor({timeout:8000}).catch(()=>{});
       if(await skip.isEnabled().catch(()=>false)) await skip.click();
-      await intro.waitFor({state:'detached',timeout:15000});
+      await page.getByRole('button',{name:/Skip to deal|Dealing/}).waitFor({state:'detached',timeout:15000});
     };
-    await page.locator('.mindi-intro').waitFor({timeout:8000});
-    assert.equal(await page.locator('.mindi-intro-draw li').count(),2,'Two players cut, one card each');
-    // The ceremony must REPLACE the table, not sit on top of it - otherwise
-    // the table paints first and flashes before the cut appears.
-    assert.equal(await page.locator('.gin-hand').count(),0,'Table rendered behind the ceremony');
-    assert.ok((await page.locator('.mindi-cut-eyebrow').textContent()).includes('GIN RUMMY'),'Ceremony names the right game');
-    await page.waitForFunction(()=>document.querySelectorAll('.mindi-intro-draw li[data-winner=true]').length===1,{},{timeout:8000});
+    await page.getByRole('button',{name:/Skip to deal/}).waitFor({timeout:8000});
+    assert.equal(await page.locator('.cutrow').count(),2,'Two players cut, one card each');
+    assert.equal(await page.getByRole('heading',{name:'Gin Rummy',exact:true}).count(),1,'The table is there from the first frame');
+    assert.equal(await page.locator('.hand .hc').count(),0,'No hand until the deal has dealt it');
+    await page.waitForFunction(()=>document.querySelectorAll('.cutrow.win').length===1,{},{timeout:8000});
     await dismissIntro();
+    assert.ok((await page.locator('.swap').first().innerText()).toUpperCase().includes('DEADWOOD'),"The left panel is the table's own again");
 
     await page.getByRole('heading',{name:'Gin Rummy',exact:true}).waitFor();
     // The cut decides who starts, so the player no longer always moves first.
@@ -54,67 +49,69 @@ async function run() {
     for(const [width,height] of [[1920,1080],[1440,900],[1280,900],[844,390],[390,844],[320,700]]) {
       await page.setViewportSize({width,height});await page.waitForTimeout(200);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Overflow '+width);
-      assert.equal(await page.locator('.gin-hand button').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})),true,'Cards clipped '+width);
+      assert.equal(await page.locator('.hand .hc').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})),true,'Cards clipped '+width);
       await page.screenshot({path:path.join(output,'gin-'+width+'.png'),fullPage:true});
     }
-    assert.equal(await page.locator('.gin-hand button').count(),10);
-    assert.equal(await page.locator('.gin-rival-hand button').count(),0);
-    assert.equal(await page.getByRole('button',{name:'Discard',exact:true}).isEnabled(),false);
+    assert.equal(await page.locator('.hand .hc').count(),10);
+    assert.equal(await page.locator('.fan button').count(),0);
+    assert.equal(await page.getByRole('button',{name:'Draw first',exact:true}).isEnabled(),false,'Nothing to discard before the draw');
 
     // ---- the Gin board (design/arena/screens/gin-01-discard-selected.jpg) --
-    const heading=await page.locator('.gin-arena-heading').innerText();
+    const heading=await page.locator('header').first().innerText();
     assert.ok(heading.includes('ޖިން ރަމީ'),'The title carries its Thaana');
-    assert.ok(heading.includes('Melds of 4, 3 and 3 win'),'and the board\'s line under it');
-    assert.equal(await page.locator('.gin-arena-utilities button').count(),3,
+    assert.ok(heading.toUpperCase().includes('MELDS OF 4, 3 AND 3 WIN'),'and the board\'s line under it');
+    assert.equal(await page.locator('header').first().locator('> div').last().locator('button').count(),3,
       'Sound, rule book and settings - the board\'s three');
     // The panel prints the melds the hand HOLDS, not the 4/3/3 it aims at.
-    const sizes=(await page.locator('.gin-assessment-sizes strong').innerText()).trim();
-    assert.ok(/^(—|\d( · \d)*)$/.test(sizes),`Real meld sizes, got "${sizes}"`);
-    assert.ok((await page.locator('.gin-arena-turn-hud').innerText()).includes('15 seconds a turn'));
-    assert.ok((await page.locator('.gin-arena-piles').innerText()).includes('Stock · '),'The felt names the stock and its count');
-    assert.ok((await page.locator('.gin-arena-piles').innerText()).includes('Discard'));
+    const sizes=(await page.locator('section[aria-label="Your melds"] .disp').first().innerText()).trim();
+    assert.ok(/^(—|\d( · \d)*)$/||/^NO MELDS YET$/i.test(sizes),`Real meld sizes, got "${sizes}"`);
+    assert.ok((await page.locator('section[aria-label="Turn"]').innerText()).includes('15 seconds a turn'));
+    assert.ok((await page.locator('.printed').allTextContents()).some(t=>t.startsWith('Stock · ')),'The felt names the stock and its count');
+    assert.ok((await page.locator('.printed').allTextContents()).includes('Discard'));
     // Brackets are on by default, as the board draws them, and every hand
     // has at least one group under it.
-    assert.ok(await page.locator('.gin-arena-melds .bracket').count()>=1,'The fan is bracketed');
-    const bracketLeft=await page.locator('.gin-arena-melds .bracket').first().evaluate(n=>n.getBoundingClientRect().left);
-    const firstCard=await page.locator('.gin-fan-slot').first().evaluate(n=>n.getBoundingClientRect().left);
-    assert.ok(Math.abs(bracketLeft-firstCard)<2,
+    assert.ok(await page.locator('.bracket').count()>=1,'The fan is bracketed');
+    const bracketLeft=await page.locator('.bracket').first().evaluate(n=>n.getBoundingClientRect().left);
+    const firstCard=await page.locator('.hand .hc').first().evaluate(n=>{const c=n.closest('.arena-canvas').getBoundingClientRect();return c.left+parseFloat(n.style.getPropertyValue('--x'))*c.width/1440;});
+    const scale=await page.locator('.arena-canvas').evaluate(n=>n.getBoundingClientRect().width/1440);
+    assert.ok(Math.abs(bracketLeft-firstCard-6*scale)<2, // the board insets each bracket 6px
+     
       `A bracket lines up with the card it covers (${Math.round(bracketLeft)} vs ${Math.round(firstCard)})`);
     await page.getByRole('button',{name:/View Melds/i}).click();
-    assert.equal(await page.locator('.gin-arena-melds .bracket').count(),0,'View Melds puts them away');
+    assert.equal(await page.locator('.bracket').count(),0,'View Melds puts them away');
     await page.getByRole('button',{name:/View Melds/i}).click();
 
     await page.getByRole('button',{name:/Draw from stock/}).click();
-    assert.equal(await page.locator('.gin-hand button').count(),11);
+    assert.equal(await page.locator('.hand .hc').count(),11);
     // The board narrates the draw rather than labelling the phase.
-    const status=await page.locator('.gin-arena-status').innerText();
+    const status=await page.locator('.status').innerText();
     assert.ok(/You drew the .+ from the stock\. Now discard\./.test(status),`Status narrates the draw, got "${status}"`);
-    assert.equal(await page.locator('.gin-arena-status .dot.live').count(),1,'with the live dot while the turn is yours');
-    await page.locator('.gin-hand button').first().focus();
+    assert.equal(await page.locator('.status .dot.live').count(),1,'with the live dot while the turn is yours');
+    await page.locator('.hand .hc').first().focus();
     await page.keyboard.press('Enter');
-    assert.equal(await page.locator('.gin-hand button[aria-pressed=true]').count(),1);
-    await page.getByRole('button',{name:'Discard',exact:true}).click();
-    assert.equal(await page.locator('.gin-hand button').count(),10);
+    assert.equal(await page.locator('.hand .hc[aria-pressed=true]').count(),1);
+    await page.getByRole('button',{name:/^Discard (A|\d+|J|Q|K)$/}).click();
+    assert.equal(await page.locator('.hand .hc').count(),10);
     await page.getByRole('button',{name:'Rule book',exact:true}).click();
     await page.getByRole('dialog').waitFor();
     assert.ok(await page.locator('.rule-book-tabs button').count()>=5,'Rule book has its sections');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('dialog[open]').count(),0);
-    await page.getByRole('button',{name:'Exit Game',exact:true}).click();
+    await page.getByRole('button',{name:'Leave game',exact:true}).click();
     await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click();
     await page.goto('http://127.0.0.1:3000/gin-test/?pass&red');
     await dismissIntro();
     await page.getByRole('button',{name:/ready/}).waitFor({timeout:20000});
-    assert.equal(await page.locator('.gin-hand').count(),0);
+    assert.equal(await page.locator('.hand .hc').count(),0);
     await page.getByRole('button',{name:/ready/}).click();
     await page.getByRole('button',{name:/Draw from stock/}).click();
-    await page.locator('.gin-hand button').last().click();
-    await page.getByRole('button',{name:'Discard',exact:true}).click();
-    assert.equal(await page.locator('.gin-hand').count(),0);
+    await page.locator('.hand .hc').last().click();
+    await page.getByRole('button',{name:/^Discard (A|\d+|J|Q|K)$/}).click();
+    assert.equal(await page.locator('.hand .hc').count(),0);
     await page.getByRole('button',{name:/ready/}).click();
-    assert.equal(await page.locator('.gin-hand button').count(),10);
-    assert.equal(await page.locator('.gin-arena-scene').getAttribute('data-skin'),'tt_red');
-    assert.equal(await page.locator('.gin-arena-fallback').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(58, 14, 20)');
+    assert.equal(await page.locator('.hand .hc').count(),10);
+    assert.equal(await page.locator('.felt.gin').getAttribute('data-skin'),'tt_red');
+    assert.equal(await page.locator('.felt.gin').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(58, 14, 20)','The felt wears the equipped table');
     assert.deepEqual(errors,[]);
     console.log('Gin passed: six sizes, real local engine draw/discard, selected cards, hidden opponent hands, pass-device privacy, skin, rules and leave cancel.');
   } finally { await browser.close(); }

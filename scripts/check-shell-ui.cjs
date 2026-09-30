@@ -2,7 +2,7 @@ const path=require('node:path'),fs=require('node:fs'),assert=require('node:asser
 const compiler=require('next/dist/compiled/webpack/webpack');compiler.init();
 const {chromium}=require('C:/Users/Sayyu/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const root=path.resolve(__dirname,'..'),output=path.join(root,'artifacts/shell-test'),mocks=path.join(__dirname,'shell-test-services.tsx');
-const alias=Object.fromEntries(['@/contexts/AuthContext','./AuthContext','@/contexts/EconomyContext','../../contexts/EconomyContext','@/contexts/SettingsContext','@/contexts/ToastContext','@/hooks/useRankLock','@/hooks/useSeasonInfo','next/link','next/navigation','@/lib/friends','@/lib/messages','@/lib/firebase','./ProtectedRoute','@/components/audio/BackgroundMusicPlayer','@/components/economy/CoinTopupWatcher','@/components/system/PresenceHeartbeat'].map(name=>[name+'$',mocks]));alias['@']=root;
+const alias=Object.fromEntries(['@/contexts/AuthContext','./AuthContext','@/contexts/EconomyContext','../../contexts/EconomyContext','@/contexts/SettingsContext','@/contexts/ToastContext','@/hooks/useRankLock','@/hooks/useSeasonInfo','next/link','next/navigation','@/lib/friends','@/lib/messages','./ProtectedRoute','@/components/audio/BackgroundMusicPlayer','@/components/economy/CoinTopupWatcher','@/components/system/PresenceHeartbeat'].map(name=>[name+'$',mocks]));alias['@']=root;
 async function run(){
  await new Promise((resolve,reject)=>compiler.webpack({mode:'development',plugins:[new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})],devtool:false,entry:path.join(__dirname,'shell-test-entry.tsx'),output:{path:output,filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[{test:/\.tsx?$/,exclude:/node_modules/,use:path.join(__dirname,'friends-test-loader.cjs')}]},optimization:{minimize:false}},(error,stats)=>error||stats.hasErrors()?reject(error||stats.toString()):resolve()));
  const browser=await chromium.launch({headless:true,channel:'msedge'});
@@ -112,3 +112,4 @@ async function run(){
  }finally{await browser.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
+

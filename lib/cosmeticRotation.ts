@@ -13,7 +13,7 @@
 // pattern used elsewhere in this project (lib/trophyUpdates.ts's
 // getWeekStartKey) to avoid needing a scheduled Cloud Function: every
 // client computes the same featured set for the same week purely from
-// the current date, with no Firestore write or backend job required.
+// the current date, with no database write or backend job required.
 
 import { CosmeticItem } from "@/types/economy";
 import { ALL_COSMETICS, isPurchasable } from "@/data/cosmetics";

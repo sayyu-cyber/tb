@@ -22,39 +22,25 @@ async function run() {
     await page.route('**/mindi-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await page.goto('http://127.0.0.1:3000/mindi-test/');
 
-    // The local modes now open with the draw-for-first-play ceremony. Assert
-    // it appears and names a winner once, then dismiss it here and on every
-    // later local page load - it is modal, so leaving it up would block every
-    // table interaction below.
+    // The local modes open with the cut and the deal, played ON the table
+    // (design/arena/DEAL_AND_ROOMS.md): the table is there from the first frame
+    // and its panels carry the ceremony. scripts/check-mindi-cut.cjs covers the
+    // ceremony in full; this only waits it out on every local page load.
     const dismissIntro = async () => {
-      const intro = page.locator('.mindi-intro');
-      // The overlay mounts a tick after navigation resolves, so wait for it
-      // rather than sampling count() immediately and racing the first paint.
-      await intro.waitFor({timeout:6000}).catch(()=>{});
-      if(await intro.count()===0) return;
-      // Skipping hurries past the cut but NOT the deal, which always plays in
-      // full - so this waits the ceremony out rather than dismissing it.
       const skip = page.getByRole('button',{name:/Skip to deal/});
+      await skip.waitFor({timeout:6000}).catch(()=>{});
       if(await skip.isEnabled().catch(()=>false)) await skip.click();
-      await intro.waitFor({state:'detached',timeout:15000});
+      await page.getByRole('button',{name:/Skip to deal|Dealing/}).waitFor({state:'detached',timeout:15000});
     };
-    await page.locator('.mindi-intro').waitFor({timeout:8000});
-    assert.equal(await page.locator('.mindi-intro-draw li').count(),4,'Four cards drawn, one per seat');
-    // The ceremony must REPLACE the table, not sit on top of it. Rendered
-    // together, the table paints first and the dialog only opens on the effect
-    // after it, so the player sees the table flash before the cut.
-    assert.equal(await page.locator('.mindi-hand').count(),0,'Table rendered behind the ceremony');
-    // Asserted inside waitForFunction rather than as a separate count() after
-    // it: the ceremony moves on to the dealing phase on its own timer, and a
-    // slow machine could let the draw row disappear between the two calls.
-    await page.waitForFunction(()=>document.querySelectorAll('.mindi-intro-draw li[data-winner=true]').length===1
-      && /plays first/.test(document.querySelector('.mindi-intro-sub')?.textContent||''),{},{timeout:8000});
+    await page.getByRole('button',{name:/Skip to deal/}).waitFor({timeout:8000});
+    assert.equal(await page.locator('.cutrow').count(),4,'Four cards drawn, one per seat');
+    assert.equal(await page.locator('.stage .table').count(),1,'The table is there from the first frame');
+    await page.waitForFunction(()=>document.querySelectorAll('.cutrow.win').length===1,{},{timeout:8000});
     // The deal is unskippable: once it starts there is no way out of it.
     await page.getByRole('button',{name:/Skip to deal/}).click();
-    await page.waitForFunction(()=>document.querySelector('.mindi-intro')?.getAttribute('data-phase')==='dealing',{},{timeout:8000});
     assert.equal(await page.getByRole('button',{name:/Dealing/}).isDisabled(),true,'Deal can still be skipped');
     await page.keyboard.press('Escape');
-    assert.equal(await page.locator('.mindi-intro').count(),1,'Escape dismissed the deal');
+    assert.equal(await page.getByRole('button',{name:/Dealing/}).count(),1,'Escape dismissed the deal');
     await dismissIntro();
 
     await page.getByRole('heading',{name:'Mindi',exact:true}).waitFor();

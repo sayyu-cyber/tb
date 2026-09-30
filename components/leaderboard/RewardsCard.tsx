@@ -6,6 +6,7 @@ import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getRankFromTrophies } from "@/constants/ranks";
 import { CoinGem, RankHex } from "@/components/arena";
+import { formatCoins } from "@/lib/wallet";
 
 /**
  * Weekly Rewards — the Leaderboard board's right column
@@ -58,7 +59,7 @@ export function RewardsCard({ trophies }: { trophies: number | undefined }) {
             </RankHex>
             <b style={{ color: config.color }}>{config.tier}</b>
             {mine && <span className="pill lime rw-you">You</span>}
-            <span className="amt"><CoinGem small />{coins.toLocaleString()}</span>
+            <span className="amt"><CoinGem small />{formatCoins(coins)}</span>
           </div>
         );
       })}

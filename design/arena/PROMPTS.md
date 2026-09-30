@@ -7,8 +7,9 @@ Use them in this order:
 3. **Reviews.** When both have finished, run prompt 3 in Claude and prompt 4 in ChatGPT. Send each list of problems back to the agent that owns the code.
 4. **Merge.** Run prompt 5 in Claude, then push `main` yourself.
 5. **Phone.** Once the desktop work is on `main`, paste prompt 6 into Claude. When it finishes, run prompt 7 in ChatGPT and send the problems back to Claude. Then run prompt 8, and push `main` yourself.
+6. **The opening deal and private rooms.** Once the phone work is on `main`, paste prompt 9 into Claude. When it finishes, run prompt 10 in ChatGPT and send the problems back to Claude. Then run prompt 11, and push `main` yourself.
 
-The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md` (desktop) and `MOBILE.md` (phone).
+The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md` (desktop), `MOBILE.md` (phone) and `DEAL_AND_ROOMS.md` (the opening deal and private rooms).
 
 ## 1. Claude: phase 0, then phase 1
 
@@ -284,6 +285,162 @@ Give me a list of problems, most serious first, each with the file and line and 
 The phone review is done and its problems are fixed. In C:\Users\Sayyu\thaasbai:
 1. git switch main
 2. git merge --no-ff phone/claude
+3. Run npm run verify and every check-*-ui script, at desktop and phone sizes.
+Don't push. Tell me when main is ready and I'll push.
+```
+
+## 9. Claude: the opening deal and private rooms
+
+Paste this into the Thaasbai project session. Claude builds both features, on desktop and phone, on the branch `deal-rooms/claude`.
+
+```text
+Finish and commit whatever you're in the middle of first, so this starts from a clean main. Then read this.
+
+We're building two features from the Arena artboards, and the app must end up an exact copy of them:
+- the opening deal: cut for first play, then the deal (Mindi and Gin)
+- private rooms: the Private Room page (create or join) and the waiting room
+You build both, on desktop and phone. ChatGPT only reviews at the end.
+
+READ FIRST, all of it, before any code
+- design/arena/DEAL_AND_ROOMS.md is the spec: the timeline, the table-space positions, the copy, reduced motion, and where each screen's data comes from.
+- The boards hold the exact values: design/arena/boards/Cut, CutGin, PCut, PCutGin, Rooms, RoomLobby, MRooms, MRoomsCreate, MRoomLobby and MRoomLobbyFull (.dc.html).
+  - The ceremony's choreography is in the Cut and PCut scripts: GEO, timeline(), phaseAt() and place().
+  - Their {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime. Read them for structure and behaviour, but don't copy them.
+- The pixel references, at 2×, are:
+  - design/arena/screens/deal/*.jpg
+  - screens/app/app-15* and app-16*
+  - screens/phone/phone-land-05*, phone-land-06*, phone-17* and phone-18*
+- design/arena/WORKSPLIT.md, "How every screen is checked" and "Exact match". Both apply here.
+- design/arena/MOBILE.md, for the phone shell and the rotate flow.
+
+WHERE
+git switch -c deal-rooms/claude (from main). Make one commit per step below, "Deal/Rooms: <step>", naming the references it matches.
+
+1. THE OPENING DEAL
+It runs on desktop (MindiTable, GinRummyTable) and on phones held sideways (PhoneMindiBoard, PhoneGinBoard).
+- Today, MindiGameClient, MindiOnlineClient, GinRummyGameClient and GinRummyOnlineClient return <MindiDealIntro> instead of the table, and that opens a <dialog> over a separate three.js lounge. Replace this:
+  - The clients render the table from the first frame, in an opening state.
+  - The ceremony is a layer inside the same ArenaStage board, in CSS 3D exactly as the boards do it: the .ccl layer inside .table, .cc cards that pivot on their near edge, and place() for the transforms.
+  - Use the desktop GEO on the 1440×900 board and the phone GEO on the 844×390 board.
+- The ceremony's words and controls live in the table's own chrome:
+  - On desktop, the left HUD shows the steps and the right HUD shows the cut. At the end, both cross-fade into Tens and Trump (Gin: Your melds and Turn).
+  - The status pill narrates.
+  - Skip to deal sits in the action button's slot.
+  - On phones, use the top bars and the compact Skip, as on PCut.
+- It stays presentation only:
+  - The cut and the deal still come from lib/openingCut.ts and the engines, unchanged.
+  - Online clients replay the stored result.
+  - The seat plates, card counts, the hand and trick 1 all come from real state.
+- Mindi 1v1 (the two-seat room variant) deals 26 each. Use CutGin's two-seat layout, with Mindi's 40 ms gap and no upcard.
+- Update components/game/mindiCutTimeline.ts to the spec's numbers.
+- Skip to deal and Escape jump the clock to the deal. The deal itself can't be skipped.
+- Build reduced motion as the spec describes, and keep the hand dealt on screen.
+- The whole pack wears the viewer's equipped card back.
+- Once nothing imports them, delete MindiCutScene.tsx, mindiCutAnimation.ts and the lounge styles. Leave mindiTableRenderer.ts alone.
+- Update scripts/check-mindi-cut.cjs and scripts/mindi-cut-test-entry.tsx for the new phases, the panel swap, Skip, and both games.
+
+2. THE PRIVATE ROOM PAGE: components/game/PrivateRoomSetup.tsx and RecentRooms.tsx
+- The boards are Rooms (desktop), MRooms and MRoomsCreate (phone).
+- Build:
+  - the game tiles
+  - the seats segment, with Gin locked to 2
+  - the password switch, and the field with its eye toggle
+  - the six-box code entry with Paste
+  - the Room Card status: active with time left, or none with Get a card
+  - incoming invites (watchRoomInvites)
+  - recent rooms with their status pills
+- Keep every existing validation message and flow: sign-in, Room Card required, not found, full, already started, and the password prompt. The password prompt is a dialog on desktop and a sheet on the phone.
+- On the phone, Join is the first tab.
+
+3. THE WAITING ROOM: components/game/RoomLobbyClient.tsx and RoomInviteDialog.tsx
+- The boards are RoomLobby (desktop, Host and Guest), MRoomLobby and MRoomLobbyFull (phone).
+- Build:
+  - the code card, with Copy and Share
+  - the table seen from above, with its seat cards: teams by seats 0 and 2 (lime) and 1 and 3 (blue), the host's crown, the You tag and open seats
+  - the host's seat menu: View profile, Remove (kickPlayer) and Ban (banPlayer)
+  - invites built into the page, using RoomInviteDialog's logic
+  - the room details
+  - Start, for the host only, enabled once the table is full. Guests see "Waiting for <host> to start" instead.
+- Swap partners exchanges seats 1 and 2 with setSeatOrder, so the host keeps seat 0 and only their partner changes. This replaces today's swap of seats 0 and 1.
+- On a phone, Start opens the rotate sheet for every player: the MPlayFind pattern, with the Android landscape lock.
+- The loading, not found, load error, removed, banned and closed states use the centred panel from the spec, with the existing roomlobby_* strings.
+- Update scripts/check-room-ui.cjs, scripts/room-test-entry.tsx and scripts/room-test-services.tsx to cover every state.
+
+EXACT MATCH
+- Port the boards' CSS value for value with scripts/port-board.mjs. The boards are already blue.
+- Keep, from each board:
+  - the structure and class names
+  - the buttons, with their press depth and shine
+  - every animation at the same timing: the riffle (rsplit and rdrop), spread, draw, flip, winner rise and halo, deal flights (fly), pickup (pick), handIn, the panel cross-fade, standPop, miniPop, tick, seatIn, charIn, toastIn, ping, sheetUp and scrimIn
+- The only allowed differences are:
+  - real data and strings in place of the sample data
+  - fluid width from 360 to 430 on portrait phones
+  - loops that stop under reduced motion
+- New strings get i18n keys in en, dv, hi and bn. The list is at the end of DEAL_AND_ROOMS.md.
+- If a board element has no real data or feature behind it, don't drop it and don't fake it. List it and ask me.
+- Nothing else may change: every existing check-*-ui script still passes, at desktop and phone sizes.
+
+PROOF, for every screen and state
+1. Feed the board's sample data into the test fixtures (scripts/*-test-services, never app code).
+2. Screenshot each state beside its reference in artifacts/compare/. Don't commit these.
+   - deal-<phase>.png at 1440×900
+   - phone-land-deal-<phase>.png at 844×390
+   - rooms-<state>.png
+   - phone-<screen>.png at 390×844
+   Freeze the ceremony clock at each phase. The boards' phase prop shows which moment.
+3. Fix every visible difference. Then check 1280 wide, and phones at 360 and 430.
+4. Play the whole ceremony for real, online and against AI, in:
+   - Mindi with four seats
+   - the Mindi 1v1 room variant
+   - Gin
+   Confirm that the cut's winner leads trick 1 and that every seat has the right number of cards.
+
+RULES
+- Never push to GitHub and never run firebase deploy. I push after the review.
+- Stage files by path, not with git add -A.
+- When you finish, give me a summary:
+  - what's done
+  - the compare images
+  - checks run and their results
+  - anything that still differs from its board, and why
+  - your questions for me
+```
+
+## 10. ChatGPT reviews the opening deal and rooms
+
+```text
+Review Claude's branch deal-rooms/claude against design/arena/DEAL_AND_ROOMS.md and its references. The references are design/arena/screens/deal/*.jpg, screens/app/app-15* and app-16*, and screens/phone/phone-land-05*, phone-land-06*, phone-17* and phone-18*. This is a review only: don't edit, commit or switch branches in any existing folder.
+1. In C:\Users\Sayyu\thaasbai, run git diff main...deal-rooms/claude --stat. This and the next step leave that folder's files alone.
+2. Make a temporary review copy:
+   git worktree add --detach ..\thaasbai-review deal-rooms/claude
+   cd ..\thaasbai-review
+   copy ..\thaasbai\.env.local .env.local
+   npm ci
+   npm run verify
+   npm run dev -- -p 3002
+3. Compare every screen and state with its reference, at 1440×900 and 1280 on desktop, 844×390 for phones held sideways, and 390×844 (and 360 and 430) for portrait phones. Check layout, spacing, sizes, colours, type, icons, buttons and states. Open the board's .dc.html to check the exact values.
+4. Check the ceremony:
+   - It plays on the real table, with no separate scene.
+   - Its timing matches the spec.
+   - Skip to deal and Escape jump to the deal.
+   - Reduced motion follows the spec.
+   - Trick 1 starts with the cut's winner in Mindi (four seats and 1v1) and in Gin.
+5. Check the rooms:
+   - create with and without a Room Card
+   - join with a good code, a bad code, and a locked room
+   - invites, and recent rooms' statuses
+   - the host's seat menu, Swap partners, and Start only once the table is full
+   - Start on a phone opens the rotate sheet
+6. Stop the server and remove the copy: git worktree remove ..\thaasbai-review
+Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
+```
+
+## 11. Claude merges the opening deal and rooms
+
+```text
+The review of deal-rooms/claude is done and its problems are fixed. In C:\Users\Sayyu\thaasbai:
+1. git switch main
+2. git merge --no-ff deal-rooms/claude
 3. Run npm run verify and every check-*-ui script, at desktop and phone sizes.
 Don't push. Tell me when main is ready and I'll push.
 ```

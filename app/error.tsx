@@ -8,7 +8,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * Route-level error boundary. Catches anything thrown while rendering a
- * page under the root layout - most usefully the 26 live Firestore
+ * page under the root layout - most usefully the live Supabase
  * listeners, any one of which can reject on a rules change or a dropped
  * connection. Before this existed those surfaced as a blank white screen
  * with no way back.

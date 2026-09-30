@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PrivateRoomSetup } from "./PrivateRoomSetup";
 import { RoomWaitingRoom } from "./RoomWaitingRoom";
@@ -75,9 +76,12 @@ export function RoomLobbyClient({ gameId }: { gameId: string }) {
   const { user } = useAuth();
   const gameType = gameTypeFor(gameId);
   const code = searchParams.get("code");
+  const [joined, setJoined] = useState("");
+  const entryKey = `${user?.uid}:${code}`;
 
   if (!code) {
     return <PrivateRoomSetup gameId={gameId} />;
   }
+  if (joined !== entryKey) return <PrivateRoomSetup gameId={gameId} autoJoinCode={code} inviteToken={searchParams.get("invite") || undefined} onEntered={() => setJoined(entryKey)} />;
   return <RoomWaitingRoom gameId={gameId} gameType={gameType} code={code} myUid={user?.uid ?? ""} buildInitialState={buildInitialState} />;
 }

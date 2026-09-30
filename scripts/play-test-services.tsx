@@ -72,7 +72,7 @@ export function usePathname() { return "/play"; }
 export function useSearchParams() { return new URLSearchParams(); }
 
 /**
- * The real queue talks to Firestore, so the fixture records whether the
+ * The real queue talks to Supabase, so the fixture records whether the
  * lobby asked for it instead. `data-queue` is the game being looked for,
  * or "off" - which is how the check proves that "Tap again to stop
  * looking" really does leave the queue.

@@ -1,3 +1,4 @@
+import { formatCoins } from "@/lib/wallet";
 /**
  * The coin, as a lime gem: a rounded square turned 45 degrees with a soft
  * glow. `.gem` on the boards, `.gem.sm` at the smaller size.
@@ -28,7 +29,7 @@ export function CoinCount({
   return (
     <div className={`coins ${className}`.trim()}>
       <CoinGem />
-      <span className="tnum">{coins.toLocaleString()}</span>
+      <span className="tnum">{formatCoins(coins)}</span>
       {onAdd ? (
         <button type="button" className="add" onClick={onAdd} aria-label={addLabel} title={addLabel}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">

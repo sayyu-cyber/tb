@@ -10,7 +10,7 @@ const nextConfig = (phase) => ({
   trailingSlash: true,
   images: {
     unoptimized: true,
-    domains: ["lh3.googleusercontent.com", "firebasestorage.googleapis.com"],
+    domains: ["lh3.googleusercontent.com"],
   },
 });
 

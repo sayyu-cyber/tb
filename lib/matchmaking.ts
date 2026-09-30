@@ -1,112 +1,79 @@
-// lib/matchmaking.ts
-//
-// Shared real-player matchmaking for Ranked mode, used by both Mindi (needs
-// 4 players) and Gin Rummy (needs 2). There is no dedicated game server in
-// this app - matches are plain Firestore documents that every participant's
-// client reads and writes directly.
-//
-// Known limitation (accepted for now, see PROGRESS.md): because match state
-// lives in a document every player can read, a technically savvy opponent
-// could inspect the raw Firestore payload and see information the UI hides
-// from them (e.g. your hand). Hardening this properly would mean moving the
-// authoritative game state into Cloud Functions so each player only ever
-// receives their own hand - a bigger backend project, deliberately deferred.
-//
-// There is also a small, accepted race: if two different "completing"
-// clients try to form a match from overlapping queued players at the exact
-// same moment, one of the earlier-queued players can end up double-booked
-// into two match documents and only ever joins the first one they see,
-// leaving the other match short a player. This should be rare at low
-// concurrency and is a reasonable trade-off for a Firestore-only backend.
-
-import {
-  collection,
-  doc,
-  limit,
-  deleteDoc,
-  setDoc,
-  getDocs,
-  getDoc,
-  query,
-  where,
-  onSnapshot,
-  runTransaction,
-  Unsubscribe,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 
 export type GameType = "mindi" | "gin_rummy";
-/** Which queue a player is in - keeps Ranked, Weekend League, and Casual
- *  matchmaking from ever pairing with each other. "casual" is a no-stakes
- *  real-multiplayer queue (see components/game/CasualOnlineClient.tsx) -
- *  same random-matching as Ranked used to be for Mindi before it went
- *  duo-only, kept around specifically for players without a friend to
- *  party up with: tryFormMatch orders queued players by wait time and
- *  seats them 0-3, so a 4-player Mindi casual match auto-assigns a random
- *  teammate (seats 0&2 vs 1&3) with zero extra logic needed. */
 export type Pool = "ranked" | "weekend" | "casual";
 
 export interface MatchDoc<TState = unknown> {
   gameType: GameType;
   pool?: Pool;
-  players: string[]; // uids, in seat order - seat index = players.indexOf(uid)
+  players: string[];
   status: "active" | "completed";
   createdAt: number;
   state: TState;
 }
 
-const QUEUE_COLLECTION = "matchmakingQueue";
-const MATCHES_COLLECTION = "matches";
-const STALE_QUEUE_MS = 2 * 60 * 1000; // ignore queue entries older than this
+const STALE_QUEUE_MS = 2 * 60 * 1000;
+
+/** PostgREST errors are plain objects, so String(error) hides their message. */
+export function matchmakingErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return typeof error === "string" ? error : "Couldn't connect to matchmaking. Please try again.";
+}
+
+async function matchFromRow<TState>(row: any): Promise<MatchDoc<TState>> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("match_players")
+    .select("user_id,seat_index")
+    .eq("match_id", row.id)
+    .order("seat_index", { ascending: true });
+  if (error) throw error;
+  return {
+    gameType: row.game_type,
+    pool: row.pool,
+    players: (data ?? []).map((player: any) => player.user_id),
+    status: row.status,
+    createdAt: toMillis(row.created_at),
+    state: row.public_state as TState,
+  };
+}
+
+async function createMatch<TState>(players: string[], gameType: GameType, pool: Pool, state: TState): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
+  const { data: match, error } = await supabase
+    .from("matches")
+    .insert({ game_type: gameType, pool, status: "active", public_state: state as any })
+    .select("id")
+    .single();
+  if (error) throw error;
+  const { error: playersError } = await supabase.from("match_players").insert(
+    players.map((userId, seatIndex) => ({ match_id: match.id, user_id: userId, seat_index: seatIndex }))
+  );
+  if (playersError) throw playersError;
+  return match.id;
+}
 
 export async function joinQueue(uid: string, gameType: GameType, pool: Pool = "ranked"): Promise<void> {
-  await setDoc(doc(db, QUEUE_COLLECTION, uid), {
-    uid,
-    gameType,
-    pool,
-    queuedAt: Date.now(),
-  });
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.rpc("join_matchmaking_queue", { p_game_type: gameType, p_pool: pool });
+  if (error) throw error;
 }
 
 export async function leaveQueue(uid: string): Promise<void> {
-  await deleteDoc(doc(db, QUEUE_COLLECTION, uid)).catch(() => {
-    /* already gone - fine */
-  });
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("matchmaking_queue").delete().eq("user_id", uid);
+  if (error) throw error;
 }
 
-/**
- * Looks for enough other waiting players to form a match. If found, creates
- * the match document and returns its id. If not enough players are waiting
- * yet, returns null (caller should keep waiting and try again later).
- */
 export async function joinDuoQueue(uid: string, partyId: string, gameType: GameType, pool: Pool = "ranked"): Promise<void> {
-  await setDoc(doc(db, QUEUE_COLLECTION, uid), {
-    uid,
-    gameType,
-    pool,
-    partyId,
-    queuedAt: Date.now(),
-  });
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("matchmaking_queue").upsert({ user_id: uid, game_type: gameType, pool, party_id: partyId });
+  if (error) throw error;
 }
 
-/**
- * Duo-based matchmaking: instead of pairing 4 random individuals, this
- * pairs two pre-formed 2-player parties (see lib/rooms.ts's "rankedDuo"
- * room mode, used to team up with a chosen friend before queueing).
- *
- * - Mindi: the two duos become the two fixed partnerships of one 4-seat
- *   match (seats 0&2 = my duo, seats 1&3 = the other duo - matches
- *   mindiEngine's teamOf(), which groups those seat pairs together).
- * - Gin Rummy: there's no established 4-player form of the game, so
- *   "2v2" here means each of my duo's members plays an ordinary 1v1
- *   sub-match against one member of the other duo, simultaneously - two
- *   independent match documents, created together. Wins/losses are
- *   still per sub-match (documented trade-off - true combined team
- *   scoring would need a bigger rework of GinRummyOnlineClient).
- *
- * Returns true if a match was formed (the caller's own client will then
- * discover its match via the existing watchForMatch, unchanged).
- */
 export async function tryFormDuoMatch<TState>(
   myUid: string,
   partyId: string,
@@ -114,82 +81,33 @@ export async function tryFormDuoMatch<TState>(
   buildInitialState: (players: string[]) => TState,
   pool: Pool = "ranked"
 ): Promise<boolean> {
-  const cutoff = Date.now() - STALE_QUEUE_MS;
-  // Deliberately unbounded: this has to see every player currently
-  // waiting for this game type in order to pair them. The queue is
-  // self-limiting (an entry exists only while someone is actively
-  // waiting) and stale entries are filtered out below.
-  const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
-  const snap = await getDocs(q);
-  const entries = snap.docs
-    .map((d) => d.data() as { uid: string; queuedAt: number; pool?: Pool; partyId?: string })
-    .filter((e) => e.queuedAt >= cutoff && (e.pool ?? "ranked") === pool && e.partyId);
+  const supabase = getSupabaseBrowserClient();
+  const cutoff = new Date(Date.now() - STALE_QUEUE_MS).toISOString();
+  const { data, error } = await supabase
+    .from("matchmaking_queue")
+    .select("user_id,party_id,queued_at")
+    .eq("game_type", gameType)
+    .eq("pool", pool)
+    .gte("queued_at", cutoff);
+  if (error) throw error;
+  const entries = (data ?? []).filter((entry: any) => entry.party_id);
+  const myDuo = entries.filter((entry: any) => entry.party_id === partyId).slice(0, 2).map((entry: any) => entry.user_id);
+  if (myDuo.length < 2) return false;
+  const otherParty = entries.find((entry: any) => entry.party_id !== partyId)?.party_id;
+  if (!otherParty) return false;
+  const theirDuo = entries.filter((entry: any) => entry.party_id === otherParty).slice(0, 2).map((entry: any) => entry.user_id);
+  if (theirDuo.length < 2) return false;
 
-  const myPartyMembers = entries.filter((e) => e.partyId === partyId);
-  if (myPartyMembers.length < 2) return false; // my own duo isn't both queued yet
-
-  const otherParties = new Map<string, typeof entries>();
-  for (const e of entries) {
-    if (e.partyId === partyId) continue;
-    if (!otherParties.has(e.partyId!)) otherParties.set(e.partyId!, []);
-    otherParties.get(e.partyId!)!.push(e);
+  if (gameType === "mindi") {
+    const players = [myDuo[0], theirDuo[0], myDuo[1], theirDuo[1]];
+    await createMatch(players, gameType, pool, buildInitialState(players));
+  } else {
+    for (const players of [[myDuo[0], theirDuo[0]], [myDuo[1], theirDuo[1]]]) {
+      await createMatch(players, gameType, pool, buildInitialState(players));
+    }
   }
-  const readyOther = Array.from(otherParties.entries()).find(([, members]) => members.length >= 2);
-  if (!readyOther) return false;
-
-  const [, otherMembers] = readyOther;
-  const myDuo = myPartyMembers.slice(0, 2).map((e) => e.uid);
-  const theirDuo = otherMembers.slice(0, 2).map((e) => e.uid);
-  const allFour = [...myDuo, ...theirDuo];
-
-  try {
-    await runTransaction(db, async (transaction) => {
-      // Re-verify all 4 are still actually queued before committing -
-      // same accepted-race pattern as tryFormMatch above.
-      const refs = allFour.map((u) => doc(db, QUEUE_COLLECTION, u));
-      for (const ref of refs) {
-        const current = await transaction.get(ref);
-        if (!current.exists()) throw new Error("candidate-no-longer-queued");
-      }
-
-      if (gameType === "mindi") {
-        const players = [myDuo[0], theirDuo[0], myDuo[1], theirDuo[1]];
-        const matchRef = doc(collection(db, MATCHES_COLLECTION));
-        const matchDoc: MatchDoc<TState> = {
-          gameType,
-          pool,
-          players,
-          status: "active",
-          createdAt: Date.now(),
-          state: buildInitialState(players),
-        };
-        transaction.set(matchRef, matchDoc);
-      } else {
-        const pairs = [
-          [myDuo[0], theirDuo[0]],
-          [myDuo[1], theirDuo[1]],
-        ];
-        for (const players of pairs) {
-          const matchRef = doc(collection(db, MATCHES_COLLECTION));
-          const matchDoc: MatchDoc<TState> = {
-            gameType,
-            pool,
-            players,
-            status: "active",
-            createdAt: Date.now(),
-            state: buildInitialState(players),
-          };
-          transaction.set(matchRef, matchDoc);
-        }
-      }
-
-      for (const ref of refs) transaction.delete(ref);
-    });
-    return true;
-  } catch (err) {
-    console.error("tryFormDuoMatch failed:", err);
-    return false;
-  }
+  await supabase.from("matchmaking_queue").delete().in("user_id", [...myDuo, ...theirDuo]);
+  return true;
 }
 
 export async function tryFormMatch<TState>(
@@ -199,152 +117,105 @@ export async function tryFormMatch<TState>(
   buildInitialState: (orderedPlayerUids: string[]) => TState,
   pool: Pool = "ranked"
 ): Promise<string | null> {
-  const cutoff = Date.now() - STALE_QUEUE_MS;
-  // Single equality filter only (no orderBy/limit in the query itself) so
-  // this never depends on a manually-created composite index - queues are
-  // small, so sorting/slicing the result client-side is cheap.
-  // Deliberately unbounded: this has to see every player currently
-  // waiting for this game type in order to pair them. The queue is
-  // self-limiting (an entry exists only while someone is actively
-  // waiting) and stale entries are filtered out below.
-  const q = query(collection(db, QUEUE_COLLECTION), where("gameType", "==", gameType));
-  const snap = await getDocs(q);
-  const others = snap.docs
-    .map((d) => d.data() as { uid: string; queuedAt: number; pool?: Pool })
-    .filter((d) => d.uid !== uid && d.queuedAt >= cutoff && (d.pool ?? "ranked") === pool)
-    .sort((a, b) => a.queuedAt - b.queuedAt)
-    .slice(0, neededPlayers - 1);
-
-  if (others.length < neededPlayers - 1) {
-    return null;
-  }
-
-  const orderedPlayerUids = [...others.map((o) => o.uid), uid];
-
-  try {
-    const matchId = await runTransaction(db, async (transaction) => {
-      // Re-check every candidate is still actually queued (not already
-      // claimed by a concurrent match) before committing to them.
-      for (const other of others) {
-        const ref = doc(db, QUEUE_COLLECTION, other.uid);
-        const current = await transaction.get(ref);
-        if (!current.exists()) {
-          throw new Error("candidate-no-longer-queued");
-        }
-      }
-
-      const matchRef = doc(collection(db, MATCHES_COLLECTION));
-      const matchDoc: MatchDoc<TState> = {
-        gameType,
-        pool,
-        players: orderedPlayerUids,
-        status: "active",
-        createdAt: Date.now(),
-        state: buildInitialState(orderedPlayerUids),
-      };
-      transaction.set(matchRef, matchDoc);
-      transaction.delete(doc(db, QUEUE_COLLECTION, uid));
-      return matchRef.id;
-    });
-
-    return matchId;
-  } catch (err) {
-    // Either a benign race (someone else grabbed a candidate first) or a
-    // real problem (permission denied, missing index, etc). Log it so it's
-    // at least visible in the browser console instead of failing silently.
-    console.error("tryFormMatch failed:", err);
-    return null;
-  }
+  const supabase = getSupabaseBrowserClient();
+  const { data: queued, error: refreshError } = await supabase.rpc("refresh_matchmaking_queue", { p_game_type: gameType, p_pool: pool });
+  if (refreshError) throw refreshError;
+  if (!queued) return null;
+  const cutoff = new Date(Date.now() - STALE_QUEUE_MS).toISOString();
+  const { data, error } = await supabase
+    .from("matchmaking_queue")
+    .select("user_id,queued_at")
+    .eq("game_type", gameType)
+    .eq("pool", pool)
+    .is("party_id", null)
+    .gte("heartbeat_at", cutoff)
+    .order("queued_at", { ascending: true });
+  if (error) throw error;
+  if (!(data ?? []).some((entry: any) => entry.user_id === uid)) return null;
+  const others = (data ?? []).filter((entry: any) => entry.user_id !== uid).slice(0, neededPlayers - 1).map((entry: any) => entry.user_id);
+  if (others.length < neededPlayers - 1) return null;
+  const players = [...others, uid];
+  const { data: matchId, error: matchError } = await supabase.rpc("try_form_match", {
+    p_game_type: gameType, p_pool: pool, p_players: players, p_state: buildInitialState(players),
+  });
+  if (matchError) throw matchError;
+  return matchId as string | null;
 }
 
-/**
- * Listens for a match this player has been placed into (by someone else's
- * tryFormMatch). Deliberately filters on nothing but the array-contains
- * clause in the query itself (gameType/status/recency are all checked
- * client-side afterwards) - combining array-contains with extra equality
- * filters or an orderBy needs a manually-created Firestore composite index,
- * and a signed-in player is only ever in a handful of match documents at
- * once, so filtering the small result set in JS is simpler and needs no
- * index setup at all.
- */
-export function watchForMatch(
-  uid: string,
-  gameType: GameType,
-  onFound: (matchId: string, match: MatchDoc) => void,
-  onError?: (err: unknown) => void,
-  pool: Pool = "ranked"
-): Unsubscribe {
-  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid), limit(20));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const candidates = snap.docs
-        .map((d) => ({ id: d.id, data: d.data() as MatchDoc }))
-        .filter((m) => m.data.gameType === gameType && m.data.status === "active" && (m.data.pool ?? "ranked") === pool)
-        .sort((a, b) => b.data.createdAt - a.data.createdAt);
-      if (candidates.length > 0) {
-        onFound(candidates[0].id, candidates[0].data);
-      }
-    },
-    (err) => {
-      console.error("watchForMatch failed:", err);
-      onError?.(err);
+export function watchForMatch(uid: string, gameType: GameType, onFound: (matchId: string, match: MatchDoc) => void, onError?: (err: unknown) => void, pool: Pool = "ranked"): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  let stopped = false;
+  let loading = false;
+  const load = async () => {
+    if (stopped || loading) return;
+    loading = true;
+    try {
+      const active = await getActiveMatchId(uid, gameType, pool);
+      if (!active || stopped) return;
+      const match = await getMatch(active.matchId);
+      if (!stopped && match && (match.pool ?? "ranked") === pool) onFound(active.matchId, match);
+    } catch (error) {
+      if (!stopped) onError?.(error);
+    } finally {
+      loading = false;
     }
-  );
+  };
+  void load();
+  // Discovery must also work when Realtime reconnects or misses an INSERT.
+  const interval = setInterval(() => void load(), 2500);
+  const unwatch = subscribe(supabase.channel(realtimeChannelName(`matches-for:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "match_players", filter: `user_id=eq.${uid}` }, load));
+  return () => { stopped = true; clearInterval(interval); unwatch(); };
 }
 
 export async function getMatch<TState>(matchId: string): Promise<MatchDoc<TState> | null> {
-  const snap = await getDoc(doc(db, MATCHES_COLLECTION, matchId));
-  return snap.exists() ? (snap.data() as MatchDoc<TState>) : null;
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.from("matches").select("*").eq("id", matchId).maybeSingle();
+  if (error) throw error;
+  return data ? matchFromRow<TState>(data) : null;
 }
 
-/**
- * Finds a live match a given player is currently in, if any - used by
- * Spectator Mode (see components/game/SpectateClient.tsx) to turn "watch
- * this player" into a matchId. Returns the most recently created one if
- * they're somehow in more than one (shouldn't normally happen).
- */
-export async function getActiveMatchId(uid: string): Promise<{ matchId: string; gameType: GameType } | null> {
-  const q = query(collection(db, MATCHES_COLLECTION), where("players", "array-contains", uid), limit(20));
-  const snap = await getDocs(q);
-  const active = snap.docs
-    .map((d) => ({ id: d.id, data: d.data() as MatchDoc }))
-    .filter((m) => m.data.status === "active")
-    .sort((a, b) => b.data.createdAt - a.data.createdAt);
-  return active.length > 0 ? { matchId: active[0].id, gameType: active[0].data.gameType } : null;
+export async function getActiveMatchId(uid: string, gameType?: GameType, pool?: Pool): Promise<{ matchId: string; gameType: GameType } | null> {
+  const supabase = getSupabaseBrowserClient();
+  let query = supabase
+    .from("match_players")
+    .select("match_id,matches!inner(game_type,pool,status,created_at)")
+    .eq("user_id", uid)
+    .eq("matches.status", "active")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (gameType) query = query.eq("matches.game_type", gameType);
+  if (pool) query = query.eq("matches.pool", pool);
+  const { data, error } = await query;
+  if (error) throw error;
+  const row = (data ?? []).find((item: any) => item.matches?.status === "active") as any;
+  return row ? { matchId: row.match_id, gameType: row.matches.game_type } : null;
 }
 
-/** Live match state for an already-placed match (MindiOnlineClient,
- *  GinRummyOnlineClient, SpectateClient). `onError` matters here more than
- *  most listeners: without it, a denied/failed read leaves those screens
- *  on "Loading match…" forever, with no way to tell a real error apart
- *  from the brief moment before the first snapshot arrives. */
-export function watchMatch<TState>(
-  matchId: string,
-  onUpdate: (match: MatchDoc<TState> | null) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  return onSnapshot(
-    doc(db, MATCHES_COLLECTION, matchId),
-    (snap) => {
-      onUpdate(snap.exists() ? (snap.data() as MatchDoc<TState>) : null);
-    },
-    onError
-  );
+export function watchMatch<TState>(matchId: string, onUpdate: (match: MatchDoc<TState> | null) => void, onError?: (err: Error) => void): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      onUpdate(await getMatch<TState>(matchId));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load match"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`match:${matchId}`)).on("postgres_changes", { event: "*", schema: "public", table: "matches", filter: `id=eq.${matchId}` }, load), onError);
 }
 
-/** Writes new match state, only if it's still the expected player's turn (checked by the caller-supplied guard). */
-export async function updateMatchState<TState>(
-  matchId: string,
-  updater: (current: MatchDoc<TState>) => Partial<MatchDoc<TState>> | null
-): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, MATCHES_COLLECTION, matchId);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) throw new Error("match-not-found");
-    const current = snap.data() as MatchDoc<TState>;
-    const patch = updater(current);
-    if (!patch) return; // guard rejected the update (e.g. not your turn anymore)
-    transaction.update(ref, patch as Record<string, unknown>);
-  });
+export async function updateMatchState<TState>(matchId: string, updater: (current: MatchDoc<TState>) => Partial<MatchDoc<TState>> | null): Promise<void> {
+  const current = await getMatch<TState>(matchId);
+  if (!current) throw new Error("match-not-found");
+  const patch = updater(current);
+  if (!patch) return;
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("matches")
+    .update({
+      ...(patch.status ? { status: patch.status, completed_at: patch.status === "completed" ? new Date().toISOString() : null } : {}),
+      ...(patch.state !== undefined ? { public_state: patch.state as any } : {}),
+    })
+    .eq("id", matchId);
+  if (error) throw error;
 }

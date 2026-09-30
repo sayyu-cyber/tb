@@ -32,7 +32,7 @@
 //   All four Tens AND every trick  = "Haas Baga".
 //   All four Tens, not every trick = "Baga".
 //
-// This module is pure game logic — no React, no Firebase — so it can be
+// This module is pure game logic — no React, no backend SDK — so it can be
 // reused by AI matches, Pass & Play, and online matchmaking.
 
 import { cutForFirstPlay } from "./openingCut";

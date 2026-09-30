@@ -1,32 +1,5 @@
-// lib/messages.ts
-//
-// Direct messages between friends (GDD "Add message feature within friends").
-// Same no-backend trust model as the rest of this app: a conversation is a
-// plain Firestore document both participants can read/write, with a
-// `messages` subcollection for the actual chat log. There is no message
-// moderation or delivery guarantee beyond what Firestore itself provides.
-//
-// A conversation's id is deterministic - the two participants' uids, sorted
-// and joined - so both sides always land on the same document without a
-// lookup step, and firestore.rules can check `request.auth.uid in
-// resource.data.participants` without needing to know which side is which.
-
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  addDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  Unsubscribe,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-
-const CONVERSATIONS_COLLECTION = "dmConversations";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { fromMillis, realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 
 export interface DmConversation {
   id: string;
@@ -35,10 +8,6 @@ export interface DmConversation {
   lastMessage: string;
   lastMessageAt: number;
   lastSenderUid: string;
-  /** Per-participant "I've seen up to this point" timestamp, keyed by uid.
-   *  Powers the unread indicator on the friends rail's chats section - see
-   *  markConversationRead below. Optional: older conversation docs (and
-   *  ones neither side has opened since this was added) simply have none. */
   lastReadAt?: Record<string, number>;
 }
 
@@ -53,101 +22,117 @@ export function conversationIdFor(uidA: string, uidB: string): string {
   return [uidA, uidB].sort().join("_");
 }
 
-/** Creates the conversation doc if it doesn't exist yet - safe to call every time a chat screen opens. */
-export async function ensureConversation(
-  myUid: string,
-  myName: string,
-  otherUid: string,
-  otherName: string
-): Promise<string> {
-  const id = conversationIdFor(myUid, otherUid);
-  const ref = doc(db, CONVERSATIONS_COLLECTION, id);
-  const existing = await getDoc(ref);
-  if (!existing.exists()) {
-    await setDoc(ref, {
-      participants: [myUid, otherUid],
-      participantNames: { [myUid]: myName, [otherUid]: otherName },
-      lastMessage: "",
-      lastMessageAt: Date.now(),
-      lastSenderUid: "",
-    });
-  }
-  return id;
+async function roomForParticipants(uidA: string, uidB: string): Promise<string | null> {
+  const supabase = getSupabaseBrowserClient();
+  const key = conversationIdFor(uidA, uidB);
+  const { data, error } = await supabase.from("chat_rooms").select("id").eq("type", "dm").eq("metadata->>dm_key", key).maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+export async function ensureConversation(myUid: string, myName: string, otherUid: string, otherName: string): Promise<string> {
+  const existing = await roomForParticipants(myUid, otherUid);
+  if (existing) return existing;
+
+  const supabase = getSupabaseBrowserClient();
+  const key = conversationIdFor(myUid, otherUid);
+  const { data: room, error: roomError } = await supabase
+    .from("chat_rooms")
+    .insert({ type: "dm", metadata: { dm_key: key } })
+    .select("id")
+    .single();
+  if (roomError) throw roomError;
+
+  const { error: participantsError } = await supabase.from("chat_participants").insert([
+    { room_id: room.id, user_id: myUid, display_name: myName },
+    { room_id: room.id, user_id: otherUid, display_name: otherName },
+  ]);
+  if (participantsError) throw participantsError;
+  return room.id;
 }
 
 export async function sendMessage(conversationId: string, senderUid: string, text: string): Promise<void> {
   const trimmed = text.trim();
   if (!trimmed) return;
-  const ref = doc(db, CONVERSATIONS_COLLECTION, conversationId);
-  await addDoc(collection(ref, "messages"), {
-    senderUid,
-    text: trimmed,
-    createdAt: Date.now(),
-  });
-  // Best-effort preview update for the conversation list - not transactional
-  // with the message write above, but a stale preview by a moment is a
-  // harmless cosmetic gap, not a data-integrity issue.
-  await setDoc(
-    ref,
-    { lastMessage: trimmed, lastMessageAt: Date.now(), lastSenderUid: senderUid },
-    { merge: true }
-  );
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("messages").insert({ room_id: conversationId, sender_id: senderUid, text: trimmed });
+  if (error) throw error;
+  const { error: updateError } = await supabase
+    .from("chat_rooms")
+    .update({ last_message: trimmed, last_message_at: new Date().toISOString(), last_sender_id: senderUid })
+    .eq("id", conversationId);
+  if (updateError) throw updateError;
 }
 
-/** Marks a conversation as read up to now for one participant. Safe to call
- *  every time a chat screen opens/receives a message - it's just a merge
- *  write of one timestamp, not a transaction. */
 export async function markConversationRead(conversationId: string, uid: string): Promise<void> {
-  await setDoc(
-    doc(db, CONVERSATIONS_COLLECTION, conversationId),
-    { lastReadAt: { [uid]: Date.now() } },
-    { merge: true }
-  );
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("chat_participants")
+    .update({ last_read_at: fromMillis(Date.now()) })
+    .eq("room_id", conversationId)
+    .eq("user_id", uid);
+  if (error) throw error;
 }
 
-/** Ordered oldest-to-newest, live - a plain orderBy with no other filter needs no composite index. */
-export function watchMessages(
-  conversationId: string,
-  onUpdate: (messages: DmMessage[]) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  const ref = doc(db, CONVERSATIONS_COLLECTION, conversationId);
-  // Cap the history a conversation loads. Matches the 200 already used
-  // for club chat (lib/clubs.ts) - without it, a long-running DM thread
-  // re-downloads its entire history on every new message.
-  const q = query(collection(ref, "messages"), orderBy("createdAt", "asc"), limit(200));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DmMessage, "id">) })));
-    },
-    onError
-  );
+export function watchMessages(conversationId: string, onUpdate: (messages: DmMessage[]) => void, onError?: (err: Error) => void): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      const { data, error } = await supabase.from("messages").select("id,sender_id,text,created_at").eq("room_id", conversationId).order("created_at", { ascending: true }).limit(200);
+      if (error) throw error;
+      onUpdate((data ?? []).map((row) => ({ id: row.id, senderUid: row.sender_id, text: row.text, createdAt: toMillis(row.created_at) })));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load messages"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`messages:${conversationId}`)).on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `room_id=eq.${conversationId}` }, load), onError);
 }
 
-/**
- * All of a player's conversations, most-recently-active first. The
- * array-contains filter is required, not optional - Firestore rejects an
- * unfiltered collection query against a per-document "am I a participant"
- * rule outright, since it can't verify every possible result would pass.
- * No orderBy in the query itself (sorting by lastMessageAt client-side
- * instead) so this never needs a manually-created composite index - same
- * pattern used throughout this codebase for matchmaking/leaderboards.
- */
-export function watchConversations(
-  uid: string,
-  onUpdate: (conversations: DmConversation[]) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  const q = query(collection(db, CONVERSATIONS_COLLECTION), where("participants", "array-contains", uid), limit(100));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const all = snap.docs
-        .map((d) => ({ id: d.id, ...(d.data() as Omit<DmConversation, "id">) }))
-        .sort((a, b) => b.lastMessageAt - a.lastMessageAt);
-      onUpdate(all);
-    },
-    onError
-  );
+export function watchConversations(uid: string, onUpdate: (conversations: DmConversation[]) => void, onError?: (err: Error) => void): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      const { data: participantRows, error: participantsError } = await supabase.from("chat_participants").select("room_id").eq("user_id", uid).limit(100);
+      if (participantsError) throw participantsError;
+      const roomIds = (participantRows ?? []).map((row) => row.room_id);
+      if (!roomIds.length) {
+        onUpdate([]);
+        return;
+      }
+      const [{ data: rooms, error: roomsError }, { data: participants, error: participantsAllError }] = await Promise.all([
+        supabase.from("chat_rooms").select("id,last_message,last_message_at,last_sender_id").eq("type", "dm").in("id", roomIds),
+        supabase.from("chat_participants").select("room_id,user_id,display_name,last_read_at").in("room_id", roomIds),
+      ]);
+      if (roomsError) throw roomsError;
+      if (participantsAllError) throw participantsAllError;
+
+      const grouped = new Map<string, typeof participants>();
+      for (const participant of participants ?? []) {
+        grouped.set(participant.room_id, [...(grouped.get(participant.room_id) ?? []), participant]);
+      }
+
+      onUpdate(
+        (rooms ?? [])
+          .map((room) => {
+            const people = grouped.get(room.id) ?? [];
+            return {
+              id: room.id,
+              participants: people.map((person) => person.user_id),
+              participantNames: Object.fromEntries(people.map((person) => [person.user_id, person.display_name])),
+              lastMessage: room.last_message,
+              lastMessageAt: toMillis(room.last_message_at),
+              lastSenderUid: room.last_sender_id ?? "",
+              lastReadAt: Object.fromEntries(people.filter((person) => person.last_read_at).map((person) => [person.user_id, toMillis(person.last_read_at)])),
+            };
+          })
+          .sort((a, b) => b.lastMessageAt - a.lastMessageAt)
+      );
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load conversations"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`conversations:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "chat_rooms" }, load), onError);
 }
+

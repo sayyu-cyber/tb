@@ -22,7 +22,7 @@ import { ArenaFelt, ArenaHeader, ArenaTable, OpponentSeat, TableWell, ArenaSeatD
  * anyone's hand - only public information (card counts, the trick/discard
  * pile, trump, whose turn it is, tens/tricks captured) even though the
  * underlying match document (now readable by any signed-in user - see
- * firestore.rules) technically contains full hands. This mirrors the same
+ * database policies) technically contains full hands. This mirrors the same
  * "the UI hides it even though the raw doc has it" trust model already
  * accepted for players' own opponents.
  *

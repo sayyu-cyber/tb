@@ -2,6 +2,7 @@
 
 import type { COIN_PACKS } from "@/data/cosmetics";
 import { Pill } from "@/components/arena";
+import { formatCoins } from "@/lib/wallet";
 
 /**
  * A coin pack as a row — the ShopVip board's `.prow`
@@ -51,10 +52,10 @@ export function CoinPackRow({
         {pack.isBestValue && <Pill tone="lime">Best Value</Pill>}
         {pack.isPopular && !pack.isBestValue && <Pill tone="blue">Popular</Pill>}
       </div>
-      <b className="c">{pack.coins.toLocaleString()} <span className="muted2">coins</span></b>
+      <b className="c">{formatCoins(pack.coins)} <span className="muted2">coins</span></b>
       <button type="button" className="ar-btn ghost sm" disabled={disabled} onClick={onPurchase}>
         Request · MVR {pack.priceMVR}
-        <span className="sr-only"> for {pack.coins.toLocaleString()} coins</span>
+        <span className="sr-only"> for {formatCoins(pack.coins)} coins</span>
       </button>
     </div>
   );

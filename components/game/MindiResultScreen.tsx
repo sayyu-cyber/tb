@@ -8,6 +8,7 @@ import { ArenaSprite } from "./ArenaSprite";
 import { ArenaFace } from "./ArenaCard";
 import { RANKS, getRankFromTrophies } from "@/constants/ranks";
 import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { formatCoins } from "@/lib/wallet";
 import { PhoneResultBoard } from "./phone/PhoneResultBoard";
 import type { HandOutcome, Team, TenCapture } from "@/lib/mindiEngine";
 
@@ -140,7 +141,7 @@ export function MindiResultScreen({
           ? `${tier} · ${trophies} · ${Math.max(0, next.min - trophies)} to ${next.name}`
           : `${tier} · ${trophies} · top tier`}
       coins={coins}
-      coinLine={`${youWon ? "Victory bonus" : "Consolation"} · ${balance.toLocaleString()}`}
+      coinLine={`${youWon ? "Victory bonus" : "Consolation"} · ${formatCoins(balance)}`}
       onReplay={() => setTake((n) => n + 1)}
       onPlayAgain={onPlayAgain}
       playAgainHref={playAgainHref}
@@ -261,7 +262,7 @@ export function MindiResultScreen({
             <span className="lbl dash">Coins</span>
             <span className="v">+{coins}</span>
             <span className="s">
-              {youWon ? "Victory bonus" : "Consolation"} · {balance.toLocaleString()}
+              {youWon ? "Victory bonus" : "Consolation"} · {formatCoins(balance)}
             </span>
           </div>
         </div>

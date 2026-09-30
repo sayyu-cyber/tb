@@ -14,6 +14,7 @@ import { Sheet } from "@/components/layout/phone/Sheet";
 import { ArenaSprite } from "./ArenaSprite";
 import { RecentRooms } from "./RecentRooms";
 import { RoomCardBadge, RoomDeck, SeatGlyph, useRoomPhone } from "./RoomBoardParts";
+import { rememberRoomReturn } from "@/lib/authReturn";
 
 const games = [{ id: "mindi", name: "Mindi", type: "mindi" }, { id: "gin-rummy", name: "Gin Rummy", type: "gin_rummy" }] as const;
 const normalize = (code: string) => code.replace(/\s/g, "").toUpperCase();
@@ -21,7 +22,7 @@ const validCode = (code: string) => /^[A-Z2-9]{6}$/.test(code);
 const message = (error: unknown) => error instanceof Error ? error.message : "Your connection was interrupted. Please try again.";
 
 /** Rooms / MRooms / MRoomsCreate, with one live set of room subscriptions. */
-export function PrivateRoomSetup({ gameId }: { gameId: string }) {
+export function PrivateRoomSetup({ gameId, autoJoinCode, inviteToken, onEntered }: { gameId: string; autoJoinCode?: string; inviteToken?: string; onEntered?: () => void }) {
   const router = useRouter(), t = useTranslation(), phone = useRoomPhone();
   const { user, isGuest } = useAuth();
   const { getActiveRoomCards } = useEconomy();
@@ -29,7 +30,7 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
   const [selected, setSelected] = useState(gameId), [tab, setTab] = useState<"join" | "create">("join");
   const [players, setPlayers] = useState("4"), [protectedRoom, setProtected] = useState(false);
   const [password, setPassword] = useState(""), [showPassword, setShowPassword] = useState(false);
-  const [code, setCode] = useState(""), [joinPassword, setJoinPassword] = useState(""), [joinEye, setJoinEye] = useState(false);
+  const [code, setCode] = useState(autoJoinCode || ""), [joinPassword, setJoinPassword] = useState(""), [joinEye, setJoinEye] = useState(false);
   const [prompt, setPrompt] = useState<{ code: string; host: string } | null>(null);
   const [error, setError] = useState<{ area: "create" | "join"; text: string } | null>(null);
   const [busy, setBusy] = useState<"create" | "join" | null>(null);
@@ -57,6 +58,7 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
   useEffect(() => () => pasteTimers.current.forEach(clearTimeout), []);
   const enter = (roomCode: string, type: string) => {
     rememberRoom(user!.uid, roomCode);
+    if (roomCode === autoJoinCode && onEntered) { onEntered(); return; }
     router.push(`/play/${type === "mindi" ? "mindi" : "gin-rummy"}/room?code=${roomCode}`);
   };
   async function create() {
@@ -69,7 +71,7 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
     } catch (err) { setError({ area: "create", text: message(err) }); }
     finally { pending.current = false; setBusy(null); }
   }
-  async function join(value = code, suppliedPassword = "") {
+  async function join(value = code, suppliedPassword = "", token = inviteToken) {
     if (pending.current) return;
     const roomCode = normalize(value); setCode(roomCode); setError(null);
     if (!roomCode) { setError({ area: "join", text: "Enter a room code." }); return; }
@@ -80,16 +82,19 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
       const room = await getRoom(roomCode);
       if (!room) throw new Error("Room not found. Check the code and try again.");
       if (room.mode === "rankedDuo") throw new Error("This is a ranked party. Join it from Ranked mode.");
-      if (room.status !== "waiting") throw new Error("This game has already started or the room has closed.");
-      if (room.bannedUids?.includes(user.uid)) throw new Error("You cannot join this room.");
-      if (room.players.length >= room.maxPlayers && !room.players.includes(user.uid)) throw new Error("This room is full.");
-      if (room.password && !suppliedPassword) { setPrompt({ code: roomCode, host: room.playerNames[room.ownerUid] || t("room_host") }); setJoinPassword(""); setJoinEye(false); return; }
-      await joinRoom(roomCode, user.uid, user.displayName || "Player", suppliedPassword);
+      if (room.players.includes(user.uid)) { enter(roomCode, room.gameType); return; }
+      if (room.password && !suppliedPassword && !token && !room.players.includes(user.uid)) { setPrompt({ code: roomCode, host: room.playerNames[room.ownerUid] || t("room_host") }); setJoinPassword(""); setJoinEye(false); return; }
+      await joinRoom(roomCode, user.uid, user.displayName || "Player", suppliedPassword, token);
       await Promise.allSettled(invites.filter(item => item.code === roomCode).map(item => dismissRoomInvite(item.id)));
       setPrompt(null); showToast(t("room_joined"), "success"); enter(roomCode, room.gameType);
     } catch (err) { setError({ area: "join", text: message(err) }); }
     finally { pending.current = false; setBusy(null); }
   }
+  useEffect(() => {
+    if (autoJoinCode && uid) void join(autoJoinCode);
+    // Automatic entry runs once per account/link; manual retries use the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoJoinCode, inviteToken, uid]);
   async function paste() {
     try {
       const value = normalize(await navigator.clipboard.readText()).slice(0, 6);
@@ -99,6 +104,9 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
     } catch { showToast(t("room_clipboardUnavailable"), "error"); }
   }
   const closePrompt = useCallback(() => { if (!pending.current) { setPrompt(null); setError(null); } }, []);
+  const resumeAfterLogin = () => {
+    if (validCode(code)) rememberRoomReturn(`/play/${gameId}/room?code=${encodeURIComponent(code)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ''}`);
+  };
   const title = (create: boolean) => <div className="room-panel-title"><span className={`itile ${create ? "" : "b"}`}>{create ? <Plus aria-hidden="true" /> : <Hash aria-hidden="true" />}</span><div><h2 className="disp">{t(create ? "room_create" : "room_joinCode")}</h2><p className="muted">{t(create ? "room_pickGame" : "room_askCode")}</p></div></div>;
   const createForm = <form id="create-room" className="panel tick room-form" onSubmit={event => { event.preventDefault(); void create(); }}>
     {title(true)}
@@ -124,7 +132,7 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
     </div>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: phone ? 10 : 12, marginTop: phone ? -4 : -6 }}><button type="button" className="lnk" onClick={paste} disabled={!!busy}><ClipboardPaste aria-hidden="true" />{t("room_paste")}</button><span className="muted2" style={phone ? { fontSize: 11.5 } : undefined}>{t(phone ? "room_codeHintShort" : "room_codeHint")}</span></div>
     {error?.area === "join" && !prompt && <p className="err" role="alert"><CircleAlert aria-hidden="true" />{error.text}</p>}
-    {!uid && <p className="help"><Link href="/login">Sign in to join private rooms.</Link></p>}
+    {!uid && <p className="help"><Link href="/login" onClick={resumeAfterLogin}>Sign in to join private rooms.</Link></p>}
     <button className="ar-btn blue full" type="submit" disabled={!!busy || !uid || code.length < 6}>{t(busy === "join" ? "room_joining" : "room_join")}<ArrowRight aria-hidden="true" /></button>
   </form>;
   const invitePanel = <section className={`${phone ? "sec" : "panel"} room-invites`} aria-label={t("room_invites")}>
@@ -135,7 +143,7 @@ export function PrivateRoomSetup({ gameId }: { gameId: string }) {
       const disabled = !loaded || !room || room.status !== "waiting" || full || room.bannedUids?.includes(uid);
       const age = Math.max(0, Math.floor((Date.now() - invite.createdAt) / 60000));
       const line = `${invite.gameType === "mindi" ? "Mindi" : "Gin Rummy"} · ${full ? t("room_tableFull").toLowerCase() : room ? t(phone ? "room_inviteSeatsShort" : "room_inviteSeats").replace("{n}", String(room.players.length)).replace("{max}", String(room.maxPlayers)) : t("room_unavailable")} · ${t("room_minutesAgo").replace("{n}", String(age))}`;
-      return <div className="inv" key={invite.id}><span className={`av ${invite.gameType === "gin_rummy" ? "them" : ""}`}>{invite.fromName[0]}</span><div className="tx"><b>{t("room_invitedYou").replace("{name}", invite.fromName)}</b><span>{line}</span></div><button className={`minib ${disabled ? "dim" : "lime"}`} disabled={!!disabled || !!busy} onClick={() => { void join(invite.code); }}>{t(full ? "room_full" : disabled ? "room_unavailable" : "room_joinShort")}</button></div>;
+      return <div className="inv" key={invite.id}><span className={`av ${invite.gameType === "gin_rummy" ? "them" : ""}`}>{invite.fromName[0]}</span><div className="tx"><b>{t("room_invitedYou").replace("{name}", invite.fromName)}</b><span>{line}</span></div><button className={`minib ${disabled ? "dim" : "lime"}`} disabled={!!disabled || !!busy} onClick={() => { void join(invite.code, "", invite.id); }}>{t(full ? "room_full" : disabled ? "room_unavailable" : "room_joinShort")}</button></div>;
     })}</div>}
   </section>;
   const passwordBody = <form onSubmit={event => { event.preventDefault(); if (prompt) void join(prompt.code, joinPassword); }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

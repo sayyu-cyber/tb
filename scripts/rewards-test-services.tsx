@@ -63,6 +63,7 @@ export function useEconomy() {
     claimDailyReward: (day: number) => {
       document.body.dataset.claimed = String(day);
       setClaimed(day);
+      return true;
     },
   };
 }

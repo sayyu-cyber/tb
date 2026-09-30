@@ -1,5 +1,9 @@
 # Economy write-path audit
 
+> Historical inventory; line numbers have moved. See [RELEASE_READINESS.md](RELEASE_READINESS.md)
+> for the 2026-09-29 re-audit. The server migration is still incomplete despite
+> the purchase callables now present in `functions/src/economy.ts`.
+
 Working document for the server-authoritative economy migration
 (MOBILE_APP_PLAN.md §3 P0). This is the complete inventory of client code
 that grants or spends value. Nothing moves server-side until every row here

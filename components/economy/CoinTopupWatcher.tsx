@@ -1,33 +1,29 @@
 "use client";
 
 // Mounted once (see MainLayout) - watches the signed-in player's own coin
-// top-up requests and, the moment one flips to "approved" by an admin,
-// credits the coins locally via the existing addCoins() and marks the
-// request "credited" so it's never applied twice. Renders nothing.
+// top-up requests. The server credits approvals atomically; this watcher
+// only refreshes the display when a request is credited. Renders nothing.
 
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
-import { watchMyTopups, markTopupCredited } from "@/lib/coinTopups";
+import { watchMyTopups } from "@/lib/coinTopups";
 
 export function CoinTopupWatcher() {
   const { user, isGuest } = useAuth();
-  const { addCoins } = useEconomy();
+  const { refreshBalance } = useEconomy();
   const processingRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user?.uid || isGuest) return;
     return watchMyTopups(user.uid, (requests) => {
       for (const req of requests) {
-        if (req.status !== "approved" || processingRef.current.has(req.id)) continue;
+        if (req.status !== "credited" || processingRef.current.has(req.id)) continue;
         processingRef.current.add(req.id);
-        addCoins(req.coins, "purchase", `Coin top-up approved: ${req.packName}`);
-        // Intentionally silent: if this write loses a race it retries on
-        // the next snapshot, and the coins are already credited locally.
-        markTopupCredited(req.id).catch(() => {});
+        void refreshBalance().catch(() => { processingRef.current.delete(req.id); });
       }
     });
-  }, [user?.uid, isGuest, addCoins]);
+  }, [user?.uid, isGuest, refreshBalance]);
 
   return null;
 }

@@ -11,11 +11,9 @@ export const metadata: Metadata = {
  *
  * Every claim here was checked against the code rather than copied from a
  * template. In particular it does NOT mention analytics or push
- * notifications: there is no analytics SDK in the project, and although
- * lib/firebase.ts defines requestFCMToken it is never called, so no push
- * tokens are collected today. If either of those is wired up later, this
- * page has to be updated in the same change — and the Play Data safety form
- * with it.
+ * notifications: there is no analytics SDK or push-token collection in the
+ * project. If either of those is wired up later, this page has to be updated
+ * in the same change — and the Play Data safety form with it.
  *
  * PLACEHOLDERS: the contact address and operator name below must be filled
  * in before this is submitted to any store.
@@ -82,8 +80,7 @@ export default function PrivacyPage() {
 
       <h2>Who processes it for us</h2>
       <p>
-        <strong>Google Firebase</strong> (Firebase Authentication and Cloud Firestore) stores
-        accounts and game data, and runs our server-side game logic.{" "}
+        <strong>Supabase</strong> stores accounts, game data, social data, and realtime state.{" "}
         <strong>Netlify</strong> hosts the website and, like any web host, records standard server
         logs including IP addresses. Both are processors acting on our behalf, and both store data
         on servers outside the Maldives.

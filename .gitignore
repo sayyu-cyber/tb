@@ -41,6 +41,16 @@ functions/lib/
 functions/node_modules/
 *.tsbuildinfo
 firebase-debug.log
+
+# Auth/data migration exports and secrets
+firebase-service.json
+supabase-service.json
+users.json
+firebase-users*.json
+firebase-auth-export*.json
+supabase/auth-migration/secrets/
+supabase/auth-migration/exports/
+supabase/auth-migration/tools/
 artifacts/friends-test/component.js
 artifacts/rewards-test/component.js
 artifacts/inventory-test/component.js

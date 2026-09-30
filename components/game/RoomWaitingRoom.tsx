@@ -11,7 +11,7 @@ import { useCanLockOrientation } from "@/hooks/useOrientationLock";
 import { lockLandscape, releaseLandscape } from "@/lib/orientationLock";
 import { getPublicProfile, type PublicProfile } from "@/lib/publicProfile";
 import { rememberRoom } from "@/lib/roomHistory";
-import { banPlayer, kickPlayer, leaveRoom, setSeatOrder, startRoomMatch, watchRoom, type RoomDoc } from "@/lib/rooms";
+import { banPlayer, kickPlayer, leaveRoom, setSeatOrder, startRoomMatch, watchRoom, createRoomInviteLink, type RoomDoc } from "@/lib/rooms";
 import type { GameType } from "@/lib/matchmaking";
 import type { MindiOnlineState } from "./MindiOnlineClient";
 import type { GinOnlineState } from "./GinRummyOnlineClient";
@@ -71,7 +71,10 @@ export function RoomWaitingRoom({ gameId, gameType, code, myUid, buildInitialSta
     } catch { showToast(t("toast_copyFailed"), "error"); }
   }
   async function share() {
-    const url = new URL(`/play/${gameId}/room?code=${encodeURIComponent(code)}`, location.origin).href;
+    let token: string;
+    try { token = await createRoomInviteLink(code); }
+    catch (err) { showToast(err instanceof Error ? err.message : t("toast_copyFailed"), "error"); return; }
+    const url = new URL(`/play/${gameId}/room?code=${encodeURIComponent(code)}&invite=${encodeURIComponent(token)}`, location.origin).href;
     if (navigator.share) {
       try { await navigator.share({ title: t("room_gameRoom").replace("{game}", gameName), text: code, url }); }
       catch (err) { if (!(err instanceof Error && err.name === "AbortError")) await copy(url, true); }

@@ -4,8 +4,12 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { GameLoading } from '@/components/system/GameLoading';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { updateProfileCosmetics } from '@/lib/supabase/data';
+import { usePathname } from 'next/navigation';
+import { useToast } from './ToastContext';
+import { loadWallet, mutateWallet, type WalletSnapshot } from '@/lib/wallet';
+import { realtimeChannelName } from '@/lib/supabase/data';
 import {
   PlayerEconomy, CoinTransaction, CoinSource, PlayerProfile,
   RoomCard, RoomCardType, ROOM_CARD_DURATION_HOURS, DailyMission, WeeklyMission, Achievement,
@@ -26,6 +30,8 @@ import {
 
 // ─── ACTIONS ─────────────────────────────────────────
 type EconomyAction =
+  | { type: 'SERVER_RESULT'; payload: { snapshot: WalletSnapshot; action?: EconomyAction } }
+  | { type: 'HYDRATE_STATE'; payload: EconomyState }
   | { type: 'ADD_COINS'; payload: { amount: number; source: CoinSource; description: string } }
   | { type: 'SPEND_COINS'; payload: { amount: number; description: string } }
   | { type: 'COMPLETE_MISSION'; payload: { missionId: string; isWeekly: boolean } }
@@ -66,6 +72,7 @@ interface EconomyState {
     streak: number;
     lastClaimed: number;
     rewards: DailyLoginReward[];
+    server?: WalletSnapshot['daily'];
   };
   rewardPopups: RewardPopup[];
   weeklyRankReward: {
@@ -270,11 +277,9 @@ function stateForUser(user: NonNullable<ReturnType<typeof useAuth>['user']>): Ec
 
 function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<ReturnType<typeof useAuth>['user']>): EconomyState {
   const base = stateForUser(user);
-  // Strip the legacy balance by OMITTING the key, never by setting it to
-  // undefined: this object is handed straight to setDoc({ merge: true }),
-  // and the Firestore instance is a plain getFirestore() without
-  // ignoreUndefinedProperties, so an undefined value throws and would break
-  // every economy save. An absent key is simply not written.
+  // Strip the legacy balance by omitting the key, never by setting it to
+  // undefined. The old profile balance has already been folded into the
+  // canonical economy balance.
   const legacyProfile = { ...(data.profile ?? {}) };
   delete legacyProfile.coins;
   return {
@@ -285,8 +290,7 @@ function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<Return
       // legacyProfile, not data.profile - see the destructure above. The
       // old balance has already been folded into economy.coins by
       // reconcileCoins, so carrying it further would only invite a stale
-      // read. (The field lingers in Firestore, since a merge write cannot
-      // delete it, but it is inert from here on.)
+      // read. The legacy field is inert from here on.
       ...legacyProfile,
       uid: user.uid,
       displayName: data.profile?.displayName || user.displayName || base.profile.displayName,
@@ -327,8 +331,83 @@ function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<Return
   };
 }
 
+async function hydrateSupabaseEconomy(base: EconomyState, uid: string): Promise<EconomyState> {
+  const supabase = getSupabaseBrowserClient();
+  const [{ data: wallet, error: walletError }, { data: equipped, error: equippedError }, { data: inventory, error: inventoryError }] = await Promise.all([
+    supabase.from('wallets').select('coins,total_earned,total_spent').eq('user_id', uid).maybeSingle(),
+    supabase.from('equipped_cosmetics').select('card_back,table_theme,profile_frame,title,victory_animation,banner').eq('user_id', uid).maybeSingle(),
+    supabase.from('inventory_items').select('item_id,category').eq('user_id', uid),
+  ]);
+  if (walletError) throw walletError;
+  if (equippedError) throw equippedError;
+  if (inventoryError) throw inventoryError;
+
+  const collection = { ...base.profile.collection };
+  for (const item of inventory ?? []) {
+    const key = CATEGORY_TO_COLLECTION_KEY[item.category];
+    if (key && !collection[key].includes(item.item_id)) collection[key] = [...collection[key], item.item_id] as any;
+  }
+
+  return {
+    ...base,
+    profile: {
+      ...base.profile,
+      equipped: {
+        ...base.profile.equipped,
+        cardBack: equipped?.card_back ?? base.profile.equipped.cardBack,
+        tableTheme: equipped?.table_theme ?? base.profile.equipped.tableTheme,
+        profileFrame: equipped?.profile_frame ?? base.profile.equipped.profileFrame,
+        title: equipped?.title ?? base.profile.equipped.title,
+        victoryAnimation: equipped?.victory_animation ?? base.profile.equipped.victoryAnimation,
+        banner: equipped?.banner ?? base.profile.equipped.banner,
+      },
+      collection,
+    },
+    economy: {
+      ...base.economy,
+      coins: wallet?.coins ?? base.economy.coins,
+      totalEarned: wallet?.total_earned ?? base.economy.totalEarned,
+      totalSpent: wallet?.total_spent ?? base.economy.totalSpent,
+    },
+  };
+}
+
+async function saveSupabaseEconomy(uid: string, state: EconomyState): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const [{ error: equippedError }] = await Promise.all([
+    supabase.from('equipped_cosmetics').upsert({
+      user_id: uid,
+      card_back: state.profile.equipped.cardBack || 'cb_default',
+      table_theme: state.profile.equipped.tableTheme || 'tt_default',
+      profile_frame: state.profile.equipped.profileFrame || 'pf_default',
+      title: state.profile.equipped.title || '',
+      victory_animation: state.profile.equipped.victoryAnimation || 'va_default',
+      banner: state.profile.equipped.banner || 'bn_default',
+      updated_at: new Date().toISOString(),
+    }),
+  ]);
+  if (equippedError) throw equippedError;
+  await updateProfileCosmetics(
+    uid,
+    state.profile.equipped.cardBack || 'cb_default',
+    state.profile.equipped.tableTheme || 'tt_default'
+  );
+}
+
 // ─── REDUCER ─────────────────────────────────────────
-function economyReducer(state: EconomyState, action: EconomyAction): EconomyState {
+function economyReducer(state: EconomyState, action: EconomyAction, wallet?: WalletSnapshot['wallet']): EconomyState {
+  if (action.type === 'HYDRATE_STATE') return { ...action.payload, economy: state.economy, dailyLogin: state.dailyLogin };
+  if (action.type === 'SERVER_RESULT') {
+    const { snapshot, action: applied } = action.payload;
+    const next = applied ? economyReducer(state, applied, snapshot.wallet) : state;
+    return { ...next,
+      economy: { ...next.economy, coins: snapshot.wallet.coins, totalEarned: snapshot.wallet.total_earned, totalSpent: snapshot.wallet.total_spent },
+      dailyLogin: { ...next.dailyLogin, server: snapshot.daily, streak: snapshot.daily.claimedThrough,
+        lastClaimed: snapshot.daily.lastClaimed ? new Date(snapshot.daily.lastClaimed).getTime() : 0,
+        rewards: DAILY_LOGIN_REWARDS.map(reward => ({ ...reward, claimed: reward.day <= snapshot.daily.claimedThrough })) },
+      profile: snapshot.roomCardId ? { ...next.profile, roomCards: next.profile.roomCards.map((card, index, all) => index === all.length - 1 ? { ...card, id: snapshot.roomCardId! } : card) } : next.profile,
+    };
+  }
   switch (action.type) {
     case 'ADD_COINS': {
       const { amount, source, description } = action.payload;
@@ -344,16 +423,16 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         ...state,
         economy: {
           ...state.economy,
-          coins: state.economy.coins + amount,
+          coins: wallet?.coins ?? state.economy.coins + amount,
           transactions: [transaction, ...state.economy.transactions].slice(0, 100),
-          totalEarned: state.economy.totalEarned + amount,
+          totalEarned: wallet?.total_earned ?? state.economy.totalEarned + amount,
         },
       };
     }
 
     case 'SPEND_COINS': {
       const { amount, description } = action.payload;
-      if (state.economy.coins < amount) return state;
+      if (!wallet && state.economy.coins < amount) return state;
       const transaction: CoinTransaction = {
         id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount,
@@ -366,9 +445,9 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         ...state,
         economy: {
           ...state.economy,
-          coins: state.economy.coins - amount,
+          coins: wallet?.coins ?? state.economy.coins - amount,
           transactions: [transaction, ...state.economy.transactions].slice(0, 100),
-          totalSpent: state.economy.totalSpent + amount,
+          totalSpent: wallet?.total_spent ?? state.economy.totalSpent + amount,
         },
       };
     }
@@ -394,8 +473,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
           },
           economy: {
             ...state.economy,
-            coins: state.economy.coins + reward,
-            totalEarned: state.economy.totalEarned + reward,
+            coins: wallet?.coins ?? state.economy.coins + reward,
+            totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward,
           },
         };
       } else {
@@ -412,8 +491,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
           missions: { ...state.missions, daily },
           economy: {
             ...state.economy,
-            coins: state.economy.coins + reward + bonus,
-            totalEarned: state.economy.totalEarned + reward + bonus,
+            coins: wallet?.coins ?? state.economy.coins + reward + bonus,
+            totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward + bonus,
           },
         };
       }
@@ -446,8 +525,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
           },
           economy: {
             ...state.economy,
-            coins: state.economy.coins + reward.coins,
-            totalEarned: state.economy.totalEarned + reward.coins,
+            coins: wallet?.coins ?? state.economy.coins + reward.coins,
+            totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward.coins,
           },
           dailyLogin: {
             streak: finalStreak,
@@ -465,8 +544,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         },
         economy: {
           ...state.economy,
-          coins: state.economy.coins + reward.coins,
-          totalEarned: state.economy.totalEarned + reward.coins,
+          coins: wallet?.coins ?? state.economy.coins + reward.coins,
+          totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward.coins,
         },
         dailyLogin: {
           streak: finalStreak,
@@ -516,7 +595,7 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
       if (!item) return state;
       if (state.shopOverrides?.hiddenItemIds.includes(itemId)) return state; // admin-hidden - not purchasable
       const price = state.shopOverrides?.priceOverrides[itemId] ?? item.price;
-      if (state.economy.coins < price) return state;
+      if (!wallet && state.economy.coins < price) return state;
       const collectionKey = CATEGORY_TO_COLLECTION_KEY[item.category];
       if (!collectionKey || state.profile.collection[collectionKey].includes(itemId)) return state;
       return {
@@ -527,8 +606,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         },
         economy: {
           ...state.economy,
-          coins: state.economy.coins - price,
-          totalSpent: state.economy.totalSpent + price,
+          coins: wallet?.coins ?? state.economy.coins - price,
+          totalSpent: wallet?.total_spent ?? state.economy.totalSpent + price,
         },
       };
     }
@@ -569,8 +648,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         },
         economy: {
           ...state.economy,
-          coins: state.economy.coins + achievement.reward,
-          totalEarned: state.economy.totalEarned + achievement.reward,
+          coins: wallet?.coins ?? state.economy.coins + achievement.reward,
+          totalEarned: wallet?.total_earned ?? state.economy.totalEarned + achievement.reward,
         },
       };
     }
@@ -602,7 +681,7 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
 
     case 'PURCHASE_ROOM_CARD': {
       const { type, price } = action.payload;
-      if (state.economy.coins < price) return state;
+      if (!wallet && state.economy.coins < price) return state;
       const newCard: RoomCard = {
         id: `rc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         type,
@@ -617,8 +696,8 @@ function economyReducer(state: EconomyState, action: EconomyAction): EconomyStat
         },
         economy: {
           ...state.economy,
-          coins: state.economy.coins - price,
-          totalSpent: state.economy.totalSpent + price,
+          coins: wallet?.coins ?? state.economy.coins - price,
+          totalSpent: wallet?.total_spent ?? state.economy.totalSpent + price,
         },
       };
     }
@@ -730,17 +809,19 @@ interface EconomyContextType {
   state: EconomyState;
   dispatch: React.Dispatch<EconomyAction>;
   addCoins: (amount: number, source: CoinSource, description: string) => void;
-  spendCoins: (amount: number, description: string) => boolean;
+  spendCoins: (amount: number, description: string) => Promise<boolean>;
   completeMission: (missionId: string, isWeekly: boolean) => void;
-  claimDailyReward: (day: number) => void;
+  claimDailyReward: (day: number) => Promise<boolean>;
   activateVip: (days: number) => void;
   activateRoomCard: (cardId: string) => void;
-  purchaseCosmetic: (itemId: string) => boolean;
+  purchaseCosmetic: (itemId: string) => Promise<boolean>;
   equipCosmetic: (category: string, itemId: string) => void;
   unlockAchievement: (achievementId: string) => void;
   updateProgress: (key: string, value: number) => void;
   addRoomCard: (type: RoomCardType) => void;
-  purchaseRoomCard: (type: RoomCardType) => boolean;
+  purchaseRoomCard: (type: RoomCardType) => Promise<boolean>;
+  balanceReady: boolean;
+  refreshBalance: () => Promise<void>;
   showReward: (popup: RewardPopup) => void;
   clearReward: (id: string) => void;
   resetDailyMissions: () => void;
@@ -758,16 +839,85 @@ const EconomyContext = createContext<EconomyContextType | null>(null);
 
 export function EconomyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [state, dispatch] = useReducer(economyReducer, initialState);
+  const [state, rawDispatch] = useReducer(economyReducer, initialState);
+  const pathname = usePathname();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [remoteReadyUid, setRemoteReadyUid] = useState<string | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
+  const activeUid = useRef(user?.uid);
+  activeUid.current = user?.uid;
+  const walletVersion = useRef(-1);
+  const mutations = useRef<Promise<unknown>>(Promise.resolve());
+  const applySnapshot = useCallback((snapshot: WalletSnapshot, action?: EconomyAction) => {
+    if (snapshot.wallet.version < walletVersion.current) {
+      if (!action) return;
+      const current = stateRef.current;
+      snapshot = { ...snapshot, wallet: { coins: current.economy.coins, total_earned: current.economy.totalEarned, total_spent: current.economy.totalSpent, version: walletVersion.current }, daily: current.dailyLogin.server || snapshot.daily };
+    }
+    walletVersion.current = snapshot.wallet.version;
+    const result: EconomyAction = { type: 'SERVER_RESULT', payload: { snapshot, action } };
+    stateRef.current = economyReducer(stateRef.current, result);
+    rawDispatch(result);
+  }, []);
+  const refreshBalance = useCallback(async () => {
+    if (!user?.uid) return;
+    const uid = user.uid;
+    const snapshot = await loadWallet();
+    if (activeUid.current !== uid) return;
+    applySnapshot(snapshot);
+    setRemoteReadyUid(uid);
+  }, [user?.uid, applySnapshot]);
+  const dispatch = useCallback((action: EconomyAction): Promise<boolean> => {
+    const monetary = ['ADD_COINS', 'SPEND_COINS', 'COMPLETE_MISSION', 'CLAIM_DAILY_REWARD', 'PURCHASE_COSMETIC', 'PURCHASE_ROOM_CARD', 'UNLOCK_ACHIEVEMENT'].includes(action.type);
+    if (!user?.uid || !monetary) { rawDispatch(action); return Promise.resolve(true); }
+    const uid = user.uid;
+    const work = mutations.current.then(async () => {
+      if (activeUid.current !== uid) return false;
+      try {
+        const snapshot = await mutateWallet(action.type, 'payload' in action ? action.payload : {});
+        if (activeUid.current === uid) { applySnapshot(snapshot, action); setRemoteReadyUid(uid); }
+        return true;
+      } catch (error) {
+        if (activeUid.current === uid) showToast(error instanceof Error ? error.message : 'Your balance could not be updated. Please try again.', 'error');
+        return false;
+      }
+    });
+    mutations.current = work;
+    return work;
+  }, [user?.uid, applySnapshot, showToast]);
 
-  // Load from Firebase on auth change
+  // Load/navigation/reconnect always read the server. Missed WebSocket events
+  // also recover on focus, online and a bounded refresh interval.
+  useEffect(() => {
+    if (!user?.uid) return;
+    const supabase = getSupabaseBrowserClient();
+    const refresh = () => { void refreshBalance().catch(console.error); };
+    refresh();
+    const channel = supabase.channel(realtimeChannelName(`wallet:${user.uid}`))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.uid}` }, refresh)
+      .subscribe(status => { if (status === 'SUBSCRIBED') refresh(); });
+    window.addEventListener('focus', refresh); window.addEventListener('online', refresh);
+    const updated = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail.uid === user.uid) {
+        const daily = stateRef.current.dailyLogin.server;
+        if (daily) applySnapshot({ wallet: detail.wallet, daily });
+        refresh();
+      }
+    };
+    window.addEventListener('thaasbai-wallet', updated);
+    const interval = setInterval(refresh, 30000);
+    return () => { void supabase.removeChannel(channel); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('thaasbai-wallet', updated); clearInterval(interval); };
+  }, [user?.uid, pathname, refreshBalance, applySnapshot]);
+
+  // Load from Supabase on auth change.
   useEffect(() => {
     setIsLoading(true);
     setRemoteReadyUid(null);
+    walletVersion.current = -1;
+    if (user) rawDispatch({ type: 'SET_STATE', payload: { ...stateForUser(user), economy: { ...initialState.economy, coins: 0 } } });
 
     if (!user) {
       // Load from localStorage for guests
@@ -815,64 +965,55 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
       if (saved) {
         try {
-          dispatch({ type: 'SET_STATE', payload: mergeEconomyState(JSON.parse(saved), user) });
+          const cached = mergeEconomyState(JSON.parse(saved), user);
+          dispatch({ type: 'HYDRATE_STATE', payload: cached });
         } catch {
-          dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+          dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
         }
       } else {
-        dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+        dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
       }
       finishLoading();
     }, ECONOMY_LOAD_TIMEOUT_MS);
 
-    // Load from Firebase
-    const loadFromFirebase = async () => {
+    const loadFromSupabase = async () => {
       try {
-        const ref = doc(db, 'playerEconomy', user.uid);
-        const snap = await getDoc(ref);
+        const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
+        const localState = saved ? mergeEconomyState(JSON.parse(saved), user) : stateForUser(user);
+        const data = await hydrateSupabaseEconomy(localState, user.uid);
+        const snapshot = await loadWallet();
         if (cancelled) return;
-        
-        if (snap.exists()) {
-          const data = mergeEconomyState(snap.data() as Partial<EconomyState>, user);
-          
-          // Check for daily/weekly resets
-          const now = Date.now();
-          const needsDailyReset = isNewDay(data.missions.lastDailyReset);
-          const needsWeeklyReset = isNewWeek(data.missions.lastWeeklyReset);
-          
-          let updatedState = { ...data };
-          
-          if (needsDailyReset) {
-            updatedState.missions.daily = generateDailyMissions();
-            updatedState.missions.lastDailyReset = now;
-          }
-          
-          if (needsWeeklyReset) {
-            updatedState.missions.weekly = generateWeeklyMissions();
-            updatedState.missions.lastWeeklyReset = now;
-          }
-          
-          dispatch({ type: 'SET_STATE', payload: updatedState });
-        } else {
-          // New user — save initial state with their UID
-          const newState = stateForUser(user);
-          await setDoc(ref, newState);
-          if (cancelled) return;
-          dispatch({ type: 'SET_STATE', payload: newState });
-        }
+
+        const now = Date.now();
+        const needsDailyReset = isNewDay(data.missions.lastDailyReset);
+        const needsWeeklyReset = isNewWeek(data.missions.lastWeeklyReset);
+        const updatedState = {
+          ...data,
+          missions: {
+            ...data.missions,
+            daily: needsDailyReset ? generateDailyMissions() : data.missions.daily,
+            weekly: needsWeeklyReset ? generateWeeklyMissions() : data.missions.weekly,
+            lastDailyReset: needsDailyReset ? now : data.missions.lastDailyReset,
+            lastWeeklyReset: needsWeeklyReset ? now : data.missions.lastWeeklyReset,
+          },
+        };
+
+        dispatch({ type: 'HYDRATE_STATE', payload: updatedState });
+        applySnapshot(snapshot);
         if (!cancelled) setRemoteReadyUid(user.uid);
       } catch (error) {
-        console.error('Failed to load from Firebase:', error);
+        console.error('Failed to load from Supabase:', error);
         if (!cancelled) {
           const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
           if (saved) {
             try {
-              dispatch({ type: 'SET_STATE', payload: mergeEconomyState(JSON.parse(saved), user) });
+              const cached = mergeEconomyState(JSON.parse(saved), user);
+              dispatch({ type: 'HYDRATE_STATE', payload: cached });
             } catch {
-              dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+              dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
             }
           } else {
-            dispatch({ type: 'SET_STATE', payload: stateForUser(user) });
+            dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
           }
         }
       } finally {
@@ -880,33 +1021,15 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    loadFromFirebase();
-
-    // Real-time sync from other devices
-    const unsub = onSnapshot(doc(db, 'playerEconomy', user.uid), (snap) => {
-      if (snap.exists()) {
-        const data = mergeEconomyState(snap.data() as Partial<EconomyState>, user);
-        // Only update if the data is newer than our current state
-        // This prevents loops while still allowing multi-device sync
-        const lastTx = data.economy?.transactions?.[0]?.timestamp || 0;
-        const ourLastTx = stateRef.current.economy?.transactions?.[0]?.timestamp || 0;
-        if (lastTx > ourLastTx) {
-          dispatch({ type: 'SET_STATE', payload: data });
-        }
-      }
-    }, (error) => {
-      console.error('Failed to watch economy:', error);
-      finishLoading();
-    });
+    loadFromSupabase();
 
     return () => {
       cancelled = true;
       window.clearTimeout(fallbackTimer);
-      unsub();
     };
-  }, [user?.uid]);
+  }, [user?.uid, applySnapshot]);
 
-  // Save to Firebase on state change
+  // Save to Supabase on state change.
   useEffect(() => {
     if (!user) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -919,28 +1042,16 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     // A timed-out read must never upload fallback balances over remote data.
     if (remoteReadyUid !== user.uid) return;
 
-    const saveToFirebase = async () => {
+    const saveToSupabase = async () => {
       try {
-        await setDoc(doc(db, 'playerEconomy', user.uid), state, { merge: true });
-        // Also mirror equipped cosmetics onto the public `players/{uid}`
-        // doc (already readable by any signed-in user, see lib/publicProfile.ts)
-        // so opponents at the table can render this player's actual skins
-        // instead of always falling back to the defaults.
-        await setDoc(
-          doc(db, 'players', user.uid),
-          {
-            equippedCardBack: state.profile.equipped.cardBack || 'cb_default',
-            equippedTableTheme: state.profile.equipped.tableTheme || 'tt_default',
-          },
-          { merge: true }
-        );
+        await saveSupabaseEconomy(user.uid, state);
       } catch (error) {
-        console.error('Failed to save to Firebase:', error);
+        console.error('Failed to save to Supabase:', error);
       }
     };
 
     // Debounce save to prevent excessive writes
-    const timer = setTimeout(saveToFirebase, 1000);
+    const timer = setTimeout(saveToSupabase, 1000);
     return () => clearTimeout(timer);
   }, [state, user?.uid, isLoading, remoteReadyUid]);
 
@@ -953,9 +1064,8 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Admin panel overrides (lib/admin.ts). Guests never actually sign into
-  // Firebase (see signInAsGuest), so `appConfig` reads would be denied for
-  // them - only subscribe when there's a real signed-in user.
+  // Admin panel overrides (lib/admin.ts). Only subscribe when there's a real
+  // signed-in user so Supabase RLS can authorize the read.
   useEffect(() => {
     if (!user) return;
     const unsubMissions = watchMissionRewardOverrides((data) =>
@@ -974,18 +1084,14 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'ADD_COINS', payload: { amount, source, description } });
   }, [dispatch]);
 
-  const spendCoins = useCallback((amount: number, description: string): boolean => {
-    if (state.economy.coins < amount) return false;
-    dispatch({ type: 'SPEND_COINS', payload: { amount, description } });
-    return true;
-  }, [dispatch, state.economy.coins]);
+  const spendCoins = useCallback((amount: number, description: string) => dispatch({ type: 'SPEND_COINS', payload: { amount, description } }), [dispatch]);
 
   const completeMission = useCallback((missionId: string, isWeekly: boolean) => {
     dispatch({ type: 'COMPLETE_MISSION', payload: { missionId, isWeekly } });
   }, [dispatch]);
 
   const claimDailyReward = useCallback((day: number) => {
-    dispatch({ type: 'CLAIM_DAILY_REWARD', payload: { day } });
+    return dispatch({ type: 'CLAIM_DAILY_REWARD', payload: { day } });
   }, [dispatch]);
 
   const activateVip = useCallback((days: number) => {
@@ -996,14 +1102,13 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'ACTIVATE_ROOM_CARD', payload: { cardId } });
   }, [dispatch]);
 
-  const purchaseCosmetic = useCallback((itemId: string): boolean => {
+  const purchaseCosmetic = useCallback(async (itemId: string): Promise<boolean> => {
     const item = ALL_COSMETICS.find(c => c.id === itemId);
     if (!item) return false;
     if (state.shopOverrides?.hiddenItemIds.includes(itemId)) return false;
     const price = state.shopOverrides?.priceOverrides[itemId] ?? item.price;
     if (state.economy.coins < price) return false;
-    dispatch({ type: 'PURCHASE_COSMETIC', payload: { itemId } });
-    return true;
+    return dispatch({ type: 'PURCHASE_COSMETIC', payload: { itemId } });
   }, [dispatch, state.economy.coins, state.shopOverrides]);
 
   const equipCosmetic = useCallback((category: string, itemId: string) => {
@@ -1024,11 +1129,10 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'ADD_ROOM_CARD', payload: { type } });
   }, [dispatch]);
 
-  const purchaseRoomCard = useCallback((type: RoomCardType): boolean => {
+  const purchaseRoomCard = useCallback(async (type: RoomCardType): Promise<boolean> => {
     const price = ROOM_CARD_PRICES[type];
     if (state.economy.coins < price) return false;
-    dispatch({ type: 'PURCHASE_ROOM_CARD', payload: { type, price } });
-    return true;
+    return dispatch({ type: 'PURCHASE_ROOM_CARD', payload: { type, price } });
   }, [dispatch, state.economy.coins]);
 
   const showReward = useCallback((popup: RewardPopup) => {
@@ -1193,6 +1297,8 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     <EconomyContext.Provider
       value={{
         state,
+        balanceReady: !user || remoteReadyUid === user.uid,
+        refreshBalance,
         dispatch,
         addCoins,
         spendCoins,

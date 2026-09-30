@@ -7,6 +7,7 @@ import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { CrownGlyph } from "@/components/arena";
 import { RANKS } from "@/constants/ranks";
+import { formatCoins } from "@/lib/wallet";
 
 /** The ring colour behind the avatar, by tier. */
 const TIER_RING: Record<string, string> = {
@@ -36,7 +37,7 @@ const TIER_RING: Record<string, string> = {
  */
 export function PhoneTopBar({ notifications = 0 }: { notifications?: number }) {
   const { user, playerStats } = useAuth();
-  const { state } = useEconomy();
+  const { state, balanceReady } = useEconomy();
   const t = useTranslation();
 
   const name = user?.displayName || t("profile_player");
@@ -52,9 +53,9 @@ export function PhoneTopBar({ notifications = 0 }: { notifications?: number }) {
       <span className="word chrome">Thaasbai</span>
 
       <div className="tr">
-        <span className="coins" aria-label={`${coins.toLocaleString()} ${t("common_coins")}`}>
+        <span className="coins" aria-label={`${balanceReady === false ? 'Updating balance' : formatCoins(coins)} ${t("common_coins")}`}>
           <i className="gem" aria-hidden="true" />
-          {coins.toLocaleString()}
+          {balanceReady === false ? '—' : formatCoins(coins)}
           <Link href="/shop?tab=coins" className="add" aria-label={t("shop_getCoins")}>
             <Plus aria-hidden="true" />
           </Link>

@@ -8,7 +8,7 @@ import { useEconomy } from "@/contexts/EconomyContext";
 import { useToast } from "@/contexts/ToastContext";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { resolveAchievements } from "@/lib/achievements";
-import { auth } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getProfileHistory, ProfileMatch } from "@/lib/profileHistory";
 import { getRankFromTrophies } from "@/constants/ranks";
 import { Avatar, RankLabel, RankHex } from "@/components/arena";
@@ -17,6 +17,7 @@ import {
   ProfileSkeleton, ProfileStatsGrid, metric,
 } from "@/components/profile/ProfileSections";
 import { PhoneProfile } from "@/components/profile/phone/PhoneProfile";
+import { copyText } from "@/lib/clipboard";
 
 /**
  * Profile — design/arena/screens/app/app-02-profile.jpg, from the Profile
@@ -49,9 +50,10 @@ export default function ProfilePage() {
   useEffect(() => {
     let active = true;
     setAdmin(false);
-    const current = auth.currentUser;
-    if (current && current.uid === uid) current.getIdTokenResult().then(token => {
-      if (active) setAdmin(token.claims.admin === true || token.claims.role === "admin");
+    getSupabaseBrowserClient().auth.getUser().then(({ data }) => {
+      const current = data.user;
+      const role = current?.app_metadata?.role;
+      if (active && current && current.id === uid) setAdmin(current.app_metadata?.admin === true || role === "admin");
     }).catch(() => {});
     return () => { active = false; };
   }, [uid]);
@@ -78,7 +80,7 @@ export default function ProfilePage() {
 
   async function copyId() {
     if (!playerStats?.playerCode) return;
-    try { await navigator.clipboard.writeText(playerStats.playerCode); showToast("User ID copied.", "success"); }
+    try { await copyText(playerStats.playerCode); showToast("User ID copied.", "success"); }
     catch { showToast("Couldn't copy User ID.", "error"); }
   }
 

@@ -13,6 +13,9 @@ let match:any,notify:any,attempts=0;
 export function watchMatch(id:string,update:any) {
   const deal=dealGinHand();
   match={players:["me","rival"],pool:"casual",status:"active",state:{hands:{me:deal.playerHand,rival:deal.opponentHand},stock:deal.stock,discard:deal.discard,turn:"me",phase:"draw",result:null}};
+  // ?intro opens on a fresh hand with the stored cut, as a match starts: the
+  // CutGin board's own - Sayyu's king of clubs over the rival's 8 of diamonds.
+  if(location.search.includes("intro")) match.state.firstCut={cards:{me:{rank:13,suit:"C"},rival:{rank:8,suit:"D"}},winner:"me"};
   notify=update;update(match);return()=>{};
 }
 export async function updateMatchState(id:string,fn:any) {

@@ -21,7 +21,7 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/
 const mocks = path.join(__dirname, 'profile-test-services.tsx');
 const alias = Object.fromEntries([
   '@/contexts/AuthContext', '@/contexts/EconomyContext', '@/contexts/ToastContext',
-  '@/hooks/useTranslation', '@/lib/profileHistory', '@/lib/firebase',
+  '@/hooks/useTranslation', '@/lib/profileHistory',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
 

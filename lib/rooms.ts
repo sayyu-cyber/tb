@@ -1,32 +1,8 @@
-// lib/rooms.ts
-//
-// Private match rooms (GDD Chapter 12): a friend creates a room and shares
-// its code (and optional password); others join with that code, the owner
-// kicks anyone unwanted and starts the match once full. Once started, a
-// room hands off to the exact same `matches/{matchId}` document used by
-// Ranked mode (lib/matchmaking.ts) - a room is just a different way to
-// assemble the player list before a match begins.
-//
-// Same trust model/limitations as lib/matchmaking.ts: no game server, so
-// this is all client-trusted Firestore reads/writes. The room code (and
-// password, if set) are the only real access control - see the rules for
-// the `rooms` collection in firestore.rules.
-
-import {
-  doc,
-  setDoc,
-  getDoc,
-  deleteDoc,
-  onSnapshot,
-  runTransaction,
-  collection,
-  Unsubscribe,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 import { GameType, MatchDoc } from "@/lib/matchmaking";
 
-const ROOMS_COLLECTION = "rooms";
-const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I to avoid confusion
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export interface RoomDoc {
   code: string;
@@ -39,255 +15,173 @@ export interface RoomDoc {
   status: "waiting" | "started" | "closed";
   matchId: string | null;
   createdAt: number;
-  /** "rankedDuo" rooms are just a 2-person "bring your own partner" party
-   *  formed before Ranked queueing (see lib/matchmaking.ts's
-   *  tryFormDuoMatch) - not a casual private match. Defaults to "casual"
-   *  for every room created before this field existed. */
   mode?: "casual" | "rankedDuo";
-  /** Uids the owner has banned from this specific room code - banned
-   *  players are blocked from rejoining (see joinRoom) even if they still
-   *  have the code, unlike a kick which only removes them once. Defaults
-   *  to [] for every room created before this field existed. */
   bannedUids?: string[];
-  /** Mindi-only: "team2v2" (the default, fixed partnerships - seats 0&2 vs
-   *  1&3) or "ffa1v1" (2 players, no partnership - see lib/mindiEngine.ts's
-   *  teamOf(), which happens to reduce to individual scoring when only
-   *  seats 0 and 1 are in play). Ignored for Gin Rummy, which is always
-   *  1v1. 1v1v1/1v1v1v1 free-for-all aren't implemented yet - they'd need
-   *  genuinely individual (non-team) scoring in mindiEngine.ts, not just a
-   *  seat-count change, so they're deliberately deferred rather than
-   *  half-shipped. */
   mindiMode?: "team2v2" | "ffa1v1";
-  /** Owner-adjustable seat assignment for Team Mode - an ordering of
-   *  `players` that decides who sits where (and therefore who's on which
-   *  team: seats 0&2 = Team A, 1&3 = Team B) once the room is full. Falls
-   *  back to `players`' join order if never set. Only meaningful for Mindi
-   *  team2v2 rooms. */
   seatOrder?: string[];
 }
 
 function generateRoomCode(): string {
   let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-  }
+  for (let i = 0; i < 6; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
   return code;
 }
 
 function maxPlayersFor(gameType: GameType, mode: "casual" | "rankedDuo", mindiMode: "team2v2" | "ffa1v1"): number {
-  if (mode === "rankedDuo") return 2; // always just you + one partner, regardless of game
+  if (mode === "rankedDuo") return 2;
   if (gameType === "mindi") return mindiMode === "ffa1v1" ? 2 : 4;
   return 2;
 }
 
-export async function createRoom(
-  ownerUid: string,
-  ownerName: string,
-  gameType: GameType,
-  password: string | null,
-  mode: "casual" | "rankedDuo" = "casual",
-  mindiMode: "team2v2" | "ffa1v1" = "team2v2"
-): Promise<string> {
-  // Vanishingly unlikely to collide, but check anyway before committing.
+function toRoom(row: any): RoomDoc {
+  const players = (row.room_players ?? []).sort((a: any, b: any) => (a.seat_index ?? 999) - (b.seat_index ?? 999));
+  return {
+    code: row.code,
+    gameType: row.game_type,
+    ownerUid: row.owner_id,
+    password: row.password_hash,
+    maxPlayers: row.max_players,
+    players: players.map((player: any) => player.user_id),
+    playerNames: Object.fromEntries(players.map((player: any) => [player.user_id, player.display_name || "Player"])),
+    status: row.status,
+    matchId: row.match_id,
+    createdAt: toMillis(row.created_at),
+    mode: row.mode,
+    bannedUids: (row.room_bans ?? []).map((ban: any) => ban.user_id),
+    mindiMode: row.mindi_mode ?? undefined,
+    seatOrder: players.map((player: any) => player.user_id),
+  };
+}
+
+export async function getRoom(code: string): Promise<RoomDoc | null> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("game_rooms")
+    .select("*,room_players(user_id,display_name,seat_index,joined_at),room_bans(user_id)")
+    .eq("code", code.trim().toUpperCase())
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toRoom(data) : null;
+}
+
+export async function createRoom(ownerUid: string, ownerName: string, gameType: GameType, password: string | null, mode: "casual" | "rankedDuo" = "casual", mindiMode: "team2v2" | "ffa1v1" = "team2v2"): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateRoomCode();
-    const ref = doc(db, ROOMS_COLLECTION, code);
-    const existing = await getDoc(ref);
-    if (existing.exists()) continue;
-
-    const room: RoomDoc = {
+    const { error } = await supabase.from("game_rooms").insert({
       code,
-      gameType,
-      ownerUid,
-      password: password || null,
-      maxPlayers: maxPlayersFor(gameType, mode, mindiMode),
-      players: [ownerUid],
-      playerNames: { [ownerUid]: ownerName },
-      status: "waiting",
-      matchId: null,
-      createdAt: Date.now(),
+      game_type: gameType,
+      owner_id: ownerUid,
+      password_hash: password || null,
+      max_players: maxPlayersFor(gameType, mode, mindiMode),
       mode,
-      bannedUids: [],
-      ...(gameType === "mindi" ? { mindiMode, seatOrder: [ownerUid] } : {}),
-    };
-    await setDoc(ref, room);
+      mindi_mode: gameType === "mindi" ? mindiMode : null,
+    });
+    if (error) {
+      if (error.code === "23505") continue;
+      throw error;
+    }
+    const { error: playerError } = await supabase.from("room_players").insert({ room_code: code, user_id: ownerUid, display_name: ownerName, seat_index: 0 });
+    if (playerError) throw playerError;
     return code;
   }
   throw new Error("Could not generate a unique room code - please try again");
 }
 
-export async function getRoom(code: string): Promise<RoomDoc | null> {
-  const snap = await getDoc(doc(db, ROOMS_COLLECTION, code.trim().toUpperCase()));
-  return snap.exists() ? { ...snap.data(), code: snap.id } as RoomDoc : null;
+export async function joinRoom(code: string, uid: string, displayName: string, password: string, inviteToken?: string): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.rpc("join_room", { p_code: code.trim().toUpperCase(), p_password: password, p_invite: inviteToken || null });
+  if (error) throw new Error(error.message);
 }
 
-export async function joinRoom(
-  code: string,
-  uid: string,
-  displayName: string,
-  password: string
-): Promise<void> {
-  const upperCode = code.trim().toUpperCase();
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, ROOMS_COLLECTION, upperCode);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) throw new Error("Room not found - check the code and try again");
-    const room = snap.data() as RoomDoc;
-
-    if (room.status !== "waiting") throw new Error("This room has already started or closed");
-    if (room.bannedUids?.includes(uid)) throw new Error("You have been banned from this room");
-    if (room.password && room.password !== password) throw new Error("Incorrect room password");
-    if (room.players.includes(uid)) return; // already in - fine
-    if (room.players.length >= room.maxPlayers) throw new Error("This room is full");
-
-    transaction.update(ref, {
-      players: [...room.players, uid],
-      playerNames: { ...room.playerNames, [uid]: displayName },
-      ...(room.seatOrder ? { seatOrder: [...room.seatOrder, uid] } : {}),
-    });
-  });
+export async function createRoomInviteLink(code: string): Promise<string> {
+  const { data, error } = await getSupabaseBrowserClient().rpc("create_room_invite_link", { p_code: code });
+  if (error) throw new Error(error.message);
+  return data as string;
 }
 
-/**
- * Owner rearranges who sits in which seat before starting a Mindi Team Mode
- * match - seats 0&2 become Team A, 1&3 become Team B (mindiEngine.ts's
- * teamOf()), so this is how the owner picks who's paired with whom. Must be
- * exactly the same set of uids already in the room, just reordered.
- */
 export async function setSeatOrder(code: string, ownerUid: string, seatOrder: string[]): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, ROOMS_COLLECTION, code);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) return;
-    const room = snap.data() as RoomDoc;
-    if (room.ownerUid !== ownerUid) return;
-    const sameSet =
-      seatOrder.length === room.players.length &&
-      room.players.every((p) => seatOrder.includes(p));
-    if (!sameSet) throw new Error("Seat order must contain exactly the current players");
-    transaction.update(ref, { seatOrder });
-  });
+  const room = await getRoom(code);
+  if (!room || room.ownerUid !== ownerUid) return;
+  const sameSet = seatOrder.length === room.players.length && room.players.every((p) => seatOrder.includes(p));
+  if (!sameSet) throw new Error("Seat order must contain exactly the current players");
+  const supabase = getSupabaseBrowserClient();
+  await Promise.all(seatOrder.map((uid, seatIndex) => supabase.from("room_players").update({ seat_index: seatIndex }).eq("room_code", code).eq("user_id", uid)));
 }
 
 export async function kickPlayer(code: string, ownerUid: string, targetUid: string): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, ROOMS_COLLECTION, code);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) return;
-    const room = snap.data() as RoomDoc;
-    if (room.ownerUid !== ownerUid || targetUid === ownerUid) return;
-
-    const players = room.players.filter((p) => p !== targetUid);
-    const playerNames = { ...room.playerNames };
-    delete playerNames[targetUid];
-    const seatOrder = room.seatOrder ? room.seatOrder.filter((p) => p !== targetUid) : undefined;
-    transaction.update(ref, { players, playerNames, ...(seatOrder ? { seatOrder } : {}) });
-  });
+  const room = await getRoom(code);
+  if (!room || room.ownerUid !== ownerUid || targetUid === ownerUid) return;
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("room_players").delete().eq("room_code", code).eq("user_id", targetUid);
+  if (error) throw error;
 }
 
-/**
- * Like kickPlayer, but also adds the target to the room's ban list so they
- * can't simply rejoin with the same code (see joinRoom's bannedUids check).
- * The removed player finds out via their own watchRoom listener - once
- * their uid disappears from room.players while the room is still
- * "waiting", RoomLobbyClient shows them a "you were banned" screen.
- */
 export async function banPlayer(code: string, ownerUid: string, targetUid: string): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, ROOMS_COLLECTION, code);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) return;
-    const room = snap.data() as RoomDoc;
-    if (room.ownerUid !== ownerUid || targetUid === ownerUid) return;
-
-    const players = room.players.filter((p) => p !== targetUid);
-    const playerNames = { ...room.playerNames };
-    delete playerNames[targetUid];
-    const bannedUids = Array.from(new Set([...(room.bannedUids ?? []), targetUid]));
-    const seatOrder = room.seatOrder ? room.seatOrder.filter((p) => p !== targetUid) : undefined;
-    transaction.update(ref, { players, playerNames, bannedUids, ...(seatOrder ? { seatOrder } : {}) });
-  });
+  await kickPlayer(code, ownerUid, targetUid);
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("room_bans").upsert({ room_code: code, user_id: targetUid });
+  if (error) throw error;
 }
 
 export async function leaveRoom(code: string, uid: string): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, ROOMS_COLLECTION, code);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) return;
-    const room = snap.data() as RoomDoc;
-    if (room.ownerUid === uid) {
-      transaction.update(ref, { status: "closed" });
-      return;
-    }
-    const players = room.players.filter((p) => p !== uid);
-    const playerNames = { ...room.playerNames };
-    delete playerNames[uid];
-    const seatOrder = room.seatOrder ? room.seatOrder.filter((p) => p !== uid) : undefined;
-    transaction.update(ref, { players, playerNames, ...(seatOrder ? { seatOrder } : {}) });
-  });
+  const room = await getRoom(code);
+  const supabase = getSupabaseBrowserClient();
+  if (room?.ownerUid === uid) {
+    await supabase.from("game_rooms").update({ status: "closed" }).eq("code", code);
+    return;
+  }
+  await supabase.from("room_players").delete().eq("room_code", code).eq("user_id", uid);
 }
 
 export async function closeRoom(code: string, ownerUid: string): Promise<void> {
-  const ref = doc(db, ROOMS_COLLECTION, code);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-  const room = snap.data() as RoomDoc;
-  if (room.ownerUid !== ownerUid) return;
-  await deleteDoc(ref).catch(async () => {
-    // Rules may forbid delete depending on config - fall back to marking closed.
-    await setDoc(ref, { ...room, status: "closed" });
-  });
+  const room = await getRoom(code);
+  if (!room || room.ownerUid !== ownerUid) return;
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("game_rooms").update({ status: "closed" }).eq("code", code);
+  if (error) throw error;
 }
 
-/**
- * Owner starts the match: builds the initial game state (same shape used by
- * Ranked matchmaking) from the room's player list and creates the shared
- * match document, then flips the room to "started" so everyone's listener
- * picks up the matchId and navigates in together.
- */
-export async function startRoomMatch<TState>(
-  code: string,
-  ownerUid: string,
-  buildInitialState: (orderedPlayerUids: string[]) => TState
-): Promise<string> {
-  return runTransaction(db, async (transaction) => {
-    const ref = doc(db, ROOMS_COLLECTION, code);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) throw new Error("Room not found");
-    const room = snap.data() as RoomDoc;
-    if (room.ownerUid !== ownerUid) throw new Error("Only the room owner can start the match");
-    if (room.players.length !== room.maxPlayers) throw new Error("Room isn't full yet");
-
-    // Team Mode lets the owner rearrange seats (see setSeatOrder) - use
-    // that order for team assignment if it's been set, otherwise fall back
-    // to plain join order like before.
-    const orderedPlayers =
-      room.seatOrder && room.seatOrder.length === room.players.length ? room.seatOrder : room.players;
-
-    const matchRef = doc(collection(db, "matches"));
-    const matchDoc: MatchDoc<TState> = {
-      gameType: room.gameType,
-      players: orderedPlayers,
-      status: "active",
-      createdAt: Date.now(),
-      state: buildInitialState(orderedPlayers),
-    };
-    transaction.set(matchRef, matchDoc);
-    transaction.update(ref, { status: "started", matchId: matchRef.id });
-    return matchRef.id;
-  });
+export async function startRoomMatch<TState>(code: string, ownerUid: string, buildInitialState: (orderedPlayerUids: string[]) => TState): Promise<string> {
+  const room = await getRoom(code);
+  if (!room) throw new Error("Room not found");
+  if (room.ownerUid !== ownerUid) throw new Error("Only the room owner can start the match");
+  if (room.players.length !== room.maxPlayers) throw new Error("Room isn't full yet");
+  const orderedPlayers = room.seatOrder && room.seatOrder.length === room.players.length ? room.seatOrder : room.players;
+  const supabase = getSupabaseBrowserClient();
+  const matchDoc: MatchDoc<TState> = {
+    gameType: room.gameType,
+    pool: room.mode === "rankedDuo" ? "ranked" : "casual",
+    players: orderedPlayers,
+    status: "active",
+    createdAt: Date.now(),
+    state: buildInitialState(orderedPlayers),
+  };
+  const { data: match, error } = await supabase.from("matches").insert({
+    game_type: matchDoc.gameType,
+    pool: matchDoc.pool,
+    status: "active",
+    public_state: matchDoc.state as any,
+  }).select("id").single();
+  if (error) throw error;
+  const { error: playersError } = await supabase.from("match_players").insert(orderedPlayers.map((userId, seatIndex) => ({ match_id: match.id, user_id: userId, seat_index: seatIndex })));
+  if (playersError) throw playersError;
+  const { error: roomError } = await supabase.from("game_rooms").update({ status: "started", match_id: match.id }).eq("code", code);
+  if (roomError) throw roomError;
+  return match.id;
 }
 
-/** `onError` matters more than usual here: a room's own creator/joiner
- *  landing on this listener is the private-room flow's only way in, and
- *  without it a denied/failed read leaves them stuck on "loading room…"
- *  forever - see RoomLobbyClient. */
 export function watchRoom(code: string, onUpdate: (room: RoomDoc | null) => void, onError?: (err: Error) => void): Unsubscribe {
-  return onSnapshot(
-    doc(db, ROOMS_COLLECTION, code),
-    (snap) => {
-      onUpdate(snap.exists() ? (snap.data() as RoomDoc) : null);
-    },
-    onError
-  );
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      onUpdate(await getRoom(code));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load room"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`room:${code}`))
+    .on("postgres_changes", { event: "*", schema: "public", table: "game_rooms", filter: `code=eq.${code}` }, load)
+    .on("postgres_changes", { event: "*", schema: "public", table: "room_players", filter: `room_code=eq.${code}` }, load), onError);
 }

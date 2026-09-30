@@ -24,6 +24,7 @@ import { ALL_COSMETICS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES, RANK_
 import { useTranslation } from "@/hooks/useTranslation";
 import { ShieldCheck, Wallet, CalendarDays, Trophy, ShoppingBag, Target, Swords, Search, Flag } from "lucide-react";
 import { REPORT_REASONS, resolveReport, watchOpenReports, type ReportDoc } from "@/lib/moderation";
+import { formatCoins, watchWallet } from "@/lib/wallet";
 
 type Tab = "topups" | "reports" | "season" | "hof" | "shop" | "missions" | "ranked";
 
@@ -111,6 +112,11 @@ function DirectTopupPanel() {
   const [confirming, setConfirming] = useState(false);
   const [depositing, setDepositing] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  useEffect(() => {
+    if (!found?.uid) return;
+    const uid = found.uid;
+    return watchWallet(uid, wallet => setFound(current => current?.uid === uid && wallet.version >= (current.version ?? -1) ? { ...current, coins: wallet.coins, version: wallet.version } : current));
+  }, [found?.uid]);
 
   async function handleSearch() {
     const trimmed = code.trim();
@@ -140,12 +146,11 @@ function DirectTopupPanel() {
     if (!found || !validAmount) return;
     setDepositing(true);
     try {
-      await adminTopUp(found.uid, found.displayName, parsedAmount);
-      setDone(`Deposited ${parsedAmount.toLocaleString()} coins to ${found.displayName}.`);
+      const balance = await adminTopUp(found.uid, found.displayName, parsedAmount);
+      setDone(`Deposited ${formatCoins(parsedAmount)} coins to ${found.displayName}.`);
       setConfirming(false);
       setAmount("");
-      setFound(null);
-      setCode("");
+      setFound({ ...found, coins: balance.coins, version: balance.version });
     } catch (err) {
       setSearchError(`Deposit failed: ${err instanceof Error ? err.message : "unknown error"}`);
       setConfirming(false);
@@ -193,7 +198,7 @@ function DirectTopupPanel() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[rgb(var(--text-primary))] text-sm font-semibold">{found.displayName}</p>
-              <p className="text-[rgb(var(--c4))] text-xs">Current balance: {found.coins.toLocaleString()} coins</p>
+              <p className="text-[rgb(var(--c4))] text-xs">Current balance: {formatCoins(found.coins)} coins</p>
             </div>
           </div>
 
@@ -224,7 +229,7 @@ function DirectTopupPanel() {
             <div>
               <p className="text-[rgb(var(--text-primary))] font-semibold text-sm mb-1">Confirm deposit</p>
               <p className="text-[rgb(var(--c4))] text-xs">
-                Deposit <span className="text-[rgb(var(--gold-ink))] font-bold">{parsedAmount.toLocaleString()} coins</span> to{" "}
+                Deposit <span className="text-[rgb(var(--gold-ink))] font-bold">{formatCoins(parsedAmount)} coins</span> to{" "}
                 <span className="text-[rgb(var(--text-primary))] font-semibold">{found.displayName}</span>? This cannot be undone.
               </p>
             </div>
@@ -254,7 +259,7 @@ function DirectTopupPanel() {
 /**
  * Abuse report queue.
  *
- * Reports are write-only for players (firestore.rules), so this is the only
+ * Reports are write-only for players through Supabase RLS, so this is the only
  * place they surface. Without it the report button would file complaints
  * into a collection nobody ever opens, which is worse than having no button
  * at all — it implies a moderation process that does not exist.
@@ -276,7 +281,7 @@ function ReportsTab() {
           setReports(items);
           setError(null);
         },
-        () => setError("Couldn't load reports. Check that the Firestore rules are deployed.")
+        () => setError("Couldn't load reports. Check that Supabase RLS and admin access are configured.")
       ),
     []
   );
@@ -394,7 +399,7 @@ function TopupsTab() {
                 <div>
                   <p className="text-[rgb(var(--text-primary))] text-sm font-medium">{r.playerName}</p>
                   <p className="text-[rgb(var(--c4))] text-xs">
-                    {r.packName} — {r.coins.toLocaleString()} coins (MVR {r.priceMVR})
+                    {r.packName} — {formatCoins(r.coins)} coins (MVR {r.priceMVR})
                   </p>
                 </div>
                 <div className="flex gap-2">

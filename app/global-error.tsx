@@ -3,7 +3,7 @@
 /**
  * Last-resort boundary for errors thrown by the ROOT LAYOUT itself
  * (app/layout.tsx) - most plausibly a provider failing to initialise, e.g.
- * Firebase misconfigured at boot. When this renders, Next has replaced the
+ * Supabase or app config misconfigured at boot. When this renders, Next has replaced the
  * whole document, so it must supply its own <html>/<body>.
  *
  * Two consequences worth knowing before editing this file:

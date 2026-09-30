@@ -1,18 +1,5 @@
-// lib/hallOfFame.ts
-//
-// Hall of Fame (GDD Version 1.5): a permanent record of the best players,
-// distinct from the regular Leaderboard (hooks/useLeaderboard.ts), which
-// ranks players by their *current* trophies - a number that goes down
-// after a loss. The Hall of Fame instead ranks by `peakTrophies`
-// (lib/trophyUpdates.ts), the highest trophy count a player has ever
-// reached, which only ever increases. That makes it a fair "best ever"
-// record without needing a season-end snapshot job.
-//
-// Query uses a single Firestore-side orderBy (no composite index needed),
-// same pattern used everywhere else in this project.
-
-import { collection, getDocs, addDoc, deleteDoc, doc, limit, orderBy, query, onSnapshot, Unsubscribe } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 
 export interface HallOfFameEntry {
   uid: string;
@@ -22,14 +9,10 @@ export interface HallOfFameEntry {
   wins: number;
   totalMatches: number;
   favoriteGame: string | null;
-  /** True for entries the admin panel added by hand (a team, a legacy
-   *  player from before this system existed, etc) rather than a real
-   *  account's computed peakTrophies. See hallOfFameManual collection. */
   isManual?: boolean;
 }
 
 const HALL_OF_FAME_SIZE = 50;
-const MANUAL_COLLECTION = "hallOfFameManual";
 
 export interface ManualHallOfFameEntry {
   id: string;
@@ -39,79 +22,84 @@ export interface ManualHallOfFameEntry {
   addedAt: number;
 }
 
-/**
- * Admin panel: manually add a player or team to the Hall of Fame - "ability
- * to ... add players, teams to hall of fame." These are additive entries
- * layered on top of the real computed ranking below, not a replacement for
- * it - real player data is never rewritten this way.
- */
 export async function addManualHallOfFameEntry(displayName: string, peakTrophies: number, note: string): Promise<void> {
-  await addDoc(collection(db, MANUAL_COLLECTION), {
-    displayName: displayName.trim().slice(0, 40),
-    peakTrophies,
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("hall_of_fame_manual").insert({
+    display_name: displayName.trim().slice(0, 40),
+    peak_trophies: peakTrophies,
     note: note.trim().slice(0, 100),
-    addedAt: Date.now(),
   });
+  if (error) throw error;
 }
 
 export async function removeManualHallOfFameEntry(id: string): Promise<void> {
-  await deleteDoc(doc(db, MANUAL_COLLECTION, id));
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("hall_of_fame_manual").delete().eq("id", id);
+  if (error) throw error;
+}
+
+async function loadManual(): Promise<ManualHallOfFameEntry[]> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.from("hall_of_fame_manual").select("id,display_name,peak_trophies,note,added_at");
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    displayName: row.display_name,
+    peakTrophies: row.peak_trophies,
+    note: row.note,
+    addedAt: toMillis(row.added_at),
+  }));
 }
 
 export function watchManualHallOfFameEntries(onUpdate: (entries: ManualHallOfFameEntry[]) => void): Unsubscribe {
-  return onSnapshot(collection(db, MANUAL_COLLECTION), (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ManualHallOfFameEntry, "id">) })));
-  });
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => onUpdate(await loadManual());
+  void load().catch(console.error);
+  return subscribe(supabase.channel(realtimeChannelName("hall-of-fame-manual")).on("postgres_changes", { event: "*", schema: "public", table: "hall_of_fame_manual" }, load));
 }
 
-/**
- * "Reset Hall of Fame" is scoped to clearing these manual entries - wiping
- * every real player's peakTrophies at scale isn't something this
- * client-only app can safely do (that's a Cloud Function job: thousands of
- * individual writes with no way to guarantee it finishes if the admin
- * closes the tab). See lib/admin.ts's file-level comment for the same
- * caveat applied elsewhere.
- */
 export async function resetManualHallOfFame(): Promise<void> {
-  const snap = await getDocs(collection(db, MANUAL_COLLECTION));
-  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.from("hall_of_fame_manual").select("id");
+  if (error) throw error;
+  await Promise.all((data ?? []).map((row) => removeManualHallOfFameEntry(row.id)));
 }
 
 export async function getHallOfFame(limitCount = HALL_OF_FAME_SIZE): Promise<HallOfFameEntry[]> {
-  const q = query(collection(db, "players"), orderBy("peakTrophies", "desc"), limit(limitCount));
-  const [snap, manualSnap] = await Promise.all([getDocs(q), getDocs(collection(db, MANUAL_COLLECTION))]);
+  const supabase = getSupabaseBrowserClient();
+  const [{ data: profiles, error: profilesError }, manual] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id,display_name,player_stats(peak_trophies,highest_rank,wins,total_matches,favorite_game),ranked_progress(trophies)")
+      .order("player_stats(peak_trophies)", { ascending: false })
+      .limit(limitCount),
+    loadManual(),
+  ]);
+  if (profilesError) throw profilesError;
 
-  const computed: HallOfFameEntry[] = snap.docs
-    .map((d) => {
-      const data = d.data();
-      return {
-        uid: d.id,
-        displayName: data.displayName || "Player",
-        peakTrophies: typeof data.peakTrophies === "number" ? data.peakTrophies : data.trophies || 0,
-        highestRank: data.highestRank || "Bronze",
-        wins: data.wins || 0,
-        totalMatches: data.totalMatches || 0,
-        favoriteGame: data.favoriteGame || null,
-      };
-    })
-    // Players who last played before this field existed have peakTrophies
-    // === 0 even if they have trophies - filter those out rather than show
-    // a misleading zero at the top of an empty section.
+  const computed: HallOfFameEntry[] = ((profiles ?? []) as any[])
+    .map((row) => ({
+      uid: row.id,
+      displayName: row.display_name || "Player",
+      peakTrophies: row.player_stats?.peak_trophies ?? row.ranked_progress?.trophies ?? 0,
+      highestRank: row.player_stats?.highest_rank ?? "Bronze",
+      wins: row.player_stats?.wins ?? 0,
+      totalMatches: row.player_stats?.total_matches ?? 0,
+      favoriteGame: row.player_stats?.favorite_game ?? null,
+    }))
     .filter((entry) => entry.peakTrophies > 0 || entry.totalMatches > 0);
 
-  const manual: HallOfFameEntry[] = manualSnap.docs.map((d) => {
-    const data = d.data() as Omit<ManualHallOfFameEntry, "id">;
-    return {
-      uid: `manual_${d.id}`,
-      displayName: data.displayName,
-      peakTrophies: data.peakTrophies,
-      highestRank: "—",
-      wins: 0,
-      totalMatches: 0,
-      favoriteGame: null,
-      isManual: true,
-    };
-  });
+  const manualEntries: HallOfFameEntry[] = manual.map((entry) => ({
+    uid: `manual_${entry.id}`,
+    displayName: entry.displayName,
+    peakTrophies: entry.peakTrophies,
+    highestRank: "-",
+    wins: 0,
+    totalMatches: 0,
+    favoriteGame: null,
+    isManual: true,
+  }));
 
-  return [...computed, ...manual].sort((a, b) => b.peakTrophies - a.peakTrophies).slice(0, limitCount);
+  return [...computed, ...manualEntries].sort((a, b) => b.peakTrophies - a.peakTrophies).slice(0, limitCount);
 }
+

@@ -1,36 +1,7 @@
-// lib/friends.ts
-//
-// Friends (GDD Chapter 11): search for a player by name, send/accept/decline
-// requests, see your friends list, and invite a friend into a private room.
-//
-// Design note: a friend request is a single shared document that neither
-// side "owns" - either the sender or the recipient can act on it (accept,
-// decline, cancel, unfriend by deleting it). This avoids ever needing one
-// user to write into another user's personal document, which Firestore
-// rules can't easily allow safely (same reasoning as the matchmaking queue
-// and rooms).
-
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  query,
-  where,
-  limit,
-  onSnapshot,
-  orderBy,
-  documentId,
-  Unsubscribe,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 import { GameType } from "@/lib/matchmaking";
 import { looksLikePlayerCode, normalizePlayerCode } from "@/lib/playerCode";
-
-const REQUESTS_COLLECTION = "friendRequests";
-const INVITES_COLLECTION = "roomInvites";
 
 export interface FriendRequestDoc {
   id: string;
@@ -55,50 +26,6 @@ export interface RecentPlayer extends PlayerSearchResult {
   gameType: GameType;
 }
 
-function socialProfile(uid: string, data: Record<string, unknown>): PlayerSearchResult {
-  return { uid, displayName: typeof data.displayName === 'string' ? data.displayName : 'Player',
-    trophies: typeof data.trophies === 'number' ? data.trophies : 0,
-    photoURL: typeof data.photoURL === 'string' ? data.photoURL : undefined,
-    lastSeen: typeof data.lastSeen === 'number' ? data.lastSeen : undefined };
-}
-
-export function watchSocialProfiles(uids: string[], onUpdate: (profiles: Record<string, PlayerSearchResult>) => void, onError: (error: Error) => void): Unsubscribe {
-  const profiles: Record<string, PlayerSearchResult> = {};
-  const unique = Array.from(new Set(uids));
-  if (!unique.length) { onUpdate({}); return () => {}; }
-  const stops: Unsubscribe[] = [];
-  for (let i = 0; i < unique.length; i += 30) {
-    const batch = unique.slice(i, i + 30);
-    stops.push(onSnapshot(query(collection(db, 'players'), where(documentId(), 'in', batch)), snap => {
-      batch.forEach(id => { delete profiles[id]; });
-      snap.docs.forEach(item => { profiles[item.id] = socialProfile(item.id, item.data()); });
-      onUpdate({ ...profiles });
-    }, onError));
-  }
-  return () => stops.forEach(stop => stop());
-}
-
-export async function getFriendSuggestions(uid: string): Promise<PlayerSearchResult[]> {
-  const snap = await getDocs(query(collection(db, 'players'), orderBy('lastSeen', 'desc'), limit(20)));
-  return snap.docs.filter(item => item.id !== uid).map(item => socialProfile(item.id, item.data()));
-}
-
-export async function getRecentPlayers(uid: string): Promise<RecentPlayer[]> {
-  const snap = await getDocs(query(collection(db, 'matches'), where('players', 'array-contains', uid), orderBy('createdAt', 'desc'), limit(12)));
-  const history = new Map<string, { playedAt: number; gameType: GameType }>();
-  snap.docs.forEach(item => {
-    const match = item.data();
-    if (!Array.isArray(match.players)) return;
-    match.players.forEach((id: string) => {
-      if (id !== uid && !history.has(id)) history.set(id, { playedAt: match.createdAt, gameType: match.gameType });
-    });
-  });
-  const ids = Array.from(history.keys()).slice(0, 15);
-  if (!ids.length) return [];
-  const profiles = await getDocs(query(collection(db, 'players'), where(documentId(), 'in', ids)));
-  return profiles.docs.map(item => ({ ...socialProfile(item.id, item.data()), ...history.get(item.id)! })).sort((a,b) => b.playedAt - a.playedAt);
-}
-
 export interface RoomInviteDoc {
   id: string;
   from: string;
@@ -109,208 +36,261 @@ export interface RoomInviteDoc {
   createdAt: number;
 }
 
-async function searchByPlayerCode(uid: string, code: string): Promise<PlayerSearchResult[]> {
-  const codeQ = query(collection(db, "players"), where("playerCode", "==", normalizePlayerCode(code)), limit(1));
-  const codeSnap = await getDocs(codeQ);
-  return codeSnap.docs
-    .filter((d) => d.id !== uid)
-    .map((d) => {
-      const data = d.data();
-      return { uid: d.id, displayName: data.displayName || "Player", trophies: data.trophies || 0 };
-    });
-}
-
-export async function searchPlayers(uid: string, prefix: string): Promise<PlayerSearchResult[]> {
-  const trimmed = prefix.trim();
-  if (!trimmed) return [];
-  const codeMatches = looksLikePlayerCode(trimmed) ? await searchByPlayerCode(uid, trimmed) : [];
-  const q = query(
-    collection(db, "players"),
-    where("displayName", ">=", trimmed),
-    where("displayName", "<=", trimmed + ""),
-    // Bound the read itself rather than fetching every match and slicing
-    // client-side. 16 (not 15) so filtering out the caller below can't
-    // leave a short page. Note this is a prefix match and Firestore range
-    // queries are case-sensitive, so it finds "Sayyu" but not "sayyu".
-    limit(16)
-  );
-  const snap = await getDocs(q);
-  const nameMatches = snap.docs
-    .filter((d) => d.id !== uid)
-    .slice(0, 15)
-    .map((d) => {
-      const data = d.data();
-      return { uid: d.id, displayName: data.displayName || "Player", trophies: data.trophies || 0 };
-    });
-
-  const seen = new Set<string>();
-  return [...codeMatches, ...nameMatches].filter((r) => (seen.has(r.uid) ? false : (seen.add(r.uid), true)));
-}
-
-/** Checks both possible directions for an existing pending/accepted request between two players. */
-async function findExistingRequest(uidA: string, uidB: string): Promise<FriendRequestDoc | null> {
-  const q1 = query(collection(db, REQUESTS_COLLECTION), where("from", "==", uidA), where("to", "==", uidB));
-  const q2 = query(collection(db, REQUESTS_COLLECTION), where("from", "==", uidB), where("to", "==", uidA));
-  const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-  const all = [...snap1.docs, ...snap2.docs].filter((d) => d.data().status !== "declined");
-  if (all.length === 0) return null;
-  const d = all[0];
-  return { id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) };
-}
-
-export async function sendFriendRequest(
-  fromUid: string,
-  fromName: string,
-  toUid: string,
-  toName: string
-): Promise<void> {
-  if (fromUid === toUid) return;
-  const existing = await findExistingRequest(fromUid, toUid);
-  if (existing) return; // already friends, or a request is already pending
-
-  await addDoc(collection(db, REQUESTS_COLLECTION), {
-    from: fromUid,
-    fromName,
-    to: toUid,
-    toName,
-    status: "pending",
-    createdAt: Date.now(),
-  });
-}
-
-export async function respondToRequest(requestId: string, accept: boolean): Promise<void> {
-  await updateDoc(doc(db, REQUESTS_COLLECTION, requestId), {
-    status: accept ? "accepted" : "declined",
-  });
-}
-
-export async function cancelOrRemove(requestId: string): Promise<void> {
-  await deleteDoc(doc(db, REQUESTS_COLLECTION, requestId));
-}
-
-export function watchIncomingRequests(
-  uid: string,
-  onUpdate: (requests: FriendRequestDoc[]) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  const q = query(
-    collection(db, REQUESTS_COLLECTION),
-    where("to", "==", uid),
-    where("status", "==", "pending"),
-    limit(100)
-  );
-  return onSnapshot(
-    q,
-    (snap) => {
-      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
-    },
-    onError
-  );
-}
-
-export function watchOutgoingRequests(
-  uid: string,
-  onUpdate: (requests: FriendRequestDoc[]) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  const q = query(
-    collection(db, REQUESTS_COLLECTION),
-    where("from", "==", uid),
-    where("status", "==", "pending"),
-    limit(100)
-  );
-  return onSnapshot(
-    q,
-    (snap) => {
-      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) })));
-    },
-    onError
-  );
-}
-
 export interface Friend {
   requestId: string;
   uid: string;
   name: string;
 }
 
-/** Friends = accepted requests in either direction, merged into one list. */
-export function watchFriends(
-  uid: string,
-  onUpdate: (friends: Friend[]) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  let fromResults: FriendRequestDoc[] = [];
-  let toResults: FriendRequestDoc[] = [];
-  let fromReady = false;
-  let toReady = false;
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  photo_url: string | null;
+  last_seen: string | null;
+  ranked_progress?: { trophies: number | null } | null;
+};
 
-  const emit = () => {
-    if (!fromReady || !toReady) return;
-    const friends: Friend[] = [
-      ...fromResults.map((r) => ({ requestId: r.id, uid: r.to, name: r.toName })),
-      ...toResults.map((r) => ({ requestId: r.id, uid: r.from, name: r.fromName })),
-    ];
-    onUpdate(friends);
-  };
+function one<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
 
-  const unsubFrom = onSnapshot(
-    query(collection(db, REQUESTS_COLLECTION), where("from", "==", uid), where("status", "==", "accepted"), limit(250)),
-    (snap) => {
-      fromResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
-      fromReady = true;
-      emit();
-    },
-    onError
-  );
-  const unsubTo = onSnapshot(
-    query(collection(db, REQUESTS_COLLECTION), where("to", "==", uid), where("status", "==", "accepted"), limit(250)),
-    (snap) => {
-      toResults = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FriendRequestDoc, "id">) }));
-      toReady = true;
-      emit();
-    },
-    onError
-  );
-
-  return () => {
-    unsubFrom();
-    unsubTo();
+function toSearch(row: ProfileRow): PlayerSearchResult {
+  const ranked = one(row.ranked_progress);
+  return {
+    uid: row.id,
+    displayName: row.display_name || "Player",
+    trophies: ranked?.trophies ?? 0,
+    photoURL: row.photo_url ?? undefined,
+    lastSeen: toMillis(row.last_seen) || undefined,
   };
 }
 
-export async function sendRoomInvite(
-  fromUid: string,
-  fromName: string,
-  toUid: string,
-  code: string,
-  gameType: GameType
-): Promise<void> {
-  await addDoc(collection(db, INVITES_COLLECTION), {
-    from: fromUid,
-    fromName,
-    to: toUid,
-    code,
-    gameType,
-    createdAt: Date.now(),
-  });
+async function loadProfiles(ids: string[]): Promise<Record<string, PlayerSearchResult>> {
+  const unique = [...new Set(ids)].filter(Boolean);
+  if (!unique.length) return {};
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id,display_name,photo_url,last_seen,ranked_progress(trophies)")
+    .in("id", unique);
+  if (error) throw error;
+  return Object.fromEntries(((data ?? []) as unknown as ProfileRow[]).map((row) => [row.id, toSearch(row)]));
 }
 
-export function watchRoomInvites(
-  uid: string,
-  onUpdate: (invites: RoomInviteDoc[]) => void,
+async function requestFromRow(row: {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  status: "pending" | "accepted" | "declined";
+  created_at: string;
+}): Promise<FriendRequestDoc> {
+  const profiles = await loadProfiles([row.from_user_id, row.to_user_id]);
+  return {
+    id: row.id,
+    from: row.from_user_id,
+    fromName: profiles[row.from_user_id]?.displayName ?? "Player",
+    to: row.to_user_id,
+    toName: profiles[row.to_user_id]?.displayName ?? "Player",
+    status: row.status,
+    createdAt: toMillis(row.created_at),
+  };
+}
+
+export function watchSocialProfiles(
+  uids: string[],
+  onUpdate: (profiles: Record<string, PlayerSearchResult>) => void,
+  onError: (error: Error) => void
+): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  const unique = [...new Set(uids)];
+  const load = async () => {
+    try {
+      onUpdate(await loadProfiles(unique));
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error("Failed to load profiles"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`social-profiles:${unique.join(",")}`)).on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, load), onError);
+}
+
+export async function getFriendSuggestions(uid: string): Promise<PlayerSearchResult[]> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id,display_name,photo_url,last_seen,ranked_progress(trophies)")
+    .neq("id", uid)
+    .order("last_seen", { ascending: false, nullsFirst: false })
+    .limit(20);
+  if (error) throw error;
+  return ((data ?? []) as unknown as ProfileRow[]).map(toSearch);
+}
+
+export async function getRecentPlayers(uid: string): Promise<RecentPlayer[]> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("match_players")
+    .select("match_id,created_at,matches(game_type,created_at),matches!inner(match_players(user_id))")
+    .eq("user_id", uid)
+    .order("created_at", { ascending: false })
+    .limit(12);
+  if (error) throw error;
+  const recent = new Map<string, { playedAt: number; gameType: GameType }>();
+  for (const row of (data ?? []) as any[]) {
+    const match = row.matches;
+    for (const player of match?.match_players ?? []) {
+      if (player.user_id !== uid && !recent.has(player.user_id)) {
+        recent.set(player.user_id, { playedAt: toMillis(match.created_at), gameType: match.game_type });
+      }
+    }
+  }
+  const profiles = await loadProfiles(Array.from(recent.keys()));
+  return Object.entries(profiles)
+    .map(([id, profile]) => ({ ...profile, ...recent.get(id)! }))
+    .sort((a, b) => b.playedAt - a.playedAt);
+}
+
+export async function searchPlayers(uid: string, prefix: string): Promise<PlayerSearchResult[]> {
+  const trimmed = prefix.trim();
+  if (!trimmed) return [];
+  const supabase = getSupabaseBrowserClient();
+  const code = normalizePlayerCode(trimmed);
+  const query = supabase
+    .from("profiles")
+    .select("id,display_name,photo_url,last_seen,ranked_progress(trophies)")
+    .neq("id", uid)
+    .limit(16);
+  const { data, error } = looksLikePlayerCode(trimmed)
+    ? await query.eq("player_code", code)
+    : await query.ilike("display_name", `${trimmed}%`);
+  if (error) throw error;
+  return ((data ?? []) as unknown as ProfileRow[]).map(toSearch).slice(0, 15);
+}
+
+async function findExistingRequest(uidA: string, uidB: string): Promise<FriendRequestDoc | null> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("friend_requests")
+    .select("id,from_user_id,to_user_id,status,created_at")
+    .or(`and(from_user_id.eq.${uidA},to_user_id.eq.${uidB}),and(from_user_id.eq.${uidB},to_user_id.eq.${uidA})`)
+    .neq("status", "declined")
+    .limit(1);
+  if (error) throw error;
+  return data?.[0] ? requestFromRow(data[0] as any) : null;
+}
+
+export async function sendFriendRequest(fromUid: string, _fromName: string, toUid: string, _toName: string): Promise<void> {
+  if (fromUid === toUid) return;
+  if (await findExistingRequest(fromUid, toUid)) return;
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("friend_requests").insert({ from_user_id: fromUid, to_user_id: toUid });
+  if (error) throw error;
+}
+
+export async function respondToRequest(requestId: string, accept: boolean): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("friend_requests")
+    .update({ status: accept ? "accepted" : "declined", updated_at: new Date().toISOString() })
+    .eq("id", requestId);
+  if (error) throw error;
+}
+
+export async function cancelOrRemove(requestId: string): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("friend_requests").delete().eq("id", requestId);
+  if (error) throw error;
+}
+
+function watchRequests(
+  key: string,
+  load: () => Promise<FriendRequestDoc[]>,
+  onUpdate: (requests: FriendRequestDoc[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
-  const q = query(collection(db, INVITES_COLLECTION), where("to", "==", uid), limit(50));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RoomInviteDoc, "id">) })));
+  const supabase = getSupabaseBrowserClient();
+  const run = async () => {
+    try {
+      onUpdate(await load());
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load friend requests"));
+    }
+  };
+  void run();
+  return subscribe(supabase.channel(realtimeChannelName(key)).on("postgres_changes", { event: "*", schema: "public", table: "friend_requests" }, run), onError);
+}
+
+async function loadRequests(column: "from_user_id" | "to_user_id", uid: string, status: "pending" | "accepted"): Promise<FriendRequestDoc[]> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("friend_requests")
+    .select("id,from_user_id,to_user_id,status,created_at")
+    .eq(column, uid)
+    .eq("status", status)
+    .limit(250);
+  if (error) throw error;
+  return Promise.all(((data ?? []) as any[]).map(requestFromRow));
+}
+
+export function watchIncomingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
+  return watchRequests(`incoming:${uid}`, () => loadRequests("to_user_id", uid, "pending"), onUpdate, onError);
+}
+
+export function watchOutgoingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
+  return watchRequests(`outgoing:${uid}`, () => loadRequests("from_user_id", uid, "pending"), onUpdate, onError);
+}
+
+export function watchFriends(uid: string, onUpdate: (friends: Friend[]) => void, onError?: (err: Error) => void): Unsubscribe {
+  return watchRequests(
+    `friends:${uid}`,
+    async () => [...(await loadRequests("from_user_id", uid, "accepted")), ...(await loadRequests("to_user_id", uid, "accepted"))],
+    (requests) => {
+      onUpdate(
+        requests.map((request) =>
+          request.from === uid
+            ? { requestId: request.id, uid: request.to, name: request.toName }
+            : { requestId: request.id, uid: request.from, name: request.fromName }
+        )
+      );
     },
     onError
   );
+}
+
+export async function sendRoomInvite(fromUid: string, _fromName: string, toUid: string, code: string, gameType: GameType): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("room_invites").insert({ from_user_id: fromUid, to_user_id: toUid, room_code: code, game_type: gameType });
+  if (error) throw error;
+}
+
+export function watchRoomInvites(uid: string, onUpdate: (invites: RoomInviteDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      const { data, error } = await supabase.from("room_invites").select("id,from_user_id,to_user_id,room_code,game_type,created_at").eq("to_user_id", uid).limit(50);
+      if (error) throw error;
+      const profiles = await loadProfiles(((data ?? []) as any[]).map((row) => row.from_user_id));
+      onUpdate(
+        ((data ?? []) as any[]).map((row) => ({
+          id: row.id,
+          from: row.from_user_id,
+          fromName: profiles[row.from_user_id]?.displayName ?? "Player",
+          to: row.to_user_id,
+          code: row.room_code,
+          gameType: row.game_type,
+          createdAt: toMillis(row.created_at),
+        }))
+      );
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load room invites"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`room-invites:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "room_invites" }, load), onError);
 }
 
 export async function dismissRoomInvite(id: string): Promise<void> {
-  await deleteDoc(doc(db, INVITES_COLLECTION, id));
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("room_invites").delete().eq("id", id);
+  if (error) throw error;
 }

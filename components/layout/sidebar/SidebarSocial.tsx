@@ -17,7 +17,7 @@ import { CHATS_HREF, ONLINE_HREF } from "./sidebarItems";
  * so the rail still tells you whether anything is happening without you
  * having to open the panel.
  *
- * Every number here comes from HomeSocialContext's real Firestore
+ * Every number here comes from HomeSocialContext's real Supabase
  * subscriptions (friends + presence + DM conversations). Nothing is
  * fabricated: with no friends online the widget says so rather than
  * inventing a count.

@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * Stand-ins for the contexts and hooks Home reads, so the screen can be
- * rendered without Firebase.
+ * rendered without live backend services.
  *
  * The figures are the Home board's own sample data
  * (design/arena/boards/Home.dc.html): Sayyu, Gold, 58 trophies, 96 matches,

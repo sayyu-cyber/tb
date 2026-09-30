@@ -1,36 +1,12 @@
-// lib/clubs.ts
-//
-// Clubs (guild-style groups of players) - "Add Clubs feature" from your
-// list. A player can be a member of at most one club at a time, to keep
-// membership simple to reason about (no multi-club leaderboards/overlap to
-// juggle). Clubs are publicly browsable (like the leaderboard) so anyone can
-// find and request to join one; only the owner manages membership/settings.
-//
-// Same no-backend, client-trusted Firestore model as the rest of this app -
-// see the trust-model notes at the top of lib/matchmaking.ts and lib/rooms.ts.
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 
-import {
-  collection,
-  doc,
-  addDoc,
-  getDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  runTransaction,
-  Unsubscribe,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-
-const CLUBS_COLLECTION = "clubs";
 export const MAX_MEMBERS = 30;
 
 export interface ClubDoc {
   id: string;
   name: string;
-  tag: string; // short 2-5 char badge shown next to member names
+  tag: string;
   description: string;
   ownerUid: string;
   members: string[];
@@ -47,137 +23,150 @@ export interface ClubMessage {
   createdAt: number;
 }
 
-export async function createClub(
-  ownerUid: string,
-  ownerName: string,
-  ownerTrophies: number,
-  name: string,
-  tag: string,
-  description: string
-): Promise<string> {
-  const ref = await addDoc(collection(db, CLUBS_COLLECTION), {
-    name: name.trim().slice(0, 30),
-    tag: tag.trim().toUpperCase().slice(0, 5),
-    description: description.trim().slice(0, 200),
-    ownerUid,
-    members: [ownerUid],
-    memberNames: { [ownerUid]: ownerName },
-    memberTrophies: { [ownerUid]: ownerTrophies },
-    createdAt: Date.now(),
+function toClub(row: any): ClubDoc {
+  const members = row.club_members ?? [];
+  return {
+    id: row.id,
+    name: row.name,
+    tag: row.tag,
+    description: row.description,
+    ownerUid: row.owner_id ?? "",
+    members: members.map((member: any) => member.user_id),
+    memberNames: Object.fromEntries(members.map((member: any) => [member.user_id, member.display_name || "Player"])),
+    memberTrophies: Object.fromEntries(members.map((member: any) => [member.user_id, member.trophies || 0])),
+    createdAt: toMillis(row.created_at),
+  };
+}
+
+async function selectClubById(clubId: string): Promise<ClubDoc | null> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("clubs")
+    .select("id,name,tag,description,owner_id,created_at,club_members(user_id,display_name,trophies,joined_at)")
+    .eq("id", clubId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toClub(data) : null;
+}
+
+export async function createClub(ownerUid: string, ownerName: string, ownerTrophies: number, name: string, tag: string, description: string): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("clubs")
+    .insert({
+      name: name.trim().slice(0, 30),
+      tag: tag.trim().toUpperCase().slice(0, 5),
+      description: description.trim().slice(0, 200),
+      owner_id: ownerUid,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  const { error: memberError } = await supabase.from("club_members").insert({
+    club_id: data.id,
+    user_id: ownerUid,
+    display_name: ownerName,
+    trophies: ownerTrophies,
+    role: "owner",
   });
-  return ref.id;
+  if (memberError) throw memberError;
+  return data.id;
 }
 
-/** Browsable club list, newest first - open to any signed-in user, like the leaderboard. */
 export function watchClubList(onUpdate: (clubs: ClubDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
-  const q = query(collection(db, CLUBS_COLLECTION), orderBy("createdAt", "desc"), limit(50));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClubDoc, "id">) })));
-    },
-    onError
-  );
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("clubs")
+        .select("id,name,tag,description,owner_id,created_at,club_members(user_id,display_name,trophies,joined_at)")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      onUpdate((data ?? []).map(toClub));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load clubs"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName("clubs:list")).on("postgres_changes", { event: "*", schema: "public", table: "clubs" }, load), onError);
 }
 
-/** The club a player currently belongs to, if any (a player is in at most one).
- *  `onError` matters here more than most listeners: without it, a denied or
- *  failed query leaves the caller's "loading" state stuck forever, since
- *  `onUpdate` is otherwise never called at all - see ClubsClient. */
-export function watchMyClub(
-  uid: string,
-  onUpdate: (club: ClubDoc | null) => void,
-  onError?: (err: Error) => void
-): Unsubscribe {
-  // A player belongs to at most one club, so only the first doc is read
-  // below - fetching more would be pure waste.
-  const q = query(collection(db, CLUBS_COLLECTION), where("members", "array-contains", uid), limit(1));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onUpdate(snap.docs.length > 0 ? { id: snap.docs[0].id, ...(snap.docs[0].data() as Omit<ClubDoc, "id">) } : null);
-    },
-    onError
-  );
+export function watchMyClub(uid: string, onUpdate: (club: ClubDoc | null) => void, onError?: (err: Error) => void): Unsubscribe {
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      const { data, error } = await supabase.from("club_members").select("club_id").eq("user_id", uid).maybeSingle();
+      if (error) throw error;
+      onUpdate(data?.club_id ? await selectClubById(data.club_id) : null);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load your club"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`club-member:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "club_members" }, load), onError);
 }
 
 export function watchClub(clubId: string, onUpdate: (club: ClubDoc | null) => void): Unsubscribe {
-  return onSnapshot(doc(db, CLUBS_COLLECTION, clubId), (snap) => {
-    onUpdate(snap.exists() ? { id: snap.id, ...(snap.data() as Omit<ClubDoc, "id">) } : null);
-  });
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => onUpdate(await selectClubById(clubId));
+  void load().catch(console.error);
+  return subscribe(supabase.channel(realtimeChannelName(`club:${clubId}`)).on("postgres_changes", { event: "*", schema: "public", table: "club_members", filter: `club_id=eq.${clubId}` }, load));
 }
 
 export async function joinClub(clubId: string, uid: string, name: string, trophies: number): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, CLUBS_COLLECTION, clubId);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) throw new Error("Club not found");
-    const club = snap.data() as ClubDoc;
-    if (club.members.includes(uid)) return;
-    if (club.members.length >= MAX_MEMBERS) throw new Error(`This club is full (max ${MAX_MEMBERS} members)`);
-    transaction.update(ref, {
-      members: [...club.members, uid],
-      memberNames: { ...club.memberNames, [uid]: name },
-      memberTrophies: { ...club.memberTrophies, [uid]: trophies },
-    });
-  });
+  const club = await selectClubById(clubId);
+  if (!club) throw new Error("Club not found");
+  if (club.members.includes(uid)) return;
+  if (club.members.length >= MAX_MEMBERS) throw new Error(`This club is full (max ${MAX_MEMBERS} members)`);
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("club_members").insert({ club_id: clubId, user_id: uid, display_name: name, trophies });
+  if (error) throw error;
 }
 
 export async function leaveClub(clubId: string, uid: string): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, CLUBS_COLLECTION, clubId);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) return;
-    const club = snap.data() as ClubDoc;
-    const members = club.members.filter((m) => m !== uid);
-    const memberNames = { ...club.memberNames };
-    delete memberNames[uid];
-    const memberTrophies = { ...club.memberTrophies };
-    delete memberTrophies[uid];
-
-    // Owner leaving hands ownership to the next-longest member instead of
-    // orphaning the club - if nobody's left, the club becomes empty (still
-    // visible, just ownerless; harmless since only the owner can manage it).
-    const newOwner = club.ownerUid === uid ? members[0] : club.ownerUid;
-    transaction.update(ref, { members, memberNames, memberTrophies, ...(newOwner ? { ownerUid: newOwner } : {}) });
-  });
+  const club = await selectClubById(clubId);
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("club_members").delete().eq("club_id", clubId).eq("user_id", uid);
+  if (error) throw error;
+  if (club?.ownerUid === uid) {
+    const nextOwner = club.members.find((member) => member !== uid) ?? null;
+    await supabase.from("clubs").update({ owner_id: nextOwner }).eq("id", clubId);
+  }
 }
 
 export async function kickMember(clubId: string, ownerUid: string, targetUid: string): Promise<void> {
-  await runTransaction(db, async (transaction) => {
-    const ref = doc(db, CLUBS_COLLECTION, clubId);
-    const snap = await transaction.get(ref);
-    if (!snap.exists()) return;
-    const club = snap.data() as ClubDoc;
-    if (club.ownerUid !== ownerUid || targetUid === ownerUid) return;
-    const members = club.members.filter((m) => m !== targetUid);
-    const memberNames = { ...club.memberNames };
-    delete memberNames[targetUid];
-    const memberTrophies = { ...club.memberTrophies };
-    delete memberTrophies[targetUid];
-    transaction.update(ref, { members, memberNames, memberTrophies });
-  });
+  const club = await selectClubById(clubId);
+  if (!club || club.ownerUid !== ownerUid || targetUid === ownerUid) return;
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("club_members").delete().eq("club_id", clubId).eq("user_id", targetUid);
+  if (error) throw error;
 }
 
 export async function sendClubMessage(clubId: string, senderUid: string, senderName: string, text: string): Promise<void> {
   const trimmed = text.trim();
   if (!trimmed) return;
-  await addDoc(collection(doc(db, CLUBS_COLLECTION, clubId), "messages"), {
-    senderUid,
-    senderName,
-    text: trimmed,
-    createdAt: Date.now(),
-  });
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("club_messages").insert({ club_id: clubId, sender_id: senderUid, sender_name: senderName, text: trimmed });
+  if (error) throw error;
 }
 
 export function watchClubMessages(clubId: string, onUpdate: (messages: ClubMessage[]) => void, onError?: (error: Error) => void): Unsubscribe {
-  const q = query(collection(doc(db, CLUBS_COLLECTION, clubId), "messages"), orderBy("createdAt", "asc"), limit(200));
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ClubMessage, "id">) })));
-  }, onError);
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => {
+    try {
+      const { data, error } = await supabase.from("club_messages").select("id,sender_id,sender_name,text,created_at").eq("club_id", clubId).order("created_at", { ascending: true }).limit(200);
+      if (error) throw error;
+      onUpdate((data ?? []).map((row: any) => ({ id: row.id, senderUid: row.sender_id, senderName: row.sender_name, text: row.text, createdAt: toMillis(row.created_at) })));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to load club messages"));
+    }
+  };
+  void load();
+  return subscribe(supabase.channel(realtimeChannelName(`club-messages:${clubId}`)).on("postgres_changes", { event: "*", schema: "public", table: "club_messages", filter: `club_id=eq.${clubId}` }, load), onError);
 }
 
 export async function getClub(clubId: string): Promise<ClubDoc | null> {
-  const snap = await getDoc(doc(db, CLUBS_COLLECTION, clubId));
-  return snap.exists() ? { id: snap.id, ...(snap.data() as Omit<ClubDoc, "id">) } : null;
+  return selectClubById(clubId);
 }
+

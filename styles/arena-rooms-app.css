@@ -1,10 +1,6 @@
 /* Fluid geometry and real form controls for the Rooms / RoomLobby boards.
    Visual recipes and animation timings remain in the generated board sheets. */
 .room-page { display: flex; flex-direction: column; gap: 20px; line-height: normal; }
-.app-shell:has(.room-page:not(.m)) { flex-direction: row-reverse; }
-.app-shell:has(.room-page:not(.m)) .app-sidebar { left: 0; right: auto; border-left: 0; border-right: 1px solid rgba(255,255,255,.08); }
-.app-shell:has(.room-page:not(.m)) .app-sidebar-panel { left: 0; right: auto; border-left: 0; border-right: 1px solid rgba(255,255,255,.08); }
-body:has(.room-page:not(.m)) .app-sidebar-tip { left: 96px !important; transform: translateY(-50%); }
 .arena-mrooms.phone-sheet-host,.arena-mroomlobby.phone-sheet-host { line-height: normal; }
 .room-page .room-setup-grid { display: grid; grid-template-columns: minmax(0,1fr) 520px; gap: 20px; }
 .room-page .room-game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

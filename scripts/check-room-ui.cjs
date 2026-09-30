@@ -35,6 +35,15 @@ async function run() {
       }
     }
     const page=await fixture();
+    const rail = await page.locator('.app-sidebar').boundingBox();
+    assert.ok(rail && Math.abs(rail.x + rail.width - 1440) < 1, 'Shared rail stays at the far right on Rooms');
+    const invited = await fixture('?code=K7Q2MX&invite=valid',1440,900);
+    await invited.locator('.room-waiting-page').waitFor();
+    assert.equal(await invited.evaluate(() => window.calls.filter(call => call[0] === 'K7Q2MX').length), 1, 'Invite navigation auto-joins exactly once');
+    await invited.close();
+    const expired = await fixture('?code=K7Q2MX&invite=expired',1440,900);
+    await expired.getByRole('alert').filter({ hasText: 'This invite has expired' }).waitFor();
+    await expired.close();
     const create=page.locator('#create-room'),join=page.locator('.room-join-form'),roomCode=join.getByRole('textbox',{name:'Room code',exact:true});
     await shot(page,'rooms-active','app/app-15-private-room');
     await create.getByRole('button',{name:/Gin Rummy/}).click();
@@ -92,7 +101,7 @@ async function run() {
     const sharing=await fixture('?code=TF2GRQ',390,844);
     await sharing.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.copiedValue=value;}}});Object.defineProperty(navigator,'share',{configurable:true,value:undefined});});
     await sharing.getByRole('button',{name:'Copy code',exact:true}).click();await sharing.waitForFunction(()=>window.copiedValue==='TF2GRQ');
-    await sharing.getByRole('button',{name:'Share link',exact:true}).last().click();await sharing.waitForFunction(()=>window.copiedValue.endsWith('/play/mindi/room?code=TF2GRQ'));
+    await sharing.getByRole('button',{name:'Share link',exact:true}).last().click();await sharing.waitForFunction(()=>window.copiedValue.endsWith('/play/mindi/room?code=TF2GRQ&invite=fixture-invite'));
     await sharing.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('Denied');}}}));await sharing.getByRole('button',{name:'Copy code',exact:true}).click();await sharing.waitForFunction(()=>window.toast?.startsWith("Couldn't copy"));await sharing.close();
     for(const guestView of [false,true]){
       const p=await fixture('?code=TF2GRQ&full'+(guestView?'&guest-lobby':''),390,844);

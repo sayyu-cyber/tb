@@ -194,13 +194,11 @@ export default function RootLayout({
       <body className={`${display.variable} ${ui.variable} ${thaana.variable} font-sans`}>
         <MotionProvider><AuthProvider>
           <SettingsProvider>
-            <EconomyProvider>
-              {/* Innermost so any screen can raise a toast, and so the
-                  toast stack renders above the app's own fixed chrome. */}
-              <ToastProvider>
+            <ToastProvider>
+              <EconomyProvider>
                 <AppShell>{children}</AppShell>
-              </ToastProvider>
-            </EconomyProvider>
+              </EconomyProvider>
+            </ToastProvider>
           </SettingsProvider>
         </AuthProvider></MotionProvider>
       </body>

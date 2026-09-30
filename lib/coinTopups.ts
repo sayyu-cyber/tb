@@ -1,33 +1,6 @@
-// lib/coinTopups.ts
-//
-// Coin top-up approval gate: "once customer top ups coins alert goes to
-// admin panel and coin wont be credited till an admin approves." A top-up
-// request is a document only the requesting player or an admin can touch;
-// the admin can only flip its status (never directly credit coins into
-// someone else's playerEconomy doc, since that stays owner-only per
-// firestore.rules) - once a player's own client sees status flip to
-// "approved", it credits its own coins locally (via EconomyContext's
-// addCoins, called from the UI layer) and marks the request "credited" so
-// it isn't applied twice.
-
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  Unsubscribe,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
 import { normalizePlayerCode } from "@/lib/playerCode";
-
-const COLLECTION = "coinTopupRequests";
 
 export interface CoinTopupRequest {
   id: string;
@@ -41,112 +14,96 @@ export interface CoinTopupRequest {
   decidedAt?: number;
 }
 
-export async function requestCoinTopup(
-  uid: string,
-  playerName: string,
-  coins: number,
-  priceMVR: number,
-  packName: string
-): Promise<void> {
-  await addDoc(collection(db, COLLECTION), {
-    uid,
-    playerName,
+function toTopup(row: any): CoinTopupRequest {
+  return {
+    id: row.id,
+    uid: row.user_id,
+    playerName: row.player_name,
+    coins: row.coins,
+    priceMVR: row.price_mvr,
+    packName: row.pack_name,
+    status: row.status,
+    createdAt: toMillis(row.created_at),
+    decidedAt: toMillis(row.decided_at) || undefined,
+  };
+}
+
+export async function requestCoinTopup(uid: string, playerName: string, coins: number, priceMVR: number, packName: string): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("coin_topup_requests").insert({
+    user_id: uid,
+    player_name: playerName,
     coins,
-    priceMVR,
-    packName,
-    status: "pending",
-    createdAt: Date.now(),
+    price_mvr: priceMVR,
+    pack_name: packName,
   });
+  if (error) throw error;
+}
+
+async function loadTopups(uid?: string): Promise<CoinTopupRequest[]> {
+  const supabase = getSupabaseBrowserClient();
+  let query = supabase.from("coin_topup_requests").select("*").order("created_at", { ascending: false }).limit(uid ? 50 : 200);
+  if (uid) query = query.eq("user_id", uid);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map(toTopup);
 }
 
 export function watchMyTopups(uid: string, onUpdate: (requests: CoinTopupRequest[]) => void): Unsubscribe {
-  // A single player will never have a meaningful number of top-ups; cap it
-  // so a long-lived account does not grow this listener without bound.
-  const q = query(collection(db, COLLECTION), where("uid", "==", uid), limit(50));
-  return onSnapshot(q, (snap) => {
-    onUpdate(
-      snap.docs
-        .map((d) => ({ id: d.id, ...(d.data() as Omit<CoinTopupRequest, "id">) }))
-        .sort((a, b) => b.createdAt - a.createdAt)
-    );
-  });
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => onUpdate(await loadTopups(uid));
+  void load().catch(console.error);
+  return subscribe(supabase.channel(realtimeChannelName(`topups:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "coin_topup_requests", filter: `user_id=eq.${uid}` }, load));
 }
 
-/** Admin-only in practice (firestore.rules restricts reading every request to the admin email). */
 export function watchAllTopups(onUpdate: (requests: CoinTopupRequest[]) => void): Unsubscribe {
-  // Admin view: newest first, one page at a time. Without a limit this
-  // re-read the entire top-up history on every single write.
-  const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"), limit(200));
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<CoinTopupRequest, "id">) })));
-  });
+  const supabase = getSupabaseBrowserClient();
+  const load = async () => onUpdate(await loadTopups());
+  void load().catch(console.error);
+  return subscribe(supabase.channel(realtimeChannelName("topups:all")).on("postgres_changes", { event: "*", schema: "public", table: "coin_topup_requests" }, load));
 }
 
 export async function decideTopup(id: string, approve: boolean): Promise<void> {
-  await updateDoc(doc(db, COLLECTION, id), {
-    status: approve ? "approved" : "rejected",
-    decidedAt: Date.now(),
-  });
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("coin_topup_requests")
+    .update({ status: approve ? "approved" : "rejected", decided_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
 }
 
-/** Called by the requesting player's own client once they see status === "approved". */
 export async function markTopupCredited(id: string): Promise<void> {
-  await updateDoc(doc(db, COLLECTION, id), { status: "credited" });
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("coin_topup_requests").update({ status: "credited", credited_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw error;
 }
 
 export interface AdminPlayerLookup {
   uid: string;
   displayName: string;
   coins: number;
+  version?: number;
 }
 
-/** Admin panel search - looks a player up by their unique player code
- *  (lib/playerCode.ts, shown on their profile) so an admin can find exactly
- *  one account before depositing coins into it, without needing to browse
- *  or guess a display name. */
 export async function findPlayerByCode(code: string): Promise<AdminPlayerLookup | null> {
   const trimmed = normalizePlayerCode(code);
   if (!trimmed) return null;
-  const q = query(collection(db, "players"), where("playerCode", "==", trimmed), limit(1));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const d = snap.docs[0];
-  const data = d.data();
-  // Coins live in playerEconomy, not players (see EconomyContext) -
-  // firestore.rules grants the admin read-only access to that doc so this
-  // shows the real balance rather than always reading 0.
-  const economySnap = await getDoc(doc(db, "playerEconomy", d.id));
-  // economy.coins is canonical, but a document the player hasn't opened
-  // since the single-balance migration may still carry a higher legacy
-  // profile.coins (the weekly reward function used to write only that one).
-  // Mirror reconcileCoins' max() so the admin sees what the player will
-  // actually have, not a figure that jumps the moment they next sign in.
-  const economyData = economySnap.exists() ? economySnap.data() : undefined;
-  const coins = economyData
-    ? Math.max(economyData.economy?.coins ?? 0, economyData.profile?.coins ?? 0)
-    : 0;
-  return { uid: d.id, displayName: data.displayName || "Player", coins };
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id,display_name,wallets(coins,version)")
+    .eq("player_code", trimmed)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const wallet = Array.isArray((data as any).wallets) ? (data as any).wallets[0] : (data as any).wallets;
+  return { uid: data.id, displayName: data.display_name || "Player", coins: wallet?.coins ?? 0, version: wallet?.version ?? 0 };
 }
 
-/**
- * Admin direct deposit: unlike requestCoinTopup (a player requesting their
- * own purchase), this is created BY the admin FOR another player, already
- * "approved" - firestore.rules only lets this through when request.auth is
- * the admin email and status is exactly 'approved'. The target player's own
- * CoinTopupWatcher (mounted for every signed-in user) picks up the approved
- * request next time its listener fires and credits the coins locally, same
- * as a normal purchase approval - admin never writes into another user's
- * playerEconomy doc directly, since that stays owner-only per the rules.
- */
-export async function adminTopUp(uid: string, playerName: string, coins: number): Promise<void> {
-  await addDoc(collection(db, COLLECTION), {
-    uid,
-    playerName,
-    coins,
-    priceMVR: 0,
-    packName: "Admin Top-Up",
-    status: "approved",
-    createdAt: Date.now(),
-    decidedAt: Date.now(),
-  });
+export async function adminTopUp(uid: string, playerName: string, coins: number): Promise<{ coins: number; version: number }> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("admin_top_up", { p_user_id: uid, p_coins: coins });
+  if (error) throw new Error(error.message);
+  window.dispatchEvent(new CustomEvent("thaasbai-wallet", { detail: { uid, wallet: data } }));
+  return { coins: data.coins, version: data.version };
 }

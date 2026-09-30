@@ -1,19 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
-  onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInAnonymously,
-  signOut,
-  updateProfile as updateFirebaseAuthProfile,
-  User as FirebaseUser,
-} from "firebase/auth";
-import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+  signInWithSupabaseEmail,
+  signInWithSupabaseGoogle,
+  signInWithSupabaseGuest,
+  signOutSupabase,
+  signUpWithSupabaseEmail,
+  toAppUser,
+} from "@/lib/supabase/auth";
+import { ensureProfileCode, loadProfileBundle, nowIso, profileToPlayerStats, realtimeChannelName, subscribe } from "@/lib/supabase/data";
 import { User, PlayerStats } from "@/types";
 import { generatePlayerCode } from "@/lib/playerCode";
 
@@ -35,17 +33,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const defaultStats: PlayerStats = {
-  totalMatches: 0,
-  wins: 0,
-  losses: 0,
-  winPercentage: 0,
-  favoriteGame: null,
-  highestRank: "Unranked",
-  trophies: 0,
-  currentRank: "Unranked",
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
@@ -56,13 +43,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profileAttempt, setProfileAttempt] = useState(0);
 
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
     let generation = 0;
     let stopProfile: (() => void) | undefined;
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+
+    async function loadUserProfile(authUser: SupabaseUser) {
       const current = ++generation;
       stopProfile?.();
       stopProfile = undefined;
-      if (!firebaseUser) {
+
+      const appUser = toAppUser(authUser);
+      setUser(appUser);
+      setIsGuest(appUser.isGuest);
+      setPlayerStats(null);
+      setProfileLoading(true);
+      setProfileError(false);
+      setLoading(false);
+
+      const refreshProfile = async () => {
+        try {
+          const bundle = await loadProfileBundle(authUser.id);
+          if (current !== generation) return;
+          if (bundle) {
+            if (!bundle.player_code) await ensureProfileCode(authUser.id, generatePlayerCode());
+            const latest = await loadProfileBundle(authUser.id);
+            if (current !== generation || !latest) return;
+            setPlayerStats(profileToPlayerStats(latest));
+            setUser((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    displayName: latest.display_name || prev.displayName,
+                    photoURL: latest.photo_url ?? prev.photoURL,
+                  }
+                : prev
+            );
+          } else {
+            setProfileError(true);
+          }
+        } catch (error) {
+          console.error("Failed to load Supabase player profile:", error);
+          if (current === generation) setProfileError(true);
+        } finally {
+          if (current === generation) setProfileLoading(false);
+        }
+      };
+
+      await refreshProfile();
+
+      const channel = supabase
+        .channel(realtimeChannelName(`profile:${authUser.id}`))
+        .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${authUser.id}` }, refreshProfile)
+        .on("postgres_changes", { event: "*", schema: "public", table: "player_stats", filter: `user_id=eq.${authUser.id}` }, refreshProfile)
+        .on("postgres_changes", { event: "*", schema: "public", table: "ranked_progress", filter: `user_id=eq.${authUser.id}` }, refreshProfile);
+      stopProfile = subscribe(channel, () => {
+        if (current === generation) setProfileError(true);
+      });
+    }
+
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (error || !data.user) {
         setUser(null);
         setPlayerStats(null);
         setIsGuest(false);
@@ -71,118 +111,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfileError(false);
         return;
       }
-
-      const displayName = firebaseUser.displayName || (firebaseUser.isAnonymous ? "Guest" : "Player");
-      // Authentication is already resolved; profile reads do not block navigation.
-      setUser({
-        uid: firebaseUser.uid, email: firebaseUser.email, displayName,
-        photoURL: firebaseUser.photoURL, isGuest: firebaseUser.isAnonymous,
-        createdAt: new Date(firebaseUser.metadata.creationTime || NaN),
-      });
-      setIsGuest(firebaseUser.isAnonymous);
-      setPlayerStats(null);
-      setProfileLoading(true);
-      setProfileError(false);
-      setLoading(false);
-
-      try {
-        const ref = doc(db, "players", firebaseUser.uid);
-        const statsDoc = await getDoc(ref);
-        if (current !== generation) return;
-        if (statsDoc.exists()) {
-          const existing = statsDoc.data() as PlayerStats;
-          if (!existing.playerCode) {
-            existing.playerCode = generatePlayerCode();
-            await setDoc(ref, { playerCode: existing.playerCode }, { merge: true });
-          }
-          if (current === generation) setPlayerStats(existing);
-        } else {
-          const playerCode = generatePlayerCode();
-          await setDoc(ref, { ...defaultStats, displayName, playerCode, createdAt: serverTimestamp() });
-          if (current === generation) setPlayerStats({ ...defaultStats, playerCode });
-        }
-        if (current !== generation) return;
-        // Match results and edits on another device should reach every HUD
-        // through the same player state, without a full-page reload.
-        stopProfile = onSnapshot(ref, snapshot => {
-          if (current !== generation) return;
-          if (!snapshot.exists()) { setProfileError(true); return; }
-          setPlayerStats(snapshot.data() as PlayerStats);
-          setProfileError(false);
-        }, () => {
-          if (current === generation) setProfileError(true);
-        });
-      } catch (error) {
-        console.error("Failed to load player profile:", error);
-        if (current === generation) setProfileError(true);
-      } finally {
-        if (current === generation) setProfileLoading(false);
-      }
+      void loadUserProfile(data.user);
     });
-    return () => { generation++; stopProfile?.(); unsubscribe(); };
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      stopProfile?.();
+      stopProfile = undefined;
+      if (!session?.user) {
+        generation++;
+        setUser(null);
+        setPlayerStats(null);
+        setIsGuest(false);
+        setLoading(false);
+        setProfileLoading(false);
+        setProfileError(false);
+        return;
+      }
+      void loadUserProfile(session.user);
+    });
+
+    return () => {
+      generation++;
+      stopProfile?.();
+      data.subscription.unsubscribe();
+    };
   }, [profileAttempt]);
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-
-    await setDoc(
-      doc(db, "players", result.user.uid),
-      {
-        displayName: result.user.displayName,
-        photoURL: result.user.photoURL,
-        email: result.user.email,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-  };
-
-  const signInWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const signUpWithEmail = async (email: string, password: string, username: string) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    await updateFirebaseAuthProfile(result.user, { displayName: username });
-
-    await setDoc(doc(db, "players", result.user.uid), {
-      ...defaultStats,
-      displayName: username,
-      email,
-      createdAt: serverTimestamp(),
-    });
-  };
-
-  // A real (anonymous) Firebase session rather than a locally-fabricated
-  // user - so it survives a refresh via Firebase's own persistence, and
-  // satisfies the `request.auth != null` Firestore rules that every other
-  // read/write in the app is already gated on. onAuthStateChanged above
-  // handles naming the guest and initialising their stats doc.
-  const signInAsGuest = async () => {
-    await signInAnonymously(auth);
-  };
-
   const updatePlayerProfile = async (updates: { displayName?: string; avatarPreset?: string; bannerPreset?: string }) => {
-    const { displayName, ...cosmeticUpdates } = updates;
-    if (!auth.currentUser) throw new Error("Please sign in again before editing your profile.");
+    if (!user) throw new Error("Please sign in again before editing your profile.");
+    const supabase = getSupabaseBrowserClient();
+    const patch = {
+      ...(updates.displayName ? { display_name: updates.displayName } : {}),
+      ...(updates.avatarPreset ? { avatar_preset: updates.avatarPreset } : {}),
+      ...(updates.bannerPreset ? { banner_preset: updates.bannerPreset } : {}),
+      updated_at: nowIso(),
+    };
 
-    if (displayName && displayName !== auth.currentUser.displayName) {
-      await updateFirebaseAuthProfile(auth.currentUser, { displayName });
+    if (updates.displayName) {
+      const { error } = await supabase.auth.updateUser({
+        data: { display_name: updates.displayName, full_name: updates.displayName },
+      });
+      if (error) throw error;
     }
 
-    await setDoc(
-      doc(db, "players", auth.currentUser.uid),
-      { ...updates, updatedAt: serverTimestamp() },
-      { merge: true }
+    const { error } = await supabase.from("profiles").update(patch).eq("id", user.uid);
+    if (error) throw error;
+
+    setUser((prev) => (prev ? { ...prev, displayName: updates.displayName ?? prev.displayName } : prev));
+    setPlayerStats((prev) =>
+      prev
+        ? {
+            ...prev,
+            avatarPreset: updates.avatarPreset ?? prev.avatarPreset,
+            bannerPreset: updates.bannerPreset ?? prev.bannerPreset,
+          }
+        : prev
     );
-
-    setUser((prev) => (prev ? { ...prev, displayName: displayName ?? prev.displayName } : prev));
-    setPlayerStats((prev) => (prev ? { ...prev, ...cosmeticUpdates } : prev));
-  };
-
-  const logout = async () => {
-    await signOut(auth);
   };
 
   return (
@@ -193,12 +177,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         profileLoading,
         profileError,
-        retryProfile: () => setProfileAttempt(value => value + 1),
-        signInWithGoogle,
-        signInWithEmail,
-        signUpWithEmail,
-        signInAsGuest,
-        logout,
+        retryProfile: () => setProfileAttempt((value) => value + 1),
+        signInWithGoogle: signInWithSupabaseGoogle,
+        signInWithEmail: signInWithSupabaseEmail,
+        signUpWithEmail: signUpWithSupabaseEmail,
+        signInAsGuest: signInWithSupabaseGuest,
+        logout: signOutSupabase,
         isGuest,
         updatePlayerProfile,
       }}

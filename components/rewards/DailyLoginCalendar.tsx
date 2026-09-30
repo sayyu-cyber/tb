@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Check, Gift } from "lucide-react";
 import { useEconomy } from "@/contexts/EconomyContext";
@@ -49,18 +49,36 @@ function GemStack({ day, className = "", style }: { day: number; className?: str
 }
 
 export default function DailyLoginCalendar({ phone = false }: { phone?: boolean }) {
-  const { state, claimDailyReward } = useEconomy();
+  const { state, claimDailyReward, refreshBalance, balanceReady } = useEconomy();
   const { dailyLogin } = state;
   const t = useTranslation();
   const [claimedDay, setClaimedDay] = useState<number | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const pending = useRef(false);
+  const [remaining, setRemaining] = useState(0);
+  const status = dailyLogin.server;
+  useEffect(() => {
+    if (!status) return;
+    const duration = Math.max(0, new Date(status.nextClaimAt || status.serverNow).getTime() - new Date(status.serverNow).getTime());
+    const started = performance.now();
+    const tick = () => setRemaining(Math.max(0, Math.ceil((duration - (performance.now() - started)) / 1000)));
+    tick(); const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [status]);
+  useEffect(() => {
+    if (status && !status.available && remaining === 0) void refreshBalance().catch(() => {});
+  }, [status, remaining, refreshBalance]);
+  const available = balanceReady !== false && (status?.available ?? true);
+  const countdown = [Math.floor(remaining / 3600), Math.floor(remaining / 60) % 60, remaining % 60].map(n => String(n).padStart(2, "0")).join(":");
 
   const nextAvailableDay = dailyLogin.rewards.findIndex((reward) => !reward.claimed) + 1;
   const claimedCount = dailyLogin.rewards.filter((reward) => reward.claimed).length;
 
-  function handleClaim(day: number) {
-    if (day !== nextAvailableDay) return;
-    claimDailyReward(day);
-    setClaimedDay(day);
+  async function handleClaim(day: number) {
+    if (day !== nextAvailableDay || !available || pending.current) return;
+    pending.current = true; setClaiming(true);
+    try { if (await claimDailyReward(day)) setClaimedDay(day); }
+    finally { pending.current = false; setClaiming(false); }
   }
 
   const claimed = claimedDay ? DAILY_LOGIN_REWARDS[claimedDay - 1] : null;
@@ -98,7 +116,7 @@ export default function DailyLoginCalendar({ phone = false }: { phone?: boolean 
           {DAILY_LOGIN_REWARDS.map((reward) => {
             const day = reward.day;
             const isClaimed = dailyLogin.rewards[day - 1]?.claimed ?? false;
-            const isToday = day === nextAvailableDay;
+            const isToday = available && day === nextAvailableDay;
             const big = day === 7;
             const bonus = bonusLabel(reward.bonusItem);
             const art = big
@@ -134,6 +152,7 @@ export default function DailyLoginCalendar({ phone = false }: { phone?: boolean 
                   className={`day today ${phone && big ? "big" : ""}`.replace(/\s+/g, " ").trim()}
                   key={day}
                   onClick={() => handleClaim(day)}
+                  disabled={claiming}
                   aria-label={`Claim Day ${day}: ${reward.coins} coins${bonus ? ` and ${bonus}` : ""}`}
                   data-flat
                 >
@@ -149,6 +168,8 @@ export default function DailyLoginCalendar({ phone = false }: { phone?: boolean 
             );
           })}
         </div>
+
+        {!available && <p className="muted2 tnum" role="status" style={{ margin: 0 }}>{status ? `Daily reward claimed · Next claim in ${countdown}` : 'Loading daily reward status…'}</p>}
 
         <Meter
           value={claimedCount / 7}

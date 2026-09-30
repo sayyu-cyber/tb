@@ -10,8 +10,8 @@ import { heartbeat, HEARTBEAT_MS } from "@/lib/presence";
  * in MainLayout, same pattern as BackgroundMusicPlayer/CoinTopupWatcher.
  *
  * Skips guests: guest sessions (see AuthContext.signInAsGuest) are a local
- * uid with no real Firebase Auth session behind them, so a write here would
- * either fail firestore.rules' owner check or, worse, write to a
+ * uid with no real Supabase Auth session behind them, so a write here would
+ * fail RLS owner checks or, worse, write to a
  * `players/{uid}` doc under an id nothing else ever reads consistently.
  */
 export function PresenceHeartbeat() {

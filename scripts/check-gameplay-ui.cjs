@@ -87,7 +87,7 @@ async function run(){
     // Run a complete real Mindi game with accelerated timers, not mocked scoring.
     await page.clock.install();await open('mindi');
     await page.clock.runFor(2000);
-    await page.locator('.mindi-intro').waitFor({state:'detached'});
+    await page.getByRole('button',{name:/Skip to deal|Dealing/}).waitFor({state:'detached'});
     for(let step=0;step<60;step++){
       if(await page.getByRole('button',{name:'Play Again',exact:true}).count())break;
       const enabled=page.locator('.mindi-hand button:enabled');

@@ -3,9 +3,7 @@
 /**
  * The Casual Online queue, as a hook.
  *
- * This is the matchmaking effect that used to live inside
- * components/game/CasualOnlineClient.tsx, lifted out unchanged so two
- * screens can share it:
+ * Shared by the full-screen queue and the inline Play lobby:
  *
  *   - the full-screen queue at /play/<game>/casual/online, which is what
  *     CasualOnlineClient still renders;
@@ -14,17 +12,14 @@
  *     board queues from the lobby rather than sending you to another
  *     screen, so the lobby needs the same queue without the same UI.
  *
- * Nothing about the matchmaking changed in the move: same joinQueue, same
- * 2.5s tryFormMatch poll, same watchForMatch, same cleanup that leaves the
- * queue if you walk away before a table forms. The only addition is
- * `active` - passing false keeps the hook mounted but out of the queue, so
- * the lobby can start and stop looking without unmounting anything.
+ * Join/leave requests are serialized across cancellations, formation polls
+ * never overlap, and inactive/unmounted queues cannot navigate later.
  */
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { joinQueue, leaveQueue, tryFormMatch, watchForMatch, GameType } from "@/lib/matchmaking";
+import { joinQueue, leaveQueue, tryFormMatch, watchForMatch, matchmakingErrorMessage, GameType } from "@/lib/matchmaking";
 import { dealMindiHand, openMindiHand } from "@/lib/mindiEngine";
 import { dealGinHand } from "@/lib/ginRummyEngine";
 import { cutForFirstPlay } from "@/lib/openingCut";
@@ -92,6 +87,7 @@ export function useCasualQueue(gameId: string, active: boolean): CasualQueue {
   const [matchFound, setMatchFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigatedRef = useRef(false);
+  const queueLifecycleRef = useRef<Promise<void>>(Promise.resolve());
 
   const { gameType, neededPlayers, label } = gameConfig(gameId);
 
@@ -100,6 +96,11 @@ export function useCasualQueue(gameId: string, active: boolean): CasualQueue {
 
     const uid = user.uid;
     let cancelled = false;
+    let found = false;
+    let attempting = false;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    let navigation: ReturnType<typeof setTimeout> | undefined;
+    let unwatch = () => {};
     // A fresh look: leaving the queue and starting again must not be blocked
     // by the ref from the previous run.
     navigatedRef.current = false;
@@ -109,42 +110,54 @@ export function useCasualQueue(gameId: string, active: boolean): CasualQueue {
     function goToMatch(matchId: string) {
       if (navigatedRef.current || cancelled) return;
       navigatedRef.current = true;
+      found = true;
+      queueLifecycleRef.current = queueLifecycleRef.current.then(() => leaveQueue(uid)).catch(() => {});
+      setError(null);
       setMatchFound(true);
-      setTimeout(() => {
+      navigation = setTimeout(() => {
         router.push(`/play/${gameId}/casual/online/live?m=${matchId}`);
       }, 900);
     }
 
-    joinQueue(uid, gameType, "casual").catch((err) => setError(`Couldn't join queue: ${String(err)}`));
-
-    const unwatch = watchForMatch(
-      uid,
-      gameType,
-      (matchId) => {
-        leaveQueue(uid);
-        goToMatch(matchId);
-      },
-      (err) => setError(`Match lookup error: ${String(err)}`),
-      "casual"
-    );
-
     const attempt = async () => {
-      if (navigatedRef.current || cancelled) return;
+      if (found || cancelled || attempting) return;
+      attempting = true;
       try {
         const matchId = await tryFormMatch(uid, gameType, neededPlayers, (players) => buildInitialState(gameType, players), "casual");
         if (matchId) goToMatch(matchId);
+        else if (!cancelled && !found) setError(current => current?.startsWith("Matchmaking error:") ? null : current);
       } catch (err) {
-        setError(`Matchmaking error: ${String(err)}`);
+        if (!cancelled && !found) setError(`Matchmaking error: ${matchmakingErrorMessage(err)}`);
+      } finally {
+        attempting = false;
       }
     };
-    attempt();
-    const interval = setInterval(attempt, 2500);
+    // Start only after the join completes. Serialize leave/join when someone
+    // cancels or switches games while the previous request is still in flight.
+    const joined = queueLifecycleRef.current.then(async () => {
+      if (cancelled) return;
+      await joinQueue(uid, gameType, "casual");
+      if (cancelled) return;
+      unwatch = watchForMatch(uid, gameType, (matchId) => {
+        goToMatch(matchId);
+      }, (err) => {
+        if (!cancelled && !found) setError(`Match lookup error: ${matchmakingErrorMessage(err)}`);
+      }, "casual");
+      void attempt();
+      interval = setInterval(() => void attempt(), 2500);
+    });
+    queueLifecycleRef.current = joined.catch((err) => {
+      if (!cancelled) setError(`Couldn't join queue: ${matchmakingErrorMessage(err)}`);
+    });
 
     return () => {
       cancelled = true;
       clearInterval(interval);
+      clearTimeout(navigation);
       unwatch();
-      if (!navigatedRef.current) leaveQueue(uid);
+      if (!found) {
+        queueLifecycleRef.current = queueLifecycleRef.current.then(() => leaveQueue(uid)).catch(() => {});
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, user?.uid, gameType, neededPlayers, gameId]);

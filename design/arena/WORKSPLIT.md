@@ -158,6 +158,18 @@ The phone designs are in `MOBILE.md`, `boards/M*.dc.html`, `boards/P*.dc.html` a
   - The desktop checks still pass at 768 and up.
   - The "Exact match" rules above apply to every phone screen.
 
+## The opening deal and private rooms
+
+The designs are in `DEAL_AND_ROOMS.md`, the boards `Cut*`, `PCut*`, `Rooms`, `RoomLobby` and `MRoom*`, and the references in `screens/deal/`, `screens/app/app-15*` and `app-16*`, and `screens/phone/`.
+
+- **Claude builds both features**, desktop and phone, on the branch `deal-rooms/claude` (PROMPTS.md, prompt 9).
+- **ChatGPT reviews** the branch once it's done (prompt 10). Then Claude merges it (prompt 11) and Sayyu pushes.
+- **Checks.**
+  - Every state matches its reference: the ceremony frozen at each phase, and each room state at its size.
+  - The ceremony's timing matches the spec, and trick 1 starts with the cut's winner.
+  - All existing desktop and phone checks still pass.
+  - The "Exact match" rules above apply.
+
 ## Phase 2: review and merge
 
 - Claude reviews `arena/codex-screens` and ChatGPT reviews `arena/claude-screens`. Each checks against the references and this file's ownership rules, and lists problems without fixing the other's code.

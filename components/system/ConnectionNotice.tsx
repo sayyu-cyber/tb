@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { WifiOff } from "lucide-react";
 
-/** Browser connectivity only, not a claim about Firebase/server health. */
+/** Browser connectivity only, not a claim about Supabase/server health. */
 export function ConnectionNotice() {
   const [offline, setOffline] = useState(false);
   useEffect(() => {

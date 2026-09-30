@@ -2,6 +2,7 @@
 
 import type { COIN_PACKS } from "@/data/cosmetics";
 import { Pill } from "@/components/arena";
+import { formatCoins } from "@/lib/wallet";
 
 /**
  * A coin pack — the Shop board's `.pack`
@@ -52,10 +53,10 @@ export function CoinPackCard({
         ))}
       </div>
       <span className="lbl">{pack.name}</span>
-      <b className="amt">{pack.coins.toLocaleString()} coins</b>
+      <b className="amt">{formatCoins(pack.coins)} coins</b>
       <button type="button" className={button} style={{ width: "100%" }} disabled={disabled} onClick={onPurchase}>
         Request · MVR {pack.priceMVR}
-        <span className="sr-only"> for {pack.coins.toLocaleString()} coins</span>
+        <span className="sr-only"> for {formatCoins(pack.coins)} coins</span>
       </button>
     </div>
   );

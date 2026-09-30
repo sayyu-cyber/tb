@@ -4,6 +4,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useEconomy } from '../../contexts/EconomyContext';
+import { formatCoins } from '@/lib/wallet';
 
 interface CoinBalanceProps {
   showAnimation?: boolean;
@@ -24,7 +25,7 @@ interface CoinBalanceProps {
  * balance ticking up doesn't make the row jitter.
  */
 export default function CoinBalance({ showAnimation = false, size = 'md', className = '' }: CoinBalanceProps) {
-  const { state } = useEconomy();
+  const { state, balanceReady } = useEconomy();
   // economy.coins, not profile.coins: this display used to read the other
   // balance from the one the shop's affordability checks used, so after a
   // weekly rank reward it showed coins the shop then refused to spend.
@@ -54,7 +55,7 @@ export default function CoinBalance({ showAnimation = false, size = 'md', classN
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 15 }}
       >
-        {coins.toLocaleString()}
+        {balanceReady === false ? '—' : formatCoins(coins)}
       </motion.span>
     </motion.div>
   );

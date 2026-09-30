@@ -36,7 +36,7 @@
 // Deadwood is still computed, but only as a progress readout for the player
 // and a heuristic for the bots - it decides nothing.
 //
-// Pure game logic only - no React, no Firebase.
+// Pure game logic only - no React, no backend SDK.
 
 export type Suit = "S" | "H" | "D" | "C";
 // Ace is always low in Gin Rummy (rank 1) - no A-K wraparound in runs.

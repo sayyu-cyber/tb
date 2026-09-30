@@ -35,16 +35,28 @@ export function sampleRoom(code = "TF2GRQ"): RoomDoc {
 export async function getRoom(code: string) {
   if (code === "BAD234" || code === "TF2GRX") return null;
   const room = sampleRoom(code);
+  if (!params.has("code") && code === "TF2GRQ") room.players = ["mariyam", "ibrahim"];
+  if (code === "START2") room.players = ["mariyam"];
   if (code === "FULL23") room.players = ["a","b","c","d"];
   if (code === "Z4C3EF") room.players = ["mariyam"];
   return room;
 }
-export async function joinRoom(code: string, user: string, name: string, password: string) { if ((code === "LOCK23" || code === "TF2GRQ") && password !== "secret") throw new Error("Incorrect room password"); record(code,user,name,password); }
+export async function joinRoom(code: string, user: string, name: string, password: string, token?: string) {
+  const room = (await getRoom(code))!;
+  if (token === "expired") throw new Error("This invite has expired. Ask the host for a new invite.");
+  if (room.status === "closed") throw new Error("This room has closed");
+  if (room.status === "started" && !room.players.includes(user)) throw new Error("This room has already started");
+  if (room.players.length >= room.maxPlayers && !room.players.includes(user)) throw new Error("This room is full");
+  if (!room.players.includes(user) && !token && (code === "LOCK23" || code === "TF2GRQ") && password !== "secret") throw new Error("Incorrect room password");
+  if (!room.players.includes(user)) liveRoom = { ...room, players: [...room.players, user], playerNames: { ...room.playerNames, [user]: name } };
+  record(code,user,name,password);
+}
+export async function createRoomInviteLink() { return "fixture-invite"; }
 export function watchRoom(code: string, callback: (value: RoomDoc | null) => void, error?: () => void) {
-  if (params.has("code") && code === params.get("code")) {
+  if (params.has("code") && code === params.get("code") && document.querySelector('.room-waiting-page')) {
     w.emitRoom = room => { liveRoom = room; callback(room); }; w.failRoom = error;
     if (params.has("load-error") && roomWatches++ === 0) error?.();
-    else if (!params.has("loading")) w.emitRoom(params.has("not-found") ? null : sampleRoom(code));
+    else if (!params.has("loading")) w.emitRoom(params.has("not-found") ? null : liveRoom ?? sampleRoom(code));
   } else { void getRoom(code).then(callback); }
   return () => {};
 }

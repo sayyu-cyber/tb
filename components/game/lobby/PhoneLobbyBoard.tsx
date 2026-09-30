@@ -5,6 +5,7 @@ import { ArenaStage } from "../ArenaStage";
 import { ArenaSprite, Icon } from "../ArenaSprite";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
+import { formatCoins } from "@/lib/wallet";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useRankProgress } from "@/hooks/useRankProgress";
 import { TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks";
@@ -231,10 +232,10 @@ export function PhoneLobbyBoard({
         {/* Right: coins, the modes grid, PLAY. */}
         <span
           className="coinchip"
-          aria-label={`${economy.economy.coins.toLocaleString()} ${t("common_coins")}`}
+          aria-label={`${formatCoins(economy.economy.coins)} ${t("common_coins")}`}
           style={{ position: "absolute", right: 44, top: 10 }}
         >
-          <i className="gem" aria-hidden="true" />{economy.economy.coins.toLocaleString()}
+          <i className="gem" aria-hidden="true" />{formatCoins(economy.economy.coins)}
         </span>
 
         <section

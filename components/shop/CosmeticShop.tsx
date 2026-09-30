@@ -19,6 +19,7 @@ import { CoinPackCard } from './StoreCoinPacks';
 import { CoinPackRow } from './CoinPackRow';
 import { VipPanel } from '@/components/vip/VipPanel';
 import { categoryLabel } from './categoryLabel';
+import { formatCoins } from '@/lib/wallet';
 
 /**
  * Shop — design/arena/screens/app/app-11-shop.jpg, with the purchase
@@ -90,13 +91,13 @@ export default function CosmeticShop() {
   };
 
   function handlePurchase(item: CosmeticItem) { setIntent('buy'); setSelectedItem(item); }
-  function confirmPurchase(item: CosmeticItem) {
+  async function confirmPurchase(item: CosmeticItem) {
     if (purchasePending.current) return;
     if (isItemOwned(item.id)) { showToast("You already own this item.", "info"); return; }
     if (isHidden(item)) { showToast("This item is no longer available.", "error"); return; }
     purchasePending.current = true;
     try {
-      if (purchaseCosmetic(item.id)) { showToast(item.name + " added to your inventory.", "success"); setSelectedItem(null); }
+      if (await purchaseCosmetic(item.id)) { showToast(item.name + " added to your inventory.", "success"); setSelectedItem(null); }
       else showToast("Purchase could not be completed. Check your balance.", "error");
     } finally { window.setTimeout(() => { purchasePending.current = false; }, 250); }
   }
@@ -184,7 +185,7 @@ export default function CosmeticShop() {
     <div className="bal">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: phone ? '1 1 0' : undefined }}>
         <span className="lbl">Your Balance</span>
-        <b><CoinGem />{state.economy.coins.toLocaleString()}</b>
+        <b><CoinGem />{formatCoins(state.economy.coins)}</b>
       </div>
       <button
         type="button"
@@ -358,7 +359,7 @@ export default function CosmeticShop() {
               </button>
             ) : (
               <span className="coins" style={{ height: '40px' }}>
-                <CoinGem />{state.economy.coins.toLocaleString()}
+                <CoinGem />{formatCoins(state.economy.coins)}
               </span>
             )}
           </div>

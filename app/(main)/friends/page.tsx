@@ -407,7 +407,7 @@ export default function FriendsPage() {
                     </div>
                     <div className="acts">
                       <Link className="minibtn lime"
-                        href={`/play/${item.gameType === 'mindi' ? 'mindi' : 'gin-rummy'}/room?code=${encodeURIComponent(item.code)}`}>
+                        href={`/play/${item.gameType === 'mindi' ? 'mindi' : 'gin-rummy'}/room?code=${encodeURIComponent(item.code)}&invite=${encodeURIComponent(item.id)}`}>
                         Join
                       </Link>
                       <button type="button" className="ibtn" aria-label="Dismiss invitation"

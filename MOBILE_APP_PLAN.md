@@ -1,5 +1,10 @@
 # Thaasbai: Going Native — Research & Plan
 
+> Historical research. For the audited 2026-09-29 baseline, current blockers,
+> completed work and this week's priorities, use [RELEASE_READINESS.md](RELEASE_READINESS.md).
+> Some statements below are outdated: privacy/terms and phone layouts now exist,
+> and economy functions exist but are not yet wired through the client/rules.
+
 Written September 2026. Covers turning the existing web app into a shipped
 mobile app, what "secure" realistically means for this project, and what it
 actually costs. Read section 1 before doing anything else.
