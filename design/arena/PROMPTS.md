@@ -6,10 +6,10 @@ Use them in this order:
 2. **Both, in parallel.** Paste prompt 2 into ChatGPT (Codex), and reply `start phase 1` to Claude.
 3. **Reviews.** When both have finished, run prompt 3 in Claude and prompt 4 in ChatGPT. Send each list of problems back to the agent that owns the code.
 4. **Merge.** Run prompt 5 in Claude, then push `main` yourself.
-5. **Phone.** Once the desktop work is on `main`, paste prompt 6 into Claude. When it finishes, run prompt 7 in ChatGPT and send the problems back to Claude. Then run prompt 8, and push `main` yourself.
-6. **The opening deal and private rooms.** Once the phone work is on `main`, paste prompt 9 into Claude. When it finishes, run prompt 10 in ChatGPT and send the problems back to Claude. Then run prompt 11, and push `main` yourself.
+5. **Phone (landscape).** Once the desktop work is on `main`, paste prompt 12 into Claude. When it finishes, run prompt 13 in ChatGPT and send the problems back to Claude. Then run prompt 14, and push `main` yourself. Prompts 6 to 8 are the earlier portrait plan: they stay below for the record, so don't run them.
+6. **The opening deal and private rooms.** Once the landscape phone work is on `main`, paste prompt 9 into Claude. When it finishes, run prompt 10 in ChatGPT and send the problems back to Claude. Then run prompt 11, and push `main` yourself.
 
-The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md` (desktop), `MOBILE.md` (phone) and `DEAL_AND_ROOMS.md` (the opening deal and private rooms).
+The rules behind all of this are in `WORKSPLIT.md`, and the designs are in `APP_SCREENS.md` (desktop), `LANDSCAPE.md` (phone) and `DEAL_AND_ROOMS.md` (the opening deal and private rooms).
 
 ## 1. Claude: phase 0, then phase 1
 
@@ -160,7 +160,9 @@ Both reviews are done and fixed. Merge as design/arena/WORKSPLIT.md phase 2 says
 Don't push. Tell me when main is ready and I'll push.
 ```
 
-## 6. Claude: the phone version (after the desktop work is merged)
+## 6. Claude: the phone version, portrait plan (replaced by 12)
+
+*Replaced by prompt 12: the phone version is now landscape only. Kept for the record, don't run it.*
 
 Paste this into the Thaasbai project session. Claude builds the whole phone version on the branch `phone/claude`.
 
@@ -255,7 +257,9 @@ RULES
   - your questions for me
 ```
 
-## 7. ChatGPT reviews the phone branch
+## 7. ChatGPT reviews the phone branch, portrait plan (replaced by 13)
+
+*Replaced by prompt 13: the phone version is now landscape only. Kept for the record, don't run it.*
 
 ```text
 Review Claude's branch phone/claude against design/arena/MOBILE.md and the references in design/arena/screens/phone/*.jpg. This is a review only: don't edit, commit or switch branches in any existing folder.
@@ -279,7 +283,9 @@ Review Claude's branch phone/claude against design/arena/MOBILE.md and the refer
 Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
 ```
 
-## 8. Claude merges the phone branch
+## 8. Claude merges the phone branch, portrait plan (replaced by 14)
+
+*Replaced by prompt 14: the phone version is now landscape only. Kept for the record, don't run it.*
 
 ```text
 The phone review is done and its problems are fixed. In C:\Users\Sayyu\thaasbai:
@@ -303,15 +309,16 @@ You build both, on desktop and phone. ChatGPT only reviews at the end.
 
 READ FIRST, all of it, before any code
 - design/arena/DEAL_AND_ROOMS.md is the spec: the timeline, the table-space positions, the copy, reduced motion, and where each screen's data comes from.
-- The boards hold the exact values: design/arena/boards/Cut, CutGin, PCut, PCutGin, Rooms, RoomLobby, MRooms, MRoomsCreate, MRoomLobby and MRoomLobbyFull (.dc.html).
+- The boards hold the exact values: design/arena/boards/Cut, CutGin, PCut, PCutGin, Rooms, RoomLobby, LRooms, LRoomsBadCode, LRoomLobby, LRoomLobbyGuest and LRoomLobbyFull (.dc.html).
   - The ceremony's choreography is in the Cut and PCut scripts: GEO, timeline(), phaseAt() and place().
   - Their {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime. Read them for structure and behaviour, but don't copy them.
 - The pixel references, at 2×, are:
   - design/arena/screens/deal/*.jpg
   - screens/app/app-15* and app-16*
-  - screens/phone/phone-land-05*, phone-land-06*, phone-17* and phone-18*
+  - screens/phone/phone-land-05* and phone-land-06*
+  - screens/landscape/landscape-15* and landscape-16*
 - design/arena/WORKSPLIT.md, "How every screen is checked" and "Exact match". Both apply here.
-- design/arena/MOBILE.md, for the phone shell and the rotate flow.
+- design/arena/LANDSCAPE.md, for the phone shell (rail, side panels, dialogs) and the orientation handling. Prompt 12 builds that shell. If landscape/claude isn't on main yet, stop and tell me.
 
 WHERE
 git switch -c deal-rooms/claude (from main). Make one commit per step below, "Deal/Rooms: <step>", naming the references it matches.
@@ -340,7 +347,7 @@ It runs on desktop (MindiTable, GinRummyTable) and on phones held sideways (Phon
 - Update scripts/check-mindi-cut.cjs and scripts/mindi-cut-test-entry.tsx for the new phases, the panel swap, Skip, and both games.
 
 2. THE PRIVATE ROOM PAGE: components/game/PrivateRoomSetup.tsx and RecentRooms.tsx
-- The boards are Rooms (desktop), MRooms and MRoomsCreate (phone).
+- The boards are Rooms (desktop), LRooms and LRoomsBadCode (phone, held sideways).
 - Build:
   - the game tiles
   - the seats segment, with Gin locked to 2
@@ -349,11 +356,11 @@ It runs on desktop (MindiTable, GinRummyTable) and on phones held sideways (Phon
   - the Room Card status: active with time left, or none with Get a card
   - incoming invites (watchRoomInvites)
   - recent rooms with their status pills
-- Keep every existing validation message and flow: sign-in, Room Card required, not found, full, already started, and the password prompt. The password prompt is a dialog on desktop and a sheet on the phone.
-- On the phone, Join is the first tab.
+- Keep every existing validation message and flow: sign-in, Room Card required, not found, full, already started, and the password prompt. The password prompt is a dialog on desktop and a centred dialog (.ldlg) on the phone.
+- On the phone, Join and Create sit side by side, with no tabs.
 
 3. THE WAITING ROOM: components/game/RoomLobbyClient.tsx and RoomInviteDialog.tsx
-- The boards are RoomLobby (desktop, Host and Guest), MRoomLobby and MRoomLobbyFull (phone).
+- The boards are RoomLobby (desktop, Host and Guest), LRoomLobby, LRoomLobbyGuest and LRoomLobbyFull (phone, held sideways).
 - Build:
   - the code card, with Copy and Share
   - the table seen from above, with its seat cards: teams by seats 0 and 2 (lime) and 1 and 3 (blue), the host's crown, the You tag and open seats
@@ -362,7 +369,7 @@ It runs on desktop (MindiTable, GinRummyTable) and on phones held sideways (Phon
   - the room details
   - Start, for the host only, enabled once the table is full. Guests see "Waiting for <host> to start" instead.
 - Swap partners exchanges seats 1 and 2 with setSeatOrder, so the host keeps seat 0 and only their partner changes. This replaces today's swap of seats 0 and 1.
-- On a phone, Start opens the rotate sheet for every player: the MPlayFind pattern, with the Android landscape lock.
+- On a phone, Start goes straight to the table for every player. The app is already landscape, so there is no rotate sheet. A phone held upright sees the turn gate.
 - The loading, not found, load error, removed, banned and closed states use the centred panel from the spec, with the existing roomlobby_* strings.
 - Update scripts/check-room-ui.cjs, scripts/room-test-entry.tsx and scripts/room-test-services.tsx to cover every state.
 
@@ -374,7 +381,7 @@ EXACT MATCH
   - every animation at the same timing: the riffle (rsplit and rdrop), spread, draw, flip, winner rise and halo, deal flights (fly), pickup (pick), handIn, the panel cross-fade, standPop, miniPop, tick, seatIn, charIn, toastIn, ping, sheetUp and scrimIn
 - The only allowed differences are:
   - real data and strings in place of the sample data
-  - fluid width from 360 to 430 on portrait phones
+  - fluid width from 740 to 932 on phones
   - loops that stop under reduced motion
 - New strings get i18n keys in en, dv, hi and bn. The list is at the end of DEAL_AND_ROOMS.md.
 - If a board element has no real data or feature behind it, don't drop it and don't fake it. List it and ask me.
@@ -386,9 +393,9 @@ PROOF, for every screen and state
    - deal-<phase>.png at 1440×900
    - phone-land-deal-<phase>.png at 844×390
    - rooms-<state>.png
-   - phone-<screen>.png at 390×844
+   - phone-<screen>.png at 844×390, and again at 740 and 932 wide
    Freeze the ceremony clock at each phase. The boards' phase prop shows which moment.
-3. Fix every visible difference. Then check 1280 wide, and phones at 360 and 430.
+3. Fix every visible difference. Then check 1280 wide, and phones at 740 and 932 wide.
 4. Play the whole ceremony for real, online and against AI, in:
    - Mindi with four seats
    - the Mindi 1v1 room variant
@@ -409,7 +416,7 @@ RULES
 ## 10. ChatGPT reviews the opening deal and rooms
 
 ```text
-Review Claude's branch deal-rooms/claude against design/arena/DEAL_AND_ROOMS.md and its references. The references are design/arena/screens/deal/*.jpg, screens/app/app-15* and app-16*, and screens/phone/phone-land-05*, phone-land-06*, phone-17* and phone-18*. This is a review only: don't edit, commit or switch branches in any existing folder.
+Review Claude's branch deal-rooms/claude against design/arena/DEAL_AND_ROOMS.md and its references. The references are design/arena/screens/deal/*.jpg, screens/app/app-15* and app-16*, and screens/phone/phone-land-05* and phone-land-06*, and screens/landscape/landscape-15* and landscape-16*. This is a review only: don't edit, commit or switch branches in any existing folder.
 1. In C:\Users\Sayyu\thaasbai, run git diff main...deal-rooms/claude --stat. This and the next step leave that folder's files alone.
 2. Make a temporary review copy:
    git worktree add --detach ..\thaasbai-review deal-rooms/claude
@@ -418,7 +425,7 @@ Review Claude's branch deal-rooms/claude against design/arena/DEAL_AND_ROOMS.md 
    npm ci
    npm run verify
    npm run dev -- -p 3002
-3. Compare every screen and state with its reference, at 1440×900 and 1280 on desktop, 844×390 for phones held sideways, and 390×844 (and 360 and 430) for portrait phones. Check layout, spacing, sizes, colours, type, icons, buttons and states. Open the board's .dc.html to check the exact values.
+3. Compare every screen and state with its reference, at 1440×900 and 1280 on desktop, and 844×390 for phones (and 740 and 932 wide). A phone held upright shows only the turn gate. Check layout, spacing, sizes, colours, type, icons, buttons and states. Open the board's .dc.html to check the exact values.
 4. Check the ceremony:
    - It plays on the real table, with no separate scene.
    - Its timing matches the spec.
@@ -430,7 +437,7 @@ Review Claude's branch deal-rooms/claude against design/arena/DEAL_AND_ROOMS.md 
    - join with a good code, a bad code, and a locked room
    - invites, and recent rooms' statuses
    - the host's seat menu, Swap partners, and Start only once the table is full
-   - Start on a phone opens the rotate sheet
+   - Start on a phone goes straight to the table
 6. Stop the server and remove the copy: git worktree remove ..\thaasbai-review
 Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
 ```
@@ -441,6 +448,160 @@ Give me a list of problems, most serious first, each with the file and line and 
 The review of deal-rooms/claude is done and its problems are fixed. In C:\Users\Sayyu\thaasbai:
 1. git switch main
 2. git merge --no-ff deal-rooms/claude
+3. Run npm run verify and every check-*-ui script, at desktop and phone sizes.
+Don't push. Tell me when main is ready and I'll push.
+```
+
+## 12. Claude: the landscape phone app (after the desktop work is merged)
+
+Paste this into the Thaasbai project session. Claude builds the whole phone version, which is landscape only, on the branch `landscape/claude`. It replaces prompts 6 to 8.
+
+```text
+Finish and commit whatever you're in the middle of first, so the phone work starts from a clean main. Then read this.
+
+We're building the phone version of Thaasbai. The whole app runs in landscape: every page, the lobby, the rooms and the tables. It must be an exact copy of the landscape artboards. You build all of it; ChatGPT only reviews at the end.
+
+BEFORE YOU START
+- An earlier portrait attempt may exist on phone/claude. Run git branch -a and git log main..phone/claude. Don't merge it. Start landscape/claude from main, reuse what still applies (the table scaling, the orientation and lock code, i18n keys), and tell me what you reused and what you dropped.
+- The landscape designs are still uncommitted. Before you branch, commit everything pending under design/arena/ on its own, as "Add landscape phone designs". It adds LANDSCAPE.md, landscape-reference.css, boards/L*.dc.html and screens/landscape/, edits the docs and boards, and deletes boards/PHome.dc.html with its two phone-land-00 screenshots. Stage by path.
+
+READ FIRST, all of it, before any code
+- design/arena/LANDSCAPE.md: the phone spec (orientation and the turn gate, the shell, the layout system, the screens table, new copy, build notes).
+- design/arena/boards/L*.dc.html (the app screens and the turn gate) and P*.dc.html (the tables, lobby and result) hold the exact values. Their {{ }}, sc-for/sc-if and DCLogic parts are the design canvas's demo runtime: read them for structure and behaviour, but don't copy them.
+- design/arena/landscape-reference.css: the landscape layer's CSS (shell, grids, side panels, dialogs, toast, gate).
+- design/arena/screens/landscape/*.jpg and screens/phone/phone-land-*.jpg: the pixel references, at 2×.
+- design/arena/WORKSPLIT.md, "Phone layouts", "How every screen is checked" and "Exact match". All three apply here.
+- MOBILE.md and the M* boards are the old portrait plan. Don't build them.
+
+WHERE
+git switch -c landscape/claude (from main). Make one commit per step below, "Landscape: <step>", naming the references it matches.
+
+1. THE SHELL
+- It applies on (orientation: landscape) and (max-height: 500px). Desktop at 768 wide and up with a normal height stays exactly as it is.
+- Build, on the existing phone shell:
+  - the 76 px rail (Home, Friends, Play, Shop, More), with env(safe-area-inset-left)
+  - the 52 px top bar in its three kinds: the Home wordmark bar, the page bar with its lime label, and the back bar for drill-downs
+  - the More panel
+  - side panels (.sheet, .sheet.w2, .sheet.w3, .sheet.right), centred dialogs (.ldlg) and the toast at the top right
+  - the layout classes LANDSCAPE.md "Building it" lists
+- Play on the rail goes straight to the Play lobby (PLobby), which is immersive and has no rail.
+- Update scripts/check-shell-ui.cjs:
+  - At 844×390 the rail holds exactly Home, Friends, Play, Shop and More, and every other destination is in the More panel.
+  - At 390×844 only the turn gate shows.
+  - The desktop assertions stay.
+
+2. ORIENTATION AND THE TURN GATE (LANDSCAPE.md "Orientation"; boards LGate, LGateAndroid and MRotate)
+- In public/manifest.json, change "orientation": "portrait" to "landscape".
+- The whole app is landscape, so take every route out of needsLandscape in components/layout/AppShell.tsx and show the turn gate (LGate) on any page held upright:
+  - It is a full-screen overlay, so the page underneath keeps its state and nothing navigates.
+  - It is a pure CSS media query and goes the moment the phone turns.
+  - It shows "You were on {page}".
+- A match held upright keeps MRotate, not LGate:
+  - It covers the live table, which shows blurred behind it, and the match keeps running.
+  - It shows the live turn status with the countdown ring.
+  - Leave table goes through the existing leave flow, and the lock hint stays.
+- Go landscape shows only where screen.orientation.lock exists (Android). One tap runs requestFullscreen({ navigationUI: "hide" }) and then screen.orientation.lock("landscape"). If either call fails, nothing breaks and the gate stays. Try the same two calls quietly on the first tap of a session. Unlock and leave fullscreen when the player leaves a match.
+- On a device without touch, in a narrow tall window, show the same gate with "Make this window wider".
+- Copy: reuse rotate_title and rotate_lockHint, and add i18n keys in en, dv, hi and bn for every new string in LANDSCAPE.md "New copy".
+
+3. THE TABLES: PLobby, PMindi, PGin, PResult
+- Each is an 844×390 composition. Scale it evenly to fit the visible viewport (100dvh / visualViewport), and never crop the hand or the action button.
+- Keep the game logic as it is: this step is layout and look only.
+- The opening deal (PCut, PCutGin) is built by prompt 9, not here.
+
+4. THE APP SCREENS, one commit each
+- Home, with the More panel
+- Profile
+- Inventory, with Room Cards, the card preview and the locked state
+- Friends, with requests and the actions panel
+- Messages and the chat
+- Clubs and the club chat
+- Leaderboard
+- Achievements, with Ranks
+- Weekend League
+- Hall of Fame
+- Shop, with the buy dialog and not-enough-coins
+- VIP and coin packs
+- Rewards and Missions, with the claimed state
+- Settings
+The Private Room screens (LRooms, LRoomLobby) are not part of this prompt. Prompt 9 builds them on this shell.
+Collection and Room Cards are tabs of the Inventory board, and Missions is part of the Rewards board.
+
+5. EVERY OTHER ROUTE
+The whole web app runs in landscape, so no route may stay portrait-only or break. Start by listing every route under app/ (page.tsx, not-found, error, global-error and loading) against the board that covers it. These have no board yet:
+- the sign-in pages: login, forgot-password, confirm-email and reset-password
+- ranked, ranked duo and the post-match screen
+- spectate, tournament, the public player page and admin
+- privacy and terms
+- the 404, error and loading screens, and ui-preview
+Build each one from the same landscape system: the rail (none when signed out), the 52 px bar, the .cols grids, side panels and .ldlg dialogs. Make it look like its neighbours, so it reads as part of one app. Signed-out pages have no rail: put the brand on the left and the form on the right.
+- These have no reference screenshot. List each one in your summary with an 844×390 screenshot, so I can review them.
+- Add scripts/check-landscape-routes.cjs. It visits every route at 844×390, 740 and 932 wide and asserts there is no horizontal overflow and no clipped primary action. At 390×844 it asserts that only the turn gate shows (a live match shows the rotate screen).
+
+EXACT MATCH
+- Port each board's CSS value for value with scripts/port-board.mjs. The boards are already blue, so there is nothing to recolour.
+- Keep, from each board:
+  - the structure and class names
+  - the buttons, with their press depth and shine
+  - every animation at the same timing, including turnPhone, hurry and the side panels' slide-in
+  - the interactions
+- The only allowed differences are:
+  - real data and strings in place of the sample data
+  - fluid width from 740 to 932
+  - loops that stop under reduced motion
+- If a board element has no real data or feature behind it, don't drop it and don't fake it. List it and ask me.
+- Desktop must not change: every desktop check still passes, and the desktop screens still match screens/app/*.jpg.
+
+PROOF, for every screen and state
+1. Feed the board's sample data into the screen's test fixture (scripts/*-test-services, never app code).
+2. Screenshot it in the same state as each reference: 844×390 for a one-screen board, the whole page for a scrolling one, and 390×844 for the turn gate.
+3. Save the screenshot beside the reference in artifacts/compare/landscape-<screen>.png. Don't commit these.
+4. Fix every visible difference, then check 740 and 932 wide as well. At 667 wide, list what runs out of room; LANDSCAPE.md "Orientation" names the three narrow variants that aren't drawn yet.
+5. Run scripts/check-landscape-routes.cjs and fix every route it flags.
+Test the turn gate and MRotate in Chrome's device emulation, turning between portrait and landscape. In your summary, say what you couldn't test for real (iPhone Safari, and the Android lock on a real phone).
+
+RULES
+- Never push to GitHub and never run firebase deploy. I push after the review.
+- Stage files by path, not with git add -A.
+- When you finish, give me a summary:
+  - screens done
+  - the compare images
+  - checks run and their results
+  - anything that still differs from its board, and why
+  - your questions for me
+```
+
+## 13. ChatGPT reviews the landscape branch
+
+```text
+Review Claude's branch landscape/claude against design/arena/LANDSCAPE.md and the references in design/arena/screens/landscape/*.jpg and screens/phone/phone-land-*.jpg. This is a review only: don't edit, commit or switch branches in any existing folder.
+1. In C:\Users\Sayyu\thaasbai, run git diff main...landscape/claude --stat. This and the next step leave that folder's files alone.
+2. Make a temporary review copy:
+   git worktree add --detach ..\thaasbai-review landscape/claude
+   cd ..\thaasbai-review
+   copy ..\thaasbai\.env.local .env.local
+   npm ci
+   npm run verify
+   npm run dev -- -p 3002
+3. In Chrome's device emulation, compare each screen at 844×390 (and at 740 and 932 wide) with its reference: layout, spacing, sizes, colours, type, icons, buttons, states and animations. For scrolling screens compare the whole page. Open the board's .dc.html to check the exact values.
+4. Check the orientation flow:
+   - Every page held upright (390×844) shows the turn gate, keeps its place, and loses the gate the moment the phone turns.
+   - The gate names the page you were on.
+   - A match held upright shows the rotate screen with the live turn status and Leave table, and the match keeps running.
+   - Play on the rail goes straight to the lobby.
+   - The rail holds exactly Home, Friends, Play, Shop and More.
+   - manifest.json has "orientation": "landscape".
+   - Desktop at 1280 and 1440 is unchanged.
+5. Stop the server and remove the copy: git worktree remove ..\thaasbai-review
+Give me a list of problems, most serious first, each with the file and line and the reference it differs from. End with "ready to merge" or "not yet".
+```
+
+## 14. Claude merges the landscape branch
+
+```text
+The landscape review is done and its problems are fixed. In C:\Users\Sayyu\thaasbai:
+1. git switch main
+2. git merge --no-ff landscape/claude
 3. Run npm run verify and every check-*-ui script, at desktop and phone sizes.
 Don't push. Tell me when main is ready and I'll push.
 ```

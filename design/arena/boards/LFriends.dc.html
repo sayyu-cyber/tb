@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Phone · Home, held sideways</title>
+<title>Landscape · Friends</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -546,65 +546,183 @@ a.btn{text-decoration:none}
 @keyframes sideIn{from{transform:translateX(-100%)}to{transform:none}}
 .land .mstage{height:390px}
 .land .mstage::before{height:170px;background-size:60px 60px}
+/* ================= the whole app, held sideways: 844 x 390 =================
+   rail 76 | top bar 52 | content area 768 x 338 (page padding 16, gap 12)
+   Loaded after mobile.css. Everything here assumes class="ar app m land". */
 
-/* hero */
-.mhero{position:relative;height:452px;overflow:hidden;border-radius:18px;background:radial-gradient(300px 220px at 50% 76%,rgba(0,188,200,.42),rgba(0,188,200,0) 70%),linear-gradient(170deg,#0B0F12 0%,#06080A 55%,#030405 100%);border:1px solid rgba(255,255,255,.1)}
-.mhero::before{content:"";position:absolute;left:-30%;right:-30%;bottom:-2px;height:190px;background-image:linear-gradient(rgba(0,188,200,.36) 1.5px,rgba(0,0,0,0) 1.5px),linear-gradient(90deg,rgba(0,188,200,.36) 1.5px,rgba(0,0,0,0) 1.5px);background-size:44px 44px;background-position:center bottom;transform:perspective(300px) rotateX(60deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(0deg,#000,rgba(0,0,0,0) 90%);mask-image:linear-gradient(0deg,#000,rgba(0,0,0,0) 90%)}
-.mhero .word{position:absolute;left:50%;top:176px;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:150px;line-height:1;color:rgba(0,0,0,0);-webkit-text-stroke:1.5px rgba(255,255,255,.07);white-space:nowrap}
-.mhero .ring{position:absolute;left:50%;top:318px;width:270px;height:72px;margin-left:-135px;border-radius:50%;box-shadow:0 0 0 2.5px #C6FF33,0 0 26px 5px rgba(198,255,51,.45),inset 0 0 26px rgba(198,255,51,.25);background:radial-gradient(closest-side,rgba(0,188,200,.35),rgba(0,188,200,0))}
-.mhero .fan{position:absolute;left:50%;top:384px;width:0;height:0;animation:bob 5s ease-in-out infinite}
-.mhero .fan .cardw{position:absolute;left:-40px;top:-146px;transform-origin:50% 100%;transform:rotate(var(--a)) translateY(-5px)}
-.mhero .fan .cardw .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 20px 26px -10px rgba(0,0,0,.9)}
-@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -8px}}
-.mhero .cta{position:absolute;left:16px;right:16px;bottom:16px;display:flex;gap:10px}
-.mhero .cta .btn{flex:1 1 0;padding:0 12px}
-.mev{display:flex;align-items:center;gap:12px;padding:11px 14px 11px 11px;border-radius:14px;background:rgba(8,8,11,.86);box-shadow:inset 0 0 0 1px rgba(198,255,51,.4);text-decoration:none;color:#fff}
-.mev .ic{flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:#C6FF33;color:#0A0A0A}
-.mev .ic svg{width:20px;height:20px}
-.mlock{display:flex;flex-direction:column;gap:8px;padding:13px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(0,188,200,.16),rgba(0,188,200,.04));box-shadow:inset 0 0 0 1px rgba(0,188,200,.45)}
-.mlock .r1{display:flex;align-items:center;gap:10px}
-.mlock .r1 > svg{width:17px;height:17px;color:#00BCC8}
-/* player hud */
-.mstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.mstat{display:flex;flex-direction:column;gap:7px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-.mstat svg{width:16px;height:16px;color:#C6FF33}
-.mstat b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
-.mstat span{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9.5px;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#A4A4B2;white-space:nowrap}
-/* quick play */
-.cover{position:relative;height:226px;border-radius:16px;overflow:hidden;border:0;padding:0;text-align:left;color:#fff;cursor:pointer;transition:translate .25s cubic-bezier(.2,.8,.2,1)}
-.cover:active{translate:0 2px}
-.cover.mindi{background:radial-gradient(160px 120px at 50% 42%,rgba(79,227,236,.5),rgba(0,188,200,0) 70%),#06323A;box-shadow:inset 0 0 0 1px rgba(0,188,200,.5),0 20px 40px -20px rgba(0,0,0,.9)}
-.cover.gin{background:radial-gradient(160px 120px at 50% 42%,rgba(0,188,200,.3),rgba(0,188,200,0) 70%),#0A2429;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 20px 40px -20px rgba(0,0,0,.9)}
-.cover::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.07) 0 2px,rgba(255,255,255,0) 2.5px);background-size:16px 16px;pointer-events:none}
-.cover .ribbon{position:absolute;left:12px;top:12px;z-index:2}
-.cover .go{position:absolute;right:12px;top:12px;z-index:2;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:#C6FF33;color:#0A0A0A;box-shadow:0 4px 0 #6F9412}
-.cover .go svg{width:18px;height:18px}
-.cover .meta{position:absolute;left:14px;right:12px;bottom:14px;z-index:2;display:flex;flex-direction:column;gap:6px}
-.cover .meta b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:25px;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;white-space:nowrap}
-.cover .meta .thaana{font-size:14px;line-height:1.2}
-.cover .meta .mm{display:flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#D4D4DC;white-space:nowrap}
-.cover .meta .mm svg{width:13px;height:13px}
-.cfan{position:absolute;left:50%;top:128px;width:0;height:0;z-index:1}
-.cfan .cardw,.cfan .cb{position:absolute;left:-29px;top:-82px;transform-origin:50% 100%;transform:rotate(var(--a))}
-/* lower */
-.sc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;height:82px;border-radius:12px;background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
-.sc svg{width:21px;height:21px;color:#00BCC8}
-.sc:active{background:rgba(198,255,51,.06);box-shadow:inset 0 0 0 1px rgba(198,255,51,.5)}
-.news{width:272px;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:14px;background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-.news h3{margin:0;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:-.01em}
-.news p{margin:0;font-size:13px;line-height:1.45;font-weight:500;color:#BEBECA}
-.mtile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;height:84px;border-radius:13px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
-.mtile svg{width:22px;height:22px;color:#00BCC8}
-.mtile.hot svg{color:#C6FF33}
-.mtile .bdg{position:absolute;right:8px;top:8px;min-width:18px;height:18px;padding:0 5px;border-radius:5px;background:#00BCC8;color:#00191B;font:700 10px/18px 'Space Grotesk',sans-serif;letter-spacing:0}
-.mtile .lv{position:absolute;right:10px;top:10px;width:7px;height:7px;border-radius:50%;background:#C6FF33;animation:breathe 1.6s ease-in-out infinite}
-.mvip{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;background:linear-gradient(160deg,#0B2629 0%,#07141A 100%);box-shadow:inset 0 0 0 1px rgba(0,188,200,.45)}
-.mvip::after{content:"";position:absolute;right:-30px;top:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(closest-side,rgba(198,255,51,.28),rgba(198,255,51,0));pointer-events:none}
-.mvip .cr{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:conic-gradient(from 200deg,#C6FF33,#00BCC8,#FFFFFF,#C6FF33,#00BCC8,#FFFFFF,#C6FF33);color:#0A0A0A}
-.mvip .cr svg{width:22px;height:22px}
+/* ---- shell ---- */
+.land .mstage{height:390px;background:radial-gradient(420px 220px at 94% -30px,rgba(0,188,200,.30),rgba(0,188,200,0) 70%),radial-gradient(360px 260px at 8% 340px,rgba(0,188,200,.13),rgba(0,188,200,0) 70%),linear-gradient(180deg,#07090B 0%,#030405 62%,#000 100%)}
+.land .mstage::before{height:150px;background-size:60px 60px;transform:perspective(380px) rotateX(58deg)}
+.land .mstage::after{right:40px;top:-60px;width:300px;height:420px;transform:rotate(15deg)}
+.land .mbg{top:390px}
+.land .mtop{left:76px;height:52px;padding:0 14px 0 16px;gap:10px}
+.land .mtop .ttl{font-size:15px}
+.land .mtop .mback{width:34px;height:34px;border-radius:9px;margin-right:2px}
+.land .mtop .coins{height:34px}
+.land .mtop .ibtn{width:34px;height:34px}
+.land .mtop .meb .ava{width:34px;height:34px;border-radius:9px;font-size:15px}
+.land .mtop .bell .dotc{right:-5px;top:-5px}
+.land .mpage{margin-left:76px;padding:64px 16px 28px;gap:12px}
+.land .hs,.land .chips{margin:0 -16px;padding:0 16px;scroll-padding:0 16px}
+.land .mrail{padding-left:0}
+/* the left rail grows by the notch inset on a real phone: padding-left:env(safe-area-inset-left) */
+
+/* ---- type, buttons, controls at landscape size ---- */
+.land .btn{height:44px;padding:0 18px;font-size:14px;border-radius:11px}
+.land .btn.sm{height:38px;padding:0 14px;font-size:12.5px;border-radius:10px}
+.land .btn.xs{height:32px;padding:0 11px;font-size:11.5px;border-radius:9px}
+.land .btn svg{width:17px;height:17px}
+.land .btn.sm svg,.land .btn.xs svg{width:15px;height:15px}
+.land .ibtn{width:40px;height:40px}
+.land .tabs{padding:3px;border-radius:12px}
+.land .tabs button{height:34px;font-size:10.5px;border-radius:9px}
+.land .chips button{height:34px;padding:0 12px;font-size:10.5px}
+.land .panel{border-radius:14px}
+.land .row{min-height:56px;padding:8px 12px;border-radius:12px;gap:11px}
+.land .row .tx b{font-size:14px}
+.land .row .tx span{font-size:12px}
+.land .lbl{font-size:10px}
+.land .sech h2{font-size:17px}
+.land .sech p{font-size:12px;margin-top:5px}
+
+/* ---- grids ---- */
+.cols{display:grid;gap:12px;align-items:start;min-width:0}
+.cols > *{min-width:0}
+.cols.stretch{align-items:stretch}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.c6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.sideR{grid-template-columns:minmax(0,1fr) 264px}   /* content + a right column */
+.sideL{grid-template-columns:264px minmax(0,1fr)}   /* a left column + content */
+.sideR2{grid-template-columns:minmax(0,1fr) 312px}
+.sideL2{grid-template-columns:312px minmax(0,1fr)}
+.fit{height:314px}                                 /* exactly one landscape screen of content */
+.stk{display:flex;flex-direction:column;gap:12px;min-width:0}
+.stk.fill{height:100%}
+.stk.fill > .grow{flex:1 1 0;min-height:0}
+.scrl{overflow-y:auto;scrollbar-width:none;min-height:0}
+.scrl::-webkit-scrollbar{display:none}
+/* a panel that fills its grid cell */
+.cell2{display:flex;flex-direction:column;min-height:0}
+
+/* ---- tiles used across screens ---- */
+.ltile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:76px;border-radius:12px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9.5px;line-height:1.2;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+.ltile svg{width:21px;height:21px;color:#00BCC8}
+.ltile.hot svg{color:#C6FF33}
+.ltile .bdg{position:absolute;right:8px;top:8px;min-width:18px;height:18px;padding:0 5px;border-radius:5px;background:#00BCC8;color:#00191B;font:700 10px/18px 'Space Grotesk',sans-serif;letter-spacing:0}
+.ltile .lv{position:absolute;right:10px;top:10px;width:7px;height:7px;border-radius:50%;background:#C6FF33;animation:breathe 1.6s ease-in-out infinite}
+.ltile:active{background:rgba(198,255,51,.06);box-shadow:inset 0 0 0 1px rgba(198,255,51,.5)}
+.lstat{display:flex;flex-direction:column;gap:7px;padding:10px 11px;border-radius:11px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.lstat svg{width:15px;height:15px;color:#C6FF33}
+.lstat b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lstat span{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9px;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#A4A4B2;white-space:nowrap}
+
+/* ---- side panels (sheets) ---- */
+.land .mview{height:390px}
+.land .mscrim{height:390px;left:76px}
+.land .sheet{left:76px;right:auto;top:0;width:392px;height:390px;padding:16px 16px 18px;border-radius:0 22px 22px 0;overflow-y:auto;scrollbar-width:none;animation:sideIn .38s cubic-bezier(.2,.9,.25,1) both}
+.land .sheet.w2{width:540px}
+.land .sheet.w3{width:640px}
+.land .sheet::-webkit-scrollbar{display:none}
+.land .sheet::before{display:none}
+.land .sheet.tick::after{left:0;top:50%;width:2px;height:120px;transform:translateY(-50%);background:linear-gradient(180deg,rgba(198,255,51,0),#C6FF33,rgba(198,255,51,0))}
+/* a sheet that opens from the right edge */
+.land .sheet.right{left:auto;right:0;border-radius:22px 0 0 22px;animation:sideInR .38s cubic-bezier(.2,.9,.25,1) both}
+.land .mscrim.full{left:0}
+@keyframes sideInR{from{transform:translateX(100%)}to{transform:none}}
+/* centred dialog on the content area */
+.ldlg{position:absolute;left:76px;right:0;top:0;height:390px;z-index:52;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.ldlg > *{pointer-events:auto}
+.ldlg .card{position:relative;border-radius:20px;background:linear-gradient(180deg,#17171D,#0B0B0E);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 30px 70px rgba(0,0,0,.85);animation:pop .32s cubic-bezier(.2,.9,.25,1) both}
+@keyframes pop{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
+.land .toast{left:auto;right:16px;top:62px;width:300px;height:46px;font-size:13px}
+
+/* ---- the turn-your-phone gate (the whole app asks for landscape) ---- */
+.gate{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 36px;text-align:center;background:radial-gradient(300px 220px at 50% 38%,rgba(0,188,200,.28),rgba(0,188,200,0) 70%),#050607}
+
+/* page title in the top bar: a small lime label over a chrome title */
+.land .mtop .pg{display:flex;flex-direction:column;gap:5px;min-width:0}
+.land .mtop .pg .lbl{font-size:8.5px;letter-spacing:.2em;color:#C6FF33;white-space:nowrap}
+.land .mtop .pg h1{margin:0;font-size:19px;line-height:1;letter-spacing:.02em;white-space:nowrap}
+.land .mtop .pg .lbl.dash::before{width:14px}
+
+/* fixed one-screen board: the page never scrolls, each pane does */
+.fx{height:390px;overflow:hidden}
+.land .mview{top:0}
+.land .mpage.fx{padding-bottom:12px}
+.fpane{display:flex;flex-direction:column;min-height:0;background:radial-gradient(300px 150px at 0% 0%,rgba(198,255,51,.07),rgba(198,255,51,0) 70%),linear-gradient(180deg,rgba(20,20,26,.92),rgba(9,9,12,.92))}
+.fhead{flex:none;display:flex;align-items:center;gap:12px;padding:12px 12px 0}
+.fhead .tabs{flex:1 1 0;display:flex;min-width:0}
+.fhead .tabs button{flex:1 1 auto;justify-content:center;padding:0 9px}
+.otg{flex:none;display:flex;align-items:center;gap:9px;white-space:nowrap}
+.otg > span{font-size:12px;font-weight:600;color:#A4A4B2}
+.otg .toggle{position:relative}
+.otg .toggle::after{content:"";position:absolute;inset:-7px -4px}
+.ftools{flex:none;display:flex;gap:8px;padding:8px 12px 0}
+.ftools .field{flex:1 1 0;min-width:0;height:38px;font-size:13px}
+.ftools .select{flex:none;height:38px;font-size:12.5px}
+.flist.rq{padding:10px 12px 10px;-webkit-mask-image:none;mask-image:none}
+.flist{flex:1 1 0;display:flex;flex-direction:column;gap:6px;padding:10px 12px 26px;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0),#000 10px,#000 calc(100% - 26px),rgba(0,0,0,0));mask-image:linear-gradient(180deg,rgba(0,0,0,0),#000 10px,#000 calc(100% - 26px),rgba(0,0,0,0))}
+.fr{display:flex;align-items:center;gap:11px;flex:none;height:52px;padding:0 8px 0 9px;border-radius:12px;background:rgba(255,255,255,.028);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.rq .fr{height:48px}
+.fr.on{background:linear-gradient(90deg,rgba(198,255,51,.07),rgba(198,255,51,0) 55%),rgba(255,255,255,.028)}
+.fr .nm2{display:flex;flex-direction:column;gap:4px;flex:1 1 0;min-width:0}
+.fr .nm2 b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;line-height:1.25;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;line-height:1;color:#A4A4B2;white-space:nowrap}
+.st i{width:7px;height:7px;border-radius:50%;background:#4A4A56}
+.st.on{color:#C6FF33}.st.on i{background:#C6FF33;box-shadow:0 0 8px rgba(198,255,51,.8)}
+.acts{flex:none;display:flex;gap:6px}
+.acts .ibtn{width:38px;height:38px;border-radius:10px}
+.acts .ibtn svg{width:17px;height:17px}
+.minibtn{flex:none;height:36px;padding:0 12px;border:0;border-radius:9px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.minibtn.lime{background:#C6FF33;color:#0A0A0A;box-shadow:0 3px 0 #6F9412}
+.minibtn.dim{background:rgba(255,255,255,.06);color:#A4A4B2;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);cursor:default}
+.minibtn.blue{background:#00BCC8;color:#00191B;box-shadow:0 3px 0 #00727A}
+.toggle{position:relative;display:inline-flex;flex:none;width:44px;height:26px;border:0;padding:0;border-radius:8px;cursor:pointer;background:#0B0B0F;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.toggle i{position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:6px;background:#fff;transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
+.toggle[aria-checked="true"]{background:rgba(198,255,51,.16);box-shadow:inset 0 0 0 1.5px #C6FF33}
+.toggle[aria-checked="true"] i{transform:translateX(18px);background:#C6FF33}
+/* requests: a gutter label per group, rows beside it, so all four fit on one screen */
+.rg{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;flex:none}
+.rq{gap:8px}
+.rg + .rg{padding-top:8px;border-top:1px solid rgba(255,255,255,.07)}
+.rgl{display:flex;flex-direction:column;gap:7px;padding-top:3px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:9.5px;line-height:1.3;letter-spacing:.14em;text-transform:uppercase;color:#BEBECA}
+.rgl::before{content:"";width:18px;height:2px;border-radius:1px;background:var(--c,#C6FF33)}
+.rgc{display:flex;flex-direction:column;gap:6px;min-width:0}
+/* right column */
+.sbtn{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:62px;padding:8px 9px 8px 10px;border:0;border-radius:12px;cursor:pointer;text-align:left;color:#fff;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.sbtn .sbt{display:flex;align-items:center;justify-content:space-between}
+.sbtn b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;line-height:1}
+.sbtn svg{width:15px;height:15px;color:#C6FF33}
+.sbtn.b svg{color:#00BCC8}
+.sbtn .lbl{display:block;font-size:9px;letter-spacing:.1em;line-height:1.2;white-space:normal;color:#A4A4B2}
+.sbtn[aria-pressed="true"]{background:linear-gradient(180deg,rgba(198,255,51,.1),rgba(198,255,51,.03));box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.7)}
+.sbtn[aria-pressed="true"] .lbl{color:#E4E4EA}
+.rcol{display:flex;flex-direction:column;gap:12px;margin-top:-8px;padding:9px 1px 20px;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0),#000 9px,#000 calc(100% - 22px),rgba(0,0,0,0));mask-image:linear-gradient(180deg,rgba(0,0,0,0),#000 9px,#000 calc(100% - 22px),rgba(0,0,0,0))}
+.rcol > .panel{flex:none;padding:12px 12px 6px}
+.link{position:relative}
+.link::after{content:"";position:absolute;inset:-12px -8px}
+.sg{display:flex;align-items:center;gap:10px;min-height:52px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.sg:last-child{border-bottom:0}
+.sg .sn{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:5px}
+.sg b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.03em;text-transform:uppercase}
+.sg .rank{font-size:9.5px;letter-spacing:.12em;white-space:nowrap}
+/* friend actions: a right side panel */
+.fa-head{display:flex;align-items:center;gap:13px;padding-bottom:14px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sheet.right.fa{width:372px;display:flex;flex-direction:column;background:radial-gradient(240px 160px at 100% 0%,rgba(0,188,200,.2),rgba(0,188,200,0) 70%),linear-gradient(180deg,#17171D 0%,#0B0B0E 100%)}
+.fa .acts2{gap:6px}
+.fa .acts2 a{height:48px}
+.fa .acts2 a .ic{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:rgba(198,255,51,.12)}
+.fa .acts2 a .ic svg{width:17px;height:17px;color:#C6FF33}
+.fa .acts2 a.danger .ic{background:rgba(255,107,128,.12)}
+.fa .acts2 a.danger .ic svg{color:#FF6B80}
+.fa .acts2 a.blu .ic{background:rgba(0,188,200,.14)}
+.fa .acts2 a.blu .ic svg{color:#00BCC8}
 </style>
 </helmet>
-<div class="ar app m land" style="position: relative; width: 844px; height: 2528px">
+<div class="ar app m land" style="position: relative; width: 844px; height: 390px">
 <svg class="sprite" aria-hidden="true">
 <defs>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"></path></symbol>
@@ -721,184 +839,145 @@ a.btn{text-decoration:none}
 
 <div class="mstage"></div>
 <header class="mtop">
-<span class="word chrome" style="margin-left: 0">Thaasbai</span>
-<div class="tr">
-<span class="coins" aria-label="1,240 coins"><i class="gem"></i>1,240<button type="button" class="add" aria-label="Get coins"><svg aria-hidden="true"><use href="#l-plus"></use></svg></button></span>
-<span class="bell"><button type="button" class="ibtn" aria-label="Notifications, 3 new"><svg aria-hidden="true"><use href="#l-bell"></use></svg></button><span class="dotc">3</span></span>
-<button type="button" class="meb" aria-label="Your profile"><span class="ava">S</span></button>
-</div>
+<div class="pg"><span class="lbl dash">Connect and play</span><h1 class="disp chrome">Friends</h1></div>
+<div class="tr"><span class="coins" aria-label="1,240 coins"><i class="gem"></i>1,240<button type="button" class="add" aria-label="Get coins"><svg aria-hidden="true"><use href="#l-plus"></use></svg></button></span><span class="bell"><button type="button" class="ibtn" aria-label="Notifications, 3 new"><svg aria-hidden="true"><use href="#l-bell"></use></svg></button><span class="dotc">3</span></span><button type="button" class="meb" aria-label="Your profile"><span class="ava">S</span></button></div>
 </header>
 
-<main class="mpage">
+<main class="mpage fx">
+<div class="cols sideR fit stretch">
 
-<section class="mhero" aria-label="Welcome">
-<div class="word" aria-hidden="true">MINDI</div>
-<div class="ring" aria-hidden="true"></div>
-<div class="fan" aria-hidden="true">
-<div class="cardw" style="font-size: 11.0px; width: 79.2px; height: 110.9px; --a: -27deg"><div class="face blk ten"><div class="idx tl"><b>10</b><svg><use href="#s-C"></use></svg></div><div class="idx br"><b>10</b><svg><use href="#s-C"></use></svg></div><div class="pips"><svg class="pip" style="left: 0%; top: 0%"><use href="#s-C"></use></svg><svg class="pip" style="left: 100%; top: 0%"><use href="#s-C"></use></svg><svg class="pip" style="left: 50%; top: 16.7%"><use href="#s-C"></use></svg><svg class="pip" style="left: 0%; top: 33.3%"><use href="#s-C"></use></svg><svg class="pip" style="left: 100%; top: 33.3%"><use href="#s-C"></use></svg><svg class="pip flip" style="left: 0%; top: 66.7%"><use href="#s-C"></use></svg><svg class="pip flip" style="left: 100%; top: 66.7%"><use href="#s-C"></use></svg><svg class="pip flip" style="left: 50%; top: 83.3%"><use href="#s-C"></use></svg><svg class="pip flip" style="left: 0%; top: 100%"><use href="#s-C"></use></svg><svg class="pip flip" style="left: 100%; top: 100%"><use href="#s-C"></use></svg></div></div></div>
-<div class="cardw" style="font-size: 11.0px; width: 79.2px; height: 110.9px; --a: -9deg"><div class="face red ten"><div class="idx tl"><b>10</b><svg><use href="#s-D"></use></svg></div><div class="idx br"><b>10</b><svg><use href="#s-D"></use></svg></div><div class="pips"><svg class="pip" style="left: 0%; top: 0%"><use href="#s-D"></use></svg><svg class="pip" style="left: 100%; top: 0%"><use href="#s-D"></use></svg><svg class="pip" style="left: 50%; top: 16.7%"><use href="#s-D"></use></svg><svg class="pip" style="left: 0%; top: 33.3%"><use href="#s-D"></use></svg><svg class="pip" style="left: 100%; top: 33.3%"><use href="#s-D"></use></svg><svg class="pip flip" style="left: 0%; top: 66.7%"><use href="#s-D"></use></svg><svg class="pip flip" style="left: 100%; top: 66.7%"><use href="#s-D"></use></svg><svg class="pip flip" style="left: 50%; top: 83.3%"><use href="#s-D"></use></svg><svg class="pip flip" style="left: 0%; top: 100%"><use href="#s-D"></use></svg><svg class="pip flip" style="left: 100%; top: 100%"><use href="#s-D"></use></svg></div></div></div>
-<div class="cardw" style="font-size: 11.0px; width: 79.2px; height: 110.9px; --a: 9deg"><div class="face blk ten"><div class="idx tl"><b>10</b><svg><use href="#s-S"></use></svg></div><div class="idx br"><b>10</b><svg><use href="#s-S"></use></svg></div><div class="pips"><svg class="pip" style="left: 0%; top: 0%"><use href="#s-S"></use></svg><svg class="pip" style="left: 100%; top: 0%"><use href="#s-S"></use></svg><svg class="pip" style="left: 50%; top: 16.7%"><use href="#s-S"></use></svg><svg class="pip" style="left: 0%; top: 33.3%"><use href="#s-S"></use></svg><svg class="pip" style="left: 100%; top: 33.3%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 0%; top: 66.7%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 100%; top: 66.7%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 50%; top: 83.3%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 0%; top: 100%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 100%; top: 100%"><use href="#s-S"></use></svg></div></div></div>
-<div class="cardw" style="font-size: 11.0px; width: 79.2px; height: 110.9px; --a: 27deg"><div class="face red ten"><div class="idx tl"><b>10</b><svg><use href="#s-H"></use></svg></div><div class="idx br"><b>10</b><svg><use href="#s-H"></use></svg></div><div class="pips"><svg class="pip" style="left: 0%; top: 0%"><use href="#s-H"></use></svg><svg class="pip" style="left: 100%; top: 0%"><use href="#s-H"></use></svg><svg class="pip" style="left: 50%; top: 16.7%"><use href="#s-H"></use></svg><svg class="pip" style="left: 0%; top: 33.3%"><use href="#s-H"></use></svg><svg class="pip" style="left: 100%; top: 33.3%"><use href="#s-H"></use></svg><svg class="pip flip" style="left: 0%; top: 66.7%"><use href="#s-H"></use></svg><svg class="pip flip" style="left: 100%; top: 66.7%"><use href="#s-H"></use></svg><svg class="pip flip" style="left: 50%; top: 83.3%"><use href="#s-H"></use></svg><svg class="pip flip" style="left: 0%; top: 100%"><use href="#s-H"></use></svg><svg class="pip flip" style="left: 100%; top: 100%"><use href="#s-H"></use></svg></div></div></div>
+<section class="panel tick fpane" aria-label="Friends">
+<div class="fhead">
+<div class="tabs">
+<button type="button" aria-pressed="{{tabFriends}}" onClick="{{showFriends}}">Friends</button>
+<button type="button" aria-pressed="{{tabRequests}}" onClick="{{showRequests}}">Requests<span class="n">2</span></button>
+<button type="button" disabled="{{true}}" title="Blocking is not available in the current app"><svg aria-hidden="true"><use href="#l-ban"></use></svg>Blocked</button>
 </div>
-<div style="position: absolute; left: 20px; right: 20px; top: 22px">
-<span class="lbl dash" style="color: #C6FF33">The Home of Maldivian Card Games</span>
-<h1 class="disp" style="margin: 14px 0 0; font-size: 58px; line-height: .86"><span class="chrome">Thaasbai</span><span style="color: #C6FF33">.</span></h1>
-<p class="disp" style="margin: 14px 0 0; font-size: 15px; letter-spacing: .02em; line-height: 1.25">Mindi. Gin Rummy. Real Players. Higher Ranks.</p>
-<p class="body" style="margin: 6px 0 0; font-size: 13.5px">Play. Compete. Make Friends. Climb the Ranks.</p>
+<sc-if value="{{tabFriends}}" hint-placeholder-val="{{true}}">
+<span class="otg"><span>Online only · 5</span><button type="button" class="toggle" role="switch" aria-checked="{{onlineOnly}}" aria-label="Online only" onClick="{{toggleOnline}}"><i></i></button></span>
+</sc-if>
 </div>
-<div class="cta">
-<a class="btn" href="#play"><svg aria-hidden="true"><use href="#l-gamepad-2"></use></svg>Play Now</a>
-<a class="btn ghost" href="#friends"><svg aria-hidden="true"><use href="#l-users"></use></svg>Find Friends</a>
+
+<sc-if value="{{tabFriends}}" hint-placeholder-val="{{true}}">
+<div class="ftools">
+<div class="field"><svg aria-hidden="true"><use href="#l-search"></use></svg><span>Search by username...</span></div>
+<span class="select">Online First<svg aria-hidden="true"><use href="#l-chevron-down"></use></svg></span>
 </div>
+<div class="scrl flist">
+<sc-for list="{{friends}}" as="f" hint-placeholder-count="8">
+<div class="fr {{f.stc}}">
+<span class="ava {{f.tone}}" style="width: 38px; height: 38px; font-size: 16px; border-radius: 10px">{{f.i}}<i class="on {{f.dot}}"></i></span>
+<div class="nm2"><b>{{f.name}}</b><span class="st {{f.stc}}"><i></i>{{f.status}}</span></div>
+<div class="acts">
+<button type="button" class="ibtn" aria-label="Invite {{f.name}} to a game"><svg aria-hidden="true"><use href="#l-gamepad-2"></use></svg></button>
+<button type="button" class="ibtn" aria-label="Message {{f.name}}"><svg aria-hidden="true"><use href="#l-message-circle"></use></svg></button>
+<button type="button" class="ibtn" aria-label="More for {{f.name}}" onClick="{{f.more}}"><svg aria-hidden="true"><use href="#l-more-horizontal"></use></svg></button>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{tabRequests}}" hint-placeholder-val="{{false}}">
+<div class="scrl flist rq">
+<div class="rg">
+<span class="rgl" style="--c: #C6FF33">Incoming requests</span>
+<div class="rgc">
+<div class="fr"><span class="ava b" style="width: 38px; height: 38px; font-size: 16px; border-radius: 10px">N</span><div class="nm2"><b>Nashid</b><span class="st">Wants to be friends</span></div><div class="acts"><button type="button" class="ibtn" aria-label="Accept" style="background: #C6FF33; color: #0A0A0A"><svg aria-hidden="true"><use href="#l-check"></use></svg></button><button type="button" class="ibtn" aria-label="Decline"><svg aria-hidden="true"><use href="#l-x"></use></svg></button></div></div>
+<div class="fr"><span class="ava w" style="width: 38px; height: 38px; font-size: 16px; border-radius: 10px">H</span><div class="nm2"><b>Hawwa</b><span class="st">Wants to be friends</span></div><div class="acts"><button type="button" class="ibtn" aria-label="Accept" style="background: #C6FF33; color: #0A0A0A"><svg aria-hidden="true"><use href="#l-check"></use></svg></button><button type="button" class="ibtn" aria-label="Decline"><svg aria-hidden="true"><use href="#l-x"></use></svg></button></div></div>
+</div>
+</div>
+<div class="rg">
+<span class="rgl" style="--c: #8E8E9C">Sent requests</span>
+<div class="rgc">
+<div class="fr"><span class="ava g" style="width: 38px; height: 38px; font-size: 16px; border-radius: 10px">Y</span><div class="nm2"><b>Yoosuf</b><span class="st">Pending</span></div><button type="button" class="minibtn dim" style="cursor: pointer">Cancel</button></div>
+</div>
+</div>
+<div class="rg">
+<span class="rgl" style="--c: #00BCC8">Room invites</span>
+<div class="rgc">
+<div class="fr" style="box-shadow: inset 0 0 0 1.5px rgba(0,188,200,.5)"><span class="ava b" style="width: 38px; height: 38px; font-size: 16px; border-radius: 10px">I</span><div class="nm2"><b>Ibrahim</b><span class="st">Invited you to Mindi</span></div><div class="acts"><button type="button" class="minibtn lime" style="height: 38px">Join</button><button type="button" class="ibtn" aria-label="Dismiss"><svg aria-hidden="true"><use href="#l-x"></use></svg></button></div></div>
+</div>
+</div>
+</div>
+</sc-if>
 </section>
 
-<a class="mev" href="#tournament">
-<span class="ic"><svg aria-hidden="true"><use href="#l-trophy"></use></svg></span>
-<span style="flex: 1 1 0; display: flex; flex-direction: column; gap: 5px"><span style="display: flex; align-items: center; gap: 8px"><b class="disp" style="font-size: 15px">Weekend League</b><span class="pill lime live" style="height: 20px">Live</span></span><span style="font-size: 12.5px; font-weight: 500; line-height: 1.35; color: #C4C4CE">Compete this weekend for double trophies.</span></span>
-<svg aria-hidden="true" style="flex: none; width: 18px; height: 18px; color: #C6FF33"><use href="#l-arrow-up-right"></use></svg>
-</a>
-
-<div class="mlock" role="status">
-<div class="r1"><svg aria-hidden="true"><use href="#l-lock"></use></svg><b class="disp" style="font-size: 13.5px; letter-spacing: .06em">Ranks Locked</b><span class="lbl" style="margin-left: auto; gap: 6px; font-size: 10px; letter-spacing: .14em"><svg aria-hidden="true" style="width: 14px; height: 14px; color: #00BCC8"><use href="#l-clock"></use></svg>Unlocks Sun 00:05</span></div>
-<span class="muted" style="font-size: 12.5px; line-height: 1.4">Weekend League is active. Ranked matches resume Sunday.</span>
+<div class="stk fill">
+<div class="cols c3 stretch" style="gap: 8px">
+<button type="button" class="sbtn" aria-pressed="{{tabFriends}}" onClick="{{showFriends}}"><span class="sbt"><b>12</b><svg aria-hidden="true"><use href="#l-users"></use></svg></span><span class="lbl">Friends</span></button>
+<button type="button" class="sbtn b" aria-pressed="{{tabRequests}}" onClick="{{showRequests}}"><span class="sbt"><b>2</b><svg aria-hidden="true"><use href="#l-user-plus"></use></svg></span><span class="lbl">Requests</span></button>
+<button type="button" class="sbtn b" onClick="{{showRequests}}"><span class="sbt"><b>1</b><svg aria-hidden="true"><use href="#l-gamepad-2"></use></svg></span><span class="lbl">Room Invites</span></button>
 </div>
-
-<section class="panel tick" aria-label="Your stats" style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
-<div style="display: flex; align-items: center; gap: 12px">
-<div class="av" style="width: 52px; height: 52px; border-radius: 13px; font-size: 23px">S</div>
-<div style="display: flex; flex-direction: column; gap: 8px"><b class="disp" style="font-size: 21px; letter-spacing: .02em">Sayyu</b><span class="rank gold"><i></i>Gold</span></div>
-<a class="link" href="#profile" style="margin-left: auto">Profile<svg aria-hidden="true"><use href="#l-chevron-right"></use></svg></a>
-</div>
-<div style="display: flex; flex-direction: column; gap: 8px"><div style="display: flex; justify-content: space-between" class="lbl"><span style="color: #E6C24A">Gold · 58</span><span>Platinum · 75</span></div><div class="meter seg"><i style="width: 32%"></i></div></div>
-<div class="mstats">
-<div class="mstat"><svg aria-hidden="true"><use href="#l-trophy"></use></svg><b>58</b><span>Trophies</span></div>
-<div class="mstat"><svg aria-hidden="true"><use href="#l-calendar"></use></svg><b>96</b><span>Matches</span></div>
-<div class="mstat"><svg aria-hidden="true"><use href="#l-swords"></use></svg><b>54</b><span>Wins</span></div>
-<div class="mstat"><svg aria-hidden="true"><use href="#l-percent"></use></svg><b>56%</b><span>Win rate</span></div>
-<div class="mstat"><svg aria-hidden="true"><use href="#l-users"></use></svg><b>12</b><span>Friends</span></div>
-<div class="mstat"><svg aria-hidden="true" style="color: #00BCC8"><use href="#l-crown"></use></svg><b>4 days</b><span>Season 9</span></div>
-</div>
+<button type="button" class="btn sm" style="flex: none"><svg aria-hidden="true"><use href="#l-user-plus"></use></svg>Add Friend</button>
+<div class="grow scrl rcol">
+<section class="panel tick b" aria-label="Friend Suggestions">
+<div class="ph" style="margin-bottom: 2px"><h2 style="font-size: 16px">Friend Suggestions</h2><a class="link b" href="#all">See All</a></div>
+<div class="sg"><span class="ava b" style="width: 36px; height: 36px; font-size: 15px">A</span><div class="sn"><b>Aminath</b><span class="rank silver"><i></i>Silver · 31</span></div><button type="button" class="minibtn lime">Add</button></div>
+<div class="sg"><span class="ava w" style="width: 36px; height: 36px; font-size: 15px">M</span><div class="sn"><b>Moosa</b><span class="rank gold"><i></i>Gold · 52</span></div><button type="button" class="minibtn lime">Add</button></div>
+<div class="sg"><span class="ava o" style="width: 36px; height: 36px; font-size: 15px">Z</span><div class="sn"><b>Zaha</b><span class="rank bronze"><i></i>Bronze · 12</span></div><button type="button" class="minibtn lime">Add</button></div>
+<div class="sg"><span class="ava g" style="width: 36px; height: 36px; font-size: 15px">Y</span><div class="sn"><b>Yoosuf</b><span class="rank silver"><i></i>Silver · 44</span></div><button type="button" class="minibtn dim">Requested</button></div>
+<div class="sg"><span class="ava" style="width: 36px; height: 36px; font-size: 15px">N</span><div class="sn"><b>Nashid</b><span class="rank plat"><i></i>Platinum · 83</span></div><button type="button" class="minibtn blue" onClick="{{showRequests}}">Respond</button></div>
 </section>
-
-<section class="sec" aria-label="Quick Play">
-<div class="sech"><div><h2>Quick Play</h2><p>Jump into a game or choose your mode.</p></div><span class="select" aria-label="Select Mode" style="height: 38px; padding: 0 10px 0 12px; font-size: 13px">All Modes<svg aria-hidden="true"><use href="#l-chevron-down"></use></svg></span></div>
-<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
-<button type="button" class="cover mindi" aria-label="Play Mindi, casual">
-<span class="pill lime ribbon">Casual</span>
-<span class="go"><svg aria-hidden="true"><use href="#l-arrow-right"></use></svg></span>
-<div class="cfan" aria-hidden="true">
-<span class="cb arena" style="font-size: 8px; --a: -16deg"><i><svg><use href="#i-crown"></use></svg></i></span>
-<span class="cb arena" style="font-size: 8px; --a: -2deg"><i><svg><use href="#i-crown"></use></svg></i></span>
-<div class="cardw" style="font-size: 8.0px; width: 57.6px; height: 80.6px; --a: 14deg"><div class="face blk ten"><div class="idx tl"><b>10</b><svg><use href="#s-S"></use></svg></div><div class="idx br"><b>10</b><svg><use href="#s-S"></use></svg></div><div class="pips"><svg class="pip" style="left: 0%; top: 0%"><use href="#s-S"></use></svg><svg class="pip" style="left: 100%; top: 0%"><use href="#s-S"></use></svg><svg class="pip" style="left: 50%; top: 16.7%"><use href="#s-S"></use></svg><svg class="pip" style="left: 0%; top: 33.3%"><use href="#s-S"></use></svg><svg class="pip" style="left: 100%; top: 33.3%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 0%; top: 66.7%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 100%; top: 66.7%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 50%; top: 83.3%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 0%; top: 100%"><use href="#s-S"></use></svg><svg class="pip flip" style="left: 100%; top: 100%"><use href="#s-S"></use></svg></div></div></div>
+<section class="panel" aria-label="Recently Played">
+<div class="ph" style="margin-bottom: 2px"><h2 style="display: flex; align-items: center; gap: 8px; font-size: 16px"><svg aria-hidden="true" style="width: 17px; height: 17px; color: #00BCC8"><use href="#l-clock"></use></svg>Recently Played</h2><a class="link b" href="#all">See All</a></div>
+<div class="sg"><span class="ava g" style="width: 36px; height: 36px; font-size: 15px">R</span><div class="sn"><b>Rasheed</b><span class="muted2" style="font-size: 12px">Mindi · Sep 26</span></div><button type="button" class="minibtn lime">Add</button></div>
+<div class="sg"><span class="ava b" style="width: 36px; height: 36px; font-size: 15px">I</span><div class="sn"><b>Ismail</b><span class="muted2" style="font-size: 12px">Gin Rummy · Sep 26</span></div><button type="button" class="minibtn lime">Add</button></div>
+<div class="sg"><span class="ava w" style="width: 36px; height: 36px; font-size: 15px">A</span><div class="sn"><b>Ahmed</b><span class="muted2" style="font-size: 12px">Mindi · Sep 25</span></div><button type="button" class="minibtn dim">Friends</button></div>
+</section>
 </div>
-<span class="meta"><b>Mindi</b><span lang="dv" dir="rtl" class="thaana" style="align-self: flex-start">މިންޑި</span><span class="mm"><svg aria-hidden="true"><use href="#l-users"></use></svg>2-4 · Casual Mode</span></span>
-</button>
-<button type="button" class="cover gin" aria-label="Play Gin Rummy, casual">
-<span class="pill lime ribbon">Casual</span>
-<span class="go"><svg aria-hidden="true"><use href="#l-arrow-right"></use></svg></span>
-<div class="cfan" aria-hidden="true">
-<div class="cardw" style="font-size: 8.0px; width: 57.6px; height: 80.6px; --a: -16deg"><div class="face blk"><div class="idx tl"><b>Q</b><svg><use href="#s-S"></use></svg></div><div class="idx br"><b>Q</b><svg><use href="#s-S"></use></svg></div><div class="court"><b>Q</b><svg><use href="#s-S"></use></svg></div></div></div>
-<div class="cardw" style="font-size: 8.0px; width: 57.6px; height: 80.6px; --a: -2deg"><div class="face red"><div class="idx tl"><b>Q</b><svg><use href="#s-D"></use></svg></div><div class="idx br"><b>Q</b><svg><use href="#s-D"></use></svg></div><div class="court"><b>Q</b><svg><use href="#s-D"></use></svg></div></div></div>
-<div class="cardw" style="font-size: 8.0px; width: 57.6px; height: 80.6px; --a: 14deg"><div class="face blk"><div class="idx tl"><b>Q</b><svg><use href="#s-C"></use></svg></div><div class="idx br"><b>Q</b><svg><use href="#s-C"></use></svg></div><div class="court"><b>Q</b><svg><use href="#s-C"></use></svg></div></div></div>
 </div>
-<span class="meta"><b>Gin Rummy</b><span lang="dv" dir="rtl" class="thaana" style="align-self: flex-start">ޖިން ރަމީ</span><span class="mm"><svg aria-hidden="true"><use href="#l-users"></use></svg>2 · Casual Mode</span></span>
-</button>
+
 </div>
-<a class="panel" href="#inventory" style="display: flex; align-items: center; gap: 14px; padding: 14px 14px 14px 16px; text-decoration: none; color: #fff">
-<span class="cb arena" style="font-size: 7px"><i><svg><use href="#i-crown"></use></svg></i></span>
-<span class="tt neon" style="font-size: 10px; width: 74px; height: 48px"></span>
-<span style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 7px">
-<span class="pill blue" style="align-self: flex-start; height: 20px">Equipped</span>
-<span style="display: flex; justify-content: space-between; gap: 8px"><span class="muted2">Card back</span><b style="font-size: 13px">Arena</b></span>
-<span style="display: flex; justify-content: space-between; gap: 8px"><span class="muted2">Table</span><b style="font-size: 13px">Neon Arena</b></span>
-</span>
-<svg aria-hidden="true" style="flex: none; width: 18px; height: 18px; color: #00BCC8"><use href="#l-chevron-right"></use></svg>
-</a>
-</section>
-
-<section class="panel tick" style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
-<span class="lbl dash">Current Rank</span>
-<div style="display: flex; align-items: center; gap: 14px"><span class="rk gold" style="width: 54px; height: 61px"><svg style="width: 25px; height: 25px"><use href="#l-crown"></use></svg></span><div><b class="disp" style="font-size: 30px; color: #E6C24A">Gold</b><div class="muted" style="margin-top: 6px"><b class="num" style="font-size: 17px; color: #fff">58</b> trophies</div></div><span class="muted" style="margin-left: auto; text-align: right; line-height: 1.35"><b style="color: #C6FF33">17 trophies</b><br>to Platinum</span></div>
-<div class="meter seg"><i style="width: 32%"></i></div>
-<div class="divider"></div>
-<div style="display: flex; align-items: center; justify-content: space-between"><span class="lbl">Weekly reward</span><span style="display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px"><i class="gem sm"></i>350</span></div>
-<span class="muted2" style="margin-top: -6px">Paid by rank tier, every Thursday night.</span>
-</section>
-
-<section class="panel tick b" style="padding: 18px; display: flex; flex-direction: column; gap: 12px; overflow: hidden">
-<div style="position: absolute; right: -50px; top: -50px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,188,200,.4), rgba(0,188,200,0))"></div>
-<div style="position: relative; display: flex; align-items: center; justify-content: space-between"><span class="lbl dash" style="color: #8AF0F5"><svg aria-hidden="true" style="width: 15px; height: 15px"><use href="#l-timer"></use></svg>Weekend League</span><span class="pill lime live">Live</span></div>
-<b class="disp" style="position: relative; font-size: 30px; line-height: .95">Double trophies</b>
-<span class="muted" style="position: relative">Double trophies during Weekend League</span>
-<div style="position: relative; display: flex; gap: 8px; flex-wrap: wrap"><span class="pill line">Silver and up</span><span class="pill line">Win +10</span><span class="pill line">Loss −4</span></div>
-<a class="btn blue sm full" href="#tournament" style="position: relative; margin-top: 4px">Enter League<svg aria-hidden="true"><use href="#l-arrow-right"></use></svg></a>
-</section>
-
-<section class="panel" style="padding: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-<a class="sc" href="#friends"><svg aria-hidden="true"><use href="#l-users"></use></svg>Friends</a>
-<a class="sc" href="#rooms"><svg aria-hidden="true"><use href="#l-key-round"></use></svg>Private Rooms</a>
-<a class="sc" href="#inventory"><svg aria-hidden="true"><use href="#l-package"></use></svg>Inventory</a>
-<a class="sc" href="#clubs"><svg aria-hidden="true"><use href="#l-shield"></use></svg>Clubs</a>
-<a class="sc" href="#vip"><svg aria-hidden="true"><use href="#l-crown"></use></svg>VIP Pass</a>
-<a class="sc" href="#hall"><svg aria-hidden="true"><use href="#l-award"></use></svg>Hall of Fame</a>
-<a class="sc" href="#missions"><svg aria-hidden="true"><use href="#l-target"></use></svg>Missions</a>
-<a class="sc" href="#shop"><svg aria-hidden="true"><use href="#l-shopping-bag"></use></svg>Cosmetic Shop</a>
-<a class="sc" href="#settings"><svg aria-hidden="true"><use href="#l-settings"></use></svg>Settings</a>
-</section>
-
-<section class="sec" aria-label="Latest Updates">
-<div class="sech"><h2 style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" style="width: 19px; height: 19px; color: #00BCC8"><use href="#l-newspaper"></use></svg>Latest Updates</h2></div>
-<div class="hs">
-<article class="news"><div style="display: flex; align-items: center; justify-content: space-between"><span class="pill lime">Announcement</span><span class="lbl">Jul 20</span></div><h3>Season 1 Ranked Launch</h3><p>The first competitive season is now live! Climb the ranks and earn exclusive rewards.</p></article>
-<article class="news"><div style="display: flex; align-items: center; justify-content: space-between"><span class="pill blue">Event</span><span class="lbl">Jul 18</span></div><h3>Weekend League Returns</h3><p>Join the Weekend League this Friday for double trophy rewards!</p></article>
-<article class="news"><div style="display: flex; align-items: center; justify-content: space-between"><span class="pill line">Update</span><span class="lbl">Jul 15</span></div><h3>New Card Designs</h3><p>Check out the new premium card backs available in the store.</p></article>
-</div>
-</section>
-
-<footer style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08)">
-<span style="display: flex; align-items: center; justify-content: space-between"><b class="disp chrome" style="font-size: 17px">Thaasbai</b><span style="display: flex; gap: 18px"><a class="link b" href="#settings">Settings</a><a class="link b" href="#community">Community</a></span></span>
-<span class="muted2">© 2026 Play Fair. Good Games. Greater Friends.</span>
-</footer>
 </main>
-<nav class="mrail" aria-label="Main menu"><span class="logo" aria-hidden="true"><svg><use href="#i-crown"></use></svg></span><a href="#home" aria-current="page"><span class="ti"><svg aria-hidden="true"><use href="#l-home"></use></svg></span>Home</a><a href="#friends"><span class="ti"><svg aria-hidden="true"><use href="#l-users"></use></svg></span>Friends<span class="bdg">2</span></a><a href="#play" class="play"><span class="pw" aria-hidden="true"><i class="lip"></i><i class="fc"></i><svg><use href="#l-gamepad-2"></use></svg></span>Play</a><a href="#shop"><span class="ti"><svg aria-hidden="true"><use href="#l-shopping-cart"></use></svg></span>Shop</a><a href="#more" onClick="{{openMore}}"><span class="ti"><svg aria-hidden="true"><use href="#l-layout-grid"></use></svg></span>More</a></nav>
+<nav class="mrail" aria-label="Main menu"><span class="logo" aria-hidden="true"><svg><use href="#i-crown"></use></svg></span><a href="#home"><span class="ti"><svg aria-hidden="true"><use href="#l-home"></use></svg></span>Home</a><a href="#friends" aria-current="page"><span class="ti"><svg aria-hidden="true"><use href="#l-users"></use></svg></span>Friends<span class="bdg">2</span></a><a href="#play" class="play"><span class="pw" aria-hidden="true"><i class="lip"></i><i class="fc"></i><svg><use href="#l-gamepad-2"></use></svg></span>Play</a><a href="#shop"><span class="ti"><svg aria-hidden="true"><use href="#l-shopping-cart"></use></svg></span>Shop</a><a href="#more"><span class="ti"><svg aria-hidden="true"><use href="#l-layout-grid"></use></svg></span>More</a></nav>
 
-<sc-if value="{{menu}}" hint-placeholder-val="{{false}}">
-<div class="mview" style="top: {{vt}}px">
-<div class="mscrim" onClick="{{closeMore}}"></div>
-<nav class="sheet tick" aria-label="More">
-<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px">
-<div class="av" style="width: 46px; height: 46px; border-radius: 12px; font-size: 20px">S</div>
-<div style="display: flex; flex-direction: column; gap: 7px"><b class="disp" style="font-size: 18px; letter-spacing: .02em">Sayyu</b><span class="rank gold"><i></i>Gold · 58</span></div>
-<a class="link" href="#profile" style="margin-left: auto">Profile<svg aria-hidden="true"><use href="#l-chevron-right"></use></svg></a>
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<div class="mview">
+<div class="mscrim" onClick="{{closeMenu}}"></div>
+<div class="sheet right tick fa" role="menu" aria-label="{{mf.name}}">
+<div class="fa-head"><span class="ava {{mf.tone}}" style="width: 52px; height: 52px; font-size: 22px; border-radius: 13px">{{mf.i}}<i class="on {{mf.dot}}"></i></span><div style="display: flex; flex-direction: column; gap: 8px"><b class="disp" style="font-size: 20px; letter-spacing: .02em">{{mf.name}}</b><span class="st {{mf.stc}}"><i></i>{{mf.status}}</span></div></div>
+<div class="acts2">
+<a href="#player" role="menuitem"><span class="ic"><svg aria-hidden="true"><use href="#l-user"></use></svg></span>View Profile</a>
+<a href="#invite" role="menuitem" class="blu"><span class="ic"><svg aria-hidden="true"><use href="#l-gamepad-2"></use></svg></span>Invite to Mindi</a>
+<a href="#invite" role="menuitem" class="blu"><span class="ic"><svg aria-hidden="true"><use href="#l-gamepad-2"></use></svg></span>Invite to Gin Rummy</a>
+<a href="#remove" class="danger" role="menuitem"><span class="ic"><svg aria-hidden="true"><use href="#l-user-x"></use></svg></span>Remove Friend</a>
 </div>
-<div class="mvip"><span class="cr"><svg aria-hidden="true"><use href="#l-crown"></use></svg></span><div style="position: relative; flex: 1 1 0"><span class="lbl" style="color: #8AF0F5; font-size: 10px">Upgrade to</span><div class="disp" style="margin-top: 5px; font-size: 19px">VIP Pass</div><p style="margin: 5px 0 0; font-size: 12px; line-height: 1.35; font-weight: 500; color: #C4C4CE">Get more matches, exclusive rewards and more!</p></div><a href="#vip" class="btn blue sm" style="position: relative; height: 38px; padding: 0 12px; font-size: 11.5px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 0 #00727A">View Plans</a></div>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px">
-<a class="mtile" href="#leaderboard"><svg aria-hidden="true"><use href="#l-bar-chart-3"></use></svg>Leaderboard</a>
-<a class="mtile hot" href="#tournament"><svg aria-hidden="true"><use href="#l-trophy"></use></svg>Weekend League<i class="lv"></i></a>
-<a class="mtile" href="#clubs"><svg aria-hidden="true"><use href="#l-shield"></use></svg>Clubs</a>
-<a class="mtile" href="#messages"><svg aria-hidden="true"><use href="#l-message-circle"></use></svg>Messages<span class="bdg">2</span></a>
-<a class="mtile" href="#inventory"><svg aria-hidden="true"><use href="#l-package"></use></svg>Inventory</a>
-<a class="mtile" href="#achievements"><svg aria-hidden="true"><use href="#l-award"></use></svg>Achievements</a>
-<a class="mtile" href="#rewards"><svg aria-hidden="true"><use href="#l-gift"></use></svg>Daily Rewards</a>
-<a class="mtile" href="#missions"><svg aria-hidden="true"><use href="#l-target"></use></svg>Missions</a>
-<a class="mtile" href="#hall"><svg aria-hidden="true"><use href="#l-medal"></use></svg>Hall of Fame</a>
+<button type="button" class="btn ghost sm full" style="margin-top: auto; flex: none" onClick="{{closeMenu}}">Cancel</button>
 </div>
-<div class="acts2" style="margin-top: 12px"><a href="#settings"><svg aria-hidden="true"><use href="#l-settings"></use></svg>Settings<svg aria-hidden="true" style="margin-left: auto; width: 17px; height: 17px"><use href="#l-chevron-right"></use></svg></a></div>
-</nav>
 </div>
 </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":844,"height":2528}}'>
-// Where the tapped control sits on this long board, so the sheet opens in the "viewport" around it.
-const vtop = e => { try { const el = e.currentTarget; const root = el.closest('.ar'); const rr = root.getBoundingClientRect(); const k = rr.height / root.offsetHeight || 1; const y = (el.getBoundingClientRect().top - rr.top) / k; return Math.max(0, Math.min(root.offsetHeight - 844, Math.round(y - 330))); } catch (_) { return 0; } };
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":844,"height":390}}'>
+const FRIENDS = [
+  { name: 'Mariyam', i: 'M', tone: '', online: true, status: 'Online' },
+  { name: 'Ibrahim', i: 'I', tone: 'b', online: true, status: 'Online' },
+  { name: 'Aishath', i: 'A', tone: 'w', online: true, status: 'Online' },
+  { name: 'Hussain', i: 'H', tone: 'b', online: true, status: 'Online' },
+  { name: 'Fathimath', i: 'F', tone: 'o', online: true, status: 'Online' },
+  { name: 'Shifa', i: 'S', tone: 'b', online: false, status: 'Last seen 5m ago' },
+  { name: 'Ahmed', i: 'A', tone: 'w', online: false, status: 'Last seen 3h ago' },
+  { name: 'Ali', i: 'A', tone: 'g', online: false, status: 'Last seen 2d ago' }
+];
+const view = f => ({ name: f.name, i: f.i, tone: f.tone, status: f.status, dot: f.online ? '' : 'off', stc: f.online ? 'on' : '' });
 class Component extends DCLogic {
-  constructor(props) { super(props); this.state = { menu: false, vt: 0 }; }
+  constructor(props) { super(props); this.state = { tab: 'friends', onlineOnly: false, menu: null }; }
   renderVals() {
+    const s = this.state;
+    const list = FRIENDS.filter(f => !s.onlineOnly || f.online).map(f => Object.assign(view(f), {
+      more: () => this.setState({ menu: f.name })
+    }));
+    const m = FRIENDS.filter(f => f.name === s.menu)[0] || FRIENDS[0];
     return {
-      menu: this.state.menu, vt: this.state.vt,
-      openMore: e => { if (e && e.preventDefault) e.preventDefault(); this.setState({ menu: true, vt: 0 }); },
-      closeMore: () => this.setState({ menu: false })
+      friends: list,
+      tabFriends: s.tab === 'friends', tabRequests: s.tab === 'requests',
+      showFriends: () => this.setState({ tab: 'friends' }),
+      showRequests: () => this.setState({ tab: 'requests' }),
+      onlineOnly: s.onlineOnly,
+      toggleOnline: () => this.setState({ onlineOnly: !s.onlineOnly }),
+      menuOpen: s.menu !== null, mf: view(m),
+      closeMenu: () => this.setState({ menu: null })
     };
   }
 }

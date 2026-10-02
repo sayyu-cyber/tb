@@ -5,7 +5,7 @@ It is reference material only: nothing in `design/` is imported, built or linted
 (`next lint`, `tsc` and `npm run check` only look at `app/`, `components/`, `lib/`, `styles/` and `*.ts(x)`).
 
 The live, playable canvas (private to Sayyu) is at
-https://claude.ai/artifact/BYFstSTQ14paceyGJpGgV8. It's titled "Thaasbai · Arena" and has 57 boards: the 7 table boards, the 14 app screens, 26 phone boards, and 10 boards for the opening deal and private rooms.
+https://claude.ai/artifact/BYFstSTQ14paceyGJpGgV8. It's titled "Thaasbai · Arena" and has 89 boards: the 7 table boards, the 14 desktop app screens, 25 portrait phone boards (replaced by landscape), 6 landscape table boards, 4 desktop boards for the opening deal and private rooms, and 33 landscape app boards.
 
 ## New: the app screens (blue edition)
 
@@ -18,7 +18,8 @@ Settings. They use **blue `#00BCC8` in place of violet**. The table boards below
 | `APP_SCREENS.md` | **Start here for app screens.** Palette, shell spec, shared pieces, a board → route → files → screenshot table, and code issues found while designing. |
 | `WORKSPLIT.md` | Who builds what: Claude and ChatGPT (Codex), file ownership, branches, ports and the checks every screen must pass. |
 | `PROMPTS.md` | The prompts to paste into Claude and ChatGPT, in the order to use them. |
-| `MOBILE.md` | **Phone layouts.** Portrait app screens (`boards/M*.dc.html`) and landscape tables (`boards/P*.dc.html`), with 2× references in `screens/phone/`. |
+| `LANDSCAPE.md` | **The phone version: the whole app in landscape.** Orientation and the turn gate, the shell, layout system, patterns, the screens table and new copy. Boards `boards/L*.dc.html`, references in `screens/landscape/`, CSS in `landscape-reference.css`. Start here for anything on a phone. |
+| `MOBILE.md` | Older portrait phone layouts (`boards/M*.dc.html`). **Replaced by `LANDSCAPE.md`**, except for the landscape tables, `MRotate` and the turning phone. |
 | `DEAL_AND_ROOMS.md` | **The opening deal and private rooms**, desktop and phone: cut for first play, the deal, the Private Room page and the waiting room. Boards `Cut*`, `PCut*`, `Rooms`, `RoomLobby` and `MRoom*`. References in `screens/deal/`, `screens/app/app-15*` and `app-16*`, and `screens/phone/phone-land-05*`, `phone-land-06*`, `phone-17*` and `phone-18*`. |
 | `screens/app/*.jpg` | Pixel reference for every app screen and its key states (19 images). |
 | `boards/<Screen>.dc.html` | Source of each app board (same format as the table boards). |

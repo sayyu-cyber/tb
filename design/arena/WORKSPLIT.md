@@ -144,17 +144,18 @@ buttons, states and animations must all be the same.
 
 ## Phone layouts
 
-The phone designs are in `MOBILE.md`, `boards/M*.dc.html`, `boards/P*.dc.html` and `screens/phone/*.jpg`.
+The phone version is landscape only. The designs are in `LANDSCAPE.md`, `boards/L*.dc.html`, `boards/P*.dc.html`, `screens/landscape/*.jpg` and `screens/phone/phone-land-*.jpg`. (`MOBILE.md` and `boards/M*.dc.html` are the older portrait plan: don't build them.)
 
-- **Claude builds the whole phone version** on the branch `phone/claude`:
-  - the shell: the top bar, the tab bar with the Play diamond, the More sheet, the sheets, and the rail when the phone is held sideways
-  - the rotate handling in MOBILE.md "Turning the phone"
-  - the four landscape table screens
-  - every portrait screen, including ChatGPT's desktop screens
-- **ChatGPT reviews** the branch once it's done (PROMPTS.md, prompt 7), then Sayyu merges it.
+- **Claude builds the whole phone version** on the branch `landscape/claude` (PROMPTS.md, prompt 12):
+  - the shell: the 76 px rail, the top bar, the More panel, side panels and dialogs
+  - the turn gate (`LGate`) and the orientation handling in `LANDSCAPE.md` "Orientation"
+  - the landscape tables, lobby and result (`P*`)
+  - every app screen, including ChatGPT's desktop screens
+  - the Private Room screens are built by prompt 9, from `LRooms` and `LRoomLobby*`
+- **ChatGPT reviews** the branch once it's done (prompt 13), then Claude merges it (prompt 14) and Sayyu pushes.
 - **Checks.**
-  - Each portrait screen matches its `screens/phone/*.jpg` at 390 × 844, and still works at 360 and 430 wide.
-  - The landscape screens match at 844 × 390.
+  - Each screen matches its `screens/landscape/*.jpg` at 844 × 390 (the whole page for scrolling screens), and still works from 740 to 932 wide.
+  - The gate matches `landscape-17*` at 390 × 844.
   - The desktop checks still pass at 768 and up.
   - The "Exact match" rules above apply to every phone screen.
 

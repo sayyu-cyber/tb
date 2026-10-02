@@ -1,5 +1,12 @@
 # Thaasbai · Arena: phone screens
 
+> **Replaced by `LANDSCAPE.md` for the app screens.** The phone version now runs in landscape only, so the portrait
+> boards (`boards/M*.dc.html`) are kept for reference and must not be built. What still applies from this file:
+> - the landscape table screens (`PLobby`, `PMindi`, `PGin`, `PResult`) and "Tables fit what is visible"
+> - `MRotate`, the gate for a match held upright, and "The turning phone"
+> - "Copy shortened to fit" for the tables
+> Everything about portrait app screens, the bottom tab bar, bottom sheets, `MPlay`, `MPlayFind` and `PHome` is superseded.
+
 These are the phone versions of the app screens and the card tables. They use the same blue edition palette, type
 and components as `APP_SCREENS.md`. There are no new colours or fonts: only the layout, sizes and a few patterns change.
 

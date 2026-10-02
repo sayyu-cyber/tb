@@ -1,5 +1,7 @@
 # The opening deal and private rooms
 
+> **Phone rooms are landscape now.** On a phone, use `LRooms`, `LRoomsBadCode`, `LRoomLobby`, `LRoomLobbyGuest` and `LRoomLobbyFull` (see `LANDSCAPE.md`) instead of `MRooms`, `MRoomsCreate`, `MRoomLobby` and `MRoomLobbyFull`. Join and Create sit side by side with no tabs, the password prompt is a centred dialog, and Start goes straight to the table: there is no rotate sheet because the phone is already sideways. The ceremony boards `PCut` and `PCutGin` are unchanged.
+
 Two features, designed for desktop and phone in the Arena blue edition:
 
 1. **The opening deal.** Cut for first play, then the deal. This replaces the gold "lounge" ceremony the app shows now.
