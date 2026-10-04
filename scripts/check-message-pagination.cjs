@@ -163,8 +163,11 @@ async function run() {
     page.on('pageerror', error => errors.push(error.message));
     const rows = page.locator('[data-message-id]');
     const older = page.getByRole('button', { name: 'Load older messages' });
-    async function open(kind, width = 1440, target) {
-      await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
+    // A phone is landscape (design/arena/LANDSCAPE.md): Messages is LMessages
+    // at 844x390 and 740x360. Clubs are checked upright until that screen is
+    // converted too.
+    async function open(kind, width = 1440, target, height = width < 768 ? 844 : 900) {
+      await page.setViewportSize({ width, height });
       await page.goto(base + (kind === 'club' ? '/?club=' + (target || 'club-a') : '/messages?with=' + (target || 'mariyam')));
       if (kind === 'club') await page.getByRole('button', { name: 'Club Chat', exact: true }).click();
       await page.waitForFunction(() => document.querySelectorAll('[data-message-id]').length === 200);
@@ -188,8 +191,9 @@ async function run() {
 
     for (const kind of ['dm', 'club']) {
       const id = kind === 'club' ? 'club-a' : 'c-mariyam';
-      for (const width of [1440, 390, 320]) {
-        await open(kind, width);
+      const sizes = kind === 'club' ? [[1440, 900], [390, 844], [320, 844]] : [[1440, 900], [844, 390], [740, 360]];
+      for (const [width, height] of sizes) {
+        await open(kind, width, undefined, height);
         assert.equal(await rows.first().getAttribute('data-message-id'), id + '-0300');
         assert.equal(await rows.last().getAttribute('data-message-id'), id + '-0499');
         assert.ok(await scroll.evaluate(node => node.scrollHeight > node.clientHeight), 'History scrolls: ' + JSON.stringify(await scroll.evaluate(node => ({
@@ -198,8 +202,8 @@ async function run() {
           minHeight: getComputedStyle(node).minHeight, overflow: getComputedStyle(node).overflowY,
         }))));
         await scroll.evaluate(node => { node.scrollTop = 120; });
-        const saved = await anchor();
         await older.focus();
+        const saved = await anchor();
         await holdOlder();
         await page.keyboard.press('Enter');
         await page.getByRole('status').filter({ hasText: 'Loading older messages' }).waitFor();
@@ -302,7 +306,7 @@ async function run() {
       await settle();
       assert.equal(await input.inputValue(), 'New draft', 'Stale send cannot clear current draft');
       assert.equal(await page.getByRole('alert').count(), 0, 'Stale send error ignored');
-      console.log(`${kind}: desktop/390/320, exact cursors, 501 messages, keyboard/loading/end, scroll anchoring, live retention, dedupe, access/error clears and thread/user races passed.`);
+      console.log(`${kind}: ${sizes.map(([w, h]) => w + 'x' + h).join('/')}, exact cursors, 501 messages, keyboard/loading/end, scroll anchoring, live retention, dedupe, access/error clears and thread/user races passed.`);
     }
 
     // Deferred DM creation must not leave a subscription behind after navigation.
@@ -317,41 +321,24 @@ async function run() {
     await release();
     await page.waitForFunction(() => document.querySelectorAll('[data-message-id]').length === 200);
     assert.equal(await page.evaluate(() => window.pagination.channels.filter(c => !c.removed && c.id === 'c-slow').length), 0);
-    await open('dm', 390);
-    await page.evaluate(() => {
-      for (const name of ['mtop', 'mtab']) {
-        const chrome = document.createElement('div');
-        chrome.className = name;
-        chrome.dataset.paginationChrome = name;
-        chrome.textContent = 'Shell chrome';
-        document.body.append(chrome);
-      }
-    });
-    for (const name of ['mtop', 'mtab']) {
-      assert.equal(await page.locator(`[data-pagination-chrome="${name}"]`).evaluate(node => getComputedStyle(node).display),
-        'none', 'Full-screen chat hides phone shell chrome');
-    }
-    await page.getByRole('button', { name: 'Go back', exact: true }).click();
-    await page.locator('.arena-mmessages .conv').waitFor();
-    assert.equal(await page.locator('.arena-mchat').count(), 0, 'Phone Back returns to the list');
-    for (const name of ['mtop', 'mtab']) {
-      assert.notEqual(await page.locator(`[data-pagination-chrome="${name}"]`).evaluate(node => getComputedStyle(node).display),
-        'none', 'Leaving chat restores phone shell chrome');
-    }
-    await page.locator('.arena-mmessages .conv').click();
+    // On a phone the thread sits beside the list (LMessages), so there is no
+    // Back: picking another conversation swaps the pane, and the shell's
+    // chrome stays.
+    await open('dm', 844, undefined, 390);
+    await page.locator('.arena-lmessages .conv').first().waitFor();
+    assert.equal(await page.locator('.arena-lmessages .cp [role=region]').count(), 1, 'Phone: the thread is beside the list');
+    await page.locator('.arena-lmessages .conv').first().click();
     await page.waitForFunction(() => document.querySelectorAll('[data-message-id]').length === 200);
-    await page.getByRole('button', { name: 'Go back', exact: true }).click();
-    await page.locator('.arena-mmessages .conv').waitFor();
     await page.evaluate(() => {
       window.pagination.holds.add('conversations');
       window.pagination.switchUser();
     });
     await page.getByText('Loading conversations...').waitFor();
-    assert.equal(await page.locator('.arena-mmessages .conv').count(), 0, 'Old account list cleared before reload');
+    assert.equal(await page.locator('.arena-lmessages .conv').count(), 0, 'Old account list cleared before reload');
     await release();
-    await page.locator('.arena-mmessages .conv').waitFor();
+    await page.locator('.arena-lmessages .conv').first().waitFor();
     assert.deepEqual(errors, [], 'No browser errors');
-    console.log('Deferred DM creation, send completion, phone Back and account-list isolation passed. Screenshots: ' + output);
+    console.log('Deferred DM creation, send completion, the phone two-pane layout and account-list isolation passed. Screenshots: ' + output);
     }
     if (process.argv.includes('--legacy') || process.argv.includes('--legacy-only')) {
       for (const file of ['check-messages-ui.cjs', 'check-clubs-ui.cjs']) {

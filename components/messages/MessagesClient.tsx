@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Send, MessageCircle, RefreshCw, Gamepad2, User, ArrowLeft, ChevronLeft } from "lucide-react";
+import { Send, MessageCircle, RefreshCw, Gamepad2, User, ArrowLeft, Info, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -17,8 +17,8 @@ import {
 } from "@/lib/messages";
 import { Avatar, RankLabel } from "@/components/arena";
 import { getRankFromTrophies } from "@/constants/ranks";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneMessages } from "./phone/PhoneMessages";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { presenceText } from "@/components/friends/FriendsPieces";
 import { useMessageHistory } from "./useMessageHistory";
 import { useHistoryScroll } from "./useHistoryScroll";
 import { MessageHistoryControls } from "./MessageHistoryControls";
@@ -38,15 +38,14 @@ import { MessageHistoryControls } from "./MessageHistoryControls";
  * Under 900px there is no room for two panes, so it falls back to one at a
  * time with a back arrow, which is the behaviour it had before.
  *
- * Held upright a phone gets MMessages and MChat
- * (design/arena/boards/MMessages.dc.html, MChat.dc.html): the list is the
- * whole screen and the thread slides in over it, hiding the tab bar, with
- * the composer pinned to the bottom (MOBILE.md "Thread").
+ * A phone gets LMessages and LChat (design/arena/boards/LMessages.dc.html,
+ * LChat.dc.html): a fixed screen with both panes, the threads on the left
+ * and the open chat on the right - or "Select a conversation" until one is
+ * picked, since a phone does not open the newest one by itself.
  *
- * This is one of the few screens that picks its composition in JavaScript
- * rather than CSS, and the reason is the thread: it holds a live message
- * subscription and marks the conversation read, so exactly one of it may
- * exist. Mounting both and hiding one would double both.
+ * Only one composition mounts, and the reason matters here: the thread
+ * holds a live message subscription and marks the conversation read, so
+ * exactly one of it may exist.
  */
 
 const MAX = 500;
@@ -56,7 +55,8 @@ export function MessagesClient() {
   const router = useRouter();
   const { user, isGuest } = useAuth();
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
+  const { profiles } = useHomeSocial();
   const myUid = user?.uid ?? "";
   const myName = user?.displayName ?? "Player";
 
@@ -106,47 +106,85 @@ export function MessagesClient() {
   }
 
   if (isGuest) {
-    return (
-      <div className="arena-messages ar-page">
-        <section className="panel tick" style={{ padding: "40px", textAlign: "center" }}>
-          <MessageCircle aria-hidden="true" style={{ width: "34px", height: "34px", color: "#3A3A46" }} />
-          <p className="muted" style={{ marginTop: "12px" }}>{t("messages_signInPrompt")}</p>
-          <Link href="/login" className="ar-btn sm" style={{ marginTop: 16 }}>{t("login_signIn")}</Link>
-        </section>
-      </div>
+    const prompt = (
+      <section className="panel tick" style={{ padding: "40px", textAlign: "center" }}>
+        <MessageCircle aria-hidden="true" style={{ width: "34px", height: "34px", color: "#3A3A46" }} />
+        <p className="muted" style={{ marginTop: "12px" }}>{t("messages_signInPrompt")}</p>
+        <Link href="/login" className="ar-btn sm" style={{ marginTop: 16 }}>{t("login_signIn")}</Link>
+      </section>
     );
+    // No board draws Messages signed out; on a phone the prompt sits in the
+    // landscape page, clear of the rail, like every other screen.
+    return phone
+      ? <div className="arena-land is-m is-land arena-lmessages"><div className="mpage">{prompt}</div></div>
+      : <div className="arena-messages ar-page">{prompt}</div>;
   }
 
   if (phone) {
-    // The thread is its own screen: it covers the list rather than sitting
-    // beside it, so only one of the two is rendered at a time.
-    return openUid ? (
-      <ChatView
-        key={`${myUid}:${openUid}`}
-        phone
-        myUid={myUid}
-        myName={myName}
-        otherUid={openUid}
-        otherName={openName}
-        onBack={backToList}
-      />
-    ) : (
-      <PhoneMessages
-        title={t("page_messages")}
-        conversations={conversations}
-        loaded={loaded}
-        loadError={loadError}
-        loadErrorText={t("messages_loadError")}
-        retryText={t("error_tryAgain")}
-        emptyText={t("messages_noConversationsYet")}
-        youPrefix={t("messages_youPrefix")}
-        noMessagesText={t("messages_noMessagesYet")}
-        myUid={myUid}
-        otherOf={other}
-        when={when}
-        onOpen={open}
-        onRetry={() => setRetryKey(k => k + 1)}
-      />
+    // LMessages: the threads and the open chat side by side, as on the
+    // wide screen, at 844x390.
+    return (
+      <div className="arena-land is-m is-land arena-lmessages">
+        <div className="mpage fx">
+          <div className="cols mm fit stretch">
+            <section className="panel tick cl" aria-label="Conversations">
+              <div className="scrl">
+                {!loaded ? (
+                  <p className="muted2" style={{ margin: 8, fontSize: 12.5 }}>Loading conversations...</p>
+                ) : loadError ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, margin: 8 }}>
+                    <p className="muted2" style={{ margin: 0, fontSize: 12.5 }}>{t("messages_loadError")}</p>
+                    <button type="button" className="minibtn lime" onClick={() => setRetryKey(k => k + 1)} data-flat>{t("error_tryAgain")}</button>
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <p className="muted2" style={{ margin: 8, fontSize: 12.5 }}>{t("messages_noConversationsYet")}</p>
+                ) : conversations.map((conversation) => {
+                  const person = other(conversation);
+                  const mine = conversation.lastSenderUid === myUid;
+                  const seen = conversation.lastReadAt?.[myUid] ?? 0;
+                  const unread = !mine && conversation.lastMessageAt > seen;
+                  const presence = presenceText(profiles[person.uid]?.lastSeen);
+                  return [
+                    <button type="button" key={conversation.id} className={`conv ${unread ? "unread" : ""}`.trim()}
+                      aria-current={person.uid === openUid} onClick={() => open(person.uid, person.name)} data-flat>
+                      <Avatar name={person.name} src={profiles[person.uid]?.photoURL} seed={person.uid} size={42} radius={10}
+                        presence={presence.online ? "online" : "offline"} style={{ fontSize: 17 }} />
+                      <span className="tx">
+                        <span className="l1">
+                          <b>{person.name}</b>
+                          <span>{conversation.lastMessageAt > 0 ? when(conversation.lastMessageAt) : ""}</span>
+                        </span>
+                        <span className="l2">
+                          <span>{mine && conversation.lastMessage ? t("messages_youPrefix") : ""}{conversation.lastMessage || t("messages_noMessagesYet")}</span>
+                          {unread && <i className="udot" aria-label="Unread" />}
+                        </span>
+                      </span>
+                    </button>,
+                    <div className="cdiv" key={`${conversation.id}-div`} />,
+                  ];
+                })}
+                <p className="tip"><Info aria-hidden="true" />Message a friend from the Friends tab to start a new conversation.</p>
+              </div>
+            </section>
+            <section className="panel cp" aria-label="Open conversation">
+              {openUid ? (
+                <ChatView key={`${myUid}:${openUid}`} land myUid={myUid} myName={myName}
+                  otherUid={openUid} otherName={openName} onBack={backToList} />
+              ) : (
+                <div className="em">
+                  <div className="mart" aria-hidden="true">
+                    <span className="mb t"><i data-ar-loop /><i data-ar-loop /><i data-ar-loop /></span>
+                    <span className="mb m"><i style={{ width: 70 }} /><i style={{ width: 46 }} /></span>
+                  </div>
+                  <h2 className="disp" style={{ margin: 0, fontSize: 22, letterSpacing: "-.01em" }}><span className="chrome">{t("messages_selectTitle")}</span></h2>
+                  <p style={{ margin: 0, maxWidth: 270, fontSize: 13, lineHeight: 1.45, fontWeight: 500, color: "#A4A4B2" }}>{t("messages_selectBody")}</p>
+                  <Link className="ar-btn blue sm" href="/friends" style={{ marginTop: 4 }}><Users aria-hidden="true" />{t("messages_goFriends")}</Link>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -236,15 +274,15 @@ function when(timestamp: number) {
 }
 
 function ChatView({
-  myUid, myName, otherUid, otherName, onBack, phone = false,
+  myUid, myName, otherUid, otherName, onBack, land = false,
 }: {
   myUid: string;
   myName: string;
   otherUid: string;
   otherName: string;
   onBack: () => void;
-  /** Draw MChat's full-screen thread instead of the wide screen's pane. */
-  phone?: boolean;
+  /** Draw LChat's pane (inside LMessages) instead of the wide screen's. */
+  land?: boolean;
 }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -312,81 +350,73 @@ function ChatView({
     <MessageHistoryControls {...history} hasOlder={!!history.nextCursor} count={messages.length} />
   );
 
-  /* MChat: the thread is its own screen. It comes in on `slideIn`, covers
-     the tab bar and pins the composer to the bottom - MOBILE.md "Thread" -
-     so the back arrow is the only way out, as the board draws it. The state
-     above is shared with the wide pane: the same subscription, the same
-     read marking, the same invite, the same day grouping. */
-  if (phone) return (
-    <section className="arena-phone arena-mchat chat" aria-label={`Chat with ${otherName}`}>
-      <div className="bg2" aria-hidden="true" />
-      <header className="chead">
-        <button type="button" className="ibtn" aria-label={t("a11y_goBack")} onClick={onBack} data-flat>
-          <ChevronLeft aria-hidden="true" />
-        </button>
-        <Avatar name={otherName} src={profile?.photoURL} seed={otherUid} size={42} radius={11}
-          presence={online ? "online" : "offline"} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 0", minWidth: 0 }}>
-          <b className="disp" style={{ fontSize: 17, letterSpacing: ".02em" }}>{otherName}</b>
-          <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span className={`st ${online ? "on" : ""}`.trim()}>
-              <i aria-hidden="true" />{online ? "Online" : "Offline"}
+  /* LChat: the header, the thread and the composer inside LMessages' right
+     pane. The state above is shared with the wide pane: the same
+     subscription, the same read marking, the same invite, the same day
+     grouping. */
+  if (land) {
+    const presence = presenceText(profile?.lastSeen);
+    return (
+      <>
+        <header className="ch">
+          <Avatar name={otherName} src={profile?.photoURL} seed={otherUid} size={40} radius={10}
+            presence={presence.online ? "online" : "offline"} style={{ fontSize: 17 }} />
+          <div className="who">
+            <b>{otherName}</b>
+            <span className="r2">
+              <span className={`on2 ${presence.online ? "on" : ""}`.trim()}><i aria-hidden="true" />{presence.text}</span>
+              {profile && <RankLabel tier={getRankFromTrophies(trophies)} />}
             </span>
-            {profile && <RankLabel tier={getRankFromTrophies(trophies)} />}
-          </span>
-        </div>
-        <a className="ibtn" aria-label={`View ${otherName}'s profile`} href={`/player?uid=${encodeURIComponent(otherUid)}`}>
-          <User aria-hidden="true" />
-        </a>
-      </header>
-
-      <div className="inv">
-        <button type="button" className="ar-btn blue sm full" onClick={invite} disabled={inviting} data-flat>
-          <Gamepad2 aria-hidden="true" />Invite to Mindi
-        </button>
-      </div>
-
-      {error && <p role="alert" className="msg-error">{error}</p>}
-      {historyControls}
-
-      <div className="msgs" ref={threadRef} tabIndex={0} role="region" aria-label="Message history"
-        aria-busy={history.loading || history.loadingOlder}>
-        {!history.loading && !history.error && messages.length === 0 && (
-          <p className="muted2" style={{ alignSelf: "center", marginTop: 20 }}>
-            {t("messages_sayHelloTo").replace("{name}", otherName)}
-          </p>
-        )}
-        {days.map((group) => (
-          <div key={group.label} style={{ display: "contents" }}>
-            <span className="day">{group.label}</span>
-            {group.items.map((message) => (
-              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id} data-message-id={message.id}>
-                {message.text}
+          </div>
+          <button type="button" className="ar-btn blue sm" onClick={invite} disabled={inviting}>
+            <Gamepad2 aria-hidden="true" />Invite to Mindi
+          </button>
+          <a className="ibtn" aria-label={`View ${otherName}'s profile`} href={`/player?uid=${encodeURIComponent(otherUid)}`}>
+            <User aria-hidden="true" />
+          </a>
+        </header>
+        {error && <p role="alert" className="msg-error">{error}</p>}
+        <div className="msgs" ref={threadRef} tabIndex={0} role="region" aria-label="Message history"
+          aria-busy={history.loading || history.loadingOlder}>
+          <div className="in">
+            {historyControls}
+            {days.map((group) => (
+              <div key={group.label} style={{ display: "contents" }}>
+                <div className="mg day">{group.label}</div>
+                {group.items.map((message) => (
+                  <div className={`mg ${message.senderUid === myUid ? "me" : "them"}`} key={message.id} data-message-id={message.id}>
+                    {message.text}
+                  </div>
+                ))}
               </div>
             ))}
+            {!history.loading && !history.error && messages.length === 0 && (
+              <div className="nomsg"><MessageCircle aria-hidden="true" /><b>{t("messages_noMessagesYet")}</b></div>
+            )}
           </div>
-        ))}
-      </div>
-
-      <div className="composer">
-        <label className="field">
-          <input
-            aria-label={t("messages_placeholder")}
-            value={text}
-            onChange={(event) => setText(event.target.value.slice(0, MAX))}
-            onKeyDown={(event) => { if (event.key === "Enter") handleSend(); }}
-            placeholder={t("messages_placeholder")}
-            maxLength={MAX}
-          />
-          <span className="counter" aria-hidden="true">{text.length} / {MAX}</span>
-        </label>
-        <button type="button" className="ar-btn" style={{ height: 48, width: 52, padding: 0 }}
-          aria-label={t("a11y_sendMessage")} onClick={handleSend} disabled={!conversationId || !text.trim()} data-flat>
-          <Send aria-hidden="true" />
-        </button>
-      </div>
-    </section>
-  );
+        </div>
+        <div className="cmp">
+          <label className="field">
+            <input
+              aria-label={t("messages_placeholder")}
+              value={text}
+              onChange={(event) => setText(event.target.value.slice(0, MAX))}
+              onKeyDown={(event) => { if (event.key === "Enter") handleSend(); }}
+              placeholder={t("messages_placeholder")}
+              maxLength={MAX}
+            />
+            <span style={{ marginLeft: "auto", fontFamily: "var(--font-display), sans-serif", fontWeight: 600, fontSize: 11, color: "#6A6A78", whiteSpace: "nowrap" }} aria-hidden="true">
+              {text.length} / {MAX}
+            </span>
+          </label>
+          <button type="button" className="ar-btn" aria-label={t("a11y_sendMessage")} onClick={handleSend}
+            disabled={!conversationId || !text.trim()}>
+            <Send aria-hidden="true" />
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <section className="panel msg-chat" aria-label={`Chat with ${otherName}`}>

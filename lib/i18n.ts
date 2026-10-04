@@ -1110,6 +1110,10 @@ export const TRANSLATIONS: Record<string, Translations> = {
   lgin_discarded: { en: "Discarded", dv: "ދޫކޮށްލެވިއްޖެ", hi: "फेंक दिया", bn: "ফেলে দেওয়া হয়েছে" },
   // LInventory's summary cell at the end of the grid: "4/13 Collected".
   inv_collected: { en: "Collected", dv: "ހޯދިފައި", hi: "एकत्रित", bn: "সংগৃহীত" },
+  // LMessages with no thread open (LANDSCAPE.md "New copy").
+  messages_selectTitle: { en: "Select a conversation", dv: "ވާހަކައެއް ޚިޔާރުކުރައްވާ", hi: "कोई बातचीत चुनें", bn: "একটি কথোপকথন বেছে নিন" },
+  messages_selectBody: { en: "Choose a thread on the left to read and reply.", dv: "ކިޔައި ޖަވާބު ދެއްވުމަށް ލިސްޓުން ވާހަކައެއް ޚިޔާރުކުރައްވާ.", hi: "पढ़ने और जवाब देने के लिए बाईं ओर से कोई बातचीत चुनें।", bn: "পড়তে ও উত্তর দিতে বাঁ দিক থেকে একটি কথোপকথন বেছে নিন।" },
+  messages_goFriends: { en: "Go to Friends", dv: "ރަޙްމަތްތެރިންނަށް", hi: "दोस्तों पर जाएँ", bn: "বন্ধুদের কাছে যান" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

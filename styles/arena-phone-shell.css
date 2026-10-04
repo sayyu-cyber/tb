@@ -65,6 +65,17 @@
 .arena-land :is(a, span).minibtn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .arena-land .minibtn:disabled { opacity: .55; cursor: not-allowed; }
 
+/* LChat's thread: the board stacks it bottom-up (column-reverse) so a short
+   one sits on the composer. Here the real history pages in older messages
+   and keeps your place (components/messages/useHistoryScroll), which
+   reckons in top-down scroll offsets - so the thread runs top-down and its
+   content is pushed to the bottom instead: the same picture. */
+.arena-lmessages .msgs { flex-direction: column; overflow-anchor: none; overscroll-behavior: contain; }
+.arena-lmessages .msgs .in { margin-top: auto; }
+.arena-lmessages .msgs .mg { flex-shrink: 0; overflow-wrap: anywhere; }
+.arena-lmessages .msgs:focus-visible { outline: 2px solid #6FE9F0; outline-offset: -2px; }
+.arena-lmessages .cmp .field input { flex: 1 1 0; }
+
 /* LFriendActions draws its four actions as links; three of them do
    something rather than go somewhere, so they are buttons - with the
    board's own `.fa .acts2 a` values. */
@@ -182,8 +193,10 @@
     overflow: hidden;
     box-sizing: border-box;
   }
-  /* Its one row of panes (`.fit`, 314px on the board) takes what is left. */
-  .arena-land.is-land .mpage.fx > .fit { height: auto; flex: 1 1 0; min-height: 0; }
+  /* Its one row of panes (`.fit`) is 314px on the board: the screen less
+     the 64px above it and a 12px gap below, whatever the page's own bottom
+     padding - so the same here, at the real height. */
+  .arena-land.is-land .mpage.fx > .fit { height: calc(100dvh - 76px - env(safe-area-inset-bottom)); min-height: 0; }
 
   /* ── Side panels and dialogs ───────────────────────────────────────
      The board draws them inside its own 844x390 frame; here the host is the

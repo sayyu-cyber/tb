@@ -1,5 +1,6 @@
 // Isolated component-test services. Never imported by application code.
 import React, { useSyncExternalStore } from 'react';
+import { translate } from '@/lib/i18n';
 
 /**
  * Stand-ins for what Messages reads.
@@ -33,7 +34,10 @@ const THREAD = [
   { id: 'm6', senderUid: ME, text: 'Sending the invite now', createdAt: now - 60_000 },
 ];
 
-export const useAuth = () => ({ user: { uid: ME, displayName: 'Sayyu' }, isGuest: flag('guest') });
+export const useAuth = () => ({ user: { uid: ME, displayName: 'Sayyu' }, isGuest: flag('guest'), playerStats: { currentRank: 'Gold', trophies: 58 } });
+/** The phone shell's coins chip: the boards' 1,240. */
+export const useEconomy = () => ({ state: { economy: { coins: 1240 }, profile: { vip: { active: false } } } });
+export const usePathname = () => '/messages';
 export const useToast = () => ({ showToast: (message: string) => { document.body.dataset.toast = message; } });
 const navigationListeners = new Set<() => void>();
 const subscribeNavigation = (callback: () => void) => {
@@ -64,7 +68,7 @@ export const useTranslation = () => (key: string) => ({
   error_tryAgain: 'Try again',
   a11y_sendMessage: 'Send message',
   a11y_goBack: 'Go back',
-}[key] || key);
+}[key] || translate(key, 'en'));
 
 export const isOnline = (time: number) => Boolean(time) && Date.now() - time < 90_000;
 export const useHomeSocial = () => ({

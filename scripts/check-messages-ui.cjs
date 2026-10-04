@@ -120,7 +120,8 @@ async function run() {
     for (const state of ['', '?empty']) {
       await page.goto(BASE + '/messages/' + state);
       await page.waitForTimeout(300);
-      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      // The wide screen's sizes. A phone gets LMessages, checked below.
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow ${state} ${width}`);
@@ -152,33 +153,46 @@ async function run() {
     assert.equal(await page.locator('input[aria-label="Message…"]').count(), 1, 'The composer is labelled');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MMessages and MChat ───────────────────────────────
-    // design/arena/boards/MMessages.dc.html and MChat.dc.html. The list is
-    // the whole screen; the thread covers it rather than sitting beside it,
-    // which is also why exactly one ChatView exists at a time.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LMessages and LChat ─────────────────────────────────
+    // design/arena/boards/LMessages.dc.html and LChat.dc.html. The phone is
+    // landscape only (design/arena/LANDSCAPE.md): a fixed screen with both
+    // panes. Nothing opens by itself - "Select a conversation" until one is
+    // picked - and exactly one ChatView exists at a time.
+    // scripts/check-landscape-screens.cjs holds both against their references.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.goto(BASE + '/messages-test/');
-    await page.locator('.arena-mmessages').waitFor();
-    const list = page.locator('.arena-mmessages');
-    await list.locator('.conv').first().waitFor();
-    assert.equal(await page.locator('.msg-page').count(), 0, 'The two-pane screen steps aside');
-    assert.ok(await list.locator('.conv').count() > 0, 'The conversations are here');
-    assert.ok(await list.locator('.cdiv').count() > 0, 'separated by the hairlines');
-    assert.equal(await page.locator('.arena-mchat').count(), 0, 'and no thread until one is picked');
-    await page.screenshot({ path: path.join(output, 'mmessages-390.png'), fullPage: true });
+    const phone = page.locator('.arena-lmessages');
+    await phone.locator('.conv').first().waitFor();
+    assert.equal(await page.locator('.msg-page').count(), 0, 'The wide screen is unmounted');
+    assert.equal(await phone.locator('.conv').count(), 5, 'The five conversations');
+    assert.equal(await phone.locator('.conv.unread .udot').count(), 1, 'Hussain unread');
+    assert.ok(await phone.locator('.cdiv').count() > 0, 'separated by the hairlines');
+    assert.ok((await phone.locator('.em').innerText()).toUpperCase().includes('SELECT A CONVERSATION'), 'Nothing open yet');
+    assert.equal(await phone.getByRole('link', { name: 'Go to Friends' }).getAttribute('href'), '/friends');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true, 'A fixed screen: the page does not scroll');
+    await page.screenshot({ path: path.join(output, 'lmessages-844.png') });
 
-    await list.locator('.conv').first().click();
-    await page.locator('.arena-mchat.chat').waitFor();
-    assert.equal(await page.locator('.arena-mmessages').count(), 0, 'The thread replaces the list');
-    assert.equal(await page.locator('.arena-mchat .composer').count(), 1, 'with the composer pinned');
-    assert.ok((await page.locator('.arena-mchat').innerText()).toLowerCase().includes('invite to mindi'), 'and the invite');
-    await page.screenshot({ path: path.join(output, 'mchat-390.png') });
-    await page.locator('.arena-mchat .chead .ibtn').first().click();
-    await page.locator('.arena-mmessages').waitFor();
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
+    await phone.locator('.conv').first().click();
+    await phone.locator('.ch').waitFor();
+    await phone.locator('.mg.day').waitFor();
+    assert.equal(await phone.locator('.conv').count(), 5, 'The list stays beside the thread');
+    assert.equal(await phone.locator('.mg.day').count(), 1, 'The day separator');
+    assert.equal(await phone.locator('.mg.me, .mg.them').count(), 6, 'and the six messages');
+    assert.equal(await phone.getByRole('region', { name: 'Message history' }).count(), 1, 'One thread');
+    assert.ok((await phone.locator('.ch').innerText()).toLowerCase().includes('invite to mindi'), 'with the invite');
+    await phone.getByRole('textbox', { name: 'Message…' }).fill('On my way');
+    assert.ok((await phone.locator('.cmp').innerText()).includes('9 / 500'), 'The counter');
+    await phone.getByRole('button', { name: 'Send message' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-said'), 'On my way');
+    await page.screenshot({ path: path.join(output, 'lchat-844.png') });
+    for (const size of [[740, 360], [932, 430]]) {
+      await page.setViewportSize({ width: size[0], height: size[1] });
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at ' + size[0]);
+    }
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Messages: MMessages and MChat held upright, both panes, five conversations with the unread dot, the board\'s six-message thread and day separator, the 500-character counter, sending, switching, Invite to Mindi, empty/guest/error states, seven widths, the narrow fallback and accessibility passed.');
+    console.log('Messages: LMessages and LChat on a phone, both panes, five conversations with the unread dot, the board\'s six-message thread and day separator, the 500-character counter, sending, switching, Invite to Mindi, empty/guest/error states, four wide-screen widths, the narrow fallback and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -64,8 +64,6 @@ import "@/styles/arena-roomlobby.css";
 import "@/styles/arena-mroomlobby.css";
 // The portrait screens. MShopBuy and MShopShort came out byte-identical to
 // MShop - they are MShop with a sheet open - so one sheet serves all three.
-import "@/styles/arena-mmessages.css";
-import "@/styles/arena-mchat.css";
 import "@/styles/arena-mclubs.css";
 import "@/styles/arena-mleaderboard.css";
 import "@/styles/arena-machievements.css";
@@ -85,6 +83,7 @@ import "@/styles/arena-lgate.css";
 import "@/styles/arena-lprofile.css";
 import "@/styles/arena-linventory.css";
 import "@/styles/arena-lfriends.css";
+import "@/styles/arena-lmessages.css";
 import "@/styles/arena-phone-shell.css";
 import "@/styles/arena-rooms-app.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings

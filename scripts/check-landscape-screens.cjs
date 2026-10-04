@@ -22,7 +22,8 @@ const loader={test:/\.tsx?$/,exclude:/node_modules/,use:path.join(__dirname,'fri
  * One entry per screen. `mocks` and `aliases` are the screen's own desktop
  * check's, plus next/navigation for the route the shell reads. `states` are
  * its references: `full` for a scrolling board, `before` to put the page in
- * that reference's state.
+ * that reference's state. `route` is the app route whose stylesheets the
+ * fixture also needs (a component's own CSS ships with its route).
  */
 const SCREENS={
   home:{
@@ -71,12 +72,21 @@ const SCREENS={
       }},
     ],
   },
+  messages:{
+    entry:'land-messages-entry.tsx',mocks:'messages-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/ToastContext','@/contexts/HomeSocialContext','@/contexts/EconomyContext','next/navigation','@/lib/messages','@/lib/clubs','@/lib/presence','@/lib/rooms','@/lib/friends','@/hooks/useTranslation','next/link'],
+    title:'MESSAGES',route:'/messages/',
+    states:[
+      {file:'messages',ref:'landscape-05-messages'},
+      {file:'chat',ref:'landscape-05b-chat',query:'?with=mariyam&name=Mariyam'},
+    ],
+  },
 };
 
 function build(name){
   const screen=SCREENS[name];
   const alias=Object.fromEntries(screen.aliases.map(n=>[n+'$',path.join(__dirname,screen.mocks)]));alias['@']=root;
-  return new Promise((resolve,reject)=>compiler.webpack({mode:'development',devtool:false,entry:path.join(__dirname,screen.entry),output:{path:path.join(output,name),filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[loader]},plugins:[new compiler.webpack.optimize.LimitChunkCountPlugin({maxChunks:1}),new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})]},(error,stats)=>error||stats.hasErrors()?reject(error||new Error(stats.toString({all:false,errors:true}))):resolve()));
+  return new Promise((resolve,reject)=>compiler.webpack({mode:'development',devtool:false,entry:path.join(__dirname,screen.entry),output:{path:path.join(output,name),filename:'component.js'},resolve:{extensions:['.tsx','.ts','.js'],alias},module:{rules:[loader]},plugins:[new compiler.webpack.NormalModuleReplacementPlugin(/\.css$/,'data:text/javascript,export default {};'),new compiler.webpack.optimize.LimitChunkCountPlugin({maxChunks:1}),new compiler.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'development'})})]},(error,stats)=>error||stats.hasErrors()?reject(error||new Error(stats.toString({all:false,errors:true}))):resolve()));
 }
 
 /** Ours on the left, the reference scaled to our size on the right. */
@@ -95,9 +105,14 @@ async function main(){
   const browser=await chromium.launch({headless:true,channel:'msedge'});
   const errors=[];
   try{
-    const source=await browser.newPage();await source.goto(base+'/login/');
-    const urls=await source.locator('link[rel=stylesheet]').evaluateAll(nodes=>nodes.map(n=>n.href));
+    const source=await browser.newPage();
+    const urls=new Set();
+    for(const route of ['/login/',...names.map(n=>SCREENS[n].route).filter(Boolean)]){
+      await source.goto(base+route);
+      for(const href of await source.locator('link[rel=stylesheet]').evaluateAll(nodes=>nodes.map(n=>n.href))) urls.add(href.replace(/\?v=\d+$/,''));
+    }
     const css=[];for(const url of urls){const r=await source.request.get(url);assert.ok(r.ok());css.push(await r.text());}
+    await source.goto(base+'/login/');
     const body=await source.locator('body').getAttribute('class');await source.close();
     async function open(name,query='',{width=844,height=390}={}){
       const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,reducedMotion:'reduce'});
