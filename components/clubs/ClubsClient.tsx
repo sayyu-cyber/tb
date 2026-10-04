@@ -10,8 +10,8 @@ import { ArenaSprite } from "@/components/game/ArenaSprite";
 import { ClubHome } from "./ClubHome";
 import { ClubCard } from "./ClubCard";
 import { CreateClubDialog } from "./CreateClubDialog";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneClubs } from "./phone/PhoneClubs";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandClubs } from "./land/LandClubs";
 
 /**
  * Clubs — design/arena/screens/app/app-06-clubs.jpg, with the chat tab from
@@ -39,7 +39,7 @@ export function ClubsClient() {
   const [pending, setPending] = useState("");
   const action = useRef(false);
   const uid = user?.uid ?? "";
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
 
   useEffect(() => {
     setMine(undefined); setClubs([]); setLoaded(false); setError("");
@@ -78,14 +78,13 @@ export function ClubsClient() {
     />
   );
 
-  /* Held upright a phone gets MClubs, which stacks the two columns and puts
-     your own club first. It picks in JavaScript rather than CSS because
+  /* A phone gets LClubs (design/arena/boards/LClubs.dc.html): your club as
+     the hero, then browse. It picks in JavaScript rather than CSS because
      ClubHome holds the club chat subscription, the member watcher and the
      kick/leave confirm - mounting both compositions would double all three. */
   if (phone) return (
     <>
-      <ArenaSprite />
-      <PhoneClubs
+      <LandClubs
         isGuest={isGuest}
         uid={uid}
         myName={user?.displayName ?? "Player"}

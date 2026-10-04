@@ -76,6 +76,14 @@
 .arena-lmessages .msgs:focus-visible { outline: 2px solid #6FE9F0; outline-offset: -2px; }
 .arena-lmessages .cmp .field input { flex: 1 1 0; }
 
+/* LClubsChat's thread: the same top-down turn as LChat's, for the same
+   paging reason. */
+.arena-lclubs .cmsgs { flex-direction: column; overflow-anchor: none; overscroll-behavior: contain; }
+.arena-lclubs .cmsgs .in { margin-top: auto; }
+.arena-lclubs .cmsgs .cb2 { flex-shrink: 0; overflow-wrap: anywhere; }
+.arena-lclubs .cmsgs:focus-visible { outline: 2px solid #6FE9F0; outline-offset: -2px; }
+.arena-lclubs .cbody .field button:disabled { opacity: .45; cursor: default; }
+
 /* LFriendActions draws its four actions as links; three of them do
    something rather than go somewhere, so they are buttons - with the
    board's own `.fa .acts2 a` values. */

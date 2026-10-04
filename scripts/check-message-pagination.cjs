@@ -109,8 +109,10 @@ const state = window.pagination;
 function App() {
   const { user } = useAuth();
   const club = new URLSearchParams(location.search).get('club');
-  return club ? React.createElement('div', { className: innerWidth < 768 ? 'arena-mclubs' : 'arena-clubs' },
-    React.createElement(ClubHome, { myUid: user.uid, myName: 'Player', compact: innerWidth < 768,
+  // A phone (landscape, at most 500 tall) gets LClubs' hero, as ClubsClient does.
+  const phone = innerHeight <= 500;
+  return club ? React.createElement('div', { className: phone ? 'arena-land is-m is-land arena-lclubs' : 'arena-clubs' },
+    React.createElement(ClubHome, { myUid: user.uid, myName: 'Player', land: phone,
       club: { id: club, name: 'Test Club', tag: 'TEST', ownerUid: user.uid,
         members: [user.uid], memberNames: {}, memberTrophies: {}, createdAt: 0, description: '' } }))
     : React.createElement(MessagesClient);
@@ -164,8 +166,7 @@ async function run() {
     const rows = page.locator('[data-message-id]');
     const older = page.getByRole('button', { name: 'Load older messages' });
     // A phone is landscape (design/arena/LANDSCAPE.md): Messages is LMessages
-    // at 844x390 and 740x360. Clubs are checked upright until that screen is
-    // converted too.
+    // and Clubs LClubs, at 844x390 and 740x360.
     async function open(kind, width = 1440, target, height = width < 768 ? 844 : 900) {
       await page.setViewportSize({ width, height });
       await page.goto(base + (kind === 'club' ? '/?club=' + (target || 'club-a') : '/messages?with=' + (target || 'mariyam')));
@@ -191,7 +192,7 @@ async function run() {
 
     for (const kind of ['dm', 'club']) {
       const id = kind === 'club' ? 'club-a' : 'c-mariyam';
-      const sizes = kind === 'club' ? [[1440, 900], [390, 844], [320, 844]] : [[1440, 900], [844, 390], [740, 360]];
+      const sizes = [[1440, 900], [844, 390], [740, 360]];
       for (const [width, height] of sizes) {
         await open(kind, width, undefined, height);
         assert.equal(await rows.first().getAttribute('data-message-id'), id + '-0300');

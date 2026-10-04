@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Crown, LogOut, Trophy, MessageCircle } from "lucide-react";
+import { ChevronRight, Crown, LogOut, Trophy, MessageCircle, Users } from "lucide-react";
 import {
   ClubDoc, MAX_MEMBERS, leaveClub, kickMember,
 } from "@/lib/clubs";
 import { watchSocialProfiles, type PlayerSearchResult } from "@/lib/friends";
 import { useToast } from "@/contexts/ToastContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, Pill } from "@/components/arena";
 import { Suit } from "@/components/game/ArenaSprite";
 import { ClubChat } from "./ClubChat";
@@ -39,23 +40,25 @@ function pick(id: string, size: number) {
   return Math.abs(hash) % size;
 }
 
-export function ClubHome({ club, myUid, myName, compact = false }: {
+export function ClubHome({ club, myUid, myName, land = false }: {
   club: ClubDoc;
   myUid: string;
   myName: string;
   /**
-   * MClubs draws the same panel two sizes down - a 58x64 crest and a 23px
-   * name instead of 64x70 and the wide `club-name` size. Only those two
-   * numbers differ, so the panel is one component rather than two: it holds
-   * the club chat subscription, the member watcher and the kick/leave
-   * confirm, and none of those should exist twice.
+   * LClubs' "My Club" hero (design/arena/boards/LClubs.dc.html): the
+   * identity column with vertical tabs beside the members, two by three, or
+   * the chat. One component either way: it holds the club chat
+   * subscription, the member watcher and the kick/leave confirm, and none
+   * of those should exist twice.
    */
-  compact?: boolean;
+  land?: boolean;
 }) {
   const [tab, setTab] = useState<"members" | "chat">("members");
   const [profiles, setProfiles] = useState<Record<string, PlayerSearchResult>>({});
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
+  const [allMembers, setAllMembers] = useState(false);
+  const t = useTranslation();
   const dialog = useRef<HTMLDialogElement>(null);
   const action = useRef(false);
   const { showToast } = useToast();
@@ -108,6 +111,106 @@ export function ClubHome({ club, myUid, myName, compact = false }: {
   const tint = TINTS[pick(club.id + "t", TINTS.length)];
   const confirmName = confirm === "leave" ? club.name : club.memberNames[confirm ?? ""] ?? "this member";
 
+  const confirmDialog = (
+    <dialog ref={dialog} className="dlg club-dlg" onClose={() => setConfirm(null)}>
+      <h2 className="disp" style={{ margin: "0 0 8px", fontSize: "24px" }}>
+        {confirm === "leave" ? "Leave club?" : "Remove member?"}
+      </h2>
+      <p className="muted" style={{ margin: "0 0 22px" }}>
+        {confirm === "leave"
+          ? `You will leave ${confirmName} and lose access to its chat.`
+          : `${confirmName} will be removed from ${club.name}.`}
+      </p>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <button type="button" className="ar-btn ghost sm" onClick={() => { setConfirm(null); dialog.current?.close(); }}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="ar-btn danger sm"
+          disabled={busy}
+          onClick={() => confirm === "leave" ? handleLeave() : confirm && handleKick(confirm)}
+        >
+          {confirm === "leave" ? "Leave" : "Remove"}
+        </button>
+      </div>
+    </dialog>
+  );
+
+  if (land) {
+    // The board shows six, two by three; "All N members" lists the rest in
+    // the same panel, scrolling.
+    const shown = allMembers ? members : members.slice(0, 6);
+    return (
+      <section className="panel tick hero" aria-label="My club">
+        <div className="idc">
+          <div className="itop">
+            <span className="lbl dash" style={{ color: "#C6FF33", fontSize: 9, letterSpacing: ".18em", gap: 7 }}>My Club</span>
+            {isOwner && <span className="pill lime"><Crown aria-hidden="true" />Owner</span>}
+          </div>
+          <div className="who">
+            <span className={`crest ${tint}`} aria-hidden="true" style={{ width: 48, height: 54 }}><Suit suit={suit} /></span>
+            <div className="cnm">
+              <span className="tag">[{club.tag}]</span>
+              <b>{club.name}</b>
+              <span className="muted2 tnum" style={{ fontSize: 11.5 }}>{club.members.length} / {MAX_MEMBERS} {t("clubs_members")}</span>
+            </div>
+          </div>
+          <div className="meter thin" role="progressbar" aria-label={`${club.name} membership`}
+            aria-valuenow={Math.round((club.members.length / MAX_MEMBERS) * 100)} aria-valuemin={0} aria-valuemax={100}
+            aria-valuetext={`${club.members.length} of ${MAX_MEMBERS} members`} style={{ marginTop: -2 }}>
+            <i style={{ width: `${Math.min(100, (club.members.length / MAX_MEMBERS) * 100)}%` }} />
+          </div>
+          <div className="tabs vtabs" role="group" aria-label="Club sections">
+            <button type="button" aria-pressed={tab === "members"} onClick={() => setTab("members")} data-flat>
+              <Users aria-hidden="true" />{t("clubs_membersTab").replace("{n}", String(club.members.length))}
+            </button>
+            <button type="button" aria-pressed={tab === "chat"} onClick={() => setTab("chat")} data-flat>
+              <MessageCircle aria-hidden="true" />{t("clubs_chatTab")}
+            </button>
+          </div>
+        </div>
+        {tab === "members" ? (
+          <div className="cbody">
+            <div className="mgrid" style={allMembers ? { gridTemplateRows: "none", gridAutoFlow: "row", overflowY: "auto", flex: "1 1 0", minHeight: 0 } : undefined}>
+              {shown.map((member, index) => (
+                <div className={`mem ${member.uid === myUid ? "you" : ""}`.trim()} key={member.uid}>
+                  <span className="pos">{index + 1}</span>
+                  <Avatar name={member.name} src={member.photoURL} seed={member.uid} size={32} radius={9} style={{ fontSize: 13 }} />
+                  <b>
+                    {member.owner && <Crown aria-hidden="true" />}
+                    {member.name}
+                    {member.uid === myUid && <span className="muted2" style={{ textTransform: "none", letterSpacing: 0 }}> {t("clubs_you")}</span>}
+                  </b>
+                  <span className="tr"><Trophy aria-hidden="true" />{member.trophies}</span>
+                  {member.uid === myUid ? null : isOwner ? (
+                    <button type="button" className="kick" disabled={busy} onClick={() => setConfirm(member.uid)} data-flat>
+                      {t("clubs_kick")}<span className="sr-only"> {member.name}</span>
+                    </button>
+                  ) : <span />}
+                </div>
+              ))}
+            </div>
+            <div className="cfoot">
+              {members.length > 6 ? (
+                <button type="button" className="link b" onClick={() => setAllMembers(value => !value)} data-flat>
+                  {allMembers ? "Fewer members" : `All ${members.length} members`}<ChevronRight aria-hidden="true" />
+                </button>
+              ) : <span />}
+              <button type="button" className="ar-btn ghost sm" disabled={busy} onClick={() => setConfirm("leave")}>
+                <LogOut aria-hidden="true" />{t("clubs_leaveClub")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ClubChat key={`${myUid}:${club.id}`} clubId={club.id} myUid={myUid} myName={myName} land />
+        )}
+        {/* The confirm reuses the wide screen's dialog and its look. */}
+        <div className="arena-clubs">{confirmDialog}</div>
+      </section>
+    );
+  }
+
   return (
     <section className="panel tick club-panel" aria-label="My club">
       <div className="club-head">
@@ -116,13 +219,12 @@ export function ClubHome({ club, myUid, myName, compact = false }: {
           {isOwner && <Pill tone="lime"><Crown aria-hidden="true" />Owner</Pill>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <span className={`crest ${tint}`} aria-hidden="true"
-            style={compact ? { width: "58px", height: "64px" } : { width: "64px", height: "70px" }}>
+          <span className={`crest ${tint}`} aria-hidden="true" style={{ width: "64px", height: "70px" }}>
             <Suit suit={suit} />
           </span>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
             <span className="tag">[{club.tag}]</span>
-            <b className="disp club-name" style={compact ? { fontSize: "23px" } : undefined}>{club.name}</b>
+            <b className="disp club-name">{club.name}</b>
             <span className="muted2 tnum">{club.members.length} / {MAX_MEMBERS} members</span>
           </div>
         </div>
@@ -170,29 +272,7 @@ export function ClubHome({ club, myUid, myName, compact = false }: {
         <ClubChat key={`${myUid}:${club.id}`} clubId={club.id} myUid={myUid} myName={myName} />
       )}
 
-      <dialog ref={dialog} className="dlg club-dlg" onClose={() => setConfirm(null)}>
-        <h2 className="disp" style={{ margin: "0 0 8px", fontSize: "24px" }}>
-          {confirm === "leave" ? "Leave club?" : "Remove member?"}
-        </h2>
-        <p className="muted" style={{ margin: "0 0 22px" }}>
-          {confirm === "leave"
-            ? `You will leave ${confirmName} and lose access to its chat.`
-            : `${confirmName} will be removed from ${club.name}.`}
-        </p>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-          <button type="button" className="ar-btn ghost sm" onClick={() => { setConfirm(null); dialog.current?.close(); }}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="ar-btn danger sm"
-            disabled={busy}
-            onClick={() => confirm === "leave" ? handleLeave() : confirm && handleKick(confirm)}
-          >
-            {confirm === "leave" ? "Leave" : "Remove"}
-          </button>
-        </div>
-      </dialog>
+      {confirmDialog}
     </section>
   );
 }

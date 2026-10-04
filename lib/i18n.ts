@@ -1114,6 +1114,8 @@ export const TRANSLATIONS: Record<string, Translations> = {
   messages_selectTitle: { en: "Select a conversation", dv: "ވާހަކައެއް ޚިޔާރުކުރައްވާ", hi: "कोई बातचीत चुनें", bn: "একটি কথোপকথন বেছে নিন" },
   messages_selectBody: { en: "Choose a thread on the left to read and reply.", dv: "ކިޔައި ޖަވާބު ދެއްވުމަށް ލިސްޓުން ވާހަކައެއް ޚިޔާރުކުރައްވާ.", hi: "पढ़ने और जवाब देने के लिए बाईं ओर से कोई बातचीत चुनें।", bn: "পড়তে ও উত্তর দিতে বাঁ দিক থেকে একটি কথোপকথন বেছে নিন।" },
   messages_goFriends: { en: "Go to Friends", dv: "ރަޙްމަތްތެރިންނަށް", hi: "दोस्तों पर जाएँ", bn: "বন্ধুদের কাছে যান" },
+  // LFriends' button (the portrait board said "Add").
+  friends_addFriend: { en: "Add Friend", dv: "ރަޙްމަތްތެރިއަކު އިތުރުކުރައްވާ", hi: "दोस्त जोड़ें", bn: "বন্ধু যোগ করুন" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

@@ -233,6 +233,7 @@ export default function FriendsPage() {
         isGuest={isGuest}
         signInPrompt={t('friends_signInPrompt')}
         signInLabel={t('login_signIn')}
+        addFriendLabel={t('friends_addFriend')}
         tab={tab}
         onTab={setTab}
         friends={friends}

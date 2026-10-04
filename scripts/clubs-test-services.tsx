@@ -1,5 +1,6 @@
 // Isolated component-test services. Never imported by application code.
 import React from 'react';
+import { translate } from '@/lib/i18n';
 
 /**
  * Stand-ins for what Clubs reads.
@@ -14,7 +15,8 @@ import React from 'react';
  * current numbers. The screen must show the live ones.
  *
  * Query flags: ?none (no club), ?member (in a club I do not own),
- * ?guest, ?failure.
+ * ?guest, ?failure, ?roster (the full 24 the boards' header counts: the six
+ * they list, then eighteen more below them).
  */
 const flag = (name: string) => new URLSearchParams(location.search).has(name);
 const ME = 'test-self';
@@ -26,6 +28,7 @@ const MEMBERS = [
   { uid: 'mariyam', name: 'Mariyam', live: 55, stale: 2 },
   { uid: 'ibrahim', name: 'Ibrahim', live: 49, stale: 30 },
   { uid: 'hussain', name: 'Hussain', live: 42, stale: 7 },
+  ...(flag('roster') ? Array.from({ length: 18 }, (_, i) => ({ uid: 'm' + i, name: 'Member ' + (i + 7), live: 40 - i * 2, stale: 1 })) : []),
 ];
 
 const MY_CLUB = {
@@ -52,10 +55,14 @@ export const MAX_MEMBERS = 30;
 export const useAuth = () => ({
   user: { uid: ME, displayName: 'Sayyu' },
   isGuest: flag('guest'),
-  playerStats: { trophies: 58 },
+  playerStats: { trophies: 58, currentRank: 'Gold' },
 });
+/** The phone shell's coins chip: the boards' 1,240. */
+export const useEconomy = () => ({ state: { economy: { coins: 1240 }, profile: { vip: { active: false } } } });
+export const usePathname = () => '/clubs';
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
 export const useToast = () => ({ showToast: (message: string) => { document.body.dataset.toast = message; } });
-export const useTranslation = () => (key: string) => key;
+export const useTranslation = () => (key: string) => translate(key, 'en');
 export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }
 
 export const watchMyClub = (_uid: string, callback: any, error: any) => {

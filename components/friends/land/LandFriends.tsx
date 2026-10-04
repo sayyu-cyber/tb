@@ -33,6 +33,7 @@ export interface LandFriendsProps {
   isGuest: boolean;
   signInPrompt: string;
   signInLabel: string;
+  addFriendLabel: string;
   tab: "friends" | "requests";
   onTab: (next: "friends" | "requests") => void;
   friends: Friend[];
@@ -141,7 +142,7 @@ export function LandFriends(p: LandFriendsProps) {
                     <Empty icon={<Users aria-hidden="true" />} title={p.isGuest ? "Your squad starts here" : "No friends yet"}
                       text={p.isGuest ? p.signInPrompt : "Find your friends, share a table, and make your next match a team effort."}>
                       <button type="button" className="ar-btn sm" onClick={p.onOpenAdd}>
-                        <UserPlus aria-hidden="true" />{p.isGuest ? p.signInLabel : "Add Friend"}
+                        <UserPlus aria-hidden="true" />{p.isGuest ? p.signInLabel : p.addFriendLabel}
                       </button>
                     </Empty>
                   ) : p.visibleFriends.length === 0 ? (
@@ -258,7 +259,7 @@ export function LandFriends(p: LandFriendsProps) {
               </button>
             </div>
             <button type="button" className="ar-btn sm" style={{ flex: "none" }} onClick={p.onOpenAdd}>
-              <UserPlus aria-hidden="true" />Add Friend
+              <UserPlus aria-hidden="true" />{p.addFriendLabel}
             </button>
             <div className="grow scrl rcol">
               <section className="panel tick b" aria-label="Friend Suggestions">

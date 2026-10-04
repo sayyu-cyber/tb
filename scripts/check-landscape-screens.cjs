@@ -81,6 +81,17 @@ const SCREENS={
       {file:'chat',ref:'landscape-05b-chat',query:'?with=mariyam&name=Mariyam'},
     ],
   },
+  clubs:{
+    entry:'land-clubs-entry.tsx',mocks:'clubs-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/ToastContext','@/contexts/EconomyContext','next/navigation','@/lib/clubs','@/lib/messages','@/lib/friends','@/hooks/useTranslation','next/link'],
+    title:'CLUBS',route:'/clubs/',
+    states:[
+      {file:'clubs',ref:'landscape-06-clubs',query:'?roster',full:true},
+      {file:'club-chat',ref:'landscape-06b-club-chat',query:'?roster',full:true,before:async page=>{
+        await page.getByRole('button',{name:'Club Chat'}).click();
+      }},
+    ],
+  },
 };
 
 function build(name){
@@ -131,6 +142,8 @@ async function main(){
         if(state.before){await state.before(page);await page.waitForTimeout(600);}
         await page.mouse.move(1,1);
         const out=path.join(output,state.file+'.png');
+        // A state's set-up click can scroll the page; the reference is drawn from the top.
+        if(state.full) await page.evaluate(()=>scrollTo(0,0));
         await page.screenshot({path:out,fullPage:!!state.full});
         if(state.ref) await sideBySide(out,path.join(refs,state.ref+'.jpg'),path.join(compareDir,'landscape-'+state.file+'.png'));
         await page.context().close();

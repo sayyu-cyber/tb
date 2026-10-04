@@ -138,7 +138,8 @@ async function run() {
     for (const state of ['', '?none']) {
       await page.goto(BASE + '/clubs/' + state);
       await page.waitForTimeout(300);
-      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      // The wide screen's sizes. A phone gets LClubs, checked below.
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow ${state} ${width}`);
@@ -155,8 +156,6 @@ async function run() {
     await page.goto(BASE + '/clubs/');
     await page.waitForTimeout(300);
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MClubs's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 4, 'Every membership meter reports its value');
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
@@ -164,27 +163,46 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MClubs ────────────────────────────────────────────
-    // design/arena/boards/MClubs.dc.html. The two columns stack and reverse:
-    // your own club leads, Browse follows. The panel and the cards are the
-    // wide screen's own, so what they do is already covered above.
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-clubs.ar-page').count(), 0, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mclubs');
-    assert.equal(await phone.isVisible(), true, 'and MClubs takes over');
-    assert.equal(await phone.locator('.club-panel').count(), 1, 'Your own club leads');
-    assert.ok(await phone.locator('.club').count() > 0, 'and the browse cards follow it');
-    // The chat tab still subscribes and sends, from the one panel there is.
-    await phone.getByRole('button', { name: /Club Chat/ }).click();
-    await phone.locator('.club-composer').waitFor();
+    // ── On a phone: LClubs ──────────────────────────────────────────────
+    // design/arena/boards/LClubs.dc.html (+ LClubsChat). The phone is
+    // landscape only (design/arena/LANDSCAPE.md): your club leads as the
+    // hero - identity, capacity, vertical tabs, six members two by three -
+    // then the tagline with Create Club and the browse grid two by two.
+    // scripts/check-landscape-screens.cjs holds it against its references.
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.goto(BASE + '/clubs/?roster');
+    const phone = page.locator('.arena-lclubs');
+    await phone.locator('.hero').waitFor();
+    assert.equal(await page.locator('.arena-clubs.ar-page').count(), 0, 'The wide screen is unmounted');
+    assert.ok((await phone.locator('.idc').innerText()).includes('24 / 30 members'), 'The capacity');
+    assert.equal(await phone.locator('.idc [role=progressbar]').getAttribute('aria-valuenow'), '80', 'and its meter');
+    assert.equal(await phone.locator('.mgrid .mem').count(), 6, 'Six members, two by three');
+    assert.deepEqual(await phone.locator('.mem .pos').allTextContents(), ['1', '2', '3', '4', '5', '6']);
+    assert.equal(await phone.locator('.mem.you').count(), 1, 'Your row is ringed');
+    assert.equal(await phone.locator('.mem .kick').count(), 5, 'The owner can kick the other five');
+    await phone.getByRole('button', { name: 'All 24 members' }).click();
+    assert.equal(await phone.locator('.mgrid .mem').count(), 24, 'All of them, in the same panel');
+    await phone.getByRole('button', { name: 'Fewer members' }).click();
+    await phone.getByRole('button', { name: 'Club Chat' }).click();
+    await phone.locator('.cmsgs .cb2').first().waitFor();
+    assert.equal(await phone.locator('.cmsgs .cb2').count(), 4, 'The club chat');
+    await phone.getByRole('textbox', { name: 'Message the club' }).fill('See you there');
+    await phone.getByRole('button', { name: 'Send to club' }).click();
+    await page.waitForFunction(() => document.body.dataset.said === 'See you there');
     await phone.getByRole('button', { name: /Members \(/ }).click();
-    assert.ok(await phone.locator('.mem').count() > 0, 'and the ladder comes back');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mclubs-390.png'), fullPage: true });
+    await phone.locator('.mem').first().waitFor();
+    assert.equal(await phone.locator('.club').count(), 4, 'The browse cards follow');
+    assert.equal(await phone.locator('.band button').isDisabled(), true, 'One club at a time: Create Club waits');
+    for (const state of ['?none', '?guest', '?failure']) {
+      await page.goto(BASE + '/clubs/' + state);
+      await phone.waitFor();
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `No overflow at 844 ${state}`);
+    }
+    await page.screenshot({ path: path.join(output, 'lclubs-844.png'), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Clubs: MClubs held upright, board structure, tags and capacities, all four card states, My Club with LIVE member trophies (code issue 10), owner-only kick, club chat, leave, join, search, guest/error states, seven widths and accessibility passed.');
+    console.log('Clubs: LClubs on a phone, board structure, tags and capacities, all four card states, My Club with LIVE member trophies (code issue 10), owner-only kick, club chat, leave, join, search, guest/error states, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
