@@ -80,6 +80,9 @@ export default function Link({ href, children, ...props }: React.AnchorHTMLAttri
   return <a href={href} {...props}>{children}</a>;
 }
 
+/** The phone top bar and rail read the route: this is Home. */
+export function usePathname() { return "/home"; }
+
 /** next/navigation's useRouter, for the covers' click handlers. */
 export function useRouter() {
   return {

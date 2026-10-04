@@ -8,8 +8,8 @@ import { ArenaQuickPlay } from "@/components/home/arena/ArenaQuickPlay";
 import {
   ArenaRankCard, ArenaLeagueCard, ArenaShortcuts, ArenaUpdates, ArenaHomeFooter,
 } from "@/components/home/arena/ArenaHomeLower";
-import { PhoneHome } from "@/components/home/phone/PhoneHome";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { LandHome } from "@/components/home/land/LandHome";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 
 /**
  * Home — design/arena/screens/app/app-01-home.jpg, from the Home board.
@@ -22,28 +22,26 @@ import { usePhonePortrait } from "@/hooks/usePhonePortrait";
  * ArenaSprite mounts the suit symbols the fanned cards reference. It is a
  * <defs>-only SVG, so it takes no space.
  *
- * ONE MOUNTED COMPOSITION. Held upright a phone gets MHome
- * (design/arena/boards/MHome.dc.html): the same ten sections in the same
- * order, recomposed for 390px. The shared portrait hook selects one tree,
- * avoiding duplicate headings, controls and data subscriptions. Mode stays
- * in this page so rotating preserves the player's choice.
+ * ONE MOUNTED COMPOSITION. A phone gets LHome
+ * (design/arena/boards/LHome.dc.html): the same sections recomposed for a
+ * phone held sideways. One hook selects one tree, avoiding duplicate
+ * headings, controls and data subscriptions. Mode stays in this page so it
+ * survives the switch.
  */
 export default function HomePage() {
   // The board draws a static "All Modes" select. The app has a casual and a
   // ranked pool per game, so the choice is real and changes where the two
   // covers send you.
   const [mode, setMode] = useState<"casual" | "ranked">("casual");
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
 
   return (
     <>
       <ArenaSprite />
       {phone ? (
-        <div className="portrait-view">
-          <PhoneHome mode={mode} onMode={setMode} />
-        </div>
+        <LandHome mode={mode} onMode={setMode} />
       ) : (
-      <div className="landscape-view">
+      <div className="desk-view">
         <div className="arena-home ar-page" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
           <ArenaHomeHero />
           <ArenaLockBar />

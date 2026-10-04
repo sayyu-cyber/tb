@@ -32,6 +32,14 @@
 .app-shell .app-sidebar,
 .app-shell .app-shell-toolbar { display: revert; }
 
+/* The boards are drawn on a bare page: text at `line-height: normal` and
+   form controls at the browser's own size. The app's base layer (Tailwind's
+   preflight) sets 1.5 and makes controls inherit 16px, which grew every
+   landscape panel by a few pixels a line. Put back for the landscape roots
+   only, and at no specificity, so every board rule still wins. */
+.arena-land { line-height: normal; }
+:where(.arena-land) :where(button, input, select, textarea) { font-size: 13.3333px; line-height: normal; }
+
 /* A screen with both compositions in the DOM shows one: the board's
    landscape phone screen, or the desktop one. */
 .phone-view { display: none; }

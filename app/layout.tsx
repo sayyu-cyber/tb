@@ -43,7 +43,6 @@ import "@/styles/arena-screens.css";
 // half: fixed chrome, safe areas, and the media queries that decide which
 // shell is on screen.
 import "@/styles/arena-phone.css";
-import "@/styles/arena-mhome.css";
 // MRotate is the gate over a table held upright.
 import "@/styles/arena-mrotate.css";
 // The four the phone gets held sideways: the Play lobby, the two tables and

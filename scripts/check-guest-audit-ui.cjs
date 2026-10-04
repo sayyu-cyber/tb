@@ -72,9 +72,9 @@ async function run() {
     assert.ok(snapshots > 0, 'Economy provider hydrates the authoritative snapshot as a guest');
     assert.equal(protectedWrites, 0, 'Hydration never writes protected cosmetics directly');
     assert.equal(await page.locator('main h1').count(), 1, 'Home mounts one heading');
-    assert.equal(await page.locator('.arena-mhome').count(), 0, 'Desktop has no hidden phone tree');
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.locator('.arena-mhome').waitFor();
+    assert.equal(await page.locator('.arena-lhome').count(), 0, 'Desktop has no hidden phone tree');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.locator('.arena-lhome').waitFor();
     assert.equal(await page.locator('.arena-home').count(), 0, 'Phone has no hidden desktop tree');
     assert.equal(await page.locator('main h1').count(), 1);
     await page.setViewportSize({ width: 1440, height: 900 });

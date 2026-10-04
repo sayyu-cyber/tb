@@ -110,27 +110,29 @@ async function run() {
       await page.screenshot({ path: path.join(output, 'home-' + width + '.png'), fullPage: true });
     }
 
-    // ── Held upright: MHome ─────────────────────────────────────────────
-    // design/arena/boards/MHome.dc.html. The same ten sections in the same
-    // order, recomposed for 390px - nothing dropped. Only one composition
-    // mounts, so hidden controls and subscriptions are not duplicated.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LHome ───────────────────────────────────────────────
+    // design/arena/boards/LHome.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md); the same sections recomposed for 844x390,
+    // nothing dropped. Only one composition mounts, so hidden controls and
+    // subscriptions are not duplicated. scripts/check-landscape-screens.cjs
+    // holds it against its reference.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
     assert.equal(await page.locator('.arena-home.ar-page').count(), 0, 'The wide screen is unmounted');
-    const phone = page.locator('.arena-mhome');
-    assert.equal(await phone.isVisible(), true, 'and MHome takes over');
-    assert.equal(await phone.locator('.mhero .cardw').count(), 4, "The hero's four Tens");
-    assert.equal(await phone.locator('.mstat').count(), 6, 'Six stat tiles');
+    const phone = page.locator('.arena-lhome');
+    assert.equal(await phone.isVisible(), true, 'and LHome takes over');
+    assert.equal(await phone.locator('.lhero .cardw').count(), 4, "The hero's four Tens");
+    assert.equal(await phone.locator('.lstat').count(), 3, 'Trophies, wins and win rate');
     assert.equal(await phone.locator('.cover').count(), 2, 'Both game covers');
-    assert.equal(await phone.locator('.sc').count(), 9, 'All nine shortcuts, as on the wide screen');
-    assert.ok(await phone.locator('.news').count() > 0, 'and the updates scroller');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mhome-390.png'), fullPage: true });
+    assert.equal(await phone.locator('.ltile').count(), 9, 'All nine shortcuts, as on the wide screen');
+    assert.ok(await phone.locator('.news').count() > 0, 'and the updates');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lhome-844.png'), fullPage: true });
 
     // ── Accessibility ───────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.locator('.arena-home.ar-page').waitFor();
-    assert.equal(await page.locator('.arena-mhome').count(), 0, 'The phone screen is unmounted');
+    assert.equal(await page.locator('.arena-lhome').count(), 0, 'The phone screen is unmounted');
     const unlabelled = await page.locator('button:not([aria-label]):not(:has-text(""))').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
@@ -150,7 +152,7 @@ async function run() {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
 
     assert.deepEqual(errors, []);
-    console.log('Home: board structure, board figures, lock-bar state, cover routing incl. guest, seven widths, MHome held upright, accessibility and reduced motion passed.');
+    console.log('Home: board structure, board figures, lock-bar state, cover routing incl. guest, seven widths, LHome on a phone, accessibility and reduced motion passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

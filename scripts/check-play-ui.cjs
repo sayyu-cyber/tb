@@ -318,7 +318,7 @@ async function run() {
     await touch.close();
 
     assert.deepEqual(errors, [], 'No page errors');
-    console.log('✓ Play lobby matches lobby-01, lobby-02, PLobby, MPlay and MPlayFind');
+    console.log('✓ Play lobby matches lobby-01, lobby-02 and PLobby, with PLobby kept mounted upright');
   } finally {
     await browser.close();
   }
