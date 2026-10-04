@@ -11,23 +11,17 @@ import { Sheet } from "./Sheet";
 import { MORE_TILES } from "./phoneTabs";
 
 /**
- * The More sheet — design/arena/boards/MMore.dc.html,
- * design/arena/screens/phone/phone-01b-more-menu.jpg.
+ * The More panel - design/arena/boards/LMore.dc.html,
+ * design/arena/screens/landscape/landscape-01b-more-panel.jpg.
  *
- * The board's order, which is deliberate: who you are, then the upsell,
- * then everywhere the five-slot bar cannot reach, then Settings. It is the
- * phone's answer to the desktop rail's ten icons - nothing is dropped, it
- * just lives one tap deeper.
+ * A 540px side panel off the rail (`.sheet.w2.tick`). Left, 196px: your
+ * avatar, name and rank, View profile, the VIP card and Settings. Right:
+ * Explore, a 3x3 grid of tiles - every destination the rail cannot hold.
+ * Weekend League carries its live dot while the league is running, and
+ * Messages its unread count.
  *
- * Markup and inline values are the board's, so the two can be read side by
- * side: `.av`, `.rank`, `.link`, `.mvip`, the 3x3 `.mtile` grid and `.acts2`.
- * Those classes are generated into styles/arena-mmore.css under
- * `.arena-mmore`, which is why the sheet carries that namespace - the portal
- * lands outside the shell.
- *
- * The Weekend League tile carries a live pip only while the league is
- * actually running, and Messages carries its unread count, so both say
- * something true rather than decorating the grid.
+ * LMore and LHome are one stylesheet (the boards' CSS is identical), so the
+ * panel travels with the `arena-lhome` namespace for `.mvip` and its tiles.
  */
 export function MoreSheet({
   open,
@@ -47,76 +41,69 @@ export function MoreSheet({
   const tier = playerStats?.currentRank || getRankFromTrophies(trophies);
 
   return (
-    <Sheet open={open} onClose={onClose} label={t("nav_moreTitle")} namespace="arena-mmore">
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
-        <div className="av" aria-hidden="true" style={{ width: "46px", height: "46px", borderRadius: "12px", fontSize: "20px" }}>
-          {name.charAt(0).toUpperCase()}
+    <Sheet open={open} onClose={onClose} label={t("nav_moreTitle")} namespace="arena-lhome" className="w2"
+      style={{ display: "flex", gap: "16px", padding: "16px" }}>
+      <div style={{ flex: "none", width: "196px", display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "11px" }}>
+          <div className="av" aria-hidden="true" style={{ width: "44px", height: "44px", borderRadius: "12px", fontSize: "19px" }}>
+            {name.charAt(0).toUpperCase()}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+            <b className="disp" style={{ fontSize: "17px", letterSpacing: ".02em" }}>{name}</b>
+            {/* RankLabel because the board's class for Platinum is `.plat`,
+                not `platinum` - lower-casing the tier would drop the colour. */}
+            <RankLabel tier={tier}>{`${tier} · ${trophies.toLocaleString()}`}</RankLabel>
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-          <b className="disp" style={{ fontSize: "18px", letterSpacing: ".02em" }}>{name}</b>
-          {/* RankLabel because the board's class for Platinum is `.plat`,
-              not `platinum` - lower-casing the tier would drop the colour. */}
-          <RankLabel tier={tier}>{`${tier} · ${trophies.toLocaleString()}`}</RankLabel>
-        </div>
-        <Link className="link" href="/profile" onClick={onClose} style={{ marginLeft: "auto" }}>
-          {t("nav_profile")}
+        <Link className="link" href="/profile" onClick={onClose} style={{ alignSelf: "flex-start" }}>
+          {t("more_viewProfile")}
           <ChevronRight aria-hidden="true" />
         </Link>
-      </div>
-
-      <div className="mvip">
-        <span className="cr" aria-hidden="true"><Crown /></span>
-        <div style={{ position: "relative", flex: "1 1 0" }}>
-          <span className="lbl" style={{ color: "#8AF0F5", fontSize: "10px" }}>{t("vip_upgradeTo")}</span>
-          <div className="disp" style={{ marginTop: "5px", fontSize: "19px" }}>{t("nav_vipPass")}</div>
-          <p style={{ margin: "5px 0 0", fontSize: "12px", lineHeight: 1.35, fontWeight: 500, color: "#C4C4CE" }}>
-            {t("vip_blurb")}
+        <div className="mvip">
+          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span className="cr" aria-hidden="true"><Crown /></span>
+            <div>
+              <span className="lbl" style={{ color: "#8AF0F5", fontSize: "9px" }}>{t("vip_upgradeTo")}</span>
+              <div className="disp" style={{ marginTop: "4px", fontSize: "17px" }}>{t("nav_vipPass")}</div>
+            </div>
+          </div>
+          <p style={{ position: "relative", margin: 0, fontSize: "11.5px", lineHeight: 1.35, fontWeight: 500, color: "#C4C4CE" }}>
+            {t("more_vipBlurb")}
           </p>
+          <Link href="/shop?tab=vip" className="ar-btn blue xs" onClick={onClose}
+            style={{ position: "relative", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 3px 0 #00727A" }}>
+            {t("vip_viewPlans")}
+          </Link>
         </div>
-        <Link
-          href="/shop?tab=vip"
-          className="ar-btn blue sm"
-          onClick={onClose}
-          style={{
-            position: "relative", height: "38px", padding: "0 12px", fontSize: "11.5px",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 4px 0 #00727A",
-          }}
-          data-flat
-        >
-          {t("vip_viewPlans")}
-        </Link>
+        <div className="acts2" style={{ marginTop: "auto" }}>
+          <Link href="/settings" onClick={onClose} style={{ height: "44px" }}>
+            <Settings aria-hidden="true" />
+            {t("settings_title")}
+            <ChevronRight aria-hidden="true" style={{ marginLeft: "auto", width: "16px", height: "16px" }} />
+          </Link>
+        </div>
       </div>
 
-      <div
-        className="more-grid"
-        style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px", marginTop: "12px" }}
-      >
-        {MORE_TILES.map((tile) => {
-          const Icon = tile.icon;
-          const badge = tile.badge === "unreadMessages" ? unread : 0;
-          const live = tile.live && isWeekendLeague;
-          return (
-            <Link
-              key={tile.href}
-              href={tile.href}
-              className={`mtile ${live ? "hot" : ""}`.trim()}
-              onClick={onClose}
-            >
-              <Icon aria-hidden="true" />
-              {t(tile.labelKey)}
-              {live && <i className="lv" aria-label={t("common_live")} />}
-              {badge > 0 && <span className="bdg">{badge > 9 ? "9+" : badge}</span>}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="acts2" style={{ marginTop: "12px" }}>
-        <Link href="/settings" onClick={onClose}>
-          <Settings aria-hidden="true" />
-          {t("settings_title")}
-          <ChevronRight aria-hidden="true" style={{ marginLeft: "auto", width: "17px", height: "17px" }} />
-        </Link>
+      <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+        <span className="lbl dash">{t("more_explore")}</span>
+        <div className="more-grid" style={{
+          flex: "1 1 0", minHeight: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gridTemplateRows: "repeat(3, minmax(0, 1fr))", gap: "8px",
+        }}>
+          {MORE_TILES.map((tile) => {
+            const Icon = tile.icon;
+            const badge = tile.badge === "unreadMessages" ? unread : 0;
+            const live = tile.live && isWeekendLeague;
+            return (
+              <Link key={tile.href} href={tile.href} className={live ? "ltile hot" : "ltile"} onClick={onClose}>
+                <Icon aria-hidden="true" />
+                {t(tile.labelKey)}
+                {live && <i className="lv" aria-label={t("common_live")} />}
+                {badge > 0 && <span className="bdg">{badge > 9 ? "9+" : badge}</span>}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </Sheet>
   );

@@ -1,23 +1,26 @@
 /* The phone shell: the app-only half.
  *
- * styles/arena-phone.css is the boards' own CSS, generated. The boards are
- * single 390x844 artboards, so they can pin the stage, the top bar, the tab
- * bar and the sheet host to a box of that exact height. A real phone is not
- * 844 tall, has a notch and a home indicator, and scrolls. This file is the
- * difference, and nothing else: no colour, no radius, no type size, no
- * timing. Those all come from the generated sheet.
+ * styles/arena-land.css is the landscape layer's own CSS, generated from
+ * design/arena/landscape-reference.css, and each screen's board sheet sits
+ * on top of it. The boards are single 844x390 artboards, so they pin the
+ * stage, the rail, the top bar and the side panels to a box of that exact
+ * size. A real phone is 360 to 430 tall, has a notch on one side and a home
+ * indicator, and scrolls. This file is the difference, and nothing else: no
+ * colour, no radius, no type size, no timing. Those all come from the
+ * generated sheets.
  *
  * Two jobs:
- *   1. Turn the board's `position:absolute; height:844px` boxes into fixed
- *      chrome with safe-area insets.
+ *   1. Turn the board's `position:absolute` boxes into fixed chrome with the
+ *      safe-area insets.
  *   2. Decide which shell is on screen. That is CSS, not JavaScript, so the
  *      first paint is already right and turning the phone costs nothing.
  *
- * WHEN THE PHONE SHELL APPLIES (design/arena/MOBILE.md "Two orientations"):
- *   - below 768px wide, and
- *   - on a phone held sideways, which is
- *     (orientation: landscape) and (max-height: 500px) and (pointer: coarse)
- * Desktop at 768 and up is untouched.
+ * WHEN THE PHONE SHELL APPLIES (design/arena/LANDSCAPE.md "Orientation"):
+ *   (orientation: landscape) and (max-height: 500px)
+ * Held upright (portrait, under 768 wide) the turn gate covers the page,
+ * and the page underneath keeps the phone shell, so turning back is
+ * instant and nothing remounts. hooks/usePhoneLayout.ts holds the same
+ * strings. Desktop at 768 and up with a normal height is untouched.
  */
 
 /* ── Which shell ──────────────────────────────────────────────────────
@@ -26,299 +29,48 @@
    also takes the hidden one out of the accessibility tree, so a screen
    reader is never offered two navigations. */
 .phone-chrome { display: none; }
-/* The phone podium's fixed 358px composition needs smaller columns on
-   narrow phones; the reference-size positions stay intact above 360px. */
-@media (max-width: 360px) {
-  .arena-mleaderboard .podium .pl {
-    width: calc((100% - 10px) / 3);
-    margin-left: 0 !important;
-  }
-  .arena-mleaderboard .podium .place-2 { left: 0 !important; }
-  .arena-mleaderboard .podium .place-1 {
-    margin-left: calc((10px - 100%) / 6) !important;
-  }
-  .arena-mleaderboard .podium .place-3 { left: auto !important; right: 0; }
-  .arena-mleaderboard .podium .who { width: 100%; }
-  .arena-mleaderboard .podium .who b {
-    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .arena-mleaderboard .podium .plinth { width: calc(100% - 12px); }
-}
 .app-shell .app-sidebar,
 .app-shell .app-shell-toolbar { display: revert; }
 
-@media (max-width: 767px),
-       (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+/* A screen with both compositions in the DOM shows one: the board's
+   landscape phone screen, or the desktop one. */
+.phone-view { display: none; }
+.desk-view { display: contents; }
+
+@media (orientation: landscape) and (max-height: 500px),
+       (orientation: portrait) and (max-width: 767px) {
   .phone-chrome { display: contents; }
+  .phone-view { display: contents; }
+  .desk-view { display: none; }
   /* The desktop rail and top bar step aside entirely - the phone has its
-     own of each, and two top bars would eat a third of the screen. */
+     own of each. */
   .app-shell .app-sidebar,
   .app-shell .app-shell-toolbar { display: none; }
   .app-shell { display: block; }
   .app-shell-main { padding-bottom: 0; }
 
-  /* The board's `.mstage` is the page background; on a phone it is the
-     whole viewport rather than the top 844px of it. */
-  .arena-phone .mstage {
+  /* The stage is the page background: fixed to the viewport behind
+     everything, rather than the board's top 390px. */
+  .arena-land.land .mstage {
     position: fixed;
     inset: 0;
     height: auto;
     z-index: 0;
   }
 
-  /* 60px plus the notch. The board writes the height flat because an
-     artboard has no notch to clear. */
-  .arena-phone .mtop {
+  /* ── The rail ──────────────────────────────────────────────────────
+     76px plus the notch when it is on the left. */
+  .arena-land.land .mrail {
     position: fixed;
-    top: 0;
-    height: calc(60px + env(safe-area-inset-top));
-    padding-top: env(safe-area-inset-top);
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(14px, env(safe-area-inset-right));
-  }
-
-  /* 62px of bar plus the board's 22px of home-indicator room, which on a
-     real phone is env() instead. */
-  .arena-phone .mtab {
-    position: fixed;
-    bottom: 0;
-    height: calc(62px + max(22px, env(safe-area-inset-bottom)));
-    padding-bottom: max(22px, env(safe-area-inset-bottom));
-  }
-  /* More is a button here, not the board's `<a href="#more">`: it opens a
-     sheet rather than navigating. Same pixels, honest semantics - which
-     means the button has to be given the slot recipe the generated sheet
-     writes for `a`, not just a reset. Value for value from
-     `.arena-phone .mtab a` in styles/arena-phone.css; a button resets its
-     own border, background, font and cursor, so those are set back. */
-  .arena-phone .mtab button,
-  .arena-phone .mrail button {
-    border: 0;
-    background: none;
-    cursor: pointer;
-  }
-  .arena-phone .mtab button {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 5px;
-    padding: 9px 0 0;
-    color: #8E8E9C;
-    font-family: var(--font-display), sans-serif;
-    font-weight: 700;
-    font-size: 9.5px;
-    line-height: 1;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-  }
-  .arena-phone .mtab button .ti {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 30px;
-    border-radius: 9px;
-    transition: background .2s, color .2s;
-  }
-  .arena-phone .mtab button svg { width: 20px; height: 20px; }
-  .arena-phone .mtab button[aria-current="page"] { color: #fff; }
-  .arena-phone .mtab button[aria-current="page"] .ti {
-    color: #0A0A0A;
-    background: #C6FF33;
-    box-shadow: 0 0 18px rgba(198, 255, 51, .35);
-  }
-  .arena-phone .mtab button:focus-visible { outline: none; }
-  .arena-phone .mtab button:focus-visible .ti { box-shadow: 0 0 0 2px #fff; }
-
-  /* The same in reverse for the chip rows: the generated sheet writes them
-     as `button`, because a board's chips only ever switch a section. On
-     Profile two of the five go somewhere - Achievements and Settings are
-     routes - so they are links, and a link needs the chip recipe too.
-     Value for value from `.arena-phone .chips button`. */
-  .arena-phone .chips a {
-    flex: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    height: 38px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 10px;
-    cursor: pointer;
-    background: rgba(255, 255, 255, .04);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
-    color: #BEBECA;
-    text-decoration: none;
-    font-family: var(--font-display), sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  .arena-phone .chips a svg { width: 15px; height: 15px; }
-  .arena-phone .chips a[aria-current="page"] {
-    background: #C6FF33;
-    color: #0A0A0A;
-    box-shadow: none;
-  }
-  .arena-phone .chips a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-
-  /* The page clears both bars. The board's own 78/110 padding assumes its
-     flat 60 and 84; these add the insets. */
-  .arena-phone .mpage,
-  .arena-phone .ar-page {
-    padding-top: calc(78px + env(safe-area-inset-top));
-    padding-bottom: calc(110px + env(safe-area-inset-bottom));
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-  }
-
-  /* Sheets: the board draws them inside its 844px box, so the host is
-     fixed to the viewport here. */
-  .arena-phone .mview,
-  .phone-sheet-host {
-    position: fixed;
-    inset: 0;
-    height: auto;
-    z-index: 70;
-  }
-  .arena-phone .mscrim {
-    position: absolute;
-    inset: 0;
-    height: auto;
-    border: 0;
-    width: 100%;
-  }
-  .arena-phone .sheet {
-    max-height: calc(100dvh - 64px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-bottom: calc(34px + env(safe-area-inset-bottom));
-  }
-  /* The 40x5 handle from MOBILE.md "Patterns". The boards draw it as part
-     of each sheet's markup; one component draws it once here. */
-  .arena-phone .sheet-handle {
-    display: block;
-    width: 40px;
-    height: 5px;
-    margin: 0 auto 12px;
-    border-radius: 99px;
-    background: rgba(255, 255, 255, .22);
-  }
-
-  /* The Play lobby's docked PLAY button. The board pins it inside its own
-     390x844 box at `bottom: 84px`, which is exactly the tab bar's height;
-     here the bar is fixed and its height includes the home indicator, so
-     the dock follows it. */
-  .arena-mplay .dock {
-    position: fixed;
-    bottom: calc(62px + max(22px, env(safe-area-inset-bottom)));
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-  }
-
-  /* ── The chat thread (MChat) ───────────────────────────────────────
-     design/arena/MOBILE.md "Thread": "The chat is its own screen: it slides
-     in (`slideIn` .32s), hides the tab bar and pins the composer to the
-     bottom." The board draws it `position:absolute; inset:0` inside its own
-     390x844 box; on a real phone that is the viewport, the notch and the
-     home indicator. The tab bar goes because the thread covers it - one
-     `:has()` rather than state passed up to the shell. */
-  .arena-mchat .chat {
-    position: fixed;
-    inset: 0;
-    padding-top: env(safe-area-inset-top);
-  }
-  .arena-mchat .composer {
-    padding-bottom: calc(30px + env(safe-area-inset-bottom));
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
-  }
-  .arena-mchat .chead {
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
-  }
-  body:has(.arena-mchat .chat) .mtab,
-  body:has(.arena-mchat .chat) .mtop { display: none; }
-
-  /* ── The claim celebration (MRewards) ──────────────────────────────
-     The board pins `.cel` at `top: 190px` inside its own 844px viewport
-     box - roughly the middle of it, worked out per tap. On a real phone
-     the viewport is the phone, so it centres instead. `margin-block:auto`
-     between two zero insets rather than a translate, because `pop` ends
-     on `transform: none` and would wipe one out. */
-  .arena-mrewards .cel {
-    top: 0;
-    bottom: 0;
-    height: fit-content;
-    margin-block: auto;
-  }
-
-  /* ── Settings' chip row (MSettings) ────────────────────────────────
-     The chips scroll to a section rather than swapping panels, as the
-     rail does on the wide screen. The top bar is fixed here, so a
-     section scrolled to `block: start` would land under it. */
-  .arena-msettings .sec2 {
-    scroll-margin-top: calc(72px + env(safe-area-inset-top));
-  }
-
-  /* The rail is the sideways shape only. */
-  .arena-phone .mrail { display: none; }
-}
-
-/* ── Held sideways (PHome) ────────────────────────────────────────────
-   The tab bar stands up as a 76px rail, the top bar shortens to 52 and
-   starts after it, and the page becomes one centred column up to 560px.
-   Sheets come in from the rail as a side panel instead of up from the
-   floor. */
-@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
-  .arena-phone .mtab { display: none; }
-
-  /* ── The rail (PHome) ──────────────────────────────────────────────
-     PHome is the shell held sideways, and the rail is the shell's own
-     chrome, so it sits outside every page and no page's namespace can
-     reach it: `.arena-phome .mrail` in the generated sheet matches
-     nothing. These are that sheet's rail rules, value for value, under
-     the class the shell does carry. Only the box changes - fixed rather
-     than absolute, and the safe area added - because the board draws it
-     inside its own 844x390 frame, and `a` becomes `:is(a, button)` because
-     the More slot opens a sheet rather than navigating. */
-  .arena-phone .mrail {
-    display: flex;
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 31;
-    flex-direction: column;
-    align-items: center;
-    padding-block: 8px;
     padding-left: env(safe-area-inset-left);
     width: calc(76px + env(safe-area-inset-left));
-    background: linear-gradient(90deg, rgba(15, 15, 19, .97), rgba(8, 8, 11, .97));
-    border-right: 1px solid rgba(255, 255, 255, .09);
   }
-  .arena-phone .mrail::before {
-    content: "";
-    position: absolute;
-    right: -1px;
-    top: 190px;
-    width: 1px;
-    height: 84px;
-    background: linear-gradient(180deg, rgba(198, 255, 51, 0), rgba(198, 255, 51, .8), rgba(198, 255, 51, 0));
-  }
-  .arena-phone .mrail .logo {
-    margin: 7px 0 16px;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    box-shadow: 0 0 0 1.5px #C6FF33, 0 0 14px rgba(198, 255, 51, .35);
-  }
-  .arena-phone .mrail .logo svg { width: 16px; height: 16px; }
-  .arena-phone .mrail :is(a, button) {
+  /* More is a button here, not the board's `<a href="#more">`: it opens a
+     panel rather than navigating. Same pixels, honest semantics - which
+     means the button needs the slot recipe the generated sheet writes for
+     `a`, value for value from `.mrail a` in styles/arena-land.css, plus the
+     border, background and cursor a button brings with it. */
+  .arena-land .mrail button {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -330,7 +82,6 @@
     background: none;
     cursor: pointer;
     color: #8E8E9C;
-    text-decoration: none;
     font-family: var(--font-display), sans-serif;
     font-weight: 700;
     font-size: 9px;
@@ -338,7 +89,7 @@
     letter-spacing: .12em;
     text-transform: uppercase;
   }
-  .arena-phone .mrail :is(a, button) .ti {
+  .arena-land .mrail button .ti {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -346,90 +97,134 @@
     height: 30px;
     border-radius: 9px;
   }
-  .arena-phone .mrail :is(a, button) svg { width: 19px; height: 19px; }
-  .arena-phone .mrail :is(a, button)[aria-current="page"] { color: #fff; }
-  .arena-phone .mrail :is(a, button)[aria-current="page"] .ti {
+  .arena-land .mrail button svg { width: 19px; height: 19px; }
+  .arena-land .mrail button[aria-current="page"] { color: #fff; }
+  .arena-land .mrail button[aria-current="page"] .ti {
     color: #0A0A0A;
     background: #C6FF33;
     box-shadow: 0 0 18px rgba(198, 255, 51, .35);
   }
-  .arena-phone .mrail :is(a, button):focus-visible { outline: none; }
-  .arena-phone .mrail :is(a, button):focus-visible .ti { box-shadow: 0 0 0 2px #fff; }
-  .arena-phone .mrail .bdg {
-    position: absolute;
-    left: calc(50% + 8px);
-    top: 1px;
-    min-width: 17px;
-    height: 17px;
-    padding: 0 4px;
-    border-radius: 5px;
-    background: #00BCC8;
-    color: #00191B;
-    font: 700 10px/17px var(--font-display), sans-serif;
-    letter-spacing: 0;
-    text-align: center;
-    box-shadow: 0 0 0 2px #0B0B0F;
-  }
-  /* The raised Play diamond, standing in the rail. */
-  .arena-phone .mrail a.play { color: #C6FF33; margin: 8px 0 6px; gap: 6px; }
-  .arena-phone .mrail .pw { position: relative; width: 60px; height: 46px; }
-  .arena-phone .mrail .pw i {
-    position: absolute;
-    left: 12px;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    transform: rotate(45deg);
-  }
-  .arena-phone .mrail .pw .lip { top: 9px; background: #5E7F0E; box-shadow: 0 0 0 4px #0A0A0D; }
-  .arena-phone .mrail .pw .fc {
-    top: 5px;
-    background: linear-gradient(135deg, #E4FF8C 0%, #C6FF33 50%, #A5DD1A 100%);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55), 0 0 26px rgba(198, 255, 51, .45);
-    animation: playglow 2.6s ease-in-out infinite;
-  }
-  .arena-phone .mrail .pw svg {
-    position: absolute;
-    left: 50%;
-    top: 12px;
-    width: 22px;
-    height: 22px;
-    margin-left: -11px;
-    color: #0A0A0A;
-  }
-  .arena-phone .mtop {
+  .arena-land .mrail button:focus-visible { outline: none; }
+  .arena-land .mrail button:focus-visible .ti { box-shadow: 0 0 0 2px #fff; }
+
+  /* ── The top bar: 52px, starting after the rail ───────────────────── */
+  .arena-land.land .mtop {
+    position: fixed;
     left: calc(76px + env(safe-area-inset-left));
-    height: 52px;
-    padding-top: 0;
+    padding-right: max(14px, env(safe-area-inset-right));
   }
-  .arena-phone .mpage,
-  .arena-phone .ar-page {
+
+  /* ── The page: 64 at the top (52 + 12), 16 at the sides, 28 below ─── */
+  .arena-land.land .mpage {
     margin-left: calc(76px + env(safe-area-inset-left));
-    padding: 68px 104px 40px;
-    padding-right: max(104px, env(safe-area-inset-right));
+    padding-right: calc(16px + env(safe-area-inset-right));
+    padding-bottom: calc(28px + env(safe-area-inset-bottom));
   }
-  /* A 392px panel off the rail, on `sideIn` rather than `sheetUp`. */
-  .arena-phone .sheet {
-    left: calc(76px + env(safe-area-inset-left));
-    right: auto;
+  /* A fixed screen (Friends, Messages, Leaderboard, Settings) is exactly
+     one viewport tall and does not scroll; its panes scroll inside. The
+     boards write that height as 390px; on a real phone it is the visible
+     viewport. */
+  .arena-land.land .mpage.lfixed {
+    height: 100dvh;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  /* ── Side panels and dialogs ───────────────────────────────────────
+     The board draws them inside its own 844x390 frame; here the host is the
+     viewport. A left panel and its scrim start at the rail, which stays
+     lit; a right panel's scrim (`.full`) covers it. */
+  .phone-sheet-host {
+    position: fixed;
+    inset: 0;
+    height: auto;
+    z-index: 70;
+  }
+  .arena-land.land .mscrim {
+    position: absolute;
     top: 0;
     bottom: 0;
-    width: 392px;
-    max-height: none;
-    border-radius: 0 24px 24px 0;
-    padding-bottom: 24px;
-    animation: sideIn .38s cubic-bezier(.2, .9, .25, 1) both;
+    left: calc(76px + env(safe-area-inset-left));
+    right: 0;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
   }
-  .arena-phone .sheet-handle { display: none; }
+  .arena-land.land .mscrim.full { left: 0; }
+  .arena-land.land .sheet {
+    top: 0;
+    bottom: 0;
+    left: calc(76px + env(safe-area-inset-left));
+    height: auto;
+    max-height: none;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+  .arena-land.land .sheet.right {
+    left: auto;
+    right: 0;
+    padding-right: calc(16px + env(safe-area-inset-right));
+  }
+  .arena-land .sheet-handle { display: none; }
+  .arena-land.land .ldlg {
+    position: fixed;
+    left: calc(76px + env(safe-area-inset-left));
+    right: env(safe-area-inset-right);
+    top: 0;
+    bottom: 0;
+    height: auto;
+  }
+
+  /* ── The toast: 300 x 46 at the top right, under the bar ──────────── */
+  .phone-toasts {
+    position: fixed;
+    top: 62px;
+    right: calc(16px + env(safe-area-inset-right));
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 300px;
+    pointer-events: none;
+  }
+  .arena-land.land.phone-toasts .toast {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    pointer-events: auto;
+  }
+}
+
+/* A side panel's close button. No board draws one - Escape and the scrim
+   close a panel - but a keyboard needs something to land on, so it is in
+   the panel and only shows while it has focus. */
+.sheet-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: #121217;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+  cursor: pointer;
+  clip-path: inset(50%);
+}
+.sheet-close:focus-visible {
+  clip-path: none;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 /* ── Which composition (MPlay upright, PLobby sideways) ───────────────
-   design/arena/MOBILE.md "Turning the phone": the Play lobby is MPlay in
-   portrait and PLobby held sideways, so both are in the DOM and this
-   decides. The query is the phone shell's own width rule rather than the
-   gate's - a narrow window gets the phone chrome, so it gets the phone
-   composition too. hooks/usePhonePortrait.ts holds the same string, for the
-   two decisions that are actions rather than styles. */
+   The older pages still carry both their portrait and landscape screens;
+   portrait now sits under the turn gate. */
 .portrait-view { display: none; }
 /* `contents` rather than `block`, so neither wrapper is a box: the lobby
    board sizes itself against the shell's main column and would notice one. */
@@ -455,8 +250,7 @@
 
 @media (orientation: portrait) and (max-width: 767px) and (pointer: coarse) {
   /* Nothing behind the gate should scroll - but only where the gate is
-     actually rendered. Portrait is a supported layout now, so an
-     unconditional lock here would freeze every phone screen in the app. */
+     actually rendered. */
   body:has(.rotate-gate) { overflow: hidden; }
 
   .rotate-gate {
@@ -491,17 +285,18 @@
 
 /* ── Reduced motion ───────────────────────────────────────────────────
    The phone's own loops, alongside the ones styles/arena-shell.css
-   already stops. One-shot entrances (sheetUp, scrimIn, sideIn, slideIn,
-   pop) are left alone: they finish by themselves, and cancelling them
-   would leave a sheet mid-slide. */
+   already stops. One-shot entrances (scrimIn, sideIn, sideInR, pop, fade)
+   are left alone: they finish by themselves, and cancelling them would
+   leave a panel mid-slide. */
 @media (prefers-reduced-motion: reduce) {
   .arena-phone [data-ar-loop],
+  .arena-land [data-ar-loop],
   .arena-mrotate [data-ar-loop],
-  .arena-phone .mtab .pw .fc,
-  .arena-phone .mrail .pw .fc { animation: none !important; }
+  .arena-land .mrail .pw .fc,
+  .arena-land .ltile .lv { animation: none !important; }
 }
 
-/* Screen-reader-only text, for the label a sheet needs and the board does
+/* Screen-reader-only text, for the label a panel needs and the board does
    not draw. */
 .sr-only {
   position: absolute;

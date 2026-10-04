@@ -1051,6 +1051,24 @@ export const TRANSLATIONS: Record<string, Translations> = {
   table_ginStartLine: { en: "Draw, then discard. Build melds to cut your deadwood.", dv: "ކާޑެއް ނަގާ، ދެން އުކާލާ. މެލްޑް ހަދައިގެން ޑެޑްވުޑް ކުޑަކުރޭ.", hi: "पत्ता उठाएं, फिर फेंकें। मेल्ड बनाकर डेडवुड घटाएं।", bn: "কার্ড নিন, তারপর ফেলুন। মেল্ড বানিয়ে ডেডউড কমান।" },
   table_ginTakeOrDraw: { en: "Your turn. Take the {rank} or draw from the stock.", dv: "ތިބާގެ ފުރުޞަތު. {rank} ނަންގަވާ ނުވަތަ ސްޓޮކުން ނަންގަވާ.", hi: "आपकी बारी। {rank} लें या स्टॉक से उठाएं।", bn: "আপনার পালা। {rank} নিন বা স্টক থেকে তুলুন।" },
   table_leadAny: { en: "Your turn. Lead any card.", dv: "ތިބާގެ ފުރުޞަތު. ކޮންމެ ކާޑެއް ލީޑްކުރޭ.", hi: "आपकी बारी। कोई भी पत्ता चलें।", bn: "আপনার পালা। যেকোনো কার্ড দিয়ে শুরু করুন।" },
+
+  // The landscape phone's top bar (design/arena/LANDSCAPE.md "The shell"):
+  // the small lime label over each page's name, from the L* boards' `.mtop`.
+  ltop_profile: { en: "Your stats & achievements", dv: "ތިބާގެ ސްޓެޓްސް އަދި ކާމިޔާބީތައް", hi: "आपके आँकड़े और उपलब्धियाँ", bn: "আপনার পরিসংখ্যান ও অর্জন" },
+  ltop_inventory: { en: "Cosmetics and Room Cards", dv: "ކޮސްމެޓިކްސް އަދި ރޫމް ކާޑު", hi: "कॉस्मेटिक्स और रूम कार्ड", bn: "কসমেটিকস ও রুম কার্ড" },
+  ltop_friends: { en: "Connect and play", dv: "ގުޅިގެން ކުޅޭ", hi: "जुड़ें और खेलें", bn: "যুক্ত হন ও খেলুন" },
+  ltop_messages: { en: "Direct messages", dv: "ސީދާ މެސެޖު", hi: "डायरेक्ट मैसेज", bn: "সরাসরি বার্তা" },
+  ltop_clubs: { en: "Thaasbai Community", dv: "ތާސްބައި ކޮމިއުނިޓީ", hi: "थासबाई समुदाय", bn: "থাসবাই কমিউনিটি" },
+  ltop_leaderboard: { en: "Compete and climb the ranks", dv: "ވާދަކޮށް ރޭންކުތަކުގައި މައްޗަށް އަރާ", hi: "मुकाबला करें और रैंक चढ़ें", bn: "প্রতিযোগিতা করুন, র‍্যাঙ্কে উঠুন" },
+  ltop_achievements: { en: "Milestones & rewards", dv: "މައިލްސްޓޯންސް އަދި އިނާމު", hi: "माइलस्टोन और इनाम", bn: "মাইলফলক ও পুরস্কার" },
+  ltop_league: { en: "Double trophies this weekend", dv: "މި ހަފްތާ ބަންދު ޑަބަލް ޓްރޮފީ", hi: "इस वीकेंड डबल ट्रॉफी", bn: "এই সপ্তাহান্তে ডাবল ট্রফি" },
+  ltop_hallOfFame: { en: "Legends of the table", dv: "މޭޒުގެ ލެޖެންޑުން", hi: "टेबल के दिग्गज", bn: "টেবিলের কিংবদন্তি" },
+  ltop_shop: { en: "Cosmetics and coin packs", dv: "ކޮސްމެޓިކްސް އަދި ކޮއިން ޕެކް", hi: "कॉस्मेटिक्स और कॉइन पैक", bn: "কসমেটিকস ও কয়েন প্যাক" },
+  ltop_rewards: { en: "Come back every day", dv: "ކޮންމެ ދުވަހަކު އަނބުރާ އާދޭ", hi: "हर दिन वापस आएँ", bn: "প্রতিদিন ফিরে আসুন" },
+  // The More panel (LMore).
+  more_viewProfile: { en: "View profile", dv: "ޕްރޮފައިލް ބައްލަވާ", hi: "प्रोफ़ाइल देखें", bn: "প্রোফাইল দেখুন" },
+  more_vipBlurb: { en: "More matches, exclusive rewards and more.", dv: "އިތުރު މެޗު، ޚާއްޞަ އިނާމު އަދި އިތުރު ބައެއް.", hi: "ज़्यादा मैच, खास इनाम और भी बहुत कुछ।", bn: "আরও ম্যাচ, এক্সক্লুসিভ পুরস্কার এবং আরও অনেক কিছু।" },
+  more_explore: { en: "Explore", dv: "ހޯދާ ބައްލަވާ", hi: "एक्सप्लोर करें", bn: "ঘুরে দেখুন" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

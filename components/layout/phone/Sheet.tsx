@@ -42,18 +42,15 @@ function tabStops(root: HTMLElement): HTMLElement[] {
 }
 
 /**
- * The phone's bottom sheet — design/arena/MOBILE.md "Patterns", drawn on
- * MMore, MShopBuy and MFriends.
+ * The phone's side panel - design/arena/LANDSCAPE.md "Patterns", drawn on
+ * LMore, LFriendActions and LInventoryPreview.
  *
- * One component for all of them: the purchase confirm, the friend actions,
- * More. On the boards these are dialogs and dropdown menus on desktop; at
- * 390px a sheet is the pattern, so this replaces both.
- *
- * Top corners 24px, a 40x5 handle, a short lime line across the top edge
- * (`.tick`), `sheetUp` .42s `cubic-bezier(.2,.9,.25,1)` over a
- * `rgba(0,0,0,.66)` scrim with a 3px blur on `scrimIn` .25s. Held
- * sideways it comes in from the rail as a 392px side panel on `sideIn`
- * instead - one class, decided in CSS (styles/arena-phone-shell.css).
+ * The phone is landscape only, so the portrait bottom sheet is gone: a
+ * panel opens from the rail's edge, 392px (`.sheet`), 540px (`.sheet.w2`)
+ * or 640px (`.sheet.w3`), or from the right edge (`.sheet.right`), on
+ * `sideIn` .38s `cubic-bezier(.2,.9,.25,1)` over a `rgba(0,0,0,.66)` scrim
+ * with a 3px blur. A left panel's scrim starts at the rail, which stays
+ * lit; a right panel's covers it (`.mscrim.full`), as on the boards.
  *
  * Behaviour the boards imply but cannot show: Escape closes it, the scrim
  * closes it, focus moves in and returns to whatever opened it, the page
@@ -70,6 +67,8 @@ export function Sheet({
   headingId,
   className = "",
   namespace = "",
+  scrimFull = false,
+  dialog = false,
   style,
   children,
 }: {
@@ -83,8 +82,17 @@ export function Sheet({
    * rather than announcing the sheet's name twice.
    */
   headingId?: string;
-  /** Extra classes on the panel itself, e.g. "more-sheet". */
+  /** Extra classes on the panel itself: "w2", "w3", "right". */
   className?: string;
+  /** Cover the rail too, as the right-edge panels and dialogs do. */
+  scrimFull?: boolean;
+  /**
+   * A centred dialog on the content area instead of a side panel -
+   * LANDSCAPE.md "Patterns": `.ldlg > .card` on `pop` .32s, for the buy
+   * dialog, the not-enough-coins state and the claimed-day celebration.
+   * `className` then goes on the card. Its scrim covers the rail.
+   */
+  dialog?: boolean;
   /**
    * Inline layout on the panel, for the sheets whose boards write it inline
    * rather than in a class - MPlayFind centres its column that way.
@@ -167,8 +175,31 @@ export function Sheet({
     /* The portal lands on <body>, outside the shell, so the namespaces the
        generated sheets are scoped under have to travel with it - otherwise
        none of the board's classes match and the sheet arrives unstyled. */
-    <div ref={host} className={`arena-app arena-phone ${namespace} mview phone-sheet-host`.replace(/\s+/g, " ").trim()}>
-      <button type="button" className="mscrim" tabIndex={-1} aria-hidden="true" onClick={onClose} data-flat />
+    <div ref={host} className={`arena-app arena-phone arena-land land ${namespace} mview phone-sheet-host`.replace(/\s+/g, " ").trim()}>
+      <button type="button" className={scrimFull || dialog ? "mscrim full" : "mscrim"} tabIndex={-1} aria-hidden="true" onClick={onClose} data-flat />
+      {dialog ? (
+      <div className="ldlg">
+        <div
+          className={`card ${className}`.trim()}
+          style={style}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={headingId ?? titleId}
+          aria-label={label}
+          tabIndex={-1}
+          ref={panel}
+        >
+          {!headingId && <h2 id={titleId} className="sr-only">{label}</h2>}
+          {children}
+          {/* No board draws a close button - Escape and the scrim close a
+              panel - but a keyboard needs something to land on, so it is
+              here and only shows while it has focus (.sheet-close). */}
+          <button type="button" className="sheet-close" aria-label={`Close ${label}`} title={`Close ${label}`} onClick={onClose} data-flat>
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      ) : (
       <div
         className={`sheet tick ${className}`.trim()}
         style={style}
@@ -182,11 +213,14 @@ export function Sheet({
         <span className="sheet-handle" aria-hidden="true" />
         {!headingId && <h2 id={titleId} className="sr-only">{label}</h2>}
         {children}
-        <button type="button" aria-label={`Close ${label}`} title={`Close ${label}`} onClick={onClose}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "auto", width: 44, height: 44 }} data-flat>
+        {/* No board draws a close button - Escape and the scrim close a
+            panel - but a keyboard needs something to land on, so it is
+            here and only shows while it has focus (.sheet-close). */}
+        <button type="button" className="sheet-close" aria-label={`Close ${label}`} title={`Close ${label}`} onClick={onClose} data-flat>
           <X size={20} aria-hidden="true" />
         </button>
       </div>
+      )}
     </div>,
     document.body
   );

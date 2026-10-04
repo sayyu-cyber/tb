@@ -10,13 +10,16 @@ import { PhoneNav } from "./PhoneNav";
 import { MoreSheet } from "./MoreSheet";
 
 /**
- * The phone shell — design/arena/MOBILE.md "The phone shell".
+ * The phone shell - design/arena/LANDSCAPE.md "The shell".
  *
- * The top bar, the five-slot navigation and the More sheet. It renders on
- * every shelled screen alongside the desktop chrome; CSS decides which of
+ * The stage, the 52px top bar, the 76px rail and the More panel. It renders
+ * on every shelled screen alongside the desktop chrome; CSS decides which of
  * the two is on screen (styles/arena-phone-shell.css), so there is no
- * breakpoint in JavaScript, no flash of the wrong shell on first paint,
- * and nothing to re-run when the phone turns.
+ * breakpoint in JavaScript, no flash of the wrong shell on first paint, and
+ * nothing to re-run when the phone turns.
+ *
+ * The Play lobby is immersive (PLobby): no rail and no top bar, just its own
+ * back arrow. So on /play the shell draws nothing here.
  *
  * The two counts it shows are the same ones the desktop top bar shows -
  * incoming friend requests, and conversations whose last message is newer
@@ -30,7 +33,7 @@ export function PhoneChrome() {
   const [more, setMore] = useState(false);
   const [requests, setRequests] = useState<FriendRequestDoc[]>([]);
 
-  // A destination chosen from the sheet should leave it behind.
+  // A destination chosen from the panel should leave it behind.
   useEffect(() => { setMore(false); }, [pathname]);
 
   useEffect(() => {
@@ -40,6 +43,9 @@ export function PhoneChrome() {
     // destination, and the Friends page reports its own errors.
     return watchIncomingRequests(user.uid, setRequests, () => setRequests([]));
   }, [user?.uid, isGuest]);
+
+  const path = pathname.replace(/\/$/, "") || "/";
+  if (path === "/play") return null;
 
   const unread = user
     ? chats.filter((chat) =>

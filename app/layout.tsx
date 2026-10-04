@@ -44,8 +44,6 @@ import "@/styles/arena-screens.css";
 // shell is on screen.
 import "@/styles/arena-phone.css";
 import "@/styles/arena-mhome.css";
-import "@/styles/arena-mmore.css";
-import "@/styles/arena-phome.css";
 // MPlay is the portrait Play lobby; MPlayFind is MPlay with the rotate sheet
 // open, and its stylesheet came out byte-for-byte identical, so one sheet
 // serves both states. MRotate is the gate over a table held upright.
@@ -84,6 +82,11 @@ import "@/styles/arena-mshop.css";
 import "@/styles/arena-mshopvip.css";
 import "@/styles/arena-mrewards.css";
 import "@/styles/arena-msettings.css";
+// The landscape phone (design/arena/LANDSCAPE.md): the shell and layout
+// layer every L* board shares, then each screen's own board sheet. After the
+// portrait sheets above, which they replace screen by screen.
+import "@/styles/arena-land.css";
+import "@/styles/arena-lhome.css";
 import "@/styles/arena-phone-shell.css";
 import "@/styles/arena-rooms-app.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings

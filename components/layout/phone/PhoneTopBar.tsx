@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Plus, Bell, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
-import { CrownGlyph } from "@/components/arena";
 import { RANKS } from "@/constants/ranks";
-import { formatCoins } from "@/lib/wallet";
+import { topBarFor } from "./phoneTabs";
+import { useTopBarOverride } from "./topBarStore";
 
 /** The ring colour behind the avatar, by tier. */
 const TIER_RING: Record<string, string> = {
@@ -18,28 +19,29 @@ const TIER_RING: Record<string, string> = {
 };
 
 /**
- * The phone's top bar — design/arena/boards/MHome.dc.html (`.mtop`),
- * 60px plus the notch inset, sticky, with a 14px backdrop blur.
+ * The phone's 52px top bar - design/arena/LANDSCAPE.md "The shell", drawn on
+ * every L* board as `.mtop`. It starts after the rail, sticks to the top
+ * with a 14px blur, and comes in three kinds:
  *
- * Left: the lime logo diamond and the wordmark in chrome. Right, in the
- * board's order: the coins chip with its `+`, the bell with its blue
- * count, and your avatar ringed in your rank colour, which opens Profile.
+ *   home  the wordmark (LHome)
+ *   page  a small lime dashed label over the page name in chrome (LFriends,
+ *         LShop and the rest)
+ *   back  a back button and a title, for a drill-down (LRooms)
  *
- * The board hard-codes that ring gold, because its sample player is Gold.
- * MOBILE.md asks for "your rank colour", so the ring takes the tier's own
- * metal from constants/ranks - a Bronze player is ringed bronze rather than
- * everybody being painted Gold. It is an inline box-shadow rather than a
- * class because the board has no per-tier `.ava` variants to reach for.
- *
- * The desktop TopBar's search field is deliberately not here. The board
- * has no room for it at 390px and does not draw one; every destination is
- * two taps away through the tab bar instead.
+ * The right side is the same on all three: the coins chip with its `+`, the
+ * bell with its count, and your avatar ringed in your rank colour, each
+ * 34px. The board hard-codes that ring gold for its Gold sample player;
+ * here it takes the tier's own metal, so a Bronze player is ringed bronze.
  */
 export function PhoneTopBar({ notifications = 0 }: { notifications?: number }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const override = useTopBarOverride();
   const { user, playerStats } = useAuth();
-  const { state, balanceReady } = useEconomy();
+  const { state } = useEconomy();
   const t = useTranslation();
 
+  const bar = override ?? topBarFor(pathname) ?? { kind: "home" as const };
   const name = user?.displayName || t("profile_player");
   const coins = state.economy.coins;
   const tier = playerStats?.currentRank || "Bronze";
@@ -47,15 +49,26 @@ export function PhoneTopBar({ notifications = 0 }: { notifications?: number }) {
 
   return (
     <header className="mtop">
-      <Link href="/home" className="logo" aria-label={t("nav_home")}>
-        <CrownGlyph size={16} />
-      </Link>
-      <span className="word chrome">Thaasbai</span>
+      {bar.kind === "home" && <span className="word chrome" style={{ marginLeft: 0 }}>Thaasbai</span>}
+      {bar.kind === "page" && (
+        <div className="pg">
+          <span className="lbl dash">{bar.labelKey ? t(bar.labelKey) : bar.label}</span>
+          <h1 className="disp chrome">{t(bar.titleKey)}</h1>
+        </div>
+      )}
+      {bar.kind === "back" && (
+        <>
+          <button type="button" className="ibtn mback" aria-label={t("a11y_goBack")} onClick={() => router.push(bar.backHref)}>
+            <ChevronLeft aria-hidden="true" />
+          </button>
+          <span className="ttl">{bar.titleKey ? t(bar.titleKey) : bar.title}</span>
+        </>
+      )}
 
       <div className="tr">
-        <span className="coins" aria-label={`${balanceReady === false ? 'Updating balance' : formatCoins(coins)} ${t("common_coins")}`}>
+        <span className="coins" aria-label={`${coins.toLocaleString()} ${t("common_coins")}`}>
           <i className="gem" aria-hidden="true" />
-          {balanceReady === false ? '—' : formatCoins(coins)}
+          {coins.toLocaleString()}
           <Link href="/shop?tab=coins" className="add" aria-label={t("shop_getCoins")}>
             <Plus aria-hidden="true" />
           </Link>

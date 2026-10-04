@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Info, X, CircleCheck, CircleAlert } from "lucide-react";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 
 export type ToastKind = "success" | "error" | "info";
 
@@ -42,8 +43,16 @@ const STYLES: Record<ToastKind, { ring: string; icon: React.ReactNode }> = {
   },
 };
 
+/** The board's icon for each kind on the phone toast. */
+const PHONE_ICON: Record<ToastKind, React.ReactNode> = {
+  success: <CircleCheck aria-hidden="true" />,
+  error: <CircleAlert aria-hidden="true" style={{ color: "#FF6B80" }} />,
+  info: <Info aria-hidden="true" />,
+};
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const phone = usePhoneLayout();
 
   const dismiss = useCallback((id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -62,6 +71,26 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(() => ({ showToast }), [showToast]);
+
+  if (phone) {
+    // The phone's toast - design/arena/LANDSCAPE.md "Patterns": 300 x 46 at
+    // the top right, under the bar, on the board's `fade`. The boards draw
+    // only the success toast (a lime check); an error keeps the same card
+    // with the boards' error red on its icon.
+    return (
+      <ToastContext.Provider value={value}>
+        {children}
+        <div className="arena-app arena-land land phone-toasts" role="status" aria-live="polite">
+          {toasts.map((toast) => (
+            <div key={toast.id} className="toast" onClick={() => dismiss(toast.id)}>
+              {PHONE_ICON[toast.kind]}
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      </ToastContext.Provider>
+    );
+  }
 
   return (
     <ToastContext.Provider value={value}>

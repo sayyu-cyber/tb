@@ -6,24 +6,20 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { PHONE_TABS, activeTab, type PhoneTab } from "./phoneTabs";
 
 /**
- * The phone's five-slot navigation, in both of its shapes —
- * design/arena/boards/MHome.dc.html (`.mtab`) and PHome.dc.html (`.mrail`).
- *
- * Both are rendered and CSS decides which is on screen: the bar below the
- * page in portrait, the 76px rail down the left when the phone is held
- * sideways. No JavaScript reads the orientation, so there is no frame
- * where the wrong one shows and nothing to re-run on a turn - the same
- * trick the desktop sidebar uses for its spacer.
+ * The phone's rail - design/arena/LANDSCAPE.md "The shell", `.mrail` on
+ * every L* board: 76px down the left, the logo, then Home, Friends (with its
+ * blue badge), the raised Play diamond, Shop and More. The slot you are on
+ * wears the lime pill, and a short lime line sits on the rail's right edge.
  *
  * The middle slot is the board's raised diamond: a darker lip, a lime face
- * on the 2.6s `playglow` loop, and the gamepad over both.
+ * on the 2.6s `playglow` loop, and the gamepad over both. Play goes straight
+ * to the Play lobby (PLobby), which is immersive and has no rail.
  *
- * One departure from the board's markup, and only one: it writes More as
- * `<a href="#more">` with a click handler. More opens a sheet rather than
- * going anywhere, so here it is a real <button> carrying the sheet's open
- * state on aria-expanded. The board's CSS styles a slot by element - `a` -
- * so styles/arena-phone-shell.css gives the button the same recipe in both
- * shapes. Same pixels, honest semantics.
+ * One departure from the board's markup: it writes More as `<a href="#more">`
+ * with a click handler. More opens a side panel rather than going anywhere,
+ * so here it is a real <button> carrying the panel's state on aria-expanded.
+ * The board styles a slot by element - `a` - so styles/arena-phone-shell.css
+ * gives the button the same recipe. Same pixels, honest semantics.
  */
 
 function slotContent(tab: PhoneTab, label: string, badge: number) {
@@ -45,10 +41,19 @@ function slotContent(tab: PhoneTab, label: string, badge: number) {
   );
 }
 
-function Slots({ current, onMore, moreOpen, requests }: { current: string | null; onMore: () => void; moreOpen: boolean; requests: number }) {
+export function PhoneNav({ onMore, moreOpen = false, requests = 0 }: { onMore: () => void; moreOpen?: boolean; requests?: number }) {
+  const pathname = usePathname();
   const t = useTranslation();
+  const current = activeTab(pathname);
+
   return (
-    <>
+    <nav className="mrail" aria-label={t("nav_moreTitle")}>
+      <span className="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
+            d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7ZM5 21h14" />
+        </svg>
+      </span>
       {PHONE_TABS.map((tab) => {
         const label = t(tab.labelKey);
         const badge = tab.badge === "friendRequests" ? requests : 0;
@@ -81,29 +86,6 @@ function Slots({ current, onMore, moreOpen, requests }: { current: string | null
           </Link>
         );
       })}
-    </>
-  );
-}
-
-export function PhoneNav({ onMore, moreOpen = false, requests = 0 }: { onMore: () => void; moreOpen?: boolean; requests?: number }) {
-  const pathname = usePathname();
-  const t = useTranslation();
-  const current = activeTab(pathname);
-
-  return (
-    <>
-      <nav className="mtab" aria-label={t("nav_moreTitle")}>
-        <Slots current={current} onMore={onMore} moreOpen={moreOpen} requests={requests} />
-      </nav>
-      <nav className="mrail" aria-label={t("nav_moreTitle")}>
-        <span className="logo" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
-              d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7ZM5 21h14" />
-          </svg>
-        </span>
-        <Slots current={current} onMore={onMore} moreOpen={moreOpen} requests={requests} />
-      </nav>
-    </>
+    </nav>
   );
 }

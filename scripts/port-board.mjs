@@ -257,9 +257,39 @@ const positional = cssMode ? args.slice(1) : args;
 // fourteen chances for a shared piece to be shadowed by a stale copy of
 // itself. Only exact matches are dropped: a board that genuinely changes a
 // shared rule keeps its version.
+//
+// It takes a comma-separated list: the landscape boards embed both
+// app-reference.css and landscape-reference.css, and drop both.
 const minusAt = positional.indexOf("--minus");
 const minusFile = minusAt === -1 ? null : positional[minusAt + 1];
 if (minusAt !== -1) positional.splice(minusAt, 2);
+const minusFiles = minusFile ? minusFile.split(",").map(f => f.trim()).filter(Boolean) : [];
+
+// `--strip ".land|.m"` is for the landscape layer. Its boards are drawn
+// inside one root, `class="ar app m land"`, and their CSS reaches every
+// piece through it: `.land .mtop`, `.m .btn`. In the app that root is the
+// namespace element itself (the phone chrome, a phone page), which carries
+// the first token as a class: `.land .mtop` and `.m .btn` become
+// `.arena-land.land .mtop` and `.arena-land.land .ar-btn`. Compound rather
+// than dropped, so each rule still outranks the plain ones exactly as it did
+// on the board - the desktop sheets gained a class from their namespace,
+// and a root rule that lost one would start losing ties it used to win.
+// A rule for the root alone (`.m{background:#000}`) styles the artboard,
+// not the app, and is dropped.
+const stripAt = positional.indexOf("--strip");
+const stripRoots = stripAt === -1 ? [] : positional[stripAt + 1].split("|").map(s => s.trim()).filter(Boolean);
+if (stripAt !== -1) positional.splice(stripAt, 2);
+function stripRoot(selector) {
+  let out = selector.trim();
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const token of stripRoots) {
+      if (out === token) return null;
+      if (out.startsWith(token + " ")) { out = out.slice(token.length + 1).trim(); changed = true; }
+    }
+  }
+  return out;
+}
 
 // `--minus-shared` is the phone set's equivalent: it drops the computed
 // common layer (styles/arena-phone.css) instead of a named file.
@@ -373,10 +403,12 @@ if (tableBoards.length) {
 // class keeps its own version and only true duplicates are dropped.
 let shared = null;
 let dropped = 0;
-if (minusFile) {
+if (minusFiles.length) {
   shared = new Set();
-  const minusCss = retypeface(recolour(readFileSync(join(root, "design", "arena", minusFile), "utf8")));
-  postcss.parse(minusCss).walkRules(rule => shared.add(fingerprint(rule)));
+  for (const file of minusFiles) {
+    const minusCss = retypeface(recolour(readFileSync(join(root, "design", "arena", file), "utf8")));
+    postcss.parse(minusCss).walkRules(rule => shared.add(fingerprint(rule)));
+  }
 } else if (minusShared) {
   shared = sharedPhoneRules();
   // styles/arena-phone.css declares every phone keyframe once; a second
@@ -403,15 +435,22 @@ out.walkRules(rule => {
   // Keyframe steps (0%, from, to) are not selectors; prefixing them breaks
   // the animation silently.
   if (rule.parent?.type === "atrule" && /keyframes/.test(rule.parent.name)) return;
-  rule.selectors = rule.selectors.map(selector => {
+  const selectors = rule.selectors.map(selector => {
     const trimmed = selector.trim();
     if (trimmed === ":root" || trimmed.startsWith("@")) return selector;
     // `body`/`html` cannot be nested under the namespace; drop them - the app
     // sets its own page background.
     if (/^(body|html)\b/.test(trimmed)) return null;
-    return `${ns} ${trimmed}`;
+    if (!stripRoots.length) return `${ns} ${trimmed}`;
+    const rest = stripRoot(trimmed);
+    if (!rest) return null;
+    return rest === trimmed ? `${ns} ${rest}` : `${ns}${stripRoots[0]} ${rest}`;
   }).filter(Boolean);
-  if (rule.selectors.length === 0) rule.remove();
+  // Checked before assigning: postcss reads an empty selector back as [""],
+  // so testing after the assignment never removed the rule and left a bare
+  // `{margin:0;background:#000}` behind.
+  if (selectors.length === 0) { rule.remove(); return; }
+  rule.selectors = selectors;
 });
 
 const origin = cssMode ? `design/arena/${board}` : `design/arena/boards/${board}.dc.html`;
@@ -427,16 +466,25 @@ const header = `/* GENERATED from ${origin} by scripts/port-board.mjs.
   cssMode
     ? `
 
-   App-only geometry that the boards get free from their fixed 1440x900
-   canvas lives in styles/arena-shell.css, alongside the boards' keyframes.`
+   App-only geometry that the boards get free from their fixed ${stripRoots.length ? "844x390" : "1440x900"}
+   canvas lives in ${stripRoots.length ? "styles/arena-phone-shell.css" : "styles/arena-shell.css, alongside the boards' keyframes"}.`
     : ""
 }${
   minusFile || minusShared
     ? `
 
-   ${dropped} rules this board shares byte for byte with ${minusFile || "the phone set's common layer"}
-   were dropped: they are already in ${minusFile ? "styles/arena-app.css" : "styles/arena-phone.css"},
+   ${dropped} rules this board shares byte for byte with ${minusFiles.join(" and ") || "the phone set's common layer"}
+   were dropped: they are already in ${minusFiles.length ? minusFiles.map(f => f === "app-reference.css" ? "styles/arena-app.css" : f === "landscape-reference.css" ? "styles/arena-land.css" : f).join(" and ") : "styles/arena-phone.css"},
    ported once. A rule the board changed, however slightly, was kept.`
+    : ""
+}${
+  stripRoots.length
+    ? `
+
+   The boards draw everything inside one root (class="ar app m land") and
+   reach it through ${stripRoots.join(" / ")}; here the namespace element is that
+   root and carries ${stripRoots[0]}, so those prefixes become ${ns}${stripRoots[0]}. Rules
+   for the root alone are dropped.`
     : ""
 }${
   tableBoards.length

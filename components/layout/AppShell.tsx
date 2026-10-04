@@ -99,7 +99,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         {!inMatch && <AppSidebar />}
-        {!inMatch && <div className="phone-chrome"><PhoneChrome /></div>}
+        {/* `arena-land land` is the landscape layer's root (styles/arena-land.css):
+            the phone chrome and the phone screens carry it, never the shell,
+            so its phone-sized buttons and tabs cannot reach the desktop. */}
+        {!inMatch && <div className="phone-chrome arena-land land"><PhoneChrome /></div>}
       </div>
       </MatchGateProvider>
       </HomeSocialProvider>
