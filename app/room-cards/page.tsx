@@ -1,7 +1,9 @@
 "use client";
 
 import RoomCardManager from "@/components/roomcards/RoomCardManager";
+import { LandInventory } from "@/components/inventory/land/LandInventory";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 
 /**
  * Room Cards on its own route — design/arena/screens/app/app-03-inventory.jpg.
@@ -10,9 +12,12 @@ import { useTranslation } from "@/hooks/useTranslation";
  * Inventory (APP_SCREENS.md: "Collection and Room Cards use the Inventory
  * board's pieces"). This route renders that same panel under the Arena page
  * header, so the two are the same object rather than two drawings of one.
+ * On a phone it is Inventory's Room Cards tab (LInventoryRoom).
  */
 export default function RoomCardsPage() {
   const t = useTranslation();
+  const phone = usePhoneLayout();
+  if (phone) return <LandInventory initialTab="roomCards" />;
   return (
     <div className="arena-inventory ar-page" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div className="phead">

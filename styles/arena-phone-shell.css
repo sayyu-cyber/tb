@@ -39,6 +39,15 @@
    only, and at no specificity, so every board rule still wins. */
 .arena-land { line-height: normal; }
 :where(.arena-land) :where(button, input, select, textarea) { font-size: 13.3333px; line-height: normal; }
+/* Tracking inherits on the boards, so a chip's count reads at the chip's
+   letter-spacing; styles/globals.css resets every element to 0 at no
+   specificity, which stops that. Put inheritance back, also at none. */
+:where(.arena-land) :where(*) { letter-spacing: inherit; }
+/* The boards' root rule `.ar button { font-family: inherit }`. It is (0,1,1)
+   there, so it beats a bare class like `.tbtn` and the tile buttons read in
+   the UI face; one class more here keeps that against the namespaced
+   sheets, and the board rules that out-rank it there still do here. */
+.arena-land.is-land button { font-family: inherit; }
 
 /* The boards draw every chip as a button. A chip that opens another route
    (Profile's Achievements and Settings) is a link, so it can be
@@ -47,6 +56,12 @@
 .arena-land .chips > a svg { width: 15px; height: 15px; }
 .arena-land.is-land .chips > a { height: 34px; padding: 0 12px; font-size: 10.5px; }
 .arena-land .chips > a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* The boards draw a search field's placeholder as a span; the app's is a
+   real input, reading in the field's own type and colour. */
+.arena-land .field input { width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: #fff; font: inherit; outline: none; }
+.arena-land .field input::placeholder { color: #8E8E9C; opacity: 1; }
+.arena-land .field:focus-within { box-shadow: inset 0 0 0 1px rgba(198,255,51,.6); }
 
 /* A screen with both compositions in the DOM shows one: the board's
    landscape phone screen, or the desktop one. */

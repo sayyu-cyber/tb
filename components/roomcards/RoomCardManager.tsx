@@ -17,7 +17,7 @@ import { CoinGem } from "@/components/arena";
  */
 
 /** The board's labels, in its order. */
-const DURATIONS: { type: RoomCardType; label: string }[] = [
+export const DURATIONS: { type: RoomCardType; label: string }[] = [
   { type: "1h", label: "1-Hour" },
   { type: "3h", label: "3-Hour" },
   { type: "6h", label: "6-Hour" },
@@ -26,12 +26,12 @@ const DURATIONS: { type: RoomCardType; label: string }[] = [
   { type: "1m", label: "1-Month" },
 ];
 
-const LABEL: Record<RoomCardType, string> = Object.fromEntries(
+export const LABEL: Record<RoomCardType, string> = Object.fromEntries(
   DURATIONS.map(({ type, label }) => [type, label])
 ) as Record<RoomCardType, string>;
 
 /** "2h 14m", or "Expired" once the clock has run out. */
-function remaining(expiresAt: number | undefined) {
+export function remaining(expiresAt: number | undefined) {
   if (!expiresAt) return null;
   const ms = expiresAt - Date.now();
   if (ms <= 0) return "Expired";

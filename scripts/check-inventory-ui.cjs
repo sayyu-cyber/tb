@@ -49,7 +49,7 @@ async function run() {
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
         + `<body class="${bodyClass || ''}" style="margin:0">`
-        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div class="arena-app app-shell ar-stage"><main class="app-shell-main">`
         + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
@@ -129,13 +129,14 @@ async function run() {
 
     // ── Room Cards on its own route ─────────────────────────────────────
     await page.goto(BASE + '/inventory-test/?roomcards');
-    await page.getByRole('heading', { name: 'Room Cards' }).waitFor();
+    await page.getByRole('heading', { name: 'Room Cards', level: 1 }).waitFor();
     assert.equal(await page.locator('.rc').count(), 6, 'The same panel, not a second drawing of it');
 
     // ── Widths ──────────────────────────────────────────────────────────
     await page.goto(BASE + '/inventory-test/');
     await page.getByRole('heading', { name: 'Inventory' }).waitFor();
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+    // The wide screen's sizes. A phone gets LInventory, checked below.
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
@@ -149,8 +150,6 @@ async function run() {
 
     // ── Accessibility ───────────────────────────────────────────────────
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MInventory's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 1, 'The collection meter reports its value');
     const unlabelled = await page.locator('button').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
@@ -159,35 +158,55 @@ async function run() {
     assert.equal(await page.locator('input[aria-label="Search inventory"]').count(), 1, 'The search field is labelled');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MInventory ────────────────────────────────────────
-    // design/arena/boards/MInventory.dc.html. The same screen recomposed:
-    // the loadout becomes a side-scroller, the chips and the search stack,
-    // and the tile grid drops to three columns. The pieces inside are this
-    // screen's own, so what a tile does is already covered above.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LInventory ──────────────────────────────────────────
+    // design/arena/boards/LInventory.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md): the loadout five across, the chips under
+    // the search, a seven-across grid ending in the "Collected" cell, and a
+    // preview panel from each tile. Only one composition mounts.
+    // scripts/check-landscape-screens.cjs holds it against its references.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-inventory.ar-page').isVisible(), false, 'The wide screen steps aside');
-    const phone = page.locator('.arena-minventory');
-    assert.equal(await phone.isVisible(), true, 'and MInventory takes over');
-    assert.equal(await phone.locator('.hs .slot').count(), 5, 'Five loadout slots, as a side-scroller');
+    assert.equal(await page.locator('.arena-inventory.ar-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-linventory');
+    assert.equal(await phone.isVisible(), true, 'and LInventory takes over');
+    assert.equal(await phone.locator('.slot').count(), 5, 'Five loadout slots');
     assert.equal(await phone.locator('.chips > button').count(), 7, 'All seven categories');
-    assert.ok(await phone.locator('.tile').count() > 0, 'and the collection grid');
-    // A card back is laid out in `em` and sized by font-size, so it only
-    // takes a width inside a block formatting context. Counting the tiles
-    // would not notice the art collapsing to nothing.
+    assert.equal(await phone.locator('.tile:not(.sum)').count(), 13, 'Thirteen card backs');
+    assert.equal(await phone.locator('.tile.sum').innerText().then(text => text.replace(/\s+/g, ' ').trim().toUpperCase()), '4/13 COLLECTED', 'and the Collected cell');
+    assert.deepEqual(await phone.locator('.tile:not(.sum) .tprev b').evaluateAll(nodes => [nodes[0].textContent, nodes[nodes.length - 1].textContent]),
+      ['Arena', 'VIP Royal Gold'], 'Owned first, the VIP back last');
     assert.ok(
       await phone.locator('.tile .cb').first().evaluate(node => node.getBoundingClientRect().width > 40),
       'Each tile draws its cosmetic, not just the crown');
-    // Every tile the same height, whatever the description runs to.
-    const heights = await phone.locator('.tile').evaluateAll(
+    const heights = await phone.locator('.tile:not(.sum)').evaluateAll(
       nodes => [...new Set(nodes.map(n => Math.round(n.getBoundingClientRect().height)))]);
     assert.equal(heights.length, 1, `Every tile is the same height (got ${heights.join(', ')})`);
-    assert.ok(await phone.locator('.rc').count() > 0, 'Room Cards are still here');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'minventory-390.png'), fullPage: true });
+    // The preview: Equip for an owned back, Buy for one you can afford.
+    await phone.getByRole('button', { name: 'Preview Deep Ocean' }).click();
+    const panel = page.getByRole('dialog', { name: 'Item preview' });
+    await panel.waitFor();
+    assert.ok((await panel.innerText()).toUpperCase().includes('OWNED'), 'Owned');
+    await panel.getByRole('button', { name: 'Equip', exact: true }).click();
+    assert.equal(await page.locator('body').getAttribute('data-equipped'), 'cardBack:cb_ocean', 'Equip from the preview');
+    await page.keyboard.press('Escape');
+    await panel.waitFor({ state: 'detached' });
+    await phone.getByRole('button', { name: 'Preview Mahogany' }).click();
+    await panel.getByRole('button', { name: 'Buy for 150' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-bought'), 'cb_wood', 'Buy from the preview');
+    await page.keyboard.press('Escape');
+    await phone.getByRole('button', { name: 'Preview Neon Cyber' }).click();
+    assert.equal(await panel.getByRole('button', { name: 'Buy for 1,500' }).isDisabled(), true, 'Short of coins, Buy is not offered');
+    await page.keyboard.press('Escape');
+    await phone.getByRole('button', { name: /Room Cards/ }).click();
+    assert.equal(await phone.locator('.rc').count(), 6, 'Room Cards: the six durations');
+    await phone.getByRole('button', { name: /Activate/ }).click();
+    assert.equal(await page.locator('body').getAttribute('data-activated'), 'rc-1');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'linventory-844.png'), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 900 });
+    assert.equal(await page.locator('.arena-linventory').count(), 0, 'The phone screen is unmounted');
 
-    console.log('Inventory: MInventory held upright, loadout, catalogue-derived counts, four tile states, equip/buy, VIP and no-coins, Room Cards incl. its own route, Collection totals (code issue 4), seven widths and accessibility passed.');
+    console.log('Inventory: LInventory on a phone, loadout, catalogue-derived counts, four tile states, equip/buy, VIP and no-coins, Room Cards incl. its own route, Collection totals (code issue 4), four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

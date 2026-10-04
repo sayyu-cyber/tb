@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ACHIEVEMENTS, ROOM_CARD_PRICES } from "@/data/cosmetics";
 import type { RoomCardType } from "@/types/economy";
+import { translate } from "@/lib/i18n";
 
 /**
  * Stand-ins for what Inventory, Collection and Room Cards read.
@@ -102,7 +103,13 @@ export const useTranslation = () => (key: string) => ({
   collection_emotes: "Emotes",
   collection_victoryAnimations: "Victory",
   collection_collected: "/ {total} collected",
-}[key] || key);
+}[key] || translate(key, "en"));
+
+/** The phone shell reads the route: whichever of the three this is. */
+export function usePathname() {
+  return flag("roomcards") ? "/room-cards" : flag("collection") ? "/collection" : "/inventory";
+}
+export function useRouter() { return { push: (href: string) => { document.body.dataset.destination = href; }, replace: () => {}, back: () => {}, prefetch: () => {} }; }
 
 export default function Link({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return <a href={href} {...props}>{children}</a>;

@@ -1108,6 +1108,8 @@ export const TRANSLATIONS: Record<string, Translations> = {
   lgin_handLost: { en: "Hand lost", dv: "ހޭންޑް ބަލި", hi: "हाथ हारा", bn: "হাত হার" },
   lgin_deadwoodN: { en: "{n} deadwood", dv: "{n} ޑެޑްވުޑް", hi: "{n} डेडवुड", bn: "{n} ডেডউড" },
   lgin_discarded: { en: "Discarded", dv: "ދޫކޮށްލެވިއްޖެ", hi: "फेंक दिया", bn: "ফেলে দেওয়া হয়েছে" },
+  // LInventory's summary cell at the end of the grid: "4/13 Collected".
+  inv_collected: { en: "Collected", dv: "ހޯދިފައި", hi: "एकत्रित", bn: "সংগৃহীত" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

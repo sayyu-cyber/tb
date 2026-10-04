@@ -42,6 +42,21 @@ const SCREENS={
     title:'PROFILE',
     states:[{file:'profile',ref:'landscape-02-profile',full:true}],
   },
+  inventory:{
+    entry:'land-inventory-entry.tsx',mocks:'inventory-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/EconomyContext','@/hooks/useTranslation','next/link','next/navigation'],
+    title:'INVENTORY',
+    states:[
+      {file:'inventory',ref:'landscape-03-inventory',full:true},
+      {file:'inventory-room-cards',ref:'landscape-03b-inventory-room-cards',query:'?roomcards'},
+      {file:'card-preview-owned',ref:'landscape-03c-card-preview-owned',before:async page=>{
+        await page.getByRole('button',{name:'Preview Deep Ocean'}).click();
+      }},
+      {file:'card-preview-buy',ref:'landscape-03d-card-preview-buy',before:async page=>{
+        await page.getByRole('button',{name:'Preview Neon Cyber'}).click();
+      }},
+    ],
+  },
 };
 
 function build(name){
@@ -100,7 +115,9 @@ async function main(){
         assert.ok(Math.abs(rail.width-76)<2&&Math.abs(rail.height-height)<2,`${name}: the rail is there at ${width}`);
         const left=await page.locator('.app-shell-main .mpage').first().evaluate(n=>n.getBoundingClientRect().left+parseFloat(getComputedStyle(n).paddingLeft));
         assert.ok(left>=76,`${name}: the content starts after the rail at ${width} (${Math.round(left)})`);
-        const clipped=await page.locator('.app-shell-main .mpage').first().evaluate(n=>[...n.querySelectorAll('button, a')].filter(el=>{const r=el.getBoundingClientRect();return r.width&&(r.left<76-1||r.right>innerWidth+1);}).map(el=>(el.getAttribute('aria-label')||el.textContent||'').trim().slice(0,40)));
+        // A side scroller (.chips, .hs) runs to the screen edge on purpose: what is
+        // past the edge is a swipe away, not cut off.
+        const clipped=await page.locator('.app-shell-main .mpage').first().evaluate(n=>[...n.querySelectorAll('button, a')].filter(el=>{const r=el.getBoundingClientRect();let p=el.parentElement;while(p&&p!==n){if(/auto|scroll/.test(getComputedStyle(p).overflowX))return false;p=p.parentElement;}return r.width&&(r.left<76-1||r.right>innerWidth+1);}).map(el=>(el.getAttribute('aria-label')||el.textContent||'').trim().slice(0,40)));
         assert.deepEqual(clipped,[],`${name}: no control is cut off at the sides at ${width}`);
       }
       const bar=(await page.locator('.mtop').innerText()).toUpperCase();
