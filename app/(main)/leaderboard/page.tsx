@@ -16,8 +16,8 @@ import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { HowItWorksModal } from "@/components/leaderboard/HowItWorksModal";
 import { PodiumSkeleton, SideCardSkeleton, TableSkeleton } from "@/components/leaderboard/LeaderboardSkeleton";
 import type { LeaderboardPeriod } from "@/types";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneLeaderboard } from "@/components/leaderboard/phone/PhoneLeaderboard";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandLeaderboard } from "@/components/leaderboard/land/LandLeaderboard";
 
 /**
  * Leaderboard.
@@ -39,7 +39,7 @@ export default function LeaderboardPage() {
 
   const { user, playerStats, isGuest } = useAuth();
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
 
   // Friend uids come from the social context the app shell already
   // subscribes to, so the Friends board costs no extra listener.
@@ -72,13 +72,12 @@ export default function LeaderboardPage() {
     document.getElementById("lb-current-user")?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  /* Held upright a phone gets MLeaderboard: one column in the board's order,
-     the four periods as a scrolling chip row, and the table's six columns
-     folded into four. It picks in JavaScript rather than CSS so the board is
+  /* A phone gets LLeaderboard: a fixed screen with the podium and your rank
+     beside the list. It picks in JavaScript rather than CSS so the board is
      ranked once - useLeaderboard subscribes per mount. */
   if (phone) return (
     <>
-      <PhoneLeaderboard
+      <LandLeaderboard
         period={period}
         onPeriod={setPeriod}
         resetIn={meta.nextResetAt ? until(meta.nextResetAt) : null}
@@ -97,7 +96,6 @@ export default function LeaderboardPage() {
         onQuery={setQueryText}
         onRefresh={refresh}
         onHowItWorks={() => setHowItWorks(true)}
-        onScrollToMe={() => document.getElementById("lb-current-user-phone")?.scrollIntoView({ behavior: "smooth", block: "center" })}
         t={t}
       />
       <HowItWorksModal open={howItWorks} onClose={() => setHowItWorks(false)} />

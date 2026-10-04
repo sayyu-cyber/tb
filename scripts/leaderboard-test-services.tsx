@@ -1,5 +1,6 @@
 // Isolated component-test services. Never imported by application code.
 import React from 'react';
+import { translate } from '@/lib/i18n';
 
 /**
  * Stand-ins for what the Leaderboard reads.
@@ -37,13 +38,14 @@ export const useAuth = () => ({
   user: { uid: flag('guest') ? 'anonymous-guest' : flag('nome') ? 'stranger' : flag('first') ? 'nashid' : ME, displayName: 'Sayyu' },
   isGuest: flag('guest'),
   // 33 trophies is Silver under constants/ranks.ts (0/25/50/75).
-  playerStats: { trophies: 33 },
+  playerStats: { trophies: 33, currentRank: 'Gold' },
 });
 
 export const useEconomy = () => ({
   state: {
     // Deliberately stale, exactly as the app leaves it - code issue 2.
-    profile: { rank: 'Bronze' },
+    profile: { rank: 'Bronze', vip: { active: false } },
+    economy: { coins: 1240 },
     rankRewardOverrides: undefined,
   },
 });
@@ -64,7 +66,9 @@ export const useTranslation = () => (key: string) => ({
   leaderboard_findFriends: 'Find friends',
   leaderboard_periodLabel: 'Leaderboard period',
   error_tryAgain: 'Try again',
-}[key] || key);
+}[key] || translate(key, 'en'));
+export const usePathname = () => '/leaderboard';
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
 
 export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }
 
@@ -83,3 +87,6 @@ export const RANKS = {
 };
 export const TROPHY_WIN = 5;
 export const TROPHY_LOSS = -2;
+
+/** The league days the shell's More panel reads (useRankLock). */
+export { RANKED_DAYS } from '../constants/ranks';

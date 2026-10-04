@@ -121,7 +121,8 @@ async function run() {
     for (const state of ['', '?empty']) {
       await page.goto(BASE + '/leaderboard/' + state);
       await page.waitForTimeout(300);
-      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      // The wide screen's sizes. A phone gets LLeaderboard, checked below.
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow ${state} ${width}`);
@@ -138,8 +139,7 @@ async function run() {
     await page.goto(BASE + '/leaderboard/');
     await page.waitForTimeout(300);
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MLeaderboard's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
+    // Only one composition mounts, so there is one h1.
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 1, 'The rank meter reports its value');
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
@@ -147,26 +147,41 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MLeaderboard ──────────────────────────────────────
-    // design/arena/boards/MLeaderboard.dc.html. One column in the board's
-    // order, the four periods as a scrolling chip row, and the table's six
-    // columns folded into four.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LLeaderboard ────────────────────────────────────────
+    // design/arena/boards/LLeaderboard.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md): a fixed screen, the podium and your rank
+    // beside the list, which scrolls inside its pane and ends with the
+    // weekly rewards. scripts/check-landscape-screens.cjs holds it against
+    // its reference.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.lb-page').count(), 0, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mleaderboard');
-    assert.equal(await phone.isVisible(), true, 'and MLeaderboard takes over');
+    assert.equal(await page.locator('.lb-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lleaderboard');
+    assert.equal(await phone.isVisible(), true, 'and LLeaderboard takes over');
     assert.equal(await phone.locator('.chips > button').count(), 4, 'All four periods');
     assert.equal(await phone.locator('.chips > button:disabled').count(), 1, 'Monthly stays disabled');
     assert.ok((await phone.innerText()).toLowerCase().includes('soon'), 'and says so');
-    assert.equal(await phone.locator('.plinth').count(), 3, 'The three plinths');
-    assert.ok(await phone.locator('.lrow').count() > 0, 'and the standings as rows');
-    assert.ok(await phone.locator('.rw').count() > 0, 'Weekly rewards are still here');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mleaderboard-390.png'), fullPage: true });
+    assert.deepEqual(await phone.locator('.plinth').allTextContents(), ['2', '1', '3'], 'The plinths, 2 1 3');
+    assert.equal(await phone.locator('.lbr').count(), 9, 'Places 4 to 12 in the list');
+    assert.equal(await phone.locator('.lbr.me .pos').innerText(), '10', 'with your row lit');
+    assert.equal(await phone.locator('.rw.cur b').innerText().then(text => text.toUpperCase()), 'SILVER', 'Rewards marked by trophies (code issue 8)');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true, 'A fixed screen: the page does not scroll');
+    await phone.getByRole('button', { name: /^You · #10/ }).click();
+    await page.waitForTimeout(600);
+    assert.ok(await phone.locator('.lbsc').evaluate(n => n.scrollTop > 0), 'You jumps to your row');
+    await phone.getByRole('button', { name: 'Weekly Rewards' }).click();
+    await page.waitForTimeout(600);
+    assert.ok(await phone.locator('.lbrew').evaluate(n => { const pane = n.parentElement.getBoundingClientRect(); return Math.abs(n.getBoundingClientRect().top - pane.top) < 4; }), 'and the gift to the rewards');
+    for (const size of [[740, 360], [932, 430]]) {
+      await page.setViewportSize({ width: size[0], height: size[1] });
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at ' + size[0]);
+    }
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.screenshot({ path: path.join(output, 'lleaderboard-844.png') });
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Leaderboard: MLeaderboard held upright, podium and plinth order, the table with your row pinned, Your Rank and the gap above, the Weekly Rewards tier from TROPHIES not profile.rank (code issue 8), tabs with Monthly disabled, search/refresh, first/absent/guest/empty/error states, seven widths and accessibility passed.');
+    console.log('Leaderboard: LLeaderboard on a phone, podium and plinth order, the table with your row pinned, Your Rank and the gap above, the Weekly Rewards tier from TROPHIES not profile.rank (code issue 8), tabs with Monthly disabled, search/refresh, first/absent/guest/empty/error states, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

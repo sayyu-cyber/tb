@@ -92,6 +92,12 @@ const SCREENS={
       }},
     ],
   },
+  leaderboard:{
+    entry:'land-leaderboard-entry.tsx',mocks:'leaderboard-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/EconomyContext','@/contexts/HomeSocialContext','@/hooks/useLeaderboard','@/hooks/useTranslation','@/constants/ranks','next/link','next/navigation'],
+    title:'LEADERBOARD',route:'/leaderboard/',
+    states:[{file:'leaderboard',ref:'landscape-07-leaderboard'}],
+  },
 };
 
 function build(name){
