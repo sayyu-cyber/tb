@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Music } from "lucide-react";
-import { Card, cardId, rankLabel, bestMeldArrangement, winningDiscard, findGinLayout, TURN_SECONDS } from "@/lib/ginRummyEngine";
+import { Card, cardId, rankLabel, bestMeldArrangement, winningDiscard, findGinLayout, TURN_SECONDS, type GinHandResult } from "@/lib/ginRummyEngine";
 import { suitFromLetter } from "./PlayingCard";
 import { ArenaSeatData, TABLE_THEME_STYLES } from "./GameArena";
 import { Button } from "@/components/ui/Button";
@@ -10,9 +10,9 @@ import { SettingToggle } from "@/components/settings/SettingToggle";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { usePublishMatchGate } from "@/contexts/MatchGateContext";
-import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSecondsLeft } from "@/components/layout/phone/TurnRing";
-import { PhoneGinBoard, type PhoneGinGroup } from "./phone/PhoneGinBoard";
+import { PhoneGinBoard, listed, type PhoneGinGroup, type PhoneGinOutcome } from "./phone/PhoneGinBoard";
 import { sortHand } from "@/lib/cardSort";
 import { HandOrder, navigateHand } from "./HandTools";
 import { RuleBook } from "./RuleBook";
@@ -21,6 +21,11 @@ import { ArenaFace } from "./ArenaCard";
 import { ArenaSprite, Suit, Icon } from "./ArenaSprite";
 import { CardBack, CountBadge, OpeningCards, OpeningCut, OpeningSkip, OpeningSteps, openingPlate, openingWords, type OpeningDeal, type OpeningPiles } from "./MindiDealIntro";
 import { GEO_DESKTOP } from "./dealGeometry";
+
+/** How the boards name a card in a sentence: "the King of diamonds", not
+ *  "the K of diamonds" (Gin.dc.html and PGin.dc.html, `WORD`). */
+const WORDS:Record<string,string>={A:"Ace",K:"King",Q:"Queen",J:"Jack"};
+const cardWord=(rank:number)=>WORDS[rankLabel(rank as Card["rank"])]??rankLabel(rank as Card["rank"]);
 
 interface Props {
   hand:Card[]; selected:Card|null; opponent:ArenaSeatData; name:string; avatar?:string;
@@ -36,13 +41,34 @@ interface Props {
      and until the first card is drawn - the table reads as the Cut board
      leaves it until then. Null once play has begun. */
   opening?:OpeningDeal|null;
+  /* The hand is over. On a phone the table itself shows it (PGin's won
+     state); the desktop shows GinResultScreen instead, so only the phone
+     reads this. */
+  outcome?:GinTableOutcome|null;
 }
+
+/** The end of a hand, as the game clients know it. */
+export interface GinTableOutcome {
+  youWon:boolean;
+  result:GinHandResult;
+  /** The losing hand, so its deadwood can be named. */
+  loserHand:Card[];
+  /** The opponent's hand, turned face up. */
+  opponentHand:Card[];
+  coins:number;
+  balance:number;
+  continueLabel:string;
+  onContinue:()=>void;
+}
+
+/** Melds from the lowest card up, the order the Gin boards draw. */
+const byLowest=(melds:Card[][])=>[...melds].sort((a,b)=>Math.min(...a.map(card=>card.rank))-Math.min(...b.map(card=>card.rank)));
 
 export function GinRummyTable(p:Props) {
   const router=useRouter();
   const {settings,updateSettings}=useSettings();
   const t=useTranslation();
-  const phone=usePhoneTable();
+  const phone=usePhoneLayout();
   const [modal,setModal]=useState<"rules"|"settings"|"leave"|null>(null);
   // The board draws the brackets on, so that is the state you arrive in.
   const [melds,setMelds]=useState(true);
@@ -81,8 +107,11 @@ export function GinRummyTable(p:Props) {
   const selectedWins=useMemo(()=>!!selectedCard&&!!findGinLayout(p.hand.filter(card=>cardId(card)!==cardId(selectedCard))),[p.hand,selectedCard]);
 
   const displayedHand=useMemo(()=>{
+    // Melds from the lowest card up, then the deadwood - the order both Gin
+    // boards draw (A-2-3, 5-6-7-8, the Queens, the King), rather than the
+    // order the arrangement happens to find them in.
     const base=order==="melds"
-      ? [...arrangement.melds.flatMap(meld=>sortHand(meld)),...sortHand(arrangement.deadwood)]
+      ? [...[...arrangement.melds].sort((a,b)=>Math.min(...a.map(card=>card.rank))-Math.min(...b.map(card=>card.rank))).flatMap(meld=>sortHand(meld)),...sortHand(arrangement.deadwood)]
       : sortHand(p.hand,order==="rank"?"rank":"suit");
     if(!manual) return base;
     const byId=new Map(p.hand.map(card=>[cardId(card),card]));
@@ -178,9 +207,10 @@ export function GinRummyTable(p:Props) {
    * the hand actually holds rather than the 4 / 3 / 3 it is aiming at.
    */
   const outCard=goingOut;
-  const meldSizes=arrangement.melds.map(meld=>meld.length);
+  // Largest first, as the boards print it: "4 · 3 · 3".
+  const meldSizes=arrangement.melds.map(meld=>meld.length).sort((a,b)=>b-a);
   const readLine=outCard
-    ? `Throw the ${rankLabel(outCard.rank)} of ${suitFromLetter(outCard.suit)} and all ten cards are melded. That is Gin.`
+    ? `Throw the ${cardWord(outCard.rank)} of ${suitFromLetter(outCard.suit)} and all ten cards are melded. That is Gin.`
     : p.myTurn
       ? "Deadwood never wins a hand here. Three complete melds go out."
       : `Deadwood never wins a hand here. ${p.opponent.name} is ${p.phase==="draw"?"drawing":"discarding"}.`;
@@ -318,10 +348,10 @@ export function GinRummyTable(p:Props) {
       ? firstTurn&&p.discard?t("table_ginTakeOrDraw").replace("{rank}",rankLabel(p.discard.rank)):"Draw from the stock, or take the discard."
       : selectedCard
         ? selectedWins
-          ? `Throw the ${rankLabel(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)}: that is Gin.`
-          : `Leaves ${preview&&preview.melds.length?preview.melds.map(meld=>meld.length).join(" · "):"nothing"} and ${preview?preview.deadwoodValue:arrangement.deadwoodValue} deadwood. Tap again to throw.`
+          ? `Throw the ${cardWord(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)}: that is Gin.`
+          : `Leaves ${preview&&preview.melds.length?preview.melds.map(meld=>meld.length).sort((a,b)=>b-a).join(" · "):"nothing"} and ${preview?preview.deadwoodValue:arrangement.deadwoodValue} deadwood. Tap again to throw.`
         : drawnCard
-          ? `You drew the ${rankLabel(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}. Now discard.`
+          ? `You drew the ${cardWord(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}. Now discard.`
           : "Pick a discard.";
   const phoneAction=!p.myTurn
     ? firstTurn?t("table_wait"):"Discarded"
@@ -346,6 +376,30 @@ export function GinRummyTable(p:Props) {
     </dialog>}
   </>;
 
+  /* The won state's numbers, all from the result: what the winner melded,
+     the 25 for going out plus the loser's deadwood, and which cards that
+     deadwood was ("Hussain's J, 10 and 2"). */
+  const phoneOutcome=useMemo<PhoneGinOutcome|null>(()=>{
+    const o=p.outcome;
+    if(!o) return null;
+    const loser=bestMeldArrangement(o.loserHand);
+    const cards=listed(sortHand(loser.deadwood,"rank").reverse().map(card=>rankLabel(card.rank)),t("lgin_and"));
+    const opponent=bestMeldArrangement(o.opponentHand);
+    const reveal=o.youWon
+      ? [...byLowest(opponent.melds).map(meld=>({cards:sortHand(meld),dead:false})),...(opponent.deadwood.length?[{cards:sortHand(opponent.deadwood,"rank").reverse(),dead:true}]:[])]
+      : byLowest(o.result.layout).map(meld=>({cards:sortHand(meld),dead:false}));
+    return {
+      youWon:o.youWon,
+      sizes:o.result.layout.map(meld=>meld.length).sort((a,b)=>b-a),
+      score:o.result.score,
+      goingOut:o.result.score-o.result.loserDeadwood,
+      loserDeadwood:o.result.loserDeadwood,
+      loserCards:o.youWon?t("lgin_theirCards").replace("{name}",p.opponent.name).replace("{cards}",cards):t("lgin_yourCards").replace("{cards}",cards),
+      coins:o.coins,balance:o.balance,reveal,
+      continueLabel:o.continueLabel,onContinue:o.onContinue,
+    };
+  },[p.outcome,p.opponent.name,t]);
+
   /* Sideways on a phone the table is PGin, an 844x390 composition of its own
      - see components/game/phone/PhoneGinBoard.tsx. Everything above this line
      is shared: the same hand order, the same melds, the same clock, the same
@@ -365,7 +419,7 @@ export function GinRummyTable(p:Props) {
       onActivate={activateCard}
       onDiscard={()=>{if(canDiscard)run(p.onDiscard);}}
       onLeave={askToLeave} onMenu={()=>setModal("settings")}
-      opening={p.opening??null} firstTurn={firstTurn}
+      opening={p.opening??null} firstTurn={firstTurn} outcome={phoneOutcome}
     />
     {dialogs}
   </>;
@@ -570,9 +624,9 @@ export function GinRummyTable(p:Props) {
             ? p.phase==="draw"
               ? firstTurn&&p.discard?t("table_ginTakeOrDraw").replace("{rank}",rankLabel(p.discard.rank)):"Your turn. Draw from the stock or the discard."
               : drawnCard
-                ? `You drew the ${rankLabel(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}${drawnFrom?` from the ${drawnFrom}`:""}. Now discard.`
+                ? `You drew the ${cardWord(drawnCard.rank)} of ${suitFromLetter(drawnCard.suit)}${drawnFrom?` from the ${drawnFrom}`:""}. Now discard.`
                 : selectedCard
-                  ? `${rankLabel(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)} selected${selectedWins?" — this one goes out":""}.`
+                  ? `${cardWord(selectedCard.rank)} of ${suitFromLetter(selectedCard.suit)} selected${selectedWins?" — this one goes out":""}.`
                   : "Choose a card to discard."
             : firstTurn?t("deal_leadsFirstTrick").replace("{name}",p.opponent.name)
             : `${p.opponent.name} to ${p.phase==="draw"?"draw":"discard"}`}</>}

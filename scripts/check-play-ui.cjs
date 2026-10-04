@@ -15,7 +15,7 @@ const BASE = process.env.CHECK_BASE_URL || 'http://127.0.0.1:3000';
 const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/play-test');
 const mocks = path.join(__dirname, 'play-test-services.tsx');
 const alias = Object.fromEntries([
-  '@/contexts/AuthContext', '@/hooks/useTranslation', '@/hooks/useCasualQueue',
+  '@/contexts/AuthContext', '@/contexts/EconomyContext', '@/hooks/useTranslation', '@/hooks/useCasualQueue',
   '@/lib/weekendLeague', '@/lib/orientationLock', 'next/link', 'next/navigation',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
@@ -206,10 +206,10 @@ async function run() {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow at ${width}`);
-      // Below 768 held upright the lobby is MPlay, not this board, so the
-      // board's frame is not on screen to measure. The portrait composition
-      // has its own section below.
-      if (width < 768 && height > width) continue;
+      // A phone - held sideways (max-height 500) or upright under the turn
+      // gate - gets PLobby, not this board (design/arena/LANDSCAPE.md); it
+      // has its own section below and scripts/check-landscape-tables.cjs.
+      if ((width < 768 && height > width) || height <= 500) continue;
       for (const game of ['Mindi', 'Gin Rummy']) {
         const deck = page.getByRole('button', { name: new RegExp('^' + game + ',') });
         if (await deck.getAttribute('aria-pressed') !== 'true') await deck.click();
@@ -226,7 +226,7 @@ async function run() {
       }
     }
 
-    await page.setViewportSize({ width: 844, height: 390 });
+    await page.setViewportSize({ width: 1280, height: 720 });
     await modes.getByRole('button', { name: /Vs AI/ }).focus();
     await page.keyboard.press('Enter');
     assert.equal(await modes.getByRole('button', { name: /Vs AI/ }).getAttribute('aria-pressed'), 'true');
@@ -234,104 +234,19 @@ async function run() {
     await go.scrollIntoViewIfNeeded();
     await go.click({ trial: true });
 
-    // ── Held upright: MPlay and the rotate sheet ────────────────────────
-    // design/arena/boards/MPlay.dc.html and MPlayFind.dc.html,
-    // design/arena/MOBILE.md "The turn happens at the Play button".
-    // /play works either way up now - only the table needs landscape - so
-    // the turn is asked for at the Play button.
+    // ── Held upright: still PLobby, under the turn gate ──────────────────
+    // design/arena/LANDSCAPE.md: the whole app is landscape. MPlay and the
+    // rotate sheet are gone; an upright phone sees the turn gate over PLobby,
+    // which stays mounted so turning back finds the lobby as it was. One
+    // composition in the DOM, never two - each is a lit 3D podium.
     await page.goto(BASE + '/play-test/');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(300);
     assert.equal(await page.locator('.lob-frame').count(), 0, 'The wide board steps aside');
-    const phone = page.locator('.arena-mplay');
-    assert.equal(await phone.isVisible(), true, 'and MPlay takes over');
-    // One composition mounted, never two. Each of the three is a lit 3D
-    // podium; hiding the others in CSS cost a phone two scenes at once and
-    // a third while turning, which is what was crashing iOS Safari on the
-    // turn to play.
-    assert.equal(
-      await page.locator('.lob-frame, .arena-plobby, .arena-mplay').count(), 1,
+    assert.equal(await page.locator('.arena-mplay').count(), 0, 'There is no portrait lobby any more');
+    assert.equal(await page.locator('.lob-frame, .arena-plobby, .arena-mplay').count(), 1,
       'Exactly one lobby composition is in the DOM');
-    assert.equal(await phone.locator('.deck').count(), 2, 'Two deck boxes on the podium');
-    assert.equal(await phone.locator('.apron').count(), 7, "The board's seven aprons");
-    assert.equal(await phone.locator('.leds ellipse').count(), 3, 'and its three LED rings');
-    assert.equal(await phone.locator('.glow').count(), 1, 'One bloom, which slides between the decks');
-    assert.equal(await phone.locator('.mode').count(), 5, 'Mindi still has all five modes');
-    assert.ok((await phone.innerText()).includes('Play Mindi'), 'The dock names the game');
-    // Nothing is dropped from the wide board: the league and the rank strip
-    // are both here, shortened.
-    assert.ok((await phone.innerText()).toUpperCase().includes('WEEKEND LEAGUE'));
-    assert.ok((await phone.innerText()).includes('Gold · 58 trophies') ||
-              (await phone.innerText()).includes('Gold · 58'), 'and your rank, from the account');
-    assert.equal(await phone.locator('.xp i').evaluate(n => n.style.width), '32%',
-      "the same 32% the wide board works out");
-    await page.screenshot({ path: path.join(output, 'mplay-390.png'), fullPage: true });
-
-    // Casual Online: looking starts at once, and the sheet opens over it.
-    await phone.getByRole('button', { name: /Play Mindi/ }).click();
-    await page.getByRole('dialog').waitFor();
-    assert.equal(await page.locator('body').getAttribute('data-queue'), 'mindi',
-      'The queue runs while the sheet is up');
-    let sheet = await page.getByRole('dialog').innerText();
-    assert.ok(sheet.includes('Rotate your phone'));
-    assert.ok(sheet.toUpperCase().includes('THE TABLE PLAYS SIDEWAYS'));
-    assert.ok(sheet.includes("We'll keep looking for a table while you turn."));
-    assert.ok(sheet.includes('Finding a Mindi table'), 'The status row names the game');
-    assert.ok(sheet.includes('Stop looking'));
-    assert.equal(await page.locator('.phone-sheet-host .spin').count(), 1, 'and it spins');
-    assert.equal(await page.locator('.phone-sheet-host .turn.sm').count(), 1, 'The turning phone, at 96px');
-    // No lock in this browser, so no button that could not work.
-    assert.equal(await page.getByRole('button', { name: /Go landscape/ }).count(), 0,
-      '"Go landscape" only exists where the lock does');
-    assert.ok(sheet.includes('Rotation Lock'), 'and the hint is the iPhone one');
-    await page.screenshot({ path: path.join(output, 'mplayfind-390.png') });
-
-    // Turning the phone closes the sheet and the search carries on.
-    await page.setViewportSize({ width: 844, height: 390 });
-    await page.waitForTimeout(300);
-    assert.equal(await page.getByRole('dialog').count(), 0, 'The sheet goes when the phone turns');
-    assert.equal(await page.locator('body').getAttribute('data-queue'), 'mindi',
-      'and the queue is still running');
-    assert.equal(await page.locator('.lob-modes .ar-btn.busy').count(), 1,
-      'the wide lobby carries on with "Finding a table"');
-
-    // Stop looking leaves the queue and hands the orientation back.
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForTimeout(300);
-    await page.getByRole('dialog').getByRole('button', { name: 'Stop looking' }).click();
-    assert.equal(await page.locator('body').getAttribute('data-queue'), 'off');
-    assert.equal(await page.locator('body').getAttribute('data-lock'), 'free',
-      'and screen.orientation.unlock() is called');
-
-    // Vs AI has nothing to queue for: the sheet says ready, no clock runs,
-    // and the game starts only once the phone is sideways.
-    await phone.getByRole('button', { name: /Vs AI/ }).click();
-    await phone.getByRole('button', { name: /Play Mindi/ }).click();
-    await page.getByRole('dialog').waitFor();
-    sheet = await page.getByRole('dialog').innerText();
-    assert.ok(sheet.includes('Your Mindi table is ready'));
-    assert.ok(sheet.includes('Your table starts as soon as you turn.'));
-    assert.equal(await page.locator('.phone-sheet-host .spin').count(), 0, 'No spinner, because nothing is searching');
-    assert.ok(!/0:\d\d/.test(sheet), 'and no clock runs while the player turns the phone');
-    assert.equal(await page.locator('body').getAttribute('data-queue'), 'off', 'and no queue is joined');
-    assert.equal(await page.locator('body').getAttribute('data-lock'), 'landscape',
-      'The tap does ask the phone to turn');
-    assert.equal(await page.locator('body').getAttribute('data-destination'), null, 'but nothing starts yet');
-    await page.setViewportSize({ width: 844, height: 390 });
-    await page.waitForTimeout(300);
-    assert.equal(await page.locator('body').getAttribute('data-destination'), '/play/mindi/casual/ai',
-      'Turning the phone is what starts it');
-
-    // Where the lock exists, "Go landscape" is offered.
-    await page.goto(BASE + '/play-test/?lock');
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole('heading', { name: 'Choose your table' }).waitFor();
-    await page.locator('.arena-mplay').getByRole('button', { name: /Play Mindi/ }).click();
-    await page.getByRole('dialog').waitFor();
-    assert.equal(await page.getByRole('button', { name: /Go landscape/ }).count(), 1,
-      '"Go landscape" appears where screen.orientation.lock does');
-    assert.ok((await page.getByRole('dialog').innerText()).includes('Auto-rotate off?'),
-      'and the hint changes to the Android one');
+    assert.equal(await page.getByRole('dialog').count(), 0, 'and no rotate sheet');
 
     // ── Signed out ──────────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -355,9 +270,8 @@ async function run() {
 
     // ── Held sideways: PLobby ───────────────────────────────────────────
     // design/arena/boards/PLobby.dc.html. A phone held sideways is
-    // `(orientation: landscape) and (max-height: 500px) and (pointer: coarse)`,
-    // and `pointer: coarse` needs a touch context - which is why this runs in
-    // one of its own rather than by resizing the page above.
+    // `(orientation: landscape) and (max-height: 500px)`; this runs in a
+    // touch context of its own so the taps are real taps.
     const touch = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true });
     const phonePage = await touch.newPage();
     const touchErrors = [];
@@ -378,7 +292,7 @@ async function run() {
     assert.equal(await wide.locator('.deck').count(), 2, 'Two decks on the podium');
     assert.equal(await wide.locator('.apron').count(), 8, "The board's eight aprons");
     assert.equal(await wide.locator('.mode').count(), 5, 'Mindi still has all five modes');
-    assert.ok((await wide.innerText()).includes('Choose your table'));
+    assert.ok((await wide.innerText()).toUpperCase().includes('CHOOSE YOUR TABLE'));
     assert.ok((await wide.innerText()).toUpperCase().includes('WEEKEND LEAGUE'), 'The league card is here');
     assert.ok((await wide.innerText()).includes('Gold · 58'), 'and your rank, from the account');
     assert.equal(await wide.locator('.xp i').evaluate(n => n.style.width), '32%');

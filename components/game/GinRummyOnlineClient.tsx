@@ -10,6 +10,7 @@ import { useEconomy } from "@/contexts/EconomyContext";
 import { watchMatch, sendMatchMove, MatchDoc } from "@/lib/matchmaking";
 import { Card, cardId, rankLabel } from "@/lib/ginRummyEngine";
 import { GinResultScreen } from "./GinResultScreen";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { ginOpening, useOpeningDeal } from "./MindiDealIntro";
 import type { CutCard } from "@/lib/openingCut";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -48,6 +49,8 @@ export interface GinOnlineState {
 export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const { user, playerStats } = useAuth();
   const { state: economyState } = useEconomy();
+  // On a phone a finished hand stays on the table (PGin's won state).
+  const phone = usePhoneLayout();
   const router = useRouter();
   const myUid = user?.uid ?? "";
 
@@ -143,7 +146,8 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     );
   }
 
-  if (state.result) {
+  // A forfeit has no melds to turn over, so it keeps the result screen.
+  if (state.result && (!phone || state.result.forfeitedBy)) {
     const { result } = state;
     const youWon = result.winnerUid === myUid;
     return <GinResultScreen result={{ winner: youWon ? "player" : "opponent", layout: result.layout, loserDeadwood: result.loserDeadwood, score: result.score }}
@@ -169,5 +173,13 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     phase={state.phase} myTurn={isMyTurn && (introSeen || !openingActive)} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
     deadline={state.turnDeadline ?? null} reshuffles={state.reshuffles ?? 0}
     tableSkin={activeTableTheme} cardBack={economyState.profile.equipped.cardBack} online opening={openingActive ? opening : null}
+    outcome={state.result ? {
+      youWon: state.result.winnerUid === myUid,
+      result: { winner: state.result.winnerUid === myUid ? "player" : "opponent", layout: state.result.layout, loserDeadwood: state.result.loserDeadwood, score: state.result.score },
+      loserHand: state.result.winnerUid === myUid ? (state.hands[opponentUid] ?? []) : (state.hands[myUid] ?? []),
+      opponentHand: state.hands[opponentUid] ?? [],
+      coins: state.result.winnerUid === myUid ? 10 : 2, balance: economyState.economy.coins,
+      continueLabel: "Find a new match", onContinue: () => router.push("/play"),
+    } : null}
     onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} onLeave={handleForfeit}/>;
 }

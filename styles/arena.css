@@ -348,6 +348,13 @@ h1, h2, h3 {
    and 100% keeps a desktop window exactly as it was. */
 .arena-frame { position: fixed; left: 0; top: 0; right: 0; height: var(--arena-vh, 100dvh); display: grid; grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr); place-items: center; overflow: hidden; background: #000; }
 .arena-canvas { position: relative; flex: none; transform-origin: 50% 50%; }
+/* A phone composition keeps clear of the notch and the home indicator: the
+   frame is padded by the safe area and ArenaStage scales the board into what
+   is left (env() is 0 everywhere else, so a desktop window is unchanged). */
+.arena-frame-phone {
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 
 /* ---- the stage ----------------------------------------------------------
    A night arena: a black floor with a receding grid, lit by two soft beams.

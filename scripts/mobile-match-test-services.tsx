@@ -5,4 +5,5 @@ export const useEconomy = () => ({ balanceReady: true, state: { economy: { coins
 const router = { push: (href: string) => window.dispatchEvent(new CustomEvent("mobile-match-route", { detail: href })) };
 export const useRouter = () => router;
 export const useCasualQueue = () => ({ matchFound: false, error: null });
-export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }
+// PLobby's local modes are links; they route through the fixture like router.push.
+export default function Link({ href, children, ...props }: any) { return <a href={href} {...props} onClick={(event: React.MouseEvent) => { event.preventDefault(); router.push(href); }}>{children}</a>; }

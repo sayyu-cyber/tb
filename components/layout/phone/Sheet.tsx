@@ -95,14 +95,14 @@ export function Sheet({
   dialog?: boolean;
   /**
    * Inline layout on the panel, for the sheets whose boards write it inline
-   * rather than in a class - MPlayFind centres its column that way.
+   * rather than in a class - LMore lays its two columns out that way.
    */
   style?: React.CSSProperties;
   /**
-   * A board namespace for content that needs one class the shared phone
-   * layer does not carry - "arena-mplay" for the rotate sheet's `.qrow` and
-   * `.spin`. The host already carries `arena-app arena-phone`, so most
-   * sheets need nothing here.
+   * A board namespace for content that needs one class the shared layers do
+   * not carry - "arena-lhome" for the More panel's `.mvip`. The host already
+   * carries `arena-app arena-phone arena-land`, so most panels need nothing
+   * here.
    */
   namespace?: string;
   children: React.ReactNode;

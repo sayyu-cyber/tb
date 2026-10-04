@@ -7,7 +7,7 @@ import { ArenaStage } from "./ArenaStage";
 import { ArenaSprite } from "./ArenaSprite";
 import { ArenaFace } from "./ArenaCard";
 import { RANKS, getRankFromTrophies } from "@/constants/ranks";
-import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { formatCoins } from "@/lib/wallet";
 import { PhoneResultBoard } from "./phone/PhoneResultBoard";
 import type { HandOutcome, Team, TenCapture } from "@/lib/mindiEngine";
@@ -81,7 +81,7 @@ export function MindiResultScreen({
   trophyChange, trophiesAfter = null, coins, balance, winnerNames = [],
   onPlayAgain, playAgainHref = "/play",
 }: MindiResultScreenProps) {
-  const phone = usePhoneTable();
+  const phone = usePhoneLayout();
   const youWon = outcome.winner === myTeam;
   const theirTeam: Team = myTeam === "A" ? "B" : "A";
   const myTens = outcome.tensCaptured[myTeam];

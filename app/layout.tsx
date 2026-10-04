@@ -44,10 +44,7 @@ import "@/styles/arena-screens.css";
 // shell is on screen.
 import "@/styles/arena-phone.css";
 import "@/styles/arena-mhome.css";
-// MPlay is the portrait Play lobby; MPlayFind is MPlay with the rotate sheet
-// open, and its stylesheet came out byte-for-byte identical, so one sheet
-// serves both states. MRotate is the gate over a table held upright.
-import "@/styles/arena-mplay.css";
+// MRotate is the gate over a table held upright.
 import "@/styles/arena-mrotate.css";
 // The four the phone gets held sideways: the Play lobby, the two tables and
 // the hand result, each an 844x390 composition scaled to the visible

@@ -26,14 +26,14 @@ async function main(){
     await page.route('**/mobile-match-test/**',r=>r.fulfill({contentType:'text/html',body:`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(s=>`<style>${s}</style>`).join('')}</head><body class="${body}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await page.route('**/images/phone-tables/*.png',r=>r.fulfill({contentType:'image/png',body:fs.readFileSync(path.join(root,'public',new URL(r.request().url()).pathname))}));
     for(const game of ['mindi','gin']){
-      await page.setViewportSize(portrait);await page.goto(base+'/mobile-match-test/');
-      await page.locator('.arena-mplay').waitFor();
+      // The phone is landscape only (design/arena/LANDSCAPE.md): Play is
+      // PLobby held sideways, and a local mode opens its table straight away.
+      await page.setViewportSize(landscape);await page.goto(base+'/mobile-match-test/');
+      await page.locator('.arena-plobby').waitFor();
       if(game==='gin')await page.getByRole('button',{name:/^Gin Rummy,/}).click();
       await page.getByRole('button',{name:/VS AI/i}).click();
-      await page.locator('.arena-mplay .dock button').click();
-      await page.getByRole('dialog',{name:/Rotate|Turn|landscape|sideways/i}).waitFor();
       const navigations=documents;
-      await page.setViewportSize(landscape);
+      await page.getByRole('link',{name:/^Play /i}).click();
       const board=page.locator(game==='mindi'?'.arena-pmindi':'.arena-pgin');await board.waitFor();
       await page.waitForTimeout(700);
       const metrics=await board.evaluate(el=>({cards:el.querySelectorAll('.cc').length,hidden:el.querySelectorAll('.cc.hid').length,promoted:[...el.querySelectorAll('.cc.hid')].filter(n=>getComputedStyle(n).willChange!=='auto').length,floor:[...el.querySelectorAll('.floor')].map(n=>({width:n.offsetWidth,height:n.offsetHeight})),phase:el.querySelector('.tag')?.textContent}));
@@ -71,11 +71,14 @@ async function main(){
       assert.equal(await board.locator('.ccl').count(),0,'Opening graphics are released after the deal');
       const hand=board.getByRole('region',{name:'Your hand'}).locator('button.hc');assert.ok(await hand.count()>0,'Playable hand renders after the opening');
       const ids=await hand.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('aria-label')));
+      // Held upright, MRotate covers the table, which stays mounted under it
+      // (blurred), so turning back finds the same hand.
       for(let turn=0;turn<3;turn++){
         await page.setViewportSize(portrait);
-        await board.waitFor({state:'detached'});
+        await page.locator('.rotate-gate').waitFor();
+        assert.equal(await board.count(),1,'The table stays mounted under MRotate');
         await page.setViewportSize(landscape);
-        await board.waitFor();
+        await page.locator('.rotate-gate').waitFor({state:'hidden'});
       }
       assert.deepEqual(await hand.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('aria-label'))),ids,'Rotation preserves the human hand');
       // Safari's address/toolbar chrome can reduce the visible landscape
@@ -92,7 +95,7 @@ async function main(){
       assert.equal(documents,navigations,'Rotation and the ceremony do not reload the document');
       assert.deepEqual(errors,[],'No render or runtime errors');
     }
-    console.log(renderSurfaces?'Rendered phone decoration assets':process.argv.includes('--compare-surfaces')?'Captured phone decoration comparisons':'Mobile Play → rotate → AI opening and repeated rotation PASS');
+    console.log(renderSurfaces?'Rendered phone decoration assets':process.argv.includes('--compare-surfaces')?'Captured phone decoration comparisons':'Mobile PLobby → AI opening, MRotate held upright and repeated rotation PASS');
   }finally{await browser.close();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

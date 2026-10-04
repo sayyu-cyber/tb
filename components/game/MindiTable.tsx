@@ -17,7 +17,7 @@ import { ArenaStage } from "./ArenaStage";
 import { ArenaSprite, Suit as SuitGlyph, Icon } from "./ArenaSprite";
 import { ArenaFace, ArenaBack } from "./ArenaCard";
 import { Music } from "lucide-react";
-import { usePhoneTable } from "@/hooks/usePhoneTable";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { PhoneMindiBoard } from "./phone/PhoneMindiBoard";
 import { CountBadge, OpeningCards, OpeningCut, OpeningSkip, OpeningSteps, openingPlate, openingWords, type OpeningDeal } from "./MindiDealIntro";
 import { GEO_DESKTOP, type Spot } from "./dealGeometry";
@@ -85,7 +85,7 @@ const TRICK_SPOT = [
 
 export function MindiTable(p:Props) {
   const router=useRouter();
-  const phone=usePhoneTable();
+  const phone=usePhoneLayout();
   const {settings,updateSettings}=useSettings();
   const t=useTranslation();
   const [selected,setSelected]=useState<string|null>(null);
@@ -319,7 +319,9 @@ export function MindiTable(p:Props) {
       hand={displayedHand} legal={legal} selected={selected} viewer={p.viewer}
       top={p.top} left={p.left} right={p.right}
       you={{name:p.name,cards:p.hand.length}}
-      active={p.active} trump={effectiveTrump} trick={p.trick} winner={winner}
+      /* PMindi rings the card winning the trick so far, not only once the
+         trick is complete: the board lights Mariyam's king while it leads. */
+      active={p.active} trump={effectiveTrump} trick={p.trick} winner={p.trick.length?resolveTrick(p.trick,effectiveTrump):null}
       tens={{us:tensUs,them:tensThem}} tricks={{us:p.tricks[team],them:p.tricks[other]}}
       tenSuits={{us:capturedSuits(p.tenCaptures,team),them:capturedSuits(p.tenCaptures,other)}}
       hint={phoneHint} error={modal ? undefined : error} actionLabel={chosen?`Play ${rankLabel(chosen.rank)}`:p.active?t("table_pickACard"):t("table_wait")}

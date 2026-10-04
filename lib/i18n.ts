@@ -179,6 +179,8 @@ export const TRANSLATIONS: Record<string, Translations> = {
     bn: "প্রতিটি র‍্যাঙ্কড জয় {base} এর বদলে {win} ট্রফি, এবং হারলে {loss} কমে।",
   },
   lobby_enter: { en: "Enter", dv: "ވަދެވަޑައިގަންނަވާ", hi: "प्रवेश करें", bn: "প্রবেশ করুন" },
+  // PLobby's league button (phone-land-01-lobby) spells it out.
+  lobby_enterLeague: { en: "Enter the league", dv: "ލީގަށް ވަދެވަޑައިގަންނަވާ", hi: "लीग में प्रवेश करें", bn: "লিগে প্রবেশ করুন" },
   lobby_progressTo: { en: "Progress to {tier}", dv: "{tier} އަށް ދާ ކުރިއެރުން", hi: "{tier} तक प्रगति", bn: "{tier} পর্যন্ত অগ্রগতি" },
   lobby_toTier: { en: "to {tier}", dv: "{tier} އަށް", hi: "{tier} तक", bn: "{tier} পর্যন্ত" },
   lobby_topTier: { en: "Top tier", dv: "އެންމެ މަތީ ފަންތި", hi: "सर्वोच्च श्रेणी", bn: "সর্বোচ্চ স্তর" },
@@ -1086,6 +1088,26 @@ export const TRANSLATIONS: Record<string, Translations> = {
   // The same gate on a screen without touch, in a narrow, tall window.
   gate_widerTitle: { en: "Make this window wider", dv: "މި ވިންޑޯ ފުޅާކުރައްވާ", hi: "यह विंडो चौड़ी करें", bn: "এই উইন্ডোটি চওড়া করুন" },
   gate_widerBody: { en: "The whole app is built for landscape. Widen the window and carry on right where you were.", dv: "މުޅި އެޕް ހަދާފައިވަނީ ލޭންޑްސްކޭޕަށް. ވިންޑޯ ފުޅާކޮށްލައްވާފައި ކުރަމުން ދިޔަ ތަނުން ކުރިއަށް ގެންދަވާ.", hi: "पूरा ऐप लैंडस्केप के लिए बना है। विंडो चौड़ी करें और जहाँ थे वहीं से आगे बढ़ें।", bn: "পুরো অ্যাপটি ল্যান্ডস্কেপের জন্য তৈরি। উইন্ডো চওড়া করে যেখানে ছিলেন সেখান থেকেই চালিয়ে যান।" },
+  // PMindi's seat lines (phone-land-02-mindi): who has played this trick,
+  // and who plays next.
+  mindi_played: { en: "Played", dv: "ކުޅެފި", hi: "खेल चुके", bn: "খেলেছেন" },
+  mindi_next: { en: "Next", dv: "ދެން", hi: "अगला", bn: "পরের জন" },
+  // PGin's won state (phone-land-03c-gin-won), with the result's own numbers.
+  lgin_and: { en: "and", dv: "އަދި", hi: "और", bn: "এবং" },
+  lgin_youWon: { en: "You won", dv: "ތިބާ ކާމިޔާބުކުރި", hi: "आप जीते", bn: "আপনি জিতেছেন" },
+  lgin_theyWon: { en: "{name} won", dv: "{name} ކާމިޔާބުކުރި", hi: "{name} जीते", bn: "{name} জিতেছেন" },
+  lgin_melds: { en: "Three melds: {sizes}, all ten cards.", dv: "ތިން މެލްޑު: {sizes}، ދިހަ ކާޑުވެސް.", hi: "तीन मेल्ड: {sizes}, सभी दस पत्ते।", bn: "তিনটি মেল্ড: {sizes}, দশটি তাসই।" },
+  lgin_status: { en: "Gin. Three melds: {sizes}.", dv: "ޖިން. ތިން މެލްޑު: {sizes}.", hi: "जिन। तीन मेल्ड: {sizes}।", bn: "জিন। তিনটি মেল্ড: {sizes}।" },
+  lgin_coins: { en: "Coins", dv: "ކޮއިން", hi: "सिक्के", bn: "কয়েন" },
+  lgin_goingOut: { en: "{bonus} for going out + {n}", dv: "ނިންމާލުމަށް {bonus} + {n}", hi: "बाहर जाने के {bonus} + {n}", bn: "শেষ করার জন্য {bonus} + {n}" },
+  lgin_theirCards: { en: "{name}’s {cards}", dv: "{name} ގެ {cards}", hi: "{name} के {cards}", bn: "{name}-এর {cards}" },
+  lgin_yourCards: { en: "Your {cards}", dv: "ތިބާގެ {cards}", hi: "आपके {cards}", bn: "আপনার {cards}" },
+  lgin_balance: { en: "Balance {n}", dv: "ބެލެންސް {n}", hi: "बैलेंस {n}", bn: "ব্যালেন্স {n}" },
+  lgin_turnOver: { en: "Turn over", dv: "ފުރުޞަތު ނިމުނީ", hi: "बारी खत्म", bn: "পালা শেষ" },
+  lgin_handWon: { en: "Hand won", dv: "ހޭންޑް ކާމިޔާބު", hi: "हाथ जीता", bn: "হাত জয়" },
+  lgin_handLost: { en: "Hand lost", dv: "ހޭންޑް ބަލި", hi: "हाथ हारा", bn: "হাত হার" },
+  lgin_deadwoodN: { en: "{n} deadwood", dv: "{n} ޑެޑްވުޑް", hi: "{n} डेडवुड", bn: "{n} ডেডউড" },
+  lgin_discarded: { en: "Discarded", dv: "ދޫކޮށްލެވިއްޖެ", hi: "फेंक दिया", bn: "ফেলে দেওয়া হয়েছে" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

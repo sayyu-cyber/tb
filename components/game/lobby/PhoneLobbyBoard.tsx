@@ -197,7 +197,7 @@ export function PhoneLobbyBoard({
             style={{ position: "relative", height: 34, padding: "0 10px", fontSize: 11, boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 4px 0 #00727A" }}
             data-flat
           >
-            {t("lobby_enter")}
+            {t("lobby_enterLeague")}
             <Icon name="i-arrow" />
           </Link>
         </section>

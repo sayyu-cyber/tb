@@ -100,6 +100,17 @@ export interface PhoneMindiBoardProps {
 export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
   const t = useTranslation();
   const duel = !p.left && !p.right;
+  /* PMindi's seat lines follow the trick: an opponent who has put a card
+     down reads "Played", and the one who plays after whoever is on turn
+     reads "Next". Seats run clockwise from the viewer - left, across,
+     right - and the 1v1 variant has only the one across. */
+  const seats = duel ? 2 : 4;
+  const seatAt = (rel: number) => duel ? (p.viewer + 1) % 2 : (p.viewer + rel) % 4;
+  const playedSeats = new Set(p.trick.map(play => play.seat as number));
+  const onTurn = p.active ? p.viewer as number
+    : p.left?.active ? seatAt(1) : p.top.active ? seatAt(2) : p.right?.active ? seatAt(3) : null;
+  const nextSeat = onTurn === null || p.trick.length + 1 >= seats ? null : (onTurn + 1) % seats;
+  const trickLine = (rel: number) => ({ played: playedSeats.has(seatAt(rel)), next: nextSeat === seatAt(rel) && !playedSeats.has(seatAt(rel)) });
   const chosen = p.hand.find((card) => cardId(card) === p.selected) ?? null;
 
   /**
@@ -207,9 +218,9 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
 
         {/* The three other seats. In the 1v1 room variant there is only one,
             and the board's own centre position is where it belongs. */}
-        <Who seat={p.top} partner={!duel} style={{ left: 422, top: 62, transform: "translateX(-50%)" }} plate={plate("N")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.top.active} t={t} />
-        {p.left && <Who seat={p.left} partner={false} style={{ left: 48, top: 150 }} plate={plate("W")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.left.active} t={t} />}
-        {p.right && <Who seat={p.right} partner={false} style={{ right: 48, top: 150 }} plate={plate("E")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.right.active} t={t} />}
+        <Who seat={p.top} partner={!duel} style={{ left: 422, top: 62, transform: "translateX(-50%)" }} plate={plate("N")} ceremony={ceremony} {...trickLine(2)} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.top.active} t={t} />
+        {p.left && <Who seat={p.left} partner={false} style={{ left: 48, top: 150 }} plate={plate("W")} ceremony={ceremony} {...trickLine(1)} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.left.active} t={t} />}
+        {p.right && <Who seat={p.right} partner={false} style={{ right: 48, top: 150 }} plate={plate("E")} ceremony={ceremony} {...trickLine(3)} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.right.active} t={t} />}
 
         {(!ceremony || p.error) && (
           <span key={p.error ? "error" : "hint"} className="hint" role={p.error ? "alert" : "status"}>
@@ -294,9 +305,12 @@ function TenRack({ suits, none }: { suits: SuitLetter[]; none: string }) {
 }
 
 /** A seated player, as the board's `.who` chip - carrying the deal while it runs. */
-function Who({ seat, partner, style, plate, ceremony, leads, firstTrick, t }: {
+function Who({ seat, partner, style, plate, ceremony, leads, firstTrick, played = false, next = false, t }: {
   seat: ArenaSeatData; partner: boolean; style: React.CSSProperties;
-  plate: ReturnType<typeof openingPlate> | null; ceremony: boolean; leads: boolean; firstTrick: boolean; t: (key: string) => string;
+  plate: ReturnType<typeof openingPlate> | null; ceremony: boolean; leads: boolean; firstTrick: boolean;
+  /** Has a card down in this trick, and plays after whoever is on turn -
+   *  the board's "Played" and "Next". */
+  played?: boolean; next?: boolean; t: (key: string) => string;
 }) {
   const live = !ceremony && seat.active;
   return (
@@ -311,7 +325,7 @@ function Who({ seat, partner, style, plate, ceremony, leads, firstTrick, t }: {
           <i className={`dot ${partner ? "" : "them"} ${live ? "live" : ""}`.replace(/\s+/g, " ").trim()}
              {...(live ? { "data-ar-loop": true } : {})} />
           {plate ? <>{plate.line}{plate.suit && <Suit suit={plate.suit} className={plate.red ? "red" : undefined} />}</>
-            : leads ? t("deal_leads") : seat.active ? "Playing" : partner ? "Partner" : firstTrick ? t("mindi_opponent") : "Waiting"}
+            : leads ? t("deal_leads") : seat.active ? "Playing" : partner ? "Partner" : played ? t("mindi_played") : next ? t("mindi_next") : firstTrick ? t("mindi_opponent") : "Waiting"}
         </span>
       </div>
     </div>

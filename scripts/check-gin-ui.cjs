@@ -18,7 +18,7 @@ async function run() {
     const bodyClass = await page.locator('body').getAttribute('class');
     const script = fs.readFileSync(path.join(output,'component.js'),'utf8');
 
-    await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+    await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root" class="arena-app arena-phone"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await page.goto('http://127.0.0.1:3000/gin-test/');
 
     // Gin opens with the cut and the deal, played ON the table from its first
@@ -52,6 +52,9 @@ async function run() {
       assert.equal(await page.locator('.hand .hc').evaluateAll(nodes=>nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})),true,'Cards clipped '+width);
       await page.screenshot({path:path.join(output,'gin-'+width+'.png'),fullPage:true});
     }
+    // 844x390 and the upright sizes are the phone now (design/arena/LANDSCAPE.md);
+    // the board assertions below are the desktop table's.
+    await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(300);
     assert.equal(await page.locator('.hand .hc').count(),10);
     assert.equal(await page.locator('.fan button').count(),0);
     assert.equal(await page.getByRole('button',{name:'Draw first',exact:true}).isEnabled(),false,'Nothing to discard before the draw');

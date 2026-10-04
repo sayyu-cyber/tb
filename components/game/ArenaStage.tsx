@@ -27,6 +27,12 @@ import { cn } from "@/lib/utils";
  * under the browser's own chrome. So the frame takes its height from
  * `visualViewport` where there is one, `100dvh` where there isn't, and the
  * board is scaled to what is actually on screen.
+ *
+ * A phone composition (844x390) is also kept clear of the notch and the
+ * home indicator: its frame is padded by the safe-area insets
+ * (`.arena-frame-phone`) and the board is scaled into what is left, so the
+ * hand and the action button are never under the hardware either
+ * (design/arena/LANDSCAPE.md "Building it").
  */
 export function ArenaStage({
   width = 1440,
@@ -49,7 +55,12 @@ export function ArenaStage({
     const measure = () => {
       const box = element.getBoundingClientRect();
       if (!box.width || !box.height) return;
-      setScale(Math.min(box.width / width, box.height / height));
+      // The content box: a phone frame's padding is the safe area.
+      const style = getComputedStyle(element);
+      const across = box.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const down = box.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      if (across <= 0 || down <= 0) return;
+      setScale(Math.min(across / width, down / height));
     };
     measure();
     // Observing the frame rather than the window catches the sidebar opening
@@ -77,7 +88,7 @@ export function ArenaStage({
   }, []);
 
   return (
-    <div ref={frame} className="arena-frame">
+    <div ref={frame} className={width === 844 ? "arena-frame arena-frame-phone" : "arena-frame"}>
       <div
         className={cn("arena-canvas", className)}
         style={{ width, height, transform: `scale(${scale})` }}

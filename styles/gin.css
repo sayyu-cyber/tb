@@ -234,3 +234,14 @@
 .arena-canvas.arena-gin-board .hc{width:108px;height:151px;border-radius:9px;font-size:15px;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(8deg);transition:transform .5s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s;animation-delay:calc(var(--i) * 45ms + 150ms)}
 .arena-canvas.arena-gin-board .hc:hover:not(:disabled){translate:0 -14px}
 .arena-canvas.arena-gin-board .hc.sel,.arena-canvas.arena-gin-board .hc.sel:hover{translate:0 -34px}
+/* The phone Gin table (PGin) places its hand and its two piles the same way,
+   by transform, and a tapped card on a phone keeps :hover - without this it
+   fell back to the board's top-left corner the moment it was touched. */
+.arena-pgin button.hc:hover:not(:disabled),
+.arena-pgin button.hc:active:not(:disabled) {
+  transform:translate(var(--x),var(--y)) rotate(var(--r));
+}
+.arena-pgin button.tc:hover:not(:disabled),
+.arena-pgin button.tc:active:not(:disabled) {
+  transform:translateZ(var(--z)) rotate(var(--rot));
+}

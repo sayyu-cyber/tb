@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArenaStage } from "../ArenaStage";
 import { ArenaSprite, Suit, Icon } from "../ArenaSprite";
 import { cardId, rankLabel, type Card } from "@/lib/ginRummyEngine";
@@ -23,7 +24,13 @@ import { PhoneTableSurface } from "./PhoneTableSurface";
  * middle with a bracket over each meld. Your chip and the discard button take
  * the bottom corners.
  *
- * It holds no state. GinRummyTable owns the hand, the selection, the sort,
+ * The hand is over when `outcome` is set: the board's won state
+ * (phone-land-03c-gin-won). The opponent's hand turns face up in a bar
+ * across the top, your melds lift with their brackets lit, and after a
+ * moment the Gin card comes down over the table with the real points,
+ * deadwood and coins. A hand you lost is the same card from the other side.
+ *
+ * It holds no state of the game. GinRummyTable owns the hand, the selection, the sort,
  * the rule book and the leave confirm, and renders this instead of its own
  * board when the phone is sideways - so tap-to-pick, tap-again-to-discard and
  * the 15-second clock are one implementation, not two.
@@ -82,6 +89,32 @@ export interface PhoneGinBoardProps {
   opening?: OpeningDeal | null;
   /** Nobody has moved yet: the plates read as the deal leaves them. */
   firstTurn?: boolean;
+  /** The hand is over: the board's won state, with the real numbers. */
+  outcome?: PhoneGinOutcome | null;
+}
+
+/** The end of a hand, worked out by GinRummyTable from the real result. */
+export interface PhoneGinOutcome {
+  youWon: boolean;
+  /** The winner's meld sizes, largest first: "4 · 3 · 3". */
+  sizes: number[];
+  /** 25 + the loser's deadwood. */
+  score: number;
+  goingOut: number;
+  loserDeadwood: number;
+  /** "Hussain's J, 10 and 2" - whose deadwood, and what it was. */
+  loserCards: string;
+  coins: number;
+  balance: number;
+  /** The opponent's hand, face up: melds, then the cards left over. */
+  reveal: { cards: Card[]; dead: boolean }[];
+  continueLabel: string;
+  onContinue: () => void;
+}
+
+/** "4, 3 and 3", for the board's sentence. */
+export function listed(parts: (string | number)[], and: string) {
+  return parts.length < 2 ? parts.join("") : `${parts.slice(0, -1).join(", ")} ${and} ${parts[parts.length - 1]}`;
 }
 
 /**
@@ -96,6 +129,19 @@ const PILES: OpeningPiles = {
 export function PhoneGinBoard(p: PhoneGinBoardProps) {
   const t = useTranslation();
   const opening = p.opening ?? null;
+  const outcome = p.outcome ?? null;
+  const won = !!outcome?.youWon;
+  // The board turns the cards over first and brings the Gin card down 1.35s
+  // later (its reveal at 750ms, the card at 2100). Under reduced motion the
+  // card is simply there.
+  const [banner, setBanner] = useState(false);
+  useEffect(() => {
+    if (!outcome) { setBanner(false); return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setBanner(true); return; }
+    const timer = setTimeout(() => setBanner(true), 1350);
+    return () => clearTimeout(timer);
+  }, [outcome]);
+  const sizes = outcome ? listed(outcome.sizes, t("lgin_and")) : "";
   const ceremony = !!opening && opening.step < 4;
   const pilesShown = !opening || opening.settled;
   const selfPlate = opening && ceremony ? openingPlate(opening, "S", t) : null;
@@ -113,7 +159,7 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
    * from the groups rather than the cards is what makes the brackets line up
    * with the melds without measuring the DOM.
    */
-  const step = 30, gap = 10, cardW = 58, top = 296;
+  const step = 30, gap = won ? 18 : 10, cardW = 58, top = 296;
   const position = new Map<string, { x: number; k: number }>();
   const spans: { a: number; b: number; group: PhoneGinGroup }[] = [];
   let x = -step - gap;
@@ -206,13 +252,36 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
 
         {/* The opponent: their ten backs, and who they are. The backs wait for
             the deal - until then those cards are its pile. */}
-        <div className={`ofan ${ceremony ? "off" : ""}`.trim()} aria-hidden="true">
-          {angles.map((angle, i) => (
-            <div key={i} className="ob" style={{ ["--a" as string]: `${angle}deg` }}>
-              <div className="back"><i><Icon name="i-crown" /></i></div>
-            </div>
-          ))}
-        </div>
+        {outcome ? (
+          <div className="reveal bar" style={{ position: "absolute", left: 422, top: 8, transform: "translateX(-50%)", height: 44, padding: "0 10px", gap: 8 }}
+            aria-label={`${p.opponent.name}: ${outcome.reveal.flatMap(group => group.cards).map(card => `${rankLabel(card.rank)} of ${SUIT_NAMES[card.suit]}`).join(", ")}`}>
+            <span className="tag" style={{ color: "#fff" }}>{p.opponent.name}</span>
+            {(() => {
+              let n = 0;
+              return outcome.reveal.map((group, g) => (
+                <div key={g} style={{ display: "flex", gap: 2 }}>
+                  {group.cards.map(card => {
+                    const red = card.suit === "H" || card.suit === "D";
+                    const delay = `${(n++ * 0.05).toFixed(2)}s`;
+                    return (
+                      <div key={cardId(card)} className={`mini ${red ? "red" : ""} ${group.dead ? "dead" : ""}`.replace(/\s+/g, " ").trim()} style={{ animationDelay: delay }}>
+                        <b>{rankLabel(card.rank)}</b><Suit suit={card.suit} />
+                      </div>
+                    );
+                  })}
+                </div>
+              ));
+            })()}
+          </div>
+        ) : (
+          <div className={`ofan ${ceremony ? "off" : ""}`.trim()} aria-hidden="true">
+            {angles.map((angle, i) => (
+              <div key={i} className="ob" style={{ ["--a" as string]: `${angle}deg` }}>
+                <div className="back"><i><Icon name="i-crown" /></i></div>
+              </div>
+            ))}
+          </div>
+        )}
         <div className={`who ${oppPlate?.first || (p.firstTurn && !ceremony && !p.myTurn) ? "first" : ""}`.trim()} style={{ left: 422, top: 62, transform: "translateX(-50%)" }}>
           <div className="av them">{p.opponent.name.slice(0, 1).toUpperCase()}
             {oppPlate ? <CountBadge count={oppPlate.count} shown={oppPlate.countShown} /> : <span className="ct">{p.opponent.cardCount}</span>}</div>
@@ -221,6 +290,7 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
             <span className="st">
               <i className={`dot them ${!ceremony && !p.myTurn ? "live" : ""}`.trim()} {...(!ceremony && !p.myTurn ? { "data-ar-loop": true } : {})} />
               {oppPlate ? <>{oppPlate.line}{oppPlate.suit && <Suit suit={oppPlate.suit} className={oppPlate.red ? "red" : undefined} />}</>
+                : outcome ? t("lgin_deadwoodN").replace("{n}", String(won ? outcome.loserDeadwood : 0))
                 : p.firstTurn ? (p.myTurn ? t("mindi_opponent") : t("deal_leads"))
                 : p.myTurn ? "Waiting" : p.phase === "draw" ? "Drawing" : "Discarding"}
             </span>
@@ -236,12 +306,12 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
           {ceremony && opening ? <PhoneOpeningSteps deal={opening} /> : (
             <div className={`bar ${appear}`.trim()} style={{ padding: "0 12px", gap: 10 }} aria-label="Your melds">
               <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span className="tag" style={p.reading.fresh ? undefined : { color: readColor }}>{p.reading.title}</span>
-                <b className="disp" style={{ fontSize: 16, color: p.reading.fresh ? undefined : readColor }}>{p.reading.big}</b>
+                <span className="tag" style={won ? { color: "#C6FF33" } : p.reading.fresh ? undefined : { color: readColor }}>{won ? "Gin" : p.reading.title}</span>
+                <b className="disp" style={{ fontSize: 16, color: won ? "#C6FF33" : p.reading.fresh ? undefined : readColor }}>{won ? outcome.sizes.join(" · ") : p.reading.big}</b>
               </span>
               <span style={{ width: 1, height: 24, background: "rgba(255,255,255,.14)" }} />
               <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <b className="num" style={{ fontSize: 16, lineHeight: 1 }}>{p.deadwoodValue}</b>
+                <b className="num" style={{ fontSize: 16, lineHeight: 1 }}>{won ? 0 : p.deadwoodValue}</b>
                 <span className="tag" style={{ fontSize: 8 }}>Deadwood</span>
               </span>
             </div>
@@ -254,7 +324,15 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
         <div style={{ position: "absolute", right: 48, top: 8, display: "flex", alignItems: "center", gap: 8 }}>
           {ceremony && opening ? <PhoneOpeningCut deal={opening} /> : (
             <div className={`bar ${appear}`.trim()} style={{ padding: "0 12px 0 6px", gap: 9 }} aria-label="Turn">
-              {p.secondsLeft !== null && (
+              {outcome ? (
+                <div className="clock">
+                  <svg viewBox="0 0 34 34" aria-hidden="true">
+                    <circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="3.5" />
+                    <circle className="arc" cx="17" cy="17" r="14" fill="none" stroke="#C6FF33" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="88" strokeDashoffset={88} />
+                  </svg>
+                  <b>–</b>
+                </div>
+              ) : p.secondsLeft !== null && (
                 <div className="clock">
                   <svg viewBox="0 0 34 34" aria-hidden="true">
                     <circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="3.5" />
@@ -264,9 +342,9 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
                 </div>
               )}
               <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span className="tag">{p.myTurn ? "Your turn" : p.opponent.name}</span>
+                <span className="tag">{outcome ? t("lgin_turnOver") : p.myTurn ? "Your turn" : p.opponent.name}</span>
                 <span className="disp" style={{ fontSize: 14, whiteSpace: "nowrap" }}>
-                  {p.busy ? "Working…" : p.myTurn ? (p.phase === "draw" ? "Draw a card" : "Discard a card") : (p.phase === "draw" ? "Drawing" : "Discarding")}
+                  {outcome ? t(won ? "lgin_handWon" : "lgin_handLost") : p.busy ? "Working…" : p.myTurn ? (p.phase === "draw" ? "Draw a card" : "Discard") : (p.phase === "draw" ? "Drawing" : "Discarding")}
                 </span>
               </span>
             </div>
@@ -278,8 +356,8 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
 
         {(!ceremony || p.error) && (
           <span key={p.error ? "error" : "hint"} className="hint" role={p.error ? "alert" : "status"}>
-            {!p.error && p.myTurn && <i className="dot live" data-ar-loop />}
-            {p.error || p.hint}
+            {!p.error && p.myTurn && !outcome && <i className="dot live" data-ar-loop />}
+            {p.error || (outcome ? t("lgin_status").replace("{sizes}", sizes) : p.hint)}
           </span>
         )}
 
@@ -295,7 +373,7 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
               <button
                 type="button"
                 key={id}
-                className={`hc ${chosen ? "sel" : ""} ${p.myTurn ? "" : "wait"}`.replace(/\s+/g, " ").trim()}
+                className={`hc ${chosen ? "sel" : ""} ${p.myTurn && !outcome ? "" : "wait"} ${won ? "lift" : ""}`.replace(/\s+/g, " ").trim()}
                 style={{
                   ["--x" as string]: `${Math.round(left0 + slot.x)}px`,
                   ["--y" as string]: `${yAt(offset)}px`,
@@ -303,13 +381,13 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
                   ["--i" as string]: index,
                   zIndex: 10 + slot.k,
                 }}
-                disabled={!p.myTurn || p.phase !== "discard" || p.busy}
+                disabled={!p.myTurn || p.phase !== "discard" || p.busy || !!outcome}
                 aria-pressed={chosen}
                 aria-label={`${rankLabel(card.rank)} of ${SUIT_NAMES[card.suit]}`}
                 onClick={() => p.onActivate(card)}
                 data-flat
               >
-                {p.drawnId === id && p.myTurn && <span className="newtag">New</span>}
+                {p.drawnId === id && p.myTurn && !outcome && <span className="newtag">New</span>}
                 <span className={`cf ${red ? "red" : ""} ${card.rank === 10 ? "ten" : ""}`.replace(/\s+/g, " ").trim()}>
                   <span className="ix"><b>{rankLabel(card.rank)}</b><Suit suit={card.suit} /></span>
                   <Suit suit={card.suit} className="mid" />
@@ -322,22 +400,24 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
         {!ceremony && spans.map(({ a, b, group }) => (
           <div
             key={group.ids.join("")}
-            className={`gtag ${group.deadwood ? "dw" : ""}`.trim()}
-            style={{ left: Math.round(left0 + a + 4), top: top - 30, width: Math.round(b - a - 8) }}
+            className={`gtag ${group.deadwood ? "dw" : ""} ${won ? "hot" : ""}`.replace(/\s+/g, " ").trim()}
+            style={{ left: Math.round(left0 + a + 4), top: top - 30 - (won ? 10 : 0), width: Math.round(b - a - 8) }}
           >
             <span>{group.label}</span>
           </div>
         ))}
 
-        <div className={`who ${selfPlate?.first ? "first" : !ceremony && p.myTurn ? "turn" : ""}`.trim()} style={{ left: 48, bottom: 16 }}>
+        {/* Your plate stays lit through a hand you won, as PGin draws it. */}
+        <div className={`who ${selfPlate?.first ? "first" : !ceremony && ((p.myTurn && !outcome) || won) ? "turn" : ""}`.trim()} style={{ left: 48, bottom: 16 }}>
           <div className="av">{p.name.slice(0, 1).toUpperCase()}
             {selfPlate ? <CountBadge count={selfPlate.count} shown={selfPlate.countShown} /> : <span className="ct">{p.hand.length}</span>}</div>
           <div>
-            <b>{!ceremony && p.myTurn && !p.firstTurn ? "Your turn" : p.name}{selfPlate?.dealer && <span className="dtag">{t("deal_dealer")}</span>}</b>
+            <b>{!ceremony && p.myTurn && !p.firstTurn && !outcome ? "Your turn" : p.name}{selfPlate?.dealer && <span className="dtag">{t("deal_dealer")}</span>}</b>
             <span className="st">
-              <i className={`dot ${!ceremony && p.myTurn ? "live" : ""}`.trim()} {...(!ceremony && p.myTurn ? { "data-ar-loop": true } : {})} />
+              <i className={`dot ${!ceremony && ((p.myTurn && !outcome) || won) ? "live" : ""}`.trim()} {...(!ceremony && ((p.myTurn && !outcome) || won) ? { "data-ar-loop": true } : {})} />
               {selfPlate ? <>{selfPlate.line}{selfPlate.suit && <Suit suit={selfPlate.suit} className={selfPlate.red ? "red" : undefined} />}</>
-                : p.myTurn ? (p.firstTurn ? "Your turn" : p.phase === "draw" ? "Draw or take" : "Discard one") : "Waiting"}
+                : outcome ? t(won ? "lgin_discarded" : "lgin_turnOver")
+                : p.myTurn ? (p.firstTurn ? "Your turn" : p.phase === "draw" ? "Draw or take" : "Pick a discard") : "Waiting"}
             </span>
           </div>
         </div>
@@ -348,16 +428,42 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
               type="button"
               className={`ar-btn ${p.selectedWins ? "go" : ""} ${appear}`.replace(/\s+/g, " ").trim()}
               style={{ width: 176 }}
-              disabled={!canDiscard}
+              disabled={!canDiscard || !!outcome}
               onClick={p.onDiscard}
               data-flat
             >
               <Icon name="i-discard" />
-              {p.actionLabel}
-              {p.selected && !p.selectedWins && <Suit suit={p.selected.suit} style={{ width: 15, height: 15 }} />}
+              {outcome ? t(won ? "lgin_discarded" : "lgin_turnOver") : p.actionLabel}
+              {!outcome && p.selected && !p.selectedWins && <Suit suit={p.selected.suit} style={{ width: 15, height: 15 }} />}
             </button>
           )}
         </div>
+
+        {outcome && banner && <>
+          <div className="veil2" />
+          <section className={won ? "hud banner" : "hud b banner"} role="status">
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <h2 className="disp" style={{ margin: 0, fontSize: 66, lineHeight: 0.9 }}><span className="stamp chrome">Gin</span></h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span className="lbl dash" style={{ color: won ? "#C6FF33" : "#9FF2F7" }}>
+                  {won ? t("lgin_youWon") : t("lgin_theyWon").replace("{name}", p.opponent.name)}
+                </span>
+                <p className="body" style={{ margin: 0, fontSize: 13.5, lineHeight: 1.4 }}>{t("lgin_melds").replace("{sizes}", sizes)}</p>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, margin: "14px 0 14px" }}>
+              <div className="gcell"><span className="lbl" style={{ fontSize: 9.5 }}>{t("gin_points")}</span><span className="num" style={{ fontSize: 24, lineHeight: 1 }}>{outcome.score}</span>
+                <span className="muted" style={{ fontSize: 11 }}>{t("lgin_goingOut").replace("{bonus}", String(outcome.goingOut)).replace("{n}", String(outcome.loserDeadwood))}</span></div>
+              <div className="gcell"><span className="lbl" style={{ fontSize: 9.5 }}>{t("gin_deadwood")}</span><span className="num" style={{ fontSize: 24, lineHeight: 1 }}>{outcome.loserDeadwood}</span>
+                <span className="muted" style={{ fontSize: 11 }}>{outcome.loserCards}</span></div>
+              <div className="gcell"><span className="lbl" style={{ fontSize: 9.5 }}>{t("lgin_coins")}</span><span className="num" style={{ fontSize: 24, lineHeight: 1, color: won ? "#C6FF33" : undefined }}>+{outcome.coins}</span>
+                <span className="muted" style={{ fontSize: 11 }}>{t("lgin_balance").replace("{n}", outcome.balance.toLocaleString())}</span></div>
+            </div>
+            <button type="button" className="ar-btn" style={{ height: 44, fontSize: 13 }} onClick={outcome.onContinue} data-flat>
+              <Icon name="i-replay" />{outcome.continueLabel}
+            </button>
+          </section>
+        </>}
       </div>
     </ArenaStage>
   );

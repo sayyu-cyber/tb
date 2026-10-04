@@ -30,6 +30,11 @@ export function useAuth() {
  * Falling through to lib/i18n rather than a short list means a new key in
  * the screen shows up as its own English text, not as its key name.
  */
+/** The PLobby board's coins chip reads 1,240, the board's own sample balance. */
+export function useEconomy() {
+  return { state: { economy: { coins: 1240 }, profile: { equipped: { cardBack: "cb_arena", tableTheme: "tt_default" } } } };
+}
+
 export function useTranslation() {
   const strings: Record<string, string> = {
     page_weekendLeague: "Weekend League",

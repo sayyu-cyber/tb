@@ -298,6 +298,9 @@
   body:has(.rotate-gate) { overflow: hidden; }
 
   .rotate-gate {
+    /* Shown here and only here. It said display:none above and nothing
+       ever turned it back on, so a match held upright showed no gate. */
+    display: block;
     position: fixed;
     inset: 0;
     z-index: 999;
@@ -338,6 +341,10 @@
   .arena-mrotate [data-ar-loop],
   .arena-land .mrail .pw .fc,
   .arena-land .ltile .lv { animation: none !important; }
+  /* The result boards' rays are centred by their own animation's
+     translate(-50%,-50%); stopping the turn must not move them off-centre. */
+  .arena-presult .rays,
+  .arena-result .rays { transform: translate(-50%, -50%); }
   /* LANDSCAPE.md: under reduced motion the gate's phone rests sideways. */
   .arena-lgate .gturn .gp { animation: none !important; transform: rotate(-90deg); }
 }

@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { sortHand } from "@/lib/cardSort";
 import { ArenaSeatData } from "@/components/game/GameArena";
 import { GinResultScreen } from "./GinResultScreen";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { ginOpening, useOpeningDeal } from "./MindiDealIntro";
 import { cutForFirstPlay } from "@/lib/openingCut";
 import type { SeatIndex } from "@/lib/mindiEngine";
@@ -76,6 +77,9 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
   // Held back so the winning discard can be seen landing before the screen
   // changes; `result` is the engine's truth the moment the hand is decided.
   const [resultReady, setResultReady] = useState(false);
+  /* On a phone the hand ends on the table itself - PGin's won state - and
+     the desktop's result screen is not used. */
+  const phone = usePhoneLayout();
   const [deadline, setDeadline] = useState<number | null>(null);
 
   // The opening deal plays ON the table from its first frame, and nothing
@@ -229,7 +233,7 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
     finishTurn(turn, hand.filter(c => cardId(c) !== cardId(selectedDiscard)), stock, [...discard, selectedDiscard]);
   }
 
-  if (result && resultReady) {
+  if (result && resultReady && !phone) {
     const youWon = result.winner === "player";
     return <GinResultScreen result={result} youWon={youWon}
       coins={youWon ? 10 : 2} balance={economyState.economy.coins}
@@ -268,7 +272,7 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
 
   return <>
     {/* The winning card, held on screen before the result takes over. */}
-    {result && !resultReady && topDiscard && (
+    {result && !resultReady && topDiscard && !phone && (
       <div className="gin-last-card" role="status">
         <motion.div initial={{ scale: 0.4, y: -120, rotate: -14, opacity: 0 }} animate={{ scale: 1, y: 0, rotate: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 170, damping: 16 }}>
@@ -283,6 +287,12 @@ function GinRummyHand({ mode, onReplay }: GinRummyGameClientProps & { onReplay: 
       deadline={deadline} reshuffles={reshuffles}
       tableSkin={economyState.profile.equipped.tableTheme} cardBack={economyState.profile.equipped.cardBack}
       opening={untouched ? opening : null}
+      outcome={result && resultReady ? {
+        youWon: result.winner === "player", result,
+        loserHand: result.winner === "player" ? opponentHand : playerHand, opponentHand,
+        coins: result.winner === "player" ? 10 : 2, balance: economyState.economy.coins,
+        continueLabel: "Continue", onContinue: onReplay,
+      } : null}
       onDraw={handleDraw} onSelect={handleSelectDiscard} onDiscard={handleConfirmDiscard} />
   </>;
 }
