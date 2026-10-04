@@ -116,8 +116,8 @@ export function RoomWaitingRoom({ gameId, gameType, code, myUid, buildInitialSta
   const card = isOwner ? getActiveRoomCards()[0] : undefined;
   const name = (uid?: string) => uid ? room.playerNames[uid] || t("profile_player") : t("room_openSeat").toLowerCase();
   const passwordText = room.password ? t("room_passwordOn") : t("room_passwordOff");
-  const passwordDetail = room.password ? `${t("room_on")}${isOwner ? ` · ${room.password}` : ""}` : t("room_off");
-  const passwordLabel = room.password && isOwner && !phone ? `${t("room_password")} · ${room.password}` : passwordText;
+  const passwordDetail = room.password ? t("room_on") : t("room_off");
+  const passwordLabel = passwordText;
   const countLine = t(phone ? "room_phoneSeatCount" : "room_inviteSeats").replace("{n}", String(room.players.length)).replace("{max}", String(room.maxPlayers)).replace("{mode}", t(teams ? "room_twoTeams" : "room_oneOnOne")).toLowerCase();
   const rotateOpen = portrait && (starting || matchReady);
   const codeTiles = <div className="bigcode" aria-label={code}>{Array.from(code, (char, i) => <i key={i}>{char}</i>)}</div>;

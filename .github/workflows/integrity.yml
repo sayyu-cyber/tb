@@ -1,0 +1,128 @@
+name: Integrity
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
+  NPM_CONFIG_ENGINE_STRICT: 'true'
+
+jobs:
+  core:
+    name: Core integrity (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check installed Supabase runtime requirements
+        run: node -e "require('./scripts/check-integrity-core.cjs').checkRuntime()"
+      - name: Verify types, lint and source contracts
+        run: npm run verify
+      - name: Build trusted match server
+        run: npm run build:match-server
+      - name: Run sequential offline integrity checks
+        run: node scripts/check-integrity-core.cjs
+      - name: Build static application with public fixtures
+        env:
+          NEXT_PUBLIC_SITE_URL: https://integrity-build.invalid
+          NEXT_PUBLIC_SUPABASE_URL: https://integrity-build.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_integrity_ci_fixture_only
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6ImludGVncml0eS1jaSIsImlhdCI6MCwiZXhwIjo0MTAyNDQ0ODAwfQ.U8dwl0w3lU5YB2Ug0y-tew7wR81XwtBqI-y_DkAtwRc
+        run: npm run build
+
+  database:
+    name: Local database integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      DOCKER_CONTEXT: default
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install isolated local PostgreSQL fixture client
+        # The existing room suite resolves pg from a Git-ignored migration tool path.
+        # NODE_PATH supplies only pg; the migration tool and its credentials are unused.
+        run: npm install --prefix "$RUNNER_TEMP/integrity-pg" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund pg@8.7.1
+      - name: Check database safeguards and full migration inventory
+        run: node scripts/check-integrity-db.cjs --check
+      - name: Create owned local PostgreSQL container
+        run: |
+          set -euo pipefail
+          endpoint="$(docker context inspect default --format '{{.Endpoints.docker.Host}}')"
+          test "$endpoint" = 'unix:///var/run/docker.sock'
+          if docker --context default inspect --type container thaasbai-audit-db >/dev/null 2>&1; then
+            echo 'Refusing to reuse or replace an existing audit container.' >&2
+            exit 1
+          fi
+          docker --context default run --detach \
+            --name thaasbai-audit-db \
+            --cidfile "$RUNNER_TEMP/thaasbai-integrity-container-id" \
+            --label "thaasbai.integrity-owner=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB" \
+            --publish 127.0.0.1:55439:5432 \
+            --tmpfs /var/lib/postgresql/data \
+            --env POSTGRES_PASSWORD=local-audit-only \
+            postgres:16-bookworm -c wal_level=logical
+          container_id="$(cat "$RUNNER_TEMP/thaasbai-integrity-container-id")"
+          for attempt in {1..30}; do
+            if docker --context default exec "$container_id" pg_isready -h 127.0.0.1 -U postgres; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'Owned PostgreSQL container did not become ready.' >&2
+          exit 1
+      - name: Apply every migration and run guarded local database suites
+        run: |
+          set -euo pipefail
+          container_id="$(cat "$RUNNER_TEMP/thaasbai-integrity-container-id")"
+          actual_id="$(docker --context default inspect --type container --format '{{.Id}}' thaasbai-audit-db)"
+          owner="$(docker --context default inspect --type container --format '{{index .Config.Labels "thaasbai.integrity-owner"}}' "$container_id")"
+          test "$actual_id" = "$container_id"
+          test "$owner" = "$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
+          export NODE_PATH="$RUNNER_TEMP/integrity-pg/node_modules"
+          node -e "const {createRequire}=require('node:module'); const path=require('node:path'); const r=createRequire(path.resolve('supabase/auth-migration/tools/firebase-to-supabase/package.json')); if(r.resolve('pg') !== require.resolve('pg')) throw new Error('Unexpected fixture client resolution'); console.log('Isolated pg fixture client:', r('pg/package.json').version);"
+          node scripts/check-integrity-db.cjs
+      - name: Remove only this job's container
+        if: always()
+        run: |
+          set -euo pipefail
+          cidfile="$RUNNER_TEMP/thaasbai-integrity-container-id"
+          if [ ! -s "$cidfile" ]; then exit 0; fi
+          container_id="$(cat "$cidfile")"
+          if [[ ! "$container_id" =~ ^[a-f0-9]{64}$ ]]; then
+            echo 'Refusing cleanup: invalid owned container ID.' >&2
+            exit 1
+          fi
+          endpoint="$(docker context inspect default --format '{{.Endpoints.docker.Host}}')"
+          test "$endpoint" = 'unix:///var/run/docker.sock'
+          owner="$(docker --context default inspect --type container --format '{{index .Config.Labels "thaasbai.integrity-owner"}}' "$container_id")"
+          name="$(docker --context default inspect --type container --format '{{.Name}}' "$container_id")"
+          test "$owner" = "$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
+          test "$name" = '/thaasbai-audit-db'
+          docker --context default rm --force "$container_id"

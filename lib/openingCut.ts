@@ -37,13 +37,13 @@ export interface OpeningCut<Key extends string | number> {
 
 const CUT_SUITS: CutSuit[] = ["S", "H", "D", "C"];
 
-function shuffledCutDeck(): CutCard[] {
+function shuffledCutDeck(random: () => number): CutCard[] {
   const deck: CutCard[] = [];
   for (const suit of CUT_SUITS) {
     for (let rank = 2; rank <= 14; rank++) deck.push({ suit, rank: rank as CutRank });
   }
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   return deck;
@@ -56,9 +56,9 @@ function shuffledCutDeck(): CutCard[] {
  * Works for any number of players - two for Gin Rummy and for the Mindi 1v1
  * room variant, four for the standard Mindi game.
  */
-export function cutForFirstPlay<Key extends string | number>(keys: Key[]): OpeningCut<Key> {
+export function cutForFirstPlay<Key extends string | number>(keys: Key[], random: () => number = Math.random): OpeningCut<Key> {
   const deal = () => {
-    const deck = shuffledCutDeck();
+    const deck = shuffledCutDeck(random);
     const cards = {} as Record<Key, CutCard>;
     keys.forEach((key, i) => { cards[key] = deck[i]; });
     return cards;

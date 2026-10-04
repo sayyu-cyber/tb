@@ -322,7 +322,7 @@ export function MindiTable(p:Props) {
       active={p.active} trump={effectiveTrump} trick={p.trick} winner={winner}
       tens={{us:tensUs,them:tensThem}} tricks={{us:p.tricks[team],them:p.tricks[other]}}
       tenSuits={{us:capturedSuits(p.tenCaptures,team),them:capturedSuits(p.tenCaptures,other)}}
-      hint={phoneHint} actionLabel={chosen?`Play ${rankLabel(chosen.rank)}`:p.active?t("table_pickACard"):t("table_wait")}
+      hint={phoneHint} error={modal ? undefined : error} actionLabel={chosen?`Play ${rankLabel(chosen.rank)}`:p.active?t("table_pickACard"):t("table_wait")}
       tableSkin={p.tableSkin} canPlay={canPlay}
       opening={opening} firstTrick={firstTrick&&!complete}
       onActivate={activateCard}

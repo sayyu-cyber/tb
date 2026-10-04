@@ -1,22 +1,26 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { ScatteredCards } from "@/components/auth/ScatteredCards";
 import { useAuth } from "@/contexts/AuthContext";
 import { takeRoomReturn } from "@/lib/authReturn";
+import { AccountCompletionNotice } from "@/components/auth/AccountCompletionNotice";
 
 export default function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, accountCompletion, accountBusy } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user && !user.isGuest) {
-      router.push(takeRoomReturn() || "/home");
+    if (!loading && !accountBusy && !accountCompletion && user && !user.isGuest) {
+      let destination = "/home";
+      try { destination = takeRoomReturn() || destination; } catch { /* Storage is optional. */ }
+      router.replace(destination);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, accountCompletion, accountBusy]);
 
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-4 relative overflow-hidden">
@@ -35,7 +39,14 @@ export default function LoginPage() {
         transition={{ type: "spring", stiffness: 420, damping: 34 }}
         className="w-full max-w-md relative z-10"
       >
-        <LoginForm />
+        {accountCompletion ? <AccountCompletionNotice /> : <>
+          {user?.isGuest && <p className="px-6 mb-4 text-sm text-center">Create an account or link Google to keep this guest profile. Signing in to an existing account switches profiles; guest progress is not merged.</p>}
+          <LoginForm />
+          <nav aria-label="Account help" className="flex flex-wrap justify-center gap-4 mt-6 text-sm">
+            <Link href="/forgot-password" className="underline">Forgot password?</Link>
+            <Link href="/confirm-email" className="underline">Resend confirmation</Link>
+          </nav>
+        </>}
       </motion.div>
     </div>
   );

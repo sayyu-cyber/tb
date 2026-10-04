@@ -10,7 +10,8 @@
     "verify": "npm run typecheck && npm run lint && npm run check",
     "prebuild": "npm run check",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/preview.mjs",
+    "build:match-server": "node scripts/build-match-server.cjs",
     "preview": "node scripts/preview.mjs",
     "lint": "next lint"
   },

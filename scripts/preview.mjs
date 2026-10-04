@@ -4,7 +4,25 @@ import { stat } from 'node:fs/promises';
 import { resolve, sep, extname } from 'node:path';
 
 const root = resolve(process.env.THAASBAI_BUILD_DIR || 'out');
-const port = Number(process.env.PORT || 3002);
+function parsePort(args, environmentPort) {
+  let value = environmentPort || '3002';
+  for (let index = 0; index < args.length; index++) {
+    const argument = args[index];
+    if (argument === '-p' || argument === '--port') {
+      value = args[++index];
+    } else if (argument.startsWith('--port=')) {
+      value = argument.slice('--port='.length);
+    } else {
+      throw new Error(`Unknown preview argument: ${argument}. Use -p PORT or --port PORT.`);
+    }
+    if (!value || !/^\d+$/.test(value)) throw new Error('Preview port must be an integer from 1 to 65535.');
+  }
+  if (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 65535) {
+    throw new Error('Preview port must be an integer from 1 to 65535.');
+  }
+  return Number(value);
+}
+const port = parsePort(process.argv.slice(2), process.env.PORT);
 const types = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json',

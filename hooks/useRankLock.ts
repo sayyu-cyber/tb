@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { RANKED_DAYS } from "@/constants/ranks";
+import { formatLeagueBoundary, getLeagueDay, getLeagueWindow } from "@/lib/competitionTime";
 
 interface RankLockStatus {
   isLocked: boolean;
@@ -21,49 +22,30 @@ export function useRankLock(): RankLockStatus {
   });
 
   useEffect(() => {
-    const checkLock = () => {
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = () => {
+      clearTimeout(timer);
       const now = new Date();
-      const day = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-      const hour = now.getHours();
-      const minute = now.getMinutes();
-
-      const isQualificationDay = RANKED_DAYS.includes(day);
-
-      // Lock from Thursday 23:59 until Sunday 00:00
-      const isThursdayNight = day === 4 && (hour > 23 || (hour === 23 && minute >= 59));
-      const isFriday = day === 5;
-      const isSaturday = day === 6;
-      const isSundayMorning = day === 0 && hour === 0 && minute < 5;
-
-      const isLocked = isThursdayNight || isFriday || isSaturday || isSundayMorning;
-
-      // Calculate next unlock
-      let nextUnlock = new Date(now);
-      if (isLocked) {
-        nextUnlock.setDate(now.getDate() + ((7 - day) % 7));
-        nextUnlock.setHours(0, 0, 0, 0);
-        if (day === 0) nextUnlock.setDate(nextUnlock.getDate() + 7);
-      }
-
+      const day = getLeagueDay(now);
+      const { live, boundary } = getLeagueWindow(now);
       const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
       setStatus({
-        isLocked,
-        // The Weekend League window IS the lock window - ranked matchmaking
-        // is locked specifically because Weekend League is running instead
-        // (see RankLockBanner's copy). Previously this was computed as
-        // "weekend day AND NOT locked", which was never true on a Friday or
-        // Saturday (both are always locked), so the badge never showed.
-        isWeekendLeague: isLocked,
-        isQualification: isQualificationDay && !isLocked,
-        nextUnlockTime: isLocked ? nextUnlock.toLocaleDateString("en-US", { weekday: "long", hour: "2-digit", minute: "2-digit" }) : "",
+        isLocked: live,
+        isWeekendLeague: live,
+        isQualification: RANKED_DAYS.includes(day) && !live,
+        nextUnlockTime: live ? formatLeagueBoundary(boundary) : "",
         currentDay: days[day],
       });
+      timer = setTimeout(refresh, 60_000 - Date.now() % 60_000);
     };
-
-    checkLock();
-    const interval = setInterval(checkLock, 60000); // Check every minute
-    return () => clearInterval(interval);
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, []);
 
   return status;

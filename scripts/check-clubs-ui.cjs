@@ -16,7 +16,7 @@ const BASE = process.env.CHECK_BASE_URL || 'http://127.0.0.1:3000';
 const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/clubs-test');
 const mocks = path.join(__dirname, 'clubs-test-services.tsx');
 const alias = Object.fromEntries([
-  '@/contexts/AuthContext', '@/contexts/ToastContext', '@/lib/clubs', '@/lib/friends',
+  '@/contexts/AuthContext', '@/contexts/ToastContext', '@/lib/clubs', '@/lib/messages', '@/lib/friends',
   '@/hooks/useTranslation', 'next/link',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
@@ -28,6 +28,7 @@ async function run() {
     output: { path: output, filename: 'component.js' },
     resolve: { extensions: ['.tsx', '.ts', '.js'], alias },
     module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/, use: path.join(__dirname, 'friends-test-loader.cjs') }] },
+    plugins: [new webpack.NormalModuleReplacementPlugin(/\.css$/, 'data:text/javascript,export default {};')],
     optimization: { minimize: false },
   }, (error, stats) => error || stats.hasErrors() ? reject(error || stats.toString()) : resolve()));
 
@@ -42,7 +43,7 @@ async function run() {
     await page.route('**/clubs/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<body class="${bodyClass || ''}" style="margin:0"><style>${fs.readFileSync(path.join(root, 'components/messages/message-history.css'), 'utf8')}</style>`
         + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
         + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
@@ -68,8 +69,8 @@ async function run() {
 
     // ── My Club, and CODE ISSUE 10 ──────────────────────────────────────
     assert.equal(await page.locator('.club-panel').count(), 1, 'The My Club panel');
-    assert.ok((await page.locator('.club-head').innerText()).includes("Male' Mindi Masters"));
-    assert.ok((await page.locator('.club-head').innerText()).includes('24 / 30 members'));
+    assert.ok((await page.locator('.club-head').textContent()).includes("Male' Mindi Masters"));
+    assert.ok((await page.locator('.club-head').innerText()).includes('6 / 30 members'));
     assert.equal(await page.locator('.mem').count(), 6, 'Six members');
     // The fixture's club document records everyone at their join-day figure
     // (4, 9, 12, 2, 30, 7). The screen must show the live ones, in order.
@@ -109,7 +110,7 @@ async function run() {
     await page.getByRole('button', { name: /^Members/ }).click();
     await page.getByRole('button', { name: /^Leave Club/ }).click();
     await page.getByRole('dialog').waitFor();
-    await page.getByRole('button', { name: 'Leave' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Leave', exact: true }).click();
     assert.equal(await page.locator('body').getAttribute('data-left'), 'yes');
 
     // ── Joining, when you have no club ──────────────────────────────────

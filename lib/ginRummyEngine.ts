@@ -68,7 +68,7 @@ export function cardId(card: Card): string {
   return `${card.suit}${card.rank}`;
 }
 
-export function createShuffledDeck(): Card[] {
+export function createShuffledDeck(random: () => number = Math.random): Card[] {
   const deck: Card[] = [];
   for (const suit of SUITS) {
     for (let rank = 1; rank <= 13; rank++) {
@@ -76,7 +76,7 @@ export function createShuffledDeck(): Card[] {
     }
   }
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   return deck;
@@ -90,8 +90,8 @@ export interface GinDeal {
 }
 
 /** Deals a fresh hand: 10 cards each, then the next card starts the discard pile. */
-export function dealGinHand(): GinDeal {
-  const deck = createShuffledDeck();
+export function dealGinHand(random: () => number = Math.random): GinDeal {
+  const deck = createShuffledDeck(random);
   const playerHand = deck.slice(0, 10);
   const opponentHand = deck.slice(10, 20);
   const discard = [deck[20]];
@@ -256,10 +256,10 @@ export function isWinningGin(hand: Card[]): boolean {
   return findGinLayout(hand) !== null;
 }
 
-function shuffle<T>(items: T[]): T[] {
+function shuffle<T>(items: T[], random: () => number): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
@@ -273,10 +273,10 @@ function shuffle<T>(items: T[]): T[] {
  * Returns the input untouched when there is nothing to recycle, so callers
  * can apply this unconditionally.
  */
-export function replenishStock(stock: Card[], discard: Card[]): { stock: Card[]; discard: Card[] } {
+export function replenishStock(stock: Card[], discard: Card[], random: () => number = Math.random): { stock: Card[]; discard: Card[] } {
   if (stock.length > 0 || discard.length <= 1) return { stock, discard };
   const top = discard[discard.length - 1];
-  return { stock: shuffle(discard.slice(0, -1)), discard: [top] };
+  return { stock: shuffle(discard.slice(0, -1), random), discard: [top] };
 }
 
 export interface GinHandResult {

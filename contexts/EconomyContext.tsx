@@ -9,14 +9,15 @@ import { usePathname } from 'next/navigation';
 import { useToast } from './ToastContext';
 import { loadWallet, mutateWallet, type WalletSnapshot } from '@/lib/wallet';
 import { realtimeChannelName } from '@/lib/supabase/data';
+import { safeSetItem } from '@/lib/safeStorage';
 import {
-  PlayerEconomy, CoinTransaction, CoinSource, PlayerProfile,
+  PlayerEconomy, CoinSource, PlayerProfile,
   RoomCard, RoomCardType, ROOM_CARD_DURATION_HOURS, DailyMission, WeeklyMission, Achievement,
-  DailyLoginReward, RewardPopup, RewardItem
+  DailyLoginReward, RewardPopup
 } from '../types/economy';
 import { 
   DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES,
-  ACHIEVEMENTS, COIN_PACKS, ALL_COSMETICS, ROOM_CARD_PRICES, RANK_CONFIGS
+  ACHIEVEMENTS, ALL_COSMETICS, ROOM_CARD_PRICES
 } from '../data/cosmetics';
 import {
   MissionRewardOverrides,
@@ -31,6 +32,7 @@ import {
 type EconomyAction =
   | { type: 'SERVER_RESULT'; payload: { snapshot: WalletSnapshot; action?: EconomyAction } }
   | { type: 'HYDRATE_STATE'; payload: EconomyState }
+  | { type: 'PRACTICE_MATCH'; payload: { isVictory: boolean; gameType: string } }
   | { type: 'ADD_COINS'; payload: { amount: number; source: CoinSource; description: string } }
   | { type: 'SPEND_COINS'; payload: { amount: number; description: string } }
   | { type: 'COMPLETE_MISSION'; payload: { missionId: string; isWeekly: boolean } }
@@ -57,6 +59,7 @@ type EconomyAction =
 
 // ─── STATE ───────────────────────────────────────────
 interface EconomyState {
+  pendingClaims: { key: string; action: EconomyAction }[];
   profile: PlayerProfile;
   economy: PlayerEconomy;
   missions: {
@@ -88,68 +91,10 @@ interface EconomyState {
   shopOverrides: ShopOverrides | null;
 }
 
-const generateDailyMissions = (): DailyMission[] => {
-  const shuffled = [...DAILY_MISSION_TEMPLATES].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 3).map((template, index) => ({
-    ...template,
-    progress: 0,
-    completed: false,
-    id: `${template.id}_${Date.now()}_${index}`,
-    templateId: template.id,
-  }));
-};
-
-const generateWeeklyMissions = (): WeeklyMission[] => {
-  const shuffled = [...WEEKLY_MISSION_TEMPLATES].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 3).map((template, index) => ({
-    ...template,
-    progress: 0,
-    completed: false,
-    id: `${template.id}_${Date.now()}_${index}`,
-    templateId: template.id,
-  }));
-};
-
 const initialDailyLoginRewards = DAILY_LOGIN_REWARDS.map(r => ({ ...r, claimed: false }));
 
-/**
- * Stored-shape version for `playerEconomy` documents.
- *
- * 2 — single canonical balance. Before this, `profile.coins` and
- *     `economy.coins` were maintained in parallel and drifted (the weekly
- *     rank-reward function incremented only `profile.coins`, CoinBalance
- *     displayed only `profile.coins`, and every affordability check read
- *     `economy.coins`). `economy.coins` won because it is what all the
- *     spend guards already used and it sits with the rest of the ledger.
- */
-const ECONOMY_SCHEMA_VERSION = 2;
-
-/**
- * One-time reconciliation for documents written before v2.
- *
- * Takes the HIGHER of the two old balances, deliberately. Players who were
- * paid a weekly rank reward have a `profile.coins` above their
- * `economy.coins`, and picking the canonical field blindly would silently
- * confiscate coins they were genuinely awarded. Over-crediting is not a
- * risk in the other direction: every reducer path updated both fields, so
- * only the function-written one could ever run ahead.
- *
- * This must run EXACTLY ONCE per document, which is what the version field
- * is for. Running it on every load would be a spend-infinitely bug: after a
- * purchase drops `economy.coins` below the stale `profile.coins`, the next
- * reload would restore the higher figure.
- */
-function reconcileCoins(data: Partial<EconomyState>, fallback: number): number {
-  const stored = data.economy?.coins;
-  if ((data.economy?.schemaVersion ?? 0) >= ECONOMY_SCHEMA_VERSION) {
-    return stored ?? fallback;
-  }
-  const legacy = data.profile?.coins;
-  if (stored === undefined && legacy === undefined) return fallback;
-  return Math.max(stored ?? 0, legacy ?? 0);
-}
-
 const initialState: EconomyState = {
+  pendingClaims: [],
   profile: {
     uid: '',
     displayName: 'Player',
@@ -183,15 +128,15 @@ const initialState: EconomyState = {
     lastLoginDate: '',
   },
   economy: {
-    coins: 100,
+    coins: 0,
     transactions: [],
-    totalEarned: 100,
+    totalEarned: 0,
     totalSpent: 0,
-    schemaVersion: ECONOMY_SCHEMA_VERSION,
+    schemaVersion: 3,
   },
   missions: {
-    daily: generateDailyMissions(),
-    weekly: generateWeeklyMissions(),
+    daily: [],
+    weekly: [],
     dailyAllBonus: 50,
     lastDailyReset: Date.now(),
     lastWeeklyReset: Date.now(),
@@ -214,23 +159,6 @@ const initialState: EconomyState = {
 };
 
 const STORAGE_KEY = 'thaasbai-economy-state';
-const ECONOMY_LOAD_TIMEOUT_MS = 4000;
-
-function isNewDay(lastTimestamp: number): boolean {
-  const last = new Date(lastTimestamp);
-  const now = new Date();
-  return last.getDate() !== now.getDate() || 
-         last.getMonth() !== now.getMonth() || 
-         last.getFullYear() !== now.getFullYear();
-}
-
-function isNewWeek(lastTimestamp: number): boolean {
-  const last = new Date(lastTimestamp);
-  const now = new Date();
-  const daysSinceLast = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
-  return daysSinceLast >= 7 || (now.getDay() === 0 && last.getDay() !== 0);
-}
-
 // Maps a cosmetic's category to its collection array key - shared by every
 // place that grants or reads owned cosmetics (purchase, equip, and now the
 // various earn sources below).
@@ -244,25 +172,6 @@ const CATEGORY_TO_COLLECTION_KEY: Record<string, keyof PlayerProfile['collection
   banner: 'banners',
 };
 
-/**
- * Grants a cosmetic item directly (no coin cost) - the shared path for every
- * "earn source" you asked for: daily login bonus items, weekly mission
- * rewards, and ranked/Weekend League weekly rewards. Returns the same
- * collection object unchanged if the id isn't a real cosmetic (e.g. it's the
- * special "room_card_1h" token, handled separately) or is already owned.
- */
-function grantCosmeticToCollection(
-  collection: PlayerProfile['collection'],
-  itemId: string | undefined
-): PlayerProfile['collection'] {
-  if (!itemId) return collection;
-  const item = ALL_COSMETICS.find(c => c.id === itemId);
-  if (!item) return collection;
-  const key = CATEGORY_TO_COLLECTION_KEY[item.category];
-  if (!key || collection[key].includes(itemId)) return collection;
-  return { ...collection, [key]: [...collection[key], itemId] };
-}
-
 function stateForUser(user: NonNullable<ReturnType<typeof useAuth>['user']>): EconomyState {
   return {
     ...initialState,
@@ -274,526 +183,117 @@ function stateForUser(user: NonNullable<ReturnType<typeof useAuth>['user']>): Ec
   };
 }
 
-function mergeEconomyState(data: Partial<EconomyState>, user: NonNullable<ReturnType<typeof useAuth>['user']>): EconomyState {
-  const base = stateForUser(user);
-  // Strip the legacy balance by omitting the key, never by setting it to
-  // undefined. The old profile balance has already been folded into the
-  // canonical economy balance.
-  const legacyProfile = { ...(data.profile ?? {}) };
-  delete legacyProfile.coins;
-  return {
-    ...base,
-    ...data,
-    profile: {
-      ...base.profile,
-      // legacyProfile, not data.profile - see the destructure above. The
-      // old balance has already been folded into economy.coins by
-      // reconcileCoins, so carrying it further would only invite a stale
-      // read. The legacy field is inert from here on.
-      ...legacyProfile,
-      uid: user.uid,
-      displayName: data.profile?.displayName || user.displayName || base.profile.displayName,
-      equipped: { ...base.profile.equipped, ...(data.profile?.equipped ?? {}) },
-      stats: { ...base.profile.stats, ...(data.profile?.stats ?? {}) },
-      collection: { ...base.profile.collection, ...(data.profile?.collection ?? {}) },
-      vip: { ...base.profile.vip, ...(data.profile?.vip ?? {}) },
-      roomCards: data.profile?.roomCards ?? base.profile.roomCards,
-      achievements: data.profile?.achievements ?? base.profile.achievements,
-    },
-    // Coins are resolved through reconcileCoins rather than a plain spread,
-    // so a pre-v2 document is migrated once and then left alone. Stamping
-    // the version here is what makes it once-only - the next save writes it
-    // back, and subsequent loads take the canonical field verbatim.
-    economy: {
-      ...base.economy,
-      ...(data.economy ?? {}),
-      coins: reconcileCoins(data, base.economy.coins),
-      schemaVersion: ECONOMY_SCHEMA_VERSION,
-    },
-    missions: {
-      ...base.missions,
-      ...(data.missions ?? {}),
-      daily: data.missions?.daily ?? base.missions.daily,
-      weekly: data.missions?.weekly ?? base.missions.weekly,
-    },
-    achievements: data.achievements ?? base.achievements,
-    dailyLogin: {
-      ...base.dailyLogin,
-      ...(data.dailyLogin ?? {}),
-      rewards: data.dailyLogin?.rewards ?? base.dailyLogin.rewards,
-    },
-    rewardPopups: data.rewardPopups ?? base.rewardPopups,
-    weeklyRankReward: { ...base.weeklyRankReward, ...(data.weeklyRankReward ?? {}) },
-    missionRewardOverrides: data.missionRewardOverrides ?? base.missionRewardOverrides,
-    rankRewardOverrides: data.rankRewardOverrides ?? base.rankRewardOverrides,
-    shopOverrides: data.shopOverrides ?? base.shopOverrides,
-  };
-}
-
-async function hydrateSupabaseEconomy(base: EconomyState, uid: string): Promise<EconomyState> {
-  const supabase = getSupabaseBrowserClient();
-  const [{ data: wallet, error: walletError }, { data: equipped, error: equippedError }, { data: inventory, error: inventoryError }] = await Promise.all([
-    supabase.from('wallets').select('coins,total_earned,total_spent').eq('user_id', uid).maybeSingle(),
-    supabase.from('equipped_cosmetics').select('card_back,table_theme,profile_frame,title,victory_animation,banner').eq('user_id', uid).maybeSingle(),
-    supabase.from('inventory_items').select('item_id,category').eq('user_id', uid),
-  ]);
-  if (walletError) throw walletError;
-  if (equippedError) throw equippedError;
-  if (inventoryError) throw inventoryError;
-
-  const collection = { ...base.profile.collection };
-  for (const item of inventory ?? []) {
+// Account entitlements always come from a complete server snapshot, never the cache.
+function applyEconomySnapshot(state: EconomyState, snapshot: WalletSnapshot): EconomyState {
+  const now = Date.parse(snapshot.daily.serverNow);
+  const collection = { ...initialState.profile.collection };
+  for (const item of snapshot.inventory ?? []) {
     const key = CATEGORY_TO_COLLECTION_KEY[item.category];
-    if (key && !collection[key].includes(item.item_id)) collection[key] = [...collection[key], item.item_id] as any;
+    if (key && !collection[key].includes(item.item_id)) collection[key] = [...collection[key], item.item_id];
   }
-
+  const equipped = snapshot.equipped;
+  const vip = snapshot.vip;
+  const expiresAt = vip?.expires_at ? Date.parse(vip.expires_at) : 0;
+  const active = !!vip?.active && expiresAt > now;
+  const missions = snapshot.missions ?? [];
+  const daily = missions.filter(m => m.cadence === 'daily').flatMap(m => {
+    const template = DAILY_MISSION_TEMPLATES.find(t => t.id === m.template_id);
+    return template ? [{ ...template, id: m.id, templateId: m.template_id, title: m.title, description: m.description,
+      target: m.target, progress: m.progress, completed: m.completed, reward: m.reward }] : [];
+  });
+  const weekly = missions.filter(m => m.cadence === 'weekly').flatMap(m => {
+    const template = WEEKLY_MISSION_TEMPLATES.find(t => t.id === m.template_id);
+    return template ? [{ ...template, id: m.id, templateId: m.template_id, title: m.title, description: m.description,
+      target: m.target, progress: m.progress, completed: m.completed, reward: m.reward,
+      rewardCosmeticId: m.reward_cosmetic_id ?? undefined }] : [];
+  });
+  const achievements = ACHIEVEMENTS.map(template => {
+    const saved = snapshot.achievements?.find(a => a.achievement_id === template.id);
+    return { ...template, progress: saved?.progress ?? 0, target: saved?.target ?? template.target,
+      unlocked: !!saved?.unlocked_at, unlockedAt: saved?.unlocked_at ? Date.parse(saved.unlocked_at) : undefined };
+  });
   return {
-    ...base,
+    ...state,
+    pendingClaims: [
+      ...missions.filter(m => m.verified_at && m.completed && m.progress >= m.target && !m.claimed_at).map(m => ({
+        key: m.id, action: { type: 'COMPLETE_MISSION' as const, payload: { missionId: m.id, isWeekly: m.cadence === 'weekly' } },
+      })),
+      ...(snapshot.achievements ?? []).filter(a => a.verified_at && a.progress >= a.target && !a.unlocked_at).map(a => ({
+        key: a.achievement_id, action: { type: 'UNLOCK_ACHIEVEMENT' as const, payload: { achievementId: a.achievement_id } },
+      })),
+    ],
+    economy: { ...state.economy, coins: snapshot.wallet.coins, totalEarned: snapshot.wallet.total_earned, totalSpent: snapshot.wallet.total_spent },
+    dailyLogin: { ...state.dailyLogin, server: snapshot.daily, streak: snapshot.daily.claimedThrough,
+      lastClaimed: snapshot.daily.lastClaimed ? Date.parse(snapshot.daily.lastClaimed) : 0,
+      rewards: DAILY_LOGIN_REWARDS.map(r => ({ ...r, claimed: r.day <= snapshot.daily.claimedThrough })) },
+    missions: { ...state.missions, daily, weekly },
+    achievements,
     profile: {
-      ...base.profile,
-      equipped: {
-        ...base.profile.equipped,
-        cardBack: equipped?.card_back ?? base.profile.equipped.cardBack,
-        tableTheme: equipped?.table_theme ?? base.profile.equipped.tableTheme,
-        profileFrame: equipped?.profile_frame ?? base.profile.equipped.profileFrame,
-        title: equipped?.title ?? base.profile.equipped.title,
-        victoryAnimation: equipped?.victory_animation ?? base.profile.equipped.victoryAnimation,
-        banner: equipped?.banner ?? base.profile.equipped.banner,
-      },
-      collection,
-    },
-    economy: {
-      ...base.economy,
-      coins: wallet?.coins ?? base.economy.coins,
-      totalEarned: wallet?.total_earned ?? base.economy.totalEarned,
-      totalSpent: wallet?.total_spent ?? base.economy.totalSpent,
+      ...state.profile, collection, achievements: achievements.filter(a => a.unlocked).map(a => a.id),
+      equipped: equipped ? { cardBack: equipped.card_back, tableTheme: equipped.table_theme,
+        profileFrame: equipped.profile_frame, title: equipped.title, victoryAnimation: equipped.victory_animation,
+        banner: equipped.banner } : initialState.profile.equipped,
+      vip: { active, activatedAt: vip?.activated_at ? Date.parse(vip.activated_at) : 0, expiresAt,
+        remainingDays: active ? Math.ceil((expiresAt - now) / 86400000) : 0 },
+      roomCards: (snapshot.roomCards ?? []).map(card => ({
+        id: card.id, type: card.type, duration: ROOM_CARD_DURATION_HOURS[card.type],
+        // Activated means consumed, including after expiry.
+        activated: !!card.activated_at || !!card.expires_at,
+        activatedAt: card.activated_at ? Date.parse(card.activated_at) : undefined,
+        expiresAt: card.expires_at ? Date.parse(card.expires_at) : undefined,
+        remainingTime: card.expires_at ? Math.max(0, Date.parse(card.expires_at) - now) : 0,
+      })),
     },
   };
 }
 
-async function saveSupabaseEconomy(uid: string, state: EconomyState): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  // handle_new_user creates this row. Upsert requires an INSERT policy,
-  // while the owner is intentionally permitted to SELECT/UPDATE only.
-  const { error: equippedError } = await supabase.from('equipped_cosmetics').update({
-      card_back: state.profile.equipped.cardBack || 'cb_default',
-      table_theme: state.profile.equipped.tableTheme || 'tt_default',
-      profile_frame: state.profile.equipped.profileFrame || 'pf_default',
-      title: state.profile.equipped.title || '',
-      victory_animation: state.profile.equipped.victoryAnimation || 'va_default',
-      banner: state.profile.equipped.banner || 'bn_default',
-      updated_at: new Date().toISOString(),
-    }).eq('user_id', uid);
-  if (equippedError) throw equippedError;
-}
-
-// ─── REDUCER ─────────────────────────────────────────
-function economyReducer(state: EconomyState, action: EconomyAction, wallet?: WalletSnapshot['wallet']): EconomyState {
-  if (action.type === 'HYDRATE_STATE') return { ...action.payload, economy: state.economy, dailyLogin: state.dailyLogin };
-  if (action.type === 'SERVER_RESULT') {
-    const { snapshot, action: applied } = action.payload;
-    const next = applied ? economyReducer(state, applied, snapshot.wallet) : state;
-    return { ...next,
-      economy: { ...next.economy, coins: snapshot.wallet.coins, totalEarned: snapshot.wallet.total_earned, totalSpent: snapshot.wallet.total_spent },
-      dailyLogin: { ...next.dailyLogin, server: snapshot.daily, streak: snapshot.daily.claimedThrough,
-        lastClaimed: snapshot.daily.lastClaimed ? new Date(snapshot.daily.lastClaimed).getTime() : 0,
-        rewards: DAILY_LOGIN_REWARDS.map(reward => ({ ...reward, claimed: reward.day <= snapshot.daily.claimedThrough })) },
-      profile: snapshot.roomCardId ? { ...next.profile, roomCards: next.profile.roomCards.map((card, index, all) => index === all.length - 1 ? { ...card, id: snapshot.roomCardId! } : card) } : next.profile,
-    };
-  }
+function economyReducer(state: EconomyState, action: EconomyAction): EconomyState {
   switch (action.type) {
-    case 'ADD_COINS': {
-      const { amount, source, description } = action.payload;
-      const transaction: CoinTransaction = {
-        id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        amount,
-        type: 'earn',
-        source,
-        description,
-        timestamp: Date.now(),
-      };
-      return {
-        ...state,
-        economy: {
-          ...state.economy,
-          coins: wallet?.coins ?? state.economy.coins + amount,
-          transactions: [transaction, ...state.economy.transactions].slice(0, 100),
-          totalEarned: wallet?.total_earned ?? state.economy.totalEarned + amount,
-        },
-      };
-    }
-
-    case 'SPEND_COINS': {
-      const { amount, description } = action.payload;
-      if (!wallet && state.economy.coins < amount) return state;
-      const transaction: CoinTransaction = {
-        id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        amount,
-        type: 'spend',
-        source: 'purchase',
-        description,
-        timestamp: Date.now(),
-      };
-      return {
-        ...state,
-        economy: {
-          ...state.economy,
-          coins: wallet?.coins ?? state.economy.coins - amount,
-          transactions: [transaction, ...state.economy.transactions].slice(0, 100),
-          totalSpent: wallet?.total_spent ?? state.economy.totalSpent + amount,
-        },
-      };
-    }
-
-    case 'COMPLETE_MISSION': {
-      const { missionId, isWeekly } = action.payload;
-      if (isWeekly) {
-        const weekly = state.missions.weekly.map(m =>
-          m.id === missionId ? { ...m, completed: true } : m
-        );
-        const completedMission = weekly.find(m => m.id === missionId);
-        if (!completedMission) return state;
-        // Admin panel's per-mission reward override (lib/admin.ts), keyed
-        // by the stable templateId rather than the per-instance id, so an
-        // edit applies even to a mission that was already generated.
-        const reward = state.missionRewardOverrides?.weeklyRewards[completedMission.templateId] ?? completedMission.reward;
-        return {
-          ...state,
-          missions: { ...state.missions, weekly },
-          profile: {
-            ...state.profile,
-            collection: grantCosmeticToCollection(state.profile.collection, completedMission.rewardCosmeticId),
-          },
-          economy: {
-            ...state.economy,
-            coins: wallet?.coins ?? state.economy.coins + reward,
-            totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward,
-          },
-        };
-      } else {
-        const daily = state.missions.daily.map(m =>
-          m.id === missionId ? { ...m, completed: true } : m
-        );
-        const completedMission = daily.find(m => m.id === missionId);
-        if (!completedMission) return state;
-        const reward = state.missionRewardOverrides?.dailyRewards[completedMission.templateId] ?? completedMission.reward;
-        const allDailyComplete = daily.every(m => m.completed);
-        const bonus = allDailyComplete && !state.missions.daily.every(m => m.completed) ? state.missions.dailyAllBonus : 0;
-        return {
-          ...state,
-          missions: { ...state.missions, daily },
-          economy: {
-            ...state.economy,
-            coins: wallet?.coins ?? state.economy.coins + reward + bonus,
-            totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward + bonus,
-          },
-        };
-      }
-    }
-
-    case 'CLAIM_DAILY_REWARD': {
-      const { day } = action.payload;
-      const reward = state.dailyLogin.rewards[day - 1];
-      if (!reward || reward.claimed) return state;
-      const newRewards = state.dailyLogin.rewards.map((r, i) =>
-        i === day - 1 ? { ...r, claimed: true } : r
-      );
-      const newStreak = day === 7 ? 0 : state.dailyLogin.streak + 1;
-      const allClaimed = newRewards.every(r => r.claimed);
-      const finalRewards = allClaimed ? initialDailyLoginRewards.map(r => ({ ...r, claimed: false })) : newRewards;
-      const finalStreak = allClaimed ? 0 : newStreak;
-
-      if (reward.bonusItem === 'room_card_1h') {
-        const newCard: RoomCard = {
-          id: `rc_${Date.now()}`,
-          type: '1h',
-          duration: ROOM_CARD_DURATION_HOURS['1h'],
-          activated: false,
-        };
-        return {
-          ...state,
-          profile: {
-            ...state.profile,
-            roomCards: [...state.profile.roomCards, newCard],
-          },
-          economy: {
-            ...state.economy,
-            coins: wallet?.coins ?? state.economy.coins + reward.coins,
-            totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward.coins,
-          },
-          dailyLogin: {
-            streak: finalStreak,
-            lastClaimed: Date.now(),
-            rewards: finalRewards,
-          },
-        };
-      }
-
-      return {
-        ...state,
-        profile: {
-          ...state.profile,
-          collection: grantCosmeticToCollection(state.profile.collection, reward.bonusItem),
-        },
-        economy: {
-          ...state.economy,
-          coins: wallet?.coins ?? state.economy.coins + reward.coins,
-          totalEarned: wallet?.total_earned ?? state.economy.totalEarned + reward.coins,
-        },
-        dailyLogin: {
-          streak: finalStreak,
-          lastClaimed: Date.now(),
-          rewards: finalRewards,
-        },
-      };
-    }
-
-    case 'ACTIVATE_VIP': {
-      const { days } = action.payload;
-      const now = Date.now();
-      const expiresAt = now + days * 24 * 60 * 60 * 1000;
-      const newCard: RoomCard = {
-        id: `rc_vip_${Date.now()}`,
-        type: '24h',
-        duration: ROOM_CARD_DURATION_HOURS['24h'],
-        activated: false,
-      };
-      return {
-        ...state,
-        profile: {
-          ...state.profile,
-          vip: { active: true, activatedAt: now, expiresAt, remainingDays: days },
-          roomCards: [...state.profile.roomCards, newCard],
-        },
-      };
-    }
-
-    case 'ACTIVATE_ROOM_CARD': {
-      const { cardId } = action.payload;
-      const now = Date.now();
-      const card = state.profile.roomCards.find(c => c.id === cardId && !c.activated);
-      if (!card) return state;
-      const updatedCards = state.profile.roomCards.map(c =>
-        c.id === cardId ? { ...c, activated: true, activatedAt: now, expiresAt: now + c.duration * 60 * 60 * 1000 } : c
-      );
-      return {
-        ...state,
-        profile: { ...state.profile, roomCards: updatedCards },
-      };
-    }
-
-    case 'PURCHASE_COSMETIC': {
-      const { itemId } = action.payload;
-      const item = ALL_COSMETICS.find(c => c.id === itemId);
-      if (!item) return state;
-      if (state.shopOverrides?.hiddenItemIds.includes(itemId)) return state; // admin-hidden - not purchasable
-      const price = state.shopOverrides?.priceOverrides[itemId] ?? item.price;
-      if (!wallet && state.economy.coins < price) return state;
-      const collectionKey = CATEGORY_TO_COLLECTION_KEY[item.category];
-      if (!collectionKey || state.profile.collection[collectionKey].includes(itemId)) return state;
-      return {
-        ...state,
-        profile: {
-          ...state.profile,
-          collection: grantCosmeticToCollection(state.profile.collection, itemId),
-        },
-        economy: {
-          ...state.economy,
-          coins: wallet?.coins ?? state.economy.coins - price,
-          totalSpent: wallet?.total_spent ?? state.economy.totalSpent + price,
-        },
-      };
-    }
-
-    case 'EQUIP_COSMETIC': {
-      const { category, itemId } = action.payload;
-      const equipMap: Record<string, string> = {
-        cardBack: 'cardBack',
-        tableTheme: 'tableTheme',
-        profileFrame: 'profileFrame',
-        victoryAnimation: 'victoryAnimation',
-        banner: 'banner',
-      };
-      const key = equipMap[category];
-      if (!key) return state;
-      return {
-        ...state,
-        profile: {
-          ...state.profile,
-          equipped: { ...state.profile.equipped, [key]: itemId },
-        },
-      };
-    }
-
-    case 'UNLOCK_ACHIEVEMENT': {
-      const { achievementId } = action.payload;
-      const achievement = state.achievements.find(a => a.id === achievementId);
-      if (!achievement || achievement.unlocked) return state;
-      const updatedAchievements = state.achievements.map(a =>
-        a.id === achievementId ? { ...a, unlocked: true, unlockedAt: Date.now() } : a
-      );
-      return {
-        ...state,
-        achievements: updatedAchievements,
-        profile: {
-          ...state.profile,
-          achievements: [...state.profile.achievements, achievementId],
-        },
-        economy: {
-          ...state.economy,
-          coins: wallet?.coins ?? state.economy.coins + achievement.reward,
-          totalEarned: wallet?.total_earned ?? state.economy.totalEarned + achievement.reward,
-        },
-      };
-    }
-
-    case 'UPDATE_PROGRESS': {
-      const { key, value } = action.payload;
-      return {
-        ...state,
-        profile: {
-          ...state.profile,
-          stats: { ...state.profile.stats, [key]: value },
-        },
-      };
-    }
-
-    case 'ADD_ROOM_CARD': {
-      const { type } = action.payload;
-      const newCard: RoomCard = {
-        id: `rc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        type,
-        duration: ROOM_CARD_DURATION_HOURS[type],
-        activated: false,
-      };
-      return {
-        ...state,
-        profile: { ...state.profile, roomCards: [...state.profile.roomCards, newCard] },
-      };
-    }
-
-    case 'PURCHASE_ROOM_CARD': {
-      const { type, price } = action.payload;
-      if (!wallet && state.economy.coins < price) return state;
-      const newCard: RoomCard = {
-        id: `rc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        type,
-        duration: ROOM_CARD_DURATION_HOURS[type],
-        activated: false,
-      };
-      return {
-        ...state,
-        profile: {
-          ...state.profile,
-          roomCards: [...state.profile.roomCards, newCard],
-        },
-        economy: {
-          ...state.economy,
-          coins: wallet?.coins ?? state.economy.coins - price,
-          totalSpent: wallet?.total_spent ?? state.economy.totalSpent + price,
-        },
-      };
-    }
-
-    case 'SET_MISSION_REWARD_OVERRIDES':
-      return { ...state, missionRewardOverrides: action.payload };
-
-    case 'SET_RANK_REWARD_OVERRIDES':
-      return { ...state, rankRewardOverrides: action.payload };
-
-    case 'SET_SHOP_OVERRIDES':
-      return { ...state, shopOverrides: action.payload };
-
-    case 'GRANT_COSMETIC': {
-      const { itemId } = action.payload;
-      const collection = grantCosmeticToCollection(state.profile.collection, itemId);
-      if (collection === state.profile.collection) return state;
-      return { ...state, profile: { ...state.profile, collection } };
-    }
-
-    case 'SHOW_REWARD': {
-      return {
-        ...state,
-        rewardPopups: [...state.rewardPopups, action.payload],
-      };
-    }
-
-    case 'CLEAR_REWARD': {
-      return {
-        ...state,
-        rewardPopups: state.rewardPopups.filter(r => r.id !== action.payload),
-      };
-    }
-
-    case 'RESET_DAILY_MISSIONS': {
-      return {
-        ...state,
-        missions: {
-          ...state.missions,
-          daily: generateDailyMissions(),
-          lastDailyReset: Date.now(),
-        },
-      };
-    }
-
-    case 'RESET_WEEKLY_MISSIONS': {
-      return {
-        ...state,
-        missions: {
-          ...state.missions,
-          weekly: generateWeeklyMissions(),
-          lastWeeklyReset: Date.now(),
-        },
-      };
-    }
-
-    case 'CHECK_VIP_EXPIRY': {
-      const now = Date.now();
-      if (state.profile.vip.active && state.profile.vip.expiresAt <= now) {
-        return {
-          ...state,
-          profile: {
-            ...state.profile,
-            vip: { active: false, activatedAt: 0, expiresAt: 0, remainingDays: 0 },
-          },
-        };
-      }
-      if (state.profile.vip.active) {
-        const remainingDays = Math.ceil((state.profile.vip.expiresAt - now) / (24 * 60 * 60 * 1000));
-        return {
-          ...state,
-          profile: {
-            ...state.profile,
-            vip: { ...state.profile.vip, remainingDays },
-          },
-        };
-      }
-      return state;
-    }
-
-    case 'CHECK_ROOM_CARDS': {
-      const now = Date.now();
-      const updatedCards = state.profile.roomCards.map(card => {
-        if (card.activated && card.expiresAt && card.expiresAt <= now) {
-          return { ...card, activated: false, remainingTime: 0 };
-        }
-        if (card.activated && card.expiresAt) {
-          return { ...card, remainingTime: Math.max(0, card.expiresAt - now) };
-        }
-        return card;
-      });
-      return {
-        ...state,
-        profile: { ...state.profile, roomCards: updatedCards },
-      };
-    }
-
-    case 'SET_STATE': {
+    case 'SERVER_RESULT':
+      return applyEconomySnapshot(state, action.payload.snapshot);
+    case 'SET_STATE':
+    case 'HYDRATE_STATE':
       return action.payload;
+    case 'PRACTICE_MATCH': {
+      const { isVictory, gameType } = action.payload;
+      const matchesPlayed = state.profile.stats.matchesPlayed + 1;
+      const matchesWon = state.profile.stats.matchesWon + Number(isVictory);
+      return { ...state,
+        profile: { ...state.profile, stats: { ...state.profile.stats, matchesPlayed, matchesWon,
+          winRate: Math.round(matchesWon / matchesPlayed * 100) } },
+        missions: { ...state.missions,
+          daily: state.missions.daily.map(m => {
+            const increment = ['play_match', 'play_matches'].includes(m.type)
+              || (['win_match', 'win_matches'].includes(m.type) && isVictory)
+              || (m.type === 'play_game' && m.gameType === gameType);
+            return increment && !m.completed ? { ...m, progress: Math.min(m.target, m.progress + 1) } : m;
+          }),
+          weekly: state.missions.weekly.map(m => {
+            const increment = m.templateId.startsWith('wm_play_') || (m.templateId.startsWith('wm_win_') && isVictory);
+            return increment && !m.completed ? { ...m, progress: Math.min(m.target, m.progress + 1) } : m;
+          }),
+        },
+      };
     }
-
-    default:
+    case 'UPDATE_PROGRESS':
+      return Number.isFinite(action.payload.value) ? { ...state, profile: { ...state.profile,
+        stats: { ...state.profile.stats, [action.payload.key]: action.payload.value } } } : state;
+    case 'SET_MISSION_REWARD_OVERRIDES': return { ...state, missionRewardOverrides: action.payload };
+    case 'SET_RANK_REWARD_OVERRIDES': return { ...state, rankRewardOverrides: action.payload };
+    case 'SET_SHOP_OVERRIDES': return { ...state, shopOverrides: action.payload };
+    case 'SHOW_REWARD': return { ...state, rewardPopups: [...state.rewardPopups, action.payload] };
+    case 'CLEAR_REWARD': return { ...state, rewardPopups: state.rewardPopups.filter(r => r.id !== action.payload) };
+    case 'RESET_DAILY_MISSIONS':
+    case 'RESET_WEEKLY_MISSIONS':
       return state;
+    case 'CHECK_ROOM_CARDS':
+      return { ...state, profile: { ...state.profile, roomCards: state.profile.roomCards.map(card =>
+        card.expiresAt ? { ...card, remainingTime: Math.max(0, card.expiresAt - Date.now()) } : card) } };
+    case 'CHECK_VIP_EXPIRY':
+      return state.profile.vip.expiresAt <= Date.now() ? { ...state, profile: { ...state.profile,
+        vip: { ...state.profile.vip, active: false, remainingDays: 0 } } } : state;
+    // All entitlement and coin changes require a SERVER_RESULT.
+    default: return state;
   }
 }
 
@@ -808,7 +308,7 @@ interface EconomyContextType {
   activateVip: (days: number) => void;
   activateRoomCard: (cardId: string) => void;
   purchaseCosmetic: (itemId: string) => Promise<boolean>;
-  equipCosmetic: (category: string, itemId: string) => void;
+  equipCosmetic: (category: string, itemId: string) => Promise<boolean>;
   unlockAchievement: (achievementId: string) => void;
   updateProgress: (key: string, value: number) => void;
   addRoomCard: (type: RoomCardType) => void;
@@ -832,221 +332,122 @@ const EconomyContext = createContext<EconomyContextType | null>(null);
 
 export function EconomyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const authUserRef = useRef(user);
+  authUserRef.current = user;
   const [state, rawDispatch] = useReducer(economyReducer, initialState);
   const pathname = usePathname();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [remoteReadyUid, setRemoteReadyUid] = useState<string | null>(null);
+  const [remoteReadyEpoch, setRemoteReadyEpoch] = useState<number | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
   const activeUid = useRef(user?.uid);
-  activeUid.current = user?.uid;
+  const authEpoch = useRef(0);
+  if (activeUid.current !== user?.uid) {
+    activeUid.current = user?.uid;
+    authEpoch.current++;
+  }
+  const epoch = authEpoch.current;
   const walletVersion = useRef(-1);
   const mutations = useRef<Promise<unknown>>(Promise.resolve());
+  const snapshotTime = useRef(0);
+  const claiming = useRef(new Set<string>());
   const applySnapshot = useCallback((snapshot: WalletSnapshot, action?: EconomyAction) => {
-    if (snapshot.wallet.version < walletVersion.current) {
-      if (!action) return;
-      const current = stateRef.current;
-      snapshot = { ...snapshot, wallet: { coins: current.economy.coins, total_earned: current.economy.totalEarned, total_spent: current.economy.totalSpent, version: walletVersion.current }, daily: current.dailyLogin.server || snapshot.daily };
-    }
+    if (authEpoch.current !== epoch) return false;
+    const time = Date.parse(snapshot.daily.serverNow);
+    // loadWallet/mutateWallet validate compatibility before a snapshot reaches here.
+    if (snapshot.wallet.version < walletVersion.current || time < snapshotTime.current) return false;
     walletVersion.current = snapshot.wallet.version;
+    snapshotTime.current = time;
     const result: EconomyAction = { type: 'SERVER_RESULT', payload: { snapshot, action } };
     stateRef.current = economyReducer(stateRef.current, result);
     rawDispatch(result);
-  }, []);
+    setRemoteReadyEpoch(epoch);
+    return true;
+  }, [epoch]);
   const refreshBalance = useCallback(async () => {
-    if (!user?.uid) return;
-    const uid = user.uid;
+    if (!user?.uid || authEpoch.current !== epoch) return;
     const snapshot = await loadWallet();
-    if (activeUid.current !== uid) return;
     applySnapshot(snapshot);
-    setRemoteReadyUid(uid);
-  }, [user?.uid, applySnapshot]);
+  }, [user?.uid, epoch, applySnapshot]);
   const dispatch = useCallback((action: EconomyAction): Promise<boolean> => {
-    const monetary = ['ADD_COINS', 'SPEND_COINS', 'COMPLETE_MISSION', 'CLAIM_DAILY_REWARD', 'PURCHASE_COSMETIC', 'PURCHASE_ROOM_CARD', 'UNLOCK_ACHIEVEMENT'].includes(action.type);
-    if (!user?.uid || !monetary) { rawDispatch(action); return Promise.resolve(true); }
-    const uid = user.uid;
+    if (authEpoch.current !== epoch) return Promise.resolve(false);
+    const monetary = ['ADD_COINS', 'SPEND_COINS', 'COMPLETE_MISSION', 'CLAIM_DAILY_REWARD', 'PURCHASE_COSMETIC', 'PURCHASE_ROOM_CARD', 'UNLOCK_ACHIEVEMENT', 'ACTIVATE_ROOM_CARD', 'EQUIP_COSMETIC', 'ACTIVATE_VIP', 'ADD_ROOM_CARD', 'GRANT_COSMETIC'].includes(action.type);
+    if (!monetary) {
+      stateRef.current = economyReducer(stateRef.current, action);
+      rawDispatch(action);
+      return Promise.resolve(true);
+    }
+    if (!user?.uid || remoteReadyEpoch !== epoch) return Promise.resolve(false);
     const work = mutations.current.then(async () => {
-      if (activeUid.current !== uid) return false;
+      if (authEpoch.current !== epoch) return false;
       try {
         const snapshot = await mutateWallet(action.type, 'payload' in action ? action.payload : {});
-        if (activeUid.current === uid) { applySnapshot(snapshot, action); setRemoteReadyUid(uid); }
+        if (authEpoch.current !== epoch) return false;
+        applySnapshot(snapshot, action);
         return true;
       } catch (error) {
-        if (activeUid.current === uid) showToast(error instanceof Error ? error.message : 'Your balance could not be updated. Please try again.', 'error');
+        if (authEpoch.current === epoch) showToast(error instanceof Error ? error.message : 'Your balance could not be updated. Please try again.', 'error');
         return false;
       }
     });
     mutations.current = work;
     return work;
-  }, [user?.uid, applySnapshot, showToast]);
+  }, [user?.uid, epoch, remoteReadyEpoch, applySnapshot, showToast]);
 
-  // Load/navigation/reconnect always read the server. Missed WebSocket events
-  // also recover on focus, online and a bounded refresh interval.
+  // Auth changes discard cached account data; malformed old caches cannot grant access.
+  useEffect(() => {
+    setRemoteReadyEpoch(null);
+    walletVersion.current = -1;
+    snapshotTime.current = 0;
+    mutations.current = Promise.resolve();
+    claiming.current = new Set();
+    const next = authUserRef.current ? stateForUser(authUserRef.current) : initialState;
+    stateRef.current = next;
+    rawDispatch({ type: 'SET_STATE', payload: next });
+    setIsLoading(false);
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid || remoteReadyEpoch !== epoch || state.profile.uid !== user.uid) return;
+    const keys = new Set(state.pendingClaims.map(claim => `${claim.action.type}:${claim.key}`));
+    for (const key of claiming.current) if (!keys.has(key)) claiming.current.delete(key);
+    for (const claim of state.pendingClaims) {
+      const key = `${claim.action.type}:${claim.key}`;
+      if (claiming.current.has(key)) continue;
+      // Attempt once while this record stays pending; explicit claims can still retry.
+      claiming.current.add(key);
+      void dispatch(claim.action);
+    }
+  }, [user?.uid, epoch, remoteReadyEpoch, state.profile.uid, state.pendingClaims, dispatch]);
+
   useEffect(() => {
     if (!user?.uid) return;
     const supabase = getSupabaseBrowserClient();
     const refresh = () => { void refreshBalance().catch(console.error); };
+    let channel = supabase.channel(realtimeChannelName(`economy:${user.uid}`));
+    for (const table of ['wallets', 'room_cards', 'vip_entitlements', 'user_missions', 'user_achievements', 'inventory_items', 'equipped_cosmetics']) {
+      channel = channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${user.uid}` }, refresh);
+    }
+    channel.subscribe(status => { if (status === 'SUBSCRIBED') refresh(); });
     refresh();
-    const channel = supabase.channel(realtimeChannelName(`wallet:${user.uid}`))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.uid}` }, refresh)
-      .subscribe(status => { if (status === 'SUBSCRIBED') refresh(); });
-    window.addEventListener('focus', refresh); window.addEventListener('online', refresh);
-    const updated = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      if (detail.uid === user.uid) {
-        const daily = stateRef.current.dailyLogin.server;
-        if (daily) applySnapshot({ wallet: detail.wallet, daily });
-        refresh();
-      }
-    };
-    window.addEventListener('thaasbai-wallet', updated);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    window.addEventListener('thaasbai-wallet', refresh);
     const interval = setInterval(refresh, 30000);
-    return () => { void supabase.removeChannel(channel); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('thaasbai-wallet', updated); clearInterval(interval); };
-  }, [user?.uid, pathname, refreshBalance, applySnapshot]);
-
-  // Load from Supabase on auth change.
-  useEffect(() => {
-    setIsLoading(true);
-    setRemoteReadyUid(null);
-    walletVersion.current = -1;
-    if (user) rawDispatch({ type: 'SET_STATE', payload: { ...stateForUser(user), economy: { ...initialState.economy, coins: 0 } } });
-
-    if (!user) {
-      // Load from localStorage for guests
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          // This path deliberately trusts the stored blob (it does not go
-          // through mergeEconomyState, which needs a signed-in user), but the
-          // coin field still has to be normalised or a guest holding a pre-v2
-          // blob would keep a second, unread balance forever. Guests cannot
-          // have drifted - only the scheduled function wrote profile.coins,
-          // and guests have no server document - so this is purely shape.
-          const parsed = JSON.parse(saved) as Partial<EconomyState>;
-          const profile = { ...(parsed.profile ?? {}) };
-          delete profile.coins;
-          dispatch({
-            type: 'SET_STATE',
-            payload: {
-              ...parsed,
-              profile,
-              economy: {
-                ...parsed.economy,
-                coins: reconcileCoins(parsed, initialState.economy.coins),
-                schemaVersion: ECONOMY_SCHEMA_VERSION,
-              },
-            } as EconomyState,
-          });
-        } catch {
-          console.error('Failed to parse localStorage');
-        }
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    let settled = false;
-    const finishLoading = () => {
-      settled = true;
-      if (!cancelled) setIsLoading(false);
-    };
-
-    const fallbackTimer = window.setTimeout(() => {
-      if (settled || cancelled) return;
-      const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
-      if (saved) {
-        try {
-          const cached = mergeEconomyState(JSON.parse(saved), user);
-          dispatch({ type: 'HYDRATE_STATE', payload: cached });
-        } catch {
-          dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
-        }
-      } else {
-        dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
-      }
-      finishLoading();
-    }, ECONOMY_LOAD_TIMEOUT_MS);
-
-    const loadFromSupabase = async () => {
-      try {
-        const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
-        const localState = saved ? mergeEconomyState(JSON.parse(saved), user) : stateForUser(user);
-        const data = await hydrateSupabaseEconomy(localState, user.uid);
-        const snapshot = await loadWallet();
-        if (cancelled) return;
-
-        const now = Date.now();
-        const needsDailyReset = isNewDay(data.missions.lastDailyReset);
-        const needsWeeklyReset = isNewWeek(data.missions.lastWeeklyReset);
-        const updatedState = {
-          ...data,
-          missions: {
-            ...data.missions,
-            daily: needsDailyReset ? generateDailyMissions() : data.missions.daily,
-            weekly: needsWeeklyReset ? generateWeeklyMissions() : data.missions.weekly,
-            lastDailyReset: needsDailyReset ? now : data.missions.lastDailyReset,
-            lastWeeklyReset: needsWeeklyReset ? now : data.missions.lastWeeklyReset,
-          },
-        };
-
-        dispatch({ type: 'HYDRATE_STATE', payload: updatedState });
-        applySnapshot(snapshot);
-        if (!cancelled) setRemoteReadyUid(user.uid);
-      } catch (error) {
-        console.error('Failed to load from Supabase:', error);
-        if (!cancelled) {
-          const saved = localStorage.getItem(`${STORAGE_KEY}:${user.uid}`);
-          if (saved) {
-            try {
-              const cached = mergeEconomyState(JSON.parse(saved), user);
-              dispatch({ type: 'HYDRATE_STATE', payload: cached });
-            } catch {
-              dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
-            }
-          } else {
-            dispatch({ type: 'HYDRATE_STATE', payload: stateForUser(user) });
-          }
-        }
-      } finally {
-        finishLoading();
-      }
-    };
-
-    loadFromSupabase();
-
     return () => {
-      cancelled = true;
-      window.clearTimeout(fallbackTimer);
+      void supabase.removeChannel(channel);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+      window.removeEventListener('thaasbai-wallet', refresh);
+      clearInterval(interval);
     };
-  }, [user?.uid, applySnapshot]);
+  }, [user?.uid, pathname, refreshBalance]);
 
-  // Save to Supabase on state change.
   useEffect(() => {
-    if (!user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      return;
-    }
-
-    if (isLoading || state.profile.uid !== user.uid) return;
-
-    localStorage.setItem(`${STORAGE_KEY}:${user.uid}`, JSON.stringify(state));
-    // A timed-out read must never upload fallback balances over remote data.
-    if (remoteReadyUid !== user.uid) return;
-
-    const saveToSupabase = async () => {
-      try {
-        await saveSupabaseEconomy(user.uid, state);
-      } catch (error) {
-        console.error('Failed to save to Supabase:', error);
-      }
-    };
-
-    // Debounce save to prevent excessive writes
-    const timer = setTimeout(saveToSupabase, 1000);
-    return () => clearTimeout(timer);
-  }, [state, user?.uid, isLoading, remoteReadyUid]);
+    // Best-effort cache only. Entitlements and balances are never restored from it.
+    safeSetItem(user?.uid ? `${STORAGE_KEY}:${user.uid}` : STORAGE_KEY, JSON.stringify(state));
+  }, [state, user?.uid]);
 
   // VIP and room card expiry check
   useEffect(() => {
@@ -1055,7 +456,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'CHECK_ROOM_CARDS' });
     }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dispatch]);
 
   // Admin panel overrides (lib/admin.ts). Only subscribe when there's a real
   // signed-in user so Supabase RLS can authorize the read.
@@ -1071,7 +472,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
       unsubRanks();
       unsubShop();
     };
-  }, [user]);
+  }, [user, dispatch]);
 
   const addCoins = useCallback((amount: number, source: CoinSource, description: string) => {
     dispatch({ type: 'ADD_COINS', payload: { amount, source, description } });
@@ -1097,17 +498,17 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
 
   const purchaseCosmetic = useCallback(async (itemId: string): Promise<boolean> => {
     const item = ALL_COSMETICS.find(c => c.id === itemId);
-    if (!item) return false;
+    if (!item || item.earnedOnly || (item.isVipExclusive && !state.profile.vip.active)) return false;
     if (state.shopOverrides?.hiddenItemIds.includes(itemId)) return false;
     const price = state.shopOverrides?.priceOverrides[itemId] ?? item.price;
     if (state.economy.coins < price) return false;
     return dispatch({ type: 'PURCHASE_COSMETIC', payload: { itemId } });
-  }, [dispatch, state.economy.coins, state.shopOverrides]);
+  }, [dispatch, state.economy.coins, state.shopOverrides, state.profile.vip.active]);
 
-  const equipCosmetic = useCallback((category: string, itemId: string) => {
+  const equipCosmetic = useCallback(async (category: string, itemId: string) => {
     const collectionKey = CATEGORY_TO_COLLECTION_KEY[category];
-    if (!collectionKey || !state.profile.collection[collectionKey].includes(itemId)) return;
-    dispatch({ type: 'EQUIP_COSMETIC', payload: { category, itemId } });
+    if (!collectionKey || !state.profile.collection[collectionKey].includes(itemId)) return false;
+    return dispatch({ type: 'EQUIP_COSMETIC', payload: { category, itemId } });
   }, [dispatch, state.profile.collection]);
 
   const unlockAchievement = useCallback((achievementId: string) => {
@@ -1145,107 +546,14 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   }, [dispatch]);
 
   const processMatchEnd = useCallback((isVictory: boolean, gameType: string) => {
-    const coinReward = isVictory ? 10 : 2;
-    const source: CoinSource = isVictory ? 'match_victory' : 'match_defeat';
-    const description = isVictory ? 'Victory Bonus' : 'Participation Reward';
+    // Practice progress is display-only. Online games refresh after server settlement.
+    dispatch({ type: 'PRACTICE_MATCH', payload: { isVictory, gameType } });
+  }, [dispatch]);
 
-    dispatch({ type: 'ADD_COINS', payload: { amount: coinReward, source, description } });
-
-    const newMatchesPlayed = state.profile.stats.matchesPlayed + 1;
-    const newMatchesWon = isVictory ? state.profile.stats.matchesWon + 1 : state.profile.stats.matchesWon;
-    const newWinRate = newMatchesPlayed > 0 ? Math.round((newMatchesWon / newMatchesPlayed) * 100) : 0;
-
-    dispatch({ type: 'UPDATE_PROGRESS', payload: { key: 'matchesPlayed', value: newMatchesPlayed } });
-    dispatch({ type: 'UPDATE_PROGRESS', payload: { key: 'matchesWon', value: newMatchesWon } });
-    dispatch({ type: 'UPDATE_PROGRESS', payload: { key: 'winRate', value: newWinRate } });
-
-    state.missions.daily.forEach(mission => {
-      if (mission.completed) return;
-      let shouldComplete = false;
-      let newProgress = mission.progress;
-
-      if (mission.type === 'play_match') {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      } else if (mission.type === 'win_match' && isVictory) {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      } else if (mission.type === 'play_game' && mission.gameType === gameType) {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      } else if (mission.type === 'win_matches' && isVictory) {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      } else if (mission.type === 'play_matches') {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      }
-
-      if (shouldComplete) {
-        dispatch({ type: 'COMPLETE_MISSION', payload: { missionId: mission.id, isWeekly: false } });
-      }
-    });
-
-    state.missions.weekly.forEach(mission => {
-      if (mission.completed) return;
-      let shouldComplete = false;
-      let newProgress = mission.progress;
-
-      if (mission.id.startsWith('wm_win_') && isVictory) {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      } else if (mission.id.startsWith('wm_play_')) {
-        newProgress = mission.progress + 1;
-        shouldComplete = newProgress >= mission.target;
-      }
-
-      if (shouldComplete) {
-        dispatch({ type: 'COMPLETE_MISSION', payload: { missionId: mission.id, isWeekly: true } });
-      }
-    });
-
-    const achievementsToCheck = [
-      { id: 'ach_first_win', condition: isVictory && state.profile.stats.matchesWon === 0 },
-      { id: 'ach_10_wins', condition: newMatchesWon >= 10 },
-      { id: 'ach_50_wins', condition: newMatchesWon >= 50 },
-      { id: 'ach_100_wins', condition: newMatchesWon >= 100 },
-    ];
-
-    achievementsToCheck.forEach(({ id, condition }) => {
-      const ach = state.achievements.find(a => a.id === id);
-      if (ach && !ach.unlocked && condition) {
-        dispatch({ type: 'UNLOCK_ACHIEVEMENT', payload: { achievementId: id } });
-      }
-    });
-  }, [dispatch, state]);
-
-  const checkAndClaimWeeklyRank = useCallback((currentRank: string) => {
-    const lastThursday = getLastThursday();
-
-    if (state.weeklyRankReward.lastClaimed < lastThursday) {
-      const rankConfig = RANK_CONFIGS.find(r => r.tier === currentRank);
-      const reward = state.rankRewardOverrides?.weeklyRewards[currentRank] ?? rankConfig?.weeklyReward ?? 50;
-      const cosmeticId = rankConfig?.weeklyRewardCosmeticId;
-      const cosmetic = cosmeticId ? ALL_COSMETICS.find(c => c.id === cosmeticId) : undefined;
-
-      dispatch({ type: 'ADD_COINS', payload: { amount: reward, source: 'weekly_rank', description: `${currentRank} Weekly Rank Reward` } });
-      if (cosmeticId) dispatch({ type: 'GRANT_COSMETIC', payload: { itemId: cosmeticId } });
-      dispatch({
-        type: 'SHOW_REWARD',
-        payload: {
-          id: `rank_reward_${Date.now()}`,
-          type: 'rank',
-          title: 'Weekly Rank Reward',
-          items: [
-            { type: 'coins', name: 'Coins', amount: reward },
-            { type: 'badge', name: `${currentRank} Rank` },
-            ...(cosmetic ? [{ type: 'cosmetic' as const, name: cosmetic.name }] : []),
-          ],
-          timestamp: Date.now(),
-        },
-      });
-    }
-  }, [dispatch, state]);
+  const checkAndClaimWeeklyRank = useCallback((_currentRank: string) => {
+    // Weekly rewards require a trusted period settlement.
+    void refreshBalance().catch(console.error);
+  }, [refreshBalance]);
 
   const getOwnedCosmetics = useCallback((category: string) => {
     const map: Record<string, string[]> = {
@@ -1275,11 +583,11 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
   }, [state.profile.collection]);
 
   const getActiveRoomCards = useCallback(() => {
-    return state.profile.roomCards.filter(c => c.activated && c.remainingTime && c.remainingTime > 0);
+    return state.profile.roomCards.filter(c => c.activated && c.expiresAt && c.expiresAt > Date.now());
   }, [state.profile.roomCards]);
 
   const getAvailableRoomCards = useCallback(() => {
-    return state.profile.roomCards.filter(c => !c.activated);
+    return state.profile.roomCards.filter(c => !c.activated && !c.activatedAt && !c.expiresAt);
   }, [state.profile.roomCards]);
 
   if (isLoading) {
@@ -1290,7 +598,7 @@ export function EconomyProvider({ children }: { children: React.ReactNode }) {
     <EconomyContext.Provider
       value={{
         state,
-        balanceReady: !user || remoteReadyUid === user.uid,
+        balanceReady: !!user && remoteReadyEpoch === epoch,
         refreshBalance,
         dispatch,
         addCoins,
@@ -1329,14 +637,4 @@ export function useEconomy() {
     throw new Error('useEconomy must be used within an EconomyProvider');
   }
   return context;
-}
-
-function getLastThursday(): number {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = (day + 3) % 7;
-  const lastThursday = new Date(now);
-  lastThursday.setDate(now.getDate() - diff);
-  lastThursday.setHours(23, 59, 0, 0);
-  return lastThursday.getTime();
 }

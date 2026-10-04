@@ -360,7 +360,7 @@ export function GinRummyTable(p:Props) {
         ?{title:outCard?"Ready":"Not out",big:meldSizes.join(" · "),ready:!!outCard}
         :{title:t("table_yourHand"),big:t("table_noMeldsYet"),ready:false,fresh:true}}
       deadwoodValue={arrangement.deadwoodValue}
-      hint={phoneStatus} actionLabel={phoneAction} drawnId={drawnId} busy={busy} selectedWins={selectedWins}
+      hint={phoneStatus} error={modal ? undefined : error} actionLabel={phoneAction} drawnId={drawnId} busy={busy} selectedWins={selectedWins}
       onDraw={source=>{if(canDraw)run(()=>p.onDraw(source));}}
       onActivate={activateCard}
       onDiscard={()=>{if(canDiscard)run(p.onDiscard);}}

@@ -81,6 +81,7 @@ export interface PhoneMindiBoardProps {
    * lives in the chip bottom-left instead.
    */
   hint: string;
+  error?: string;
   /** The action button's words: "Play 10", "Pick a card". */
   actionLabel: string;
   tableSkin?: string;
@@ -210,10 +211,10 @@ export function PhoneMindiBoard(p: PhoneMindiBoardProps) {
         {p.left && <Who seat={p.left} partner={false} style={{ left: 48, top: 150 }} plate={plate("W")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.left.active} t={t} />}
         {p.right && <Who seat={p.right} partner={false} style={{ right: 48, top: 150 }} plate={plate("E")} ceremony={ceremony} firstTrick={!!p.firstTrick} leads={!!p.firstTrick && p.right.active} t={t} />}
 
-        {!ceremony && (
-          <span className="hint" role="status">
-            {p.active && <i className="dot live" data-ar-loop />}
-            {p.hint}
+        {(!ceremony || p.error) && (
+          <span key={p.error ? "error" : "hint"} className="hint" role={p.error ? "alert" : "status"}>
+            {!p.error && p.active && <i className="dot live" data-ar-loop />}
+            {p.error || p.hint}
           </span>
         )}
 

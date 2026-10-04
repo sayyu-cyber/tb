@@ -1,0 +1,92 @@
+.message-history-controls {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 4px 12px;
+  color: #A4A4B2;
+  font-size: 13px;
+  text-align: center;
+}
+.message-history-controls p { margin: 0; }
+.message-history-controls .minibtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #3A3A46;
+  border-radius: 6px;
+  color: #E4E4EA;
+  background: #15151B;
+  font: inherit;
+  white-space: normal;
+  cursor: pointer;
+}
+.message-history-controls .minibtn svg { width: 16px; height: 16px; flex: none; }
+.message-history-controls .minibtn[aria-disabled="true"] { opacity: .55; cursor: default; }
+.message-history-controls .minibtn:focus-visible,
+.arena-messages .msg-thread:focus-visible,
+.arena-mchat .msgs:focus-visible { outline: 2px solid #6FE9F0; outline-offset: -2px; }
+.arena-messages .msg-chat:not(.msg-empty) { height: max(360px, calc(100dvh - 160px)); }
+.arena-messages .msg-thread,
+.arena-mchat .msgs {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+}
+.arena-messages .msg-day-group,
+.arena-mchat .msgs > * { flex-shrink: 0; }
+.arena-mchat.chat {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  background: #000;
+}
+body:has(.arena-mchat.chat) .mtab,
+body:has(.arena-mchat.chat) .mtop { display: none; }
+.arena-mchat .msgs { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; padding: 16px; }
+.arena-mchat .bub,
+.arena-mchat .day { flex-shrink: 0; }
+.arena-mchat .chead,
+.arena-mchat .composer,
+.arena-mchat .inv { flex-shrink: 0; }
+.arena-clubs .paginated-club-chat,
+.arena-mclubs .paginated-club-chat { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; max-height: none; overflow: hidden; }
+.club-message-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: max(200px, min(420px, calc(100dvh - 460px)));
+  flex-shrink: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+}
+.club-message-history > * { flex-shrink: 0; }
+.club-message-history:focus-visible { outline: 2px solid #6FE9F0; outline-offset: -2px; }
+.club-message-history .cb2,
+.arena-messages .bub,
+.arena-mchat .bub { overflow-wrap: anywhere; }
+.arena-mchat .composer input,
+.paginated-club-chat .club-composer input {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #E4E4EA;
+  font: inherit;
+}
+.arena-mchat .composer .field:focus-within,
+.paginated-club-chat .club-composer:focus-within { box-shadow: inset 0 0 0 2px #6FE9F0; }

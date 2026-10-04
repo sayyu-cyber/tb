@@ -71,13 +71,24 @@ export const joinClub = async (id: string) => { document.body.dataset.joined = i
 export const leaveClub = async () => { document.body.dataset.left = 'yes'; };
 export const kickMember = async (_c: string, _o: string, uid: string) => { document.body.dataset.kicked = uid; };
 export const sendClubMessage = async (_c: string, _u: string, _n: string, text: string) => { document.body.dataset.said = text; };
-export const watchClubMessages = (_id: string, callback: any) => {
-  const timer = setTimeout(() => callback([
+const CHAT_MESSAGES = [
     { id: 'm1', senderUid: 'rasheed', senderName: 'Rasheed', text: "Weekend League is open. Who's in?", createdAt: 1 },
     { id: 'm2', senderUid: 'aishath', senderName: 'Aishath', text: 'Me! Mindi with Mariyam and Ibrahim.', createdAt: 2 },
     { id: 'm3', senderUid: ME, senderName: 'Sayyu', text: 'Count me in after dinner.', createdAt: 3 },
     { id: 'm4', senderUid: 'mariyam', senderName: 'Mariyam', text: 'Bring your luck with the Tens.', createdAt: 4 },
-  ]), 30);
+  ];
+export const loadClubMessagesPage = async () => ({ messages: CHAT_MESSAGES, nextCursor: null });
+export const loadMessagesPage = async () => ({ messages: [], nextCursor: null });
+export const ensureConversation = async () => 'fixture-dm';
+export function watchSocialSnapshot<T>(_key: string, _tables: unknown[], load: () => Promise<T>, callback: (value: T) => void, error?: (error: Error) => void) {
+  let active = true;
+  const timer = setTimeout(() => {
+    void load().then(value => { if (active) callback(value); }, err => { if (active) error?.(err); });
+  }, 30);
+  return () => { active = false; clearTimeout(timer); };
+}
+export const watchClubMessages = (_id: string, callback: any) => {
+  const timer = setTimeout(() => callback(CHAT_MESSAGES), 30);
   return () => clearTimeout(timer);
 };
 export const getClub = async () => MY_CLUB;

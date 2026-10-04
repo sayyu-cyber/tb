@@ -7,19 +7,8 @@ import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
-import { updateMatchResult } from "@/lib/trophyUpdates";
-import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
-import {
-  Card,
-  cardId,
-  bestMeldArrangement,
-  findGinLayout,
-  replenishStock,
-  randomDiscard,
-  rankLabel,
-  scoreGin,
-  TURN_SECONDS,
-} from "@/lib/ginRummyEngine";
+import { watchMatch, sendMatchMove, MatchDoc } from "@/lib/matchmaking";
+import { Card, cardId, rankLabel } from "@/lib/ginRummyEngine";
 import { GinResultScreen } from "./GinResultScreen";
 import { ginOpening, useOpeningDeal } from "./MindiDealIntro";
 import type { CutCard } from "@/lib/openingCut";
@@ -31,6 +20,8 @@ import { useOpponentProfiles } from "@/hooks/useOpponentProfiles";
 export interface GinOnlineState {
   hands: Record<string, Card[]>;
   stock: Card[];
+  stockCount?: number;
+  handCounts?: Record<string, number>;
   discard: Card[];
   turn: string;
   phase: "draw" | "discard";
@@ -56,7 +47,7 @@ export interface GinOnlineState {
 
 export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const { user, playerStats } = useAuth();
-  const { processMatchEnd, state: economyState } = useEconomy();
+  const { state: economyState } = useEconomy();
   const router = useRouter();
   const myUid = user?.uid ?? "";
 
@@ -64,8 +55,6 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   const [matchLoadError, setMatchLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [selectedDiscard, setSelectedDiscard] = useState<Card | null>(null);
-  const [showRewardPopup, setShowRewardPopup] = useState(false);
-  const [rewardsApplied, setRewardsApplied] = useState(false);
   const [introSeen, setIntroSeen] = useState(false);
   const t = useTranslation();
   const { showToast } = useToast();
@@ -75,7 +64,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     setMatch(null);
     const unsub = watchMatch<GinOnlineState>(matchId, next => {
       setMatch(next);
-      if (!next) setMatchLoadError(true);
+      setMatchLoadError(!next);
     }, () => setMatchLoadError(true));
     return unsub;
   }, [matchId, retryKey]);
@@ -92,7 +81,7 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   // into play rather than re-watching it, and matches created before the cut
   // was stored start without it. The first player's clock waits for it.
   const openingActive = !!state?.firstCut && !state.result && state.phase === "draw"
-    && state.turn === state.firstCut.winner && state.discard.length === 1 && state.stock.length === 31;
+    && state.turn === state.firstCut.winner && state.discard.length === 1 && (state.stockCount ?? state.stock.length) === 31;
   const openingSetup = useMemo(() => openingActive && state?.firstCut && opponentUid ? ginOpening({
     cut: state.firstCut, you: myUid, opponent: opponentUid,
     names: { [myUid]: user?.displayName ?? t("mindi_you"), [opponentUid]: opponentProfile?.displayName ?? t("gin_opponent") },
@@ -111,182 +100,25 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
   },[isMyTurn,state?.phase]);
 
   async function handleDraw(source: "stock" | "discard") {
-    if (!state || !isMyTurn || state.phase !== "draw") return;
-    await updateMatchState<GinOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (current.status!=="active" || s.result || s.turn !== myUid || s.phase !== "draw" || !current.players.includes(myUid)) return null;
-      const hand = [...s.hands[myUid]];
-      let stock = [...s.stock];
-      let discard = [...s.discard];
-      let reshuffles = s.reshuffles ?? 0;
-      if (source === "discard") {
-        if (discard.length === 0) return null;
-        hand.push(discard.pop()!);
-      } else {
-        // No knocking means a hand ends only when somebody melds 4+3+3, so an
-        // empty stock is refilled from the discard pile rather than ending it.
-        if (stock.length === 0) {
-          const refilled = replenishStock(stock, discard);
-          if (refilled.stock.length === 0) return null;
-          stock = [...refilled.stock]; discard = [...refilled.discard]; reshuffles += 1;
-        }
-        hand.push(stock.pop()!);
-      }
-      return { state: { ...s, hands: { ...s.hands, [myUid]: hand }, stock, discard, reshuffles, phase: "discard" } };
-    });
+    if (!match || !isMyTurn || state?.phase !== "draw") return;
+    await sendMatchMove(matchId, match.revision, { type: "draw", source });
   }
 
   function handleSelectDiscard(card: Card) {
-    if (!state || state.phase !== "discard" || !isMyTurn) return;
-    setSelectedDiscard((prev) => (prev && cardId(prev) === cardId(card) ? null : card));
-  }
-
-  /**
-   * Applies a discard. Going out is detected here rather than through a
-   * separate action: with no knocking, the discard IS the move that wins.
-   */
-  async function discardCardTo(discardCard: Card) {
-    if (!opponentUid) return;
-    await updateMatchState<GinOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (current.status!=="active" || s.result || s.turn !== myUid || s.phase !== "discard" || !s.hands[myUid]?.some(card=>cardId(card)===cardId(discardCard))) return null;
-      const hand = s.hands[myUid].filter((c) => cardId(c) !== cardId(discardCard));
-      const base = { ...s, hands: { ...s.hands, [myUid]: hand }, discard: [...s.discard, discardCard] };
-
-      const layout = findGinLayout(hand);
-      if (layout) {
-        const scored = scoreGin("player", layout, s.hands[opponentUid] ?? []);
-        return {
-          status: "completed",
-          state: { ...base, turnDeadline: null,
-            result: { winnerUid: myUid, layout, loserDeadwood: scored.loserDeadwood, score: scored.score } },
-        };
-      }
-      // The deadline is written with the handover so both clients read one
-      // clock from the document rather than each starting their own.
-      return { state: { ...base, phase: "draw", turn: opponentUid, turnDeadline: Date.now() + TURN_SECONDS * 1000 } };
-    });
-    setSelectedDiscard(null);
+    if (state?.phase !== "discard" || !isMyTurn) return;
+    setSelectedDiscard(prev => prev && cardId(prev) === cardId(card) ? null : card);
   }
 
   async function handleConfirmDiscard() {
-    if (!selectedDiscard) return;
-    await discardCardTo(selectedDiscard);
+    if (!match || !selectedDiscard) return;
+    await sendMatchMove(matchId, match.revision, { type: "discard", card: selectedDiscard });
+    setSelectedDiscard(null);
   }
 
-  /**
-   * Plays out the rest of the turn when the clock expires.
-   *
-   * Guarded on `isMyTurn` so only the player who is actually on the clock
-   * writes - the opponent watches the same deadline pass and does nothing.
-   * Without that, both clients would race to auto-play the same turn.
-   */
-  // The first turn has no deadline yet: it is written once the player on the
-  // clock has actually finished watching the ceremony, so they do not lose
-  // most of their turn to the cut and the deal. Only that player writes it,
-  // so there is no race.
-  const ceremonyOver = introSeen || !state?.firstCut;
-  useEffect(() => {
-    if (!state || !ceremonyOver || !isMyTurn || state.result || state.turnDeadline) return;
-    void updateMatchState<GinOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (current.status !== "active" || s.result || s.turn !== myUid || s.turnDeadline) return null;
-      return { state: { ...s, turnDeadline: Date.now() + TURN_SECONDS * 1000 } };
-    }).catch(() => {/* the opponent's clock will still run; not worth a toast */});
-  }, [state, ceremonyOver, isMyTurn, matchId, myUid]);
-
-  useEffect(() => {
-    if (!state || !ceremonyOver || !isMyTurn || state.result || !state.turnDeadline) return;
-    const timer = setTimeout(async () => {
-      await updateMatchState<GinOnlineState>(matchId, (current) => {
-        const s = current.state;
-        if (current.status !== "active" || s.result || s.turn !== myUid) return null;
-        // Re-checked inside the update: the turn may have been played
-        // normally in the moments before this fired.
-        if ((s.turnDeadline ?? 0) > Date.now()) return null;
-        let hand = [...(s.hands[myUid] ?? [])];
-        let stock = [...s.stock], discard = [...s.discard], reshuffles = s.reshuffles ?? 0;
-        if (s.phase === "draw") {
-          if (stock.length === 0) {
-            const refilled = replenishStock(stock, discard);
-            if (refilled.stock.length === 0) return null;
-            stock = [...refilled.stock]; discard = [...refilled.discard]; reshuffles += 1;
-          }
-          hand = [...hand, stock.pop()!];
-        }
-        const thrown = randomDiscard(hand);
-        const kept = hand.filter(card => cardId(card) !== cardId(thrown));
-        const base = { ...s, hands: { ...s.hands, [myUid]: kept }, stock, discard: [...discard, thrown], reshuffles };
-        const layout = findGinLayout(kept);
-        if (layout) {
-          const scored = scoreGin("player", layout, s.hands[opponentUid] ?? []);
-          return { status: "completed", state: { ...base, turnDeadline: null,
-            result: { winnerUid: myUid, layout, loserDeadwood: scored.loserDeadwood, score: scored.score } } };
-        }
-        return { state: { ...base, phase: "draw", turn: opponentUid, turnDeadline: Date.now() + TURN_SECONDS * 1000 } };
-      }).catch(() => {/* a lost race just means the turn was played normally */});
-    }, Math.max(0, state.turnDeadline - Date.now()));
-    return () => clearTimeout(timer);
-  }, [state, ceremonyOver, isMyTurn, matchId, myUid, opponentUid]);
-
-  /**
-   * Rewards are applied as soon as the match ends rather than when a button
-   * is pressed, because the result screen now shows what was earned. Guarded
-   * by `rewardsApplied` so a re-render cannot pay out twice.
-   */
-  useEffect(() => {
-    if (!state?.result || rewardsApplied) return;
-    setRewardsApplied(true);
-    const isVictory = state.result.winnerUid === myUid;
-    processMatchEnd(isVictory, "gin_rummy");
-    // Casual is a no-stakes queue (see CasualOnlineClient) - skip the real
-    // trophy/rank update, same treatment as Mindi's casual pool.
-    if (match?.pool !== "casual") {
-      const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
-      // See MindiOnlineClient - a swallowed failure here reads to the
-      // player as "I won and got nothing".
-      void updateMatchResult(myUid, isVictory, "gin-rummy", trophyMultiplier).catch(() => {
-        showToast(t("toast_trophiesFailed"), "error");
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state?.result, rewardsApplied, myUid, match?.pool]);
-
   async function handleForfeit() {
-    if (!match || !opponentUid) return;
-    await updateMatchState<GinOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (s.result) return null; // match already ended some other way
-      return {
-        status: "completed",
-        state: {
-          ...s,
-          turnDeadline: null,
-          result: {
-            winnerUid: opponentUid,
-            // A forfeit has no winning layout; the result screen shows the
-            // forfeit line instead of melds.
-            layout: [],
-            loserDeadwood: bestMeldArrangement(s.hands[myUid] ?? []).deadwoodValue,
-            score: 0,
-            forfeitedBy: myUid,
-          },
-        },
-      };
-    }).catch((error) => {
-      showToast(t("toast_forfeitFailed"), "error");
-      throw error;
-    });
-
-    // We're leaving, so we won't be around to click "Rewards" ourselves -
-    // take the loss on our own account right now instead.
-    processMatchEnd(false, "gin_rummy");
-    if (match.pool !== "casual") {
-      const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
-      await updateMatchResult(myUid, false, "gin-rummy", trophyMultiplier).catch(() => {
-        showToast(t("toast_trophiesFailed"), "error");
-      });
-    }
+    if (!match) return;
+    try { await sendMatchMove(matchId, match.revision, { type: "forfeit" }); }
+    catch (error) { showToast(t("toast_forfeitFailed"), "error"); throw error; }
   }
 
   if (!match || !state) {
@@ -326,14 +158,14 @@ export function GinRummyOnlineClient({ matchId }: { matchId: string }) {
     name: opponentProfile?.displayName ?? t("gin_opponent"),
     avatarPreset: opponentProfile?.avatarPreset,
     cardBackId: opponentProfile?.cardBack,
-    cardCount: state.hands[opponentUid]?.length ?? 0,
+    cardCount: state.handCounts?.[opponentUid] ?? state.hands[opponentUid]?.length ?? 0,
     active: !isMyTurn,
   };
   const activeTableTheme =
     match.players[0] === myUid ? economyState.profile.equipped.tableTheme : opponentProfile?.tableTheme || "tt_default";
 
   return <GinRummyTable hand={sortedHand} selected={selectedDiscard} opponent={opponentSeat}
-    name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} stock={state.stock.length} discard={topDiscard}
+    name={user?.displayName ?? "You"} avatar={playerStats?.avatarPreset} stock={state.stockCount ?? state.stock.length} discard={topDiscard}
     phase={state.phase} myTurn={isMyTurn && (introSeen || !openingActive)} mode={match.pool === "casual" ? "Casual Online" : match.pool === "weekend" ? "Weekend League" : "Ranked"}
     deadline={state.turnDeadline ?? null} reshuffles={state.reshuffles ?? 0}
     tableSkin={activeTableTheme} cardBack={economyState.profile.equipped.cardBack} online opening={openingActive ? opening : null}

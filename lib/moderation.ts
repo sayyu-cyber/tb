@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
+import { toMillis, type Unsubscribe } from "@/lib/supabase/data";
+import { socialCommand, watchSocialSnapshot } from "@/lib/messages";
 
 export type ReportReason = "harassment" | "hate" | "sexual" | "spam" | "cheating" | "impersonation" | "other";
 
@@ -46,16 +47,7 @@ async function profileNames(ids: string[]): Promise<Record<string, string>> {
 }
 
 export function watchBlocks(uid: string, onUpdate: (blocked: string[]) => void, onError?: (err: Error) => void): Unsubscribe {
-  const supabase = getSupabaseBrowserClient();
-  const load = async () => {
-    try {
-      onUpdate(await getBlocks(uid));
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error("Failed to load blocks"));
-    }
-  };
-  void load();
-  return subscribe(supabase.channel(realtimeChannelName(`blocks:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "blocks", filter: `blocker_id=eq.${uid}` }, load), onError);
+  return watchSocialSnapshot(`blocks:${uid}`, [{ table: "blocks", filter: `blocker_id=eq.${uid}` }], () => getBlocks(uid), onUpdate, onError, []);
 }
 
 export async function getBlocks(uid: string): Promise<string[]> {
@@ -67,20 +59,21 @@ export async function getBlocks(uid: string): Promise<string[]> {
 
 export async function blockUser(uid: string, targetUid: string): Promise<void> {
   if (uid === targetUid) throw new Error("You cannot block yourself.");
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("blocks").upsert({ blocker_id: uid, blocked_id: targetUid });
-  if (error) throw error;
+  await socialCommand("block", { actor: uid, other: targetUid });
 }
 
 export async function unblockUser(uid: string, targetUid: string): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("blocks").delete().eq("blocker_id", uid).eq("blocked_id", targetUid);
-  if (error) throw error;
+  await socialCommand("unblock", { actor: uid, other: targetUid });
 }
 
 export async function isBlockedEitherWay(uid: string, otherUid: string): Promise<boolean> {
-  const [mine, theirs] = await Promise.all([getBlocks(uid), getBlocks(otherUid)]);
-  return mine.includes(otherUid) || theirs.includes(uid);
+  const supabase = getSupabaseBrowserClient();
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (session.session?.user.id !== uid) throw new Error("Caller mismatch");
+  const { data, error } = await supabase.rpc("social_blocked", { p_other: otherUid });
+  if (error) throw error;
+  return data === true;
 }
 
 export async function reportUser(input: {
@@ -134,16 +127,7 @@ async function loadOpenReports(): Promise<ReportDoc[]> {
 }
 
 export function watchOpenReports(onUpdate: (reports: ReportDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
-  const supabase = getSupabaseBrowserClient();
-  const load = async () => {
-    try {
-      onUpdate(await loadOpenReports());
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error("Failed to load reports"));
-    }
-  };
-  void load();
-  return subscribe(supabase.channel(realtimeChannelName("open-reports")).on("postgres_changes", { event: "*", schema: "public", table: "reports" }, load), onError);
+  return watchSocialSnapshot("open-reports", [{ table: "reports" }], loadOpenReports, onUpdate, onError, []);
 }
 
 export async function resolveReport(reportId: string, status: Exclude<ReportStatus, "open">, adminUid: string): Promise<void> {

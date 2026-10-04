@@ -134,8 +134,8 @@ export interface FirstPlayerDraw {
  * engine should have to import the other. Mindi's card ranks are already
  * 2..14 ace-high, so the shared cut card is the same shape as a Mindi card.
  */
-export function drawForFirstPlayer(seats: SeatIndex[] = SEATS): FirstPlayerDraw {
-  const cut = cutForFirstPlay(seats);
+export function drawForFirstPlayer(seats: SeatIndex[] = SEATS, random: () => number = Math.random): FirstPlayerDraw {
+  const cut = cutForFirstPlay(seats, random);
   return { cards: cut.cards as Record<SeatIndex, Card>, winner: cut.winner };
 }
 
@@ -153,17 +153,17 @@ export interface MindiOpening {
   deal: MindiDeal;
 }
 
-export function openMindiHand(dealer: SeatIndex = 3): MindiOpening {
-  const draw = drawForFirstPlayer();
-  return { draw, deal: dealMindiHand(dealer, draw.winner) };
+export function openMindiHand(dealer: SeatIndex = 3, random: () => number = Math.random): MindiOpening {
+  const draw = drawForFirstPlayer(SEATS, random);
+  return { draw, deal: dealMindiHand(dealer, draw.winner, random) };
 }
 
-export function openMindiHandFFA1v1(dealer: 0 | 1 = 1): MindiOpening {
-  const draw = drawForFirstPlayer([0, 1]);
-  return { draw, deal: dealMindiHandFFA1v1(dealer, draw.winner as 0 | 1) };
+export function openMindiHandFFA1v1(dealer: 0 | 1 = 1, random: () => number = Math.random): MindiOpening {
+  const draw = drawForFirstPlayer([0, 1], random);
+  return { draw, deal: dealMindiHandFFA1v1(dealer, draw.winner as 0 | 1, random) };
 }
 
-function createShuffledDeck(): Card[] {
+function createShuffledDeck(random: () => number): Card[] {
   const deck: Card[] = [];
   for (const suit of SUITS) {
     for (let rank = 2; rank <= 14; rank++) {
@@ -172,7 +172,7 @@ function createShuffledDeck(): Card[] {
   }
   // Fisher-Yates shuffle
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   return deck;
@@ -186,8 +186,8 @@ function createShuffledDeck(): Card[] {
  * by the four-card draw (drawForFirstPlayer) rather than by seat position,
  * so pass the draw winner in.
  */
-export function dealMindiHand(dealer: SeatIndex, leader: SeatIndex = nextSeat(dealer)): MindiDeal {
-  const deck = createShuffledDeck();
+export function dealMindiHand(dealer: SeatIndex, leader: SeatIndex = nextSeat(dealer), random: () => number = Math.random): MindiDeal {
+  const deck = createShuffledDeck(random);
   const hands: Record<SeatIndex, Card[]> = { 0: [], 1: [], 2: [], 3: [] };
 
   let seat = nextSeat(dealer);
@@ -210,8 +210,8 @@ export function dealMindiHand(dealer: SeatIndex, leader: SeatIndex = nextSeat(de
  * 26 cards each (52 / 2), same one-at-a-time dealing rule as the 4-player
  * game. Trump is established in play here too, not dealt.
  */
-export function dealMindiHandFFA1v1(dealer: 0 | 1, leader: 0 | 1 = dealer === 0 ? 1 : 0): MindiDeal {
-  const deck = createShuffledDeck();
+export function dealMindiHandFFA1v1(dealer: 0 | 1, leader: 0 | 1 = dealer === 0 ? 1 : 0, random: () => number = Math.random): MindiDeal {
+  const deck = createShuffledDeck(random);
   const hands: Record<SeatIndex, Card[]> = { 0: [], 1: [], 2: [], 3: [] };
 
   const other: 0 | 1 = dealer === 0 ? 1 : 0;

@@ -19,7 +19,7 @@ async function run() {
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     await context.routeWebSocket('**/realtime/**', ws => ws.close());
-    let saves = 0, signups = 0, queues = 0;
+    let protectedWrites = 0, snapshots = 0, signups = 0, queues = 0;
     await context.route(backend + '/**', async route => {
       const req = route.request(), url = new URL(req.url()), endpoint = url.pathname.split('/').pop();
       const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS', 'Access-Control-Allow-Headers': req.headers()['access-control-request-headers'] || '*' };
@@ -29,19 +29,23 @@ async function run() {
         if (endpoint === 'signup') { signups++; value = session; }
         else if (endpoint === 'user') value = { user };
         else value = session;
-      } else if (endpoint === 'get_economy_snapshot') value = { wallet, daily: { available: true, claimedThrough: 0, nextDay: 1, lastClaimed: null, nextClaimAt: null, serverNow: new Date().toISOString() } };
+      } else if (endpoint === 'get_economy_snapshot') {
+        snapshots++;
+        value = { integrityVersion: 1, wallet, equipped, inventory: [{ item_id: 'cb_default', category: 'cardBack' }], roomCards: [], vip: null, missions: [], achievements: [],
+          daily: { available: true, claimedThrough: 0, nextDay: 1, lastClaimed: null, nextClaimAt: null, serverNow: new Date().toISOString() } };
+      }
       else if (endpoint === 'equipped_cosmetics') {
         if (req.method() !== 'GET') {
-          assert.equal(req.method(), 'PATCH', 'Saving updates the auth-created row without INSERT permissions');
-          assert.equal(url.searchParams.get('user_id'), `eq.${uid}`, 'Save is scoped to the owner');
-          Object.assign(equipped, req.postDataJSON()); saves++;
-          return route.fulfill({ status: 204, headers });
+          protectedWrites++;
+          return route.fulfill({ status: 403, headers, contentType: 'application/json', body: JSON.stringify({ message: 'Use the verified economy command' }) });
         }
         value = [equipped];
       } else if (endpoint === 'wallets') value = [wallet];
       else if (endpoint === 'profiles') value = url.searchParams.has('id') ? [profile] : [leader];
       else if (endpoint === 'player_stats') value = [profile.player_stats];
-      else if (endpoint === 'ranked_progress') value = [profile.ranked_progress];
+      else if (endpoint === 'ranked_progress') value = url.searchParams.get('select')?.includes('profiles!inner')
+        ? [{ user_id: leader.id, ...leader.ranked_progress, profiles: leader }]
+        : [profile.ranked_progress];
       if (/queue|form_match/.test(endpoint)) queues++;
       const single = (req.headers().accept || '').includes('application/vnd.pgrst.object');
       if (single && Array.isArray(value)) value = value[0] || null;
@@ -65,7 +69,8 @@ async function run() {
     await page.waitForURL('**/home/');
     await page.locator('.arena-home').waitFor();
     await page.waitForTimeout(1800);
-    assert.ok(saves > 0, 'Economy provider successfully saves as a guest');
+    assert.ok(snapshots > 0, 'Economy provider hydrates the authoritative snapshot as a guest');
+    assert.equal(protectedWrites, 0, 'Hydration never writes protected cosmetics directly');
     assert.equal(await page.locator('main h1').count(), 1, 'Home mounts one heading');
     assert.equal(await page.locator('.arena-mhome').count(), 0, 'Desktop has no hidden phone tree');
     await page.setViewportSize({ width: 390, height: 844 });
@@ -125,8 +130,9 @@ async function run() {
     await page.reload();
     await page.locator('.arena-home').waitFor(); await page.waitForTimeout(1600);
     assert.equal(signups, 1, 'Reload restores the guest session');
+    assert.equal(protectedWrites, 0, 'Practice and navigation never write protected cosmetics directly');
     assert.deepEqual(errors, [], 'No app exceptions or Supabase save/load failures');
-    console.log(`PASS ${useWebkit ? 'WebKit' : 'Chromium'}: guest signup/reload/login, saves, leaderboard, both Gin AI URLs, one Home composition and direct online/ranked gates`);
+    console.log(`PASS ${useWebkit ? 'WebKit' : 'Chromium'}: guest signup/reload/login, server snapshot hydration, no direct cosmetic writes, leaderboard, both Gin AI URLs, one Home composition and direct online/ranked gates`);
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

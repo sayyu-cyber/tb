@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
+import { toMillis, type Unsubscribe } from "@/lib/supabase/data";
+import { socialCommand, watchSocialSnapshot } from "@/lib/messages";
 import { GameType } from "@/lib/matchmaking";
 import { looksLikePlayerCode, normalizePlayerCode } from "@/lib/playerCode";
 
@@ -69,22 +70,28 @@ async function loadProfiles(ids: string[]): Promise<Record<string, PlayerSearchR
   const unique = [...new Set(ids)].filter(Boolean);
   if (!unique.length) return {};
   const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id,display_name,photo_url,last_seen,ranked_progress(trophies)")
-    .in("id", unique);
-  if (error) throw error;
-  return Object.fromEntries(((data ?? []) as unknown as ProfileRow[]).map((row) => [row.id, toSearch(row)]));
+  const profiles: Record<string, PlayerSearchResult> = {};
+  // Bound UUID filters so large friend lists stay below URL-size limits.
+  for (let start = 0; start < unique.length; start += 100) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,display_name,photo_url,last_seen,ranked_progress(trophies)")
+      .in("id", unique.slice(start, start + 100));
+    if (error) throw error;
+    for (const row of (data ?? []) as unknown as ProfileRow[]) profiles[row.id] = toSearch(row);
+  }
+  return profiles;
 }
 
-async function requestFromRow(row: {
+type RequestRow = {
   id: string;
   from_user_id: string;
   to_user_id: string;
   status: "pending" | "accepted" | "declined";
   created_at: string;
-}): Promise<FriendRequestDoc> {
-  const profiles = await loadProfiles([row.from_user_id, row.to_user_id]);
+};
+
+function requestFromRow(row: RequestRow, profiles: Record<string, PlayerSearchResult>): FriendRequestDoc {
   return {
     id: row.id,
     from: row.from_user_id,
@@ -101,17 +108,21 @@ export function watchSocialProfiles(
   onUpdate: (profiles: Record<string, PlayerSearchResult>) => void,
   onError: (error: Error) => void
 ): Unsubscribe {
-  const supabase = getSupabaseBrowserClient();
-  const unique = [...new Set(uids)];
-  const load = async () => {
-    try {
-      onUpdate(await loadProfiles(unique));
-    } catch (error) {
-      onError(error instanceof Error ? error : new Error("Failed to load profiles"));
-    }
+  const unique = [...new Set(uids)].filter(Boolean).sort();
+  if (!unique.length) {
+    onUpdate({});
+    return () => {};
+  }
+  const relevant = new Set(unique);
+  const accept = (field: string) => (payload: { new?: Record<string, unknown>; old?: Record<string, unknown> }) => {
+    const id = payload.new?.[field] ?? payload.old?.[field];
+    // Restricted delete payloads may omit the user key; polling also recovers them.
+    return typeof id !== "string" || relevant.has(id);
   };
-  void load();
-  return subscribe(supabase.channel(realtimeChannelName(`social-profiles:${unique.join(",")}`)).on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, load), onError);
+  return watchSocialSnapshot(`social-profiles:${unique.join(",")}`, [
+    { table: "profiles", accept: accept("id") },
+    { table: "ranked_progress", accept: accept("user_id") },
+  ], () => loadProfiles(unique), onUpdate, onError, {});
 }
 
 export async function getFriendSuggestions(uid: string): Promise<PlayerSearchResult[]> {
@@ -167,39 +178,16 @@ export async function searchPlayers(uid: string, prefix: string): Promise<Player
   return ((data ?? []) as unknown as ProfileRow[]).map(toSearch).slice(0, 15);
 }
 
-async function findExistingRequest(uidA: string, uidB: string): Promise<FriendRequestDoc | null> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("friend_requests")
-    .select("id,from_user_id,to_user_id,status,created_at")
-    .or(`and(from_user_id.eq.${uidA},to_user_id.eq.${uidB}),and(from_user_id.eq.${uidB},to_user_id.eq.${uidA})`)
-    .neq("status", "declined")
-    .limit(1);
-  if (error) throw error;
-  return data?.[0] ? requestFromRow(data[0] as any) : null;
-}
-
 export async function sendFriendRequest(fromUid: string, _fromName: string, toUid: string, _toName: string): Promise<void> {
-  if (fromUid === toUid) return;
-  if (await findExistingRequest(fromUid, toUid)) return;
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("friend_requests").insert({ from_user_id: fromUid, to_user_id: toUid });
-  if (error) throw error;
+  await socialCommand("friend_send", { actor: fromUid, other: toUid });
 }
 
 export async function respondToRequest(requestId: string, accept: boolean): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase
-    .from("friend_requests")
-    .update({ status: accept ? "accepted" : "declined", updated_at: new Date().toISOString() })
-    .eq("id", requestId);
-  if (error) throw error;
+  await socialCommand("friend_respond", { id: requestId, accept });
 }
 
 export async function cancelOrRemove(requestId: string): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("friend_requests").delete().eq("id", requestId);
-  if (error) throw error;
+  await socialCommand("friend_remove", { id: requestId });
 }
 
 function watchRequests(
@@ -208,16 +196,7 @@ function watchRequests(
   onUpdate: (requests: FriendRequestDoc[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
-  const supabase = getSupabaseBrowserClient();
-  const run = async () => {
-    try {
-      onUpdate(await load());
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error("Failed to load friend requests"));
-    }
-  };
-  void run();
-  return subscribe(supabase.channel(realtimeChannelName(key)).on("postgres_changes", { event: "*", schema: "public", table: "friend_requests" }, run), onError);
+  return watchSocialSnapshot(key, [{ table: "friend_requests" }, { table: "blocks" }], load, onUpdate, onError, []);
 }
 
 async function loadRequests(column: "from_user_id" | "to_user_id", uid: string, status: "pending" | "accepted"): Promise<FriendRequestDoc[]> {
@@ -229,7 +208,9 @@ async function loadRequests(column: "from_user_id" | "to_user_id", uid: string, 
     .eq("status", status)
     .limit(250);
   if (error) throw error;
-  return Promise.all(((data ?? []) as any[]).map(requestFromRow));
+  const rows = (data ?? []) as RequestRow[];
+  const profiles = await loadProfiles(rows.flatMap((row) => [row.from_user_id, row.to_user_id]));
+  return rows.map((row) => requestFromRow(row, profiles));
 }
 
 export function watchIncomingRequests(uid: string, onUpdate: (requests: FriendRequestDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
@@ -257,20 +238,17 @@ export function watchFriends(uid: string, onUpdate: (friends: Friend[]) => void,
   );
 }
 
-export async function sendRoomInvite(fromUid: string, _fromName: string, toUid: string, code: string, gameType: GameType): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("room_invites").insert({ from_user_id: fromUid, to_user_id: toUid, room_code: code, game_type: gameType });
-  if (error) throw error;
+export async function sendRoomInvite(fromUid: string, _fromName: string, toUid: string, code: string, _gameType: GameType): Promise<void> {
+  await socialCommand("invite_send", { actor: fromUid, other: toUid, code });
 }
 
 export function watchRoomInvites(uid: string, onUpdate: (invites: RoomInviteDoc[]) => void, onError?: (err: Error) => void): Unsubscribe {
   const supabase = getSupabaseBrowserClient();
   const load = async () => {
-    try {
-      const { data, error } = await supabase.from("room_invites").select("id,from_user_id,to_user_id,room_code,game_type,created_at").eq("to_user_id", uid).limit(50);
+      const { data, error } = await supabase.from("room_invites").select("id,from_user_id,to_user_id,room_code,game_type,created_at").eq("to_user_id", uid).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(50);
       if (error) throw error;
       const profiles = await loadProfiles(((data ?? []) as any[]).map((row) => row.from_user_id));
-      onUpdate(
+      return (
         ((data ?? []) as any[]).map((row) => ({
           id: row.id,
           from: row.from_user_id,
@@ -281,16 +259,10 @@ export function watchRoomInvites(uid: string, onUpdate: (invites: RoomInviteDoc[
           createdAt: toMillis(row.created_at),
         }))
       );
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error("Failed to load room invites"));
-    }
   };
-  void load();
-  return subscribe(supabase.channel(realtimeChannelName(`room-invites:${uid}`)).on("postgres_changes", { event: "*", schema: "public", table: "room_invites" }, load), onError);
+  return watchSocialSnapshot(`room-invites:${uid}`, [{ table: "room_invites" }, { table: "blocks" }], load, onUpdate, onError, []);
 }
 
 export async function dismissRoomInvite(id: string): Promise<void> {
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("room_invites").delete().eq("id", id);
-  if (error) throw error;
+  await socialCommand("invite_remove", { id });
 }

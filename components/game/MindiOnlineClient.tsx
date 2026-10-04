@@ -2,37 +2,17 @@
 import { MindiTable } from "./MindiTable";
 import { mindiOpening, useOpeningDeal } from "./MindiDealIntro";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEconomy } from "@/contexts/EconomyContext";
-import { updateMatchResult } from "@/lib/trophyUpdates";
 import { TROPHY_WIN, TROPHY_LOSS } from "@/constants/ranks";
 import { MindiResultScreen } from "./MindiResultScreen";
-import { watchMatch, updateMatchState, MatchDoc } from "@/lib/matchmaking";
+import { watchMatch, sendMatchMove, MatchDoc } from "@/lib/matchmaking";
 import {
-  Card,
-  Suit,
-  SeatIndex,
-  Team,
-  TrickPlay,
-  SUIT_SYMBOLS,
-  SUIT_COLOR,
-  rankLabel,
-  cardId,
-  teamOf,
-  nextSeat,
-  nextSeatFFA1v1,
-  getLegalPlays,
-  resolveTrick,
-  establishTrump,
-  FirstPlayerDraw,
-  isTen,
-  checkHandOutcome,
-  tensFromTrick,
-  HandOutcome,
-  TenCapture,
+  Card, Suit, SeatIndex, Team, TrickPlay, teamOf, getLegalPlays,
+  FirstPlayerDraw, HandOutcome, TenCapture,
 } from "@/lib/mindiEngine";
 import { useTranslation } from "@/hooks/useTranslation";
 import { sortHand } from "@/lib/cardSort";
@@ -43,6 +23,8 @@ import { ArenaSeatData } from "@/components/game/GameArena";
 export interface MindiOnlineState {
   lastTrick?: import("@/lib/mindiEngine").CompletedTrick;
   handsByUid: Record<string, Card[]>;
+  handCounts?: Record<string, number>;
+  turnDeadline?: number | null;
   /** Null until a player reneges - see establishTrump in lib/mindiEngine.ts.
    *  Matches created before the rules rewrite carry a suit here from the
    *  deal; those still resolve correctly, the suit is just fixed up front. */
@@ -69,7 +51,7 @@ export interface MindiOnlineState {
 
 export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const { user, playerStats } = useAuth();
-  const { processMatchEnd, state: economyState } = useEconomy();
+  const { state: economyState } = useEconomy();
   const myUid = user?.uid ?? "";
   const t = useTranslation();
   const { showToast } = useToast();
@@ -78,11 +60,6 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchDoc<MindiOnlineState> | null>(null);
   const [matchLoadError, setMatchLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [rewardsApplied, setRewardsApplied] = useState(false);
-  // The trophy total updateMatchResult actually wrote, so the result
-  // screen counts up to the real number rather than to whatever the auth
-  // listener happens to be holding when the hand ends.
-  const [trophiesAfter, setTrophiesAfter] = useState<number | null>(null);
   const [introSeen, setIntroSeen] = useState(false);
 
   useEffect(() => {
@@ -90,7 +67,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
     setMatch(null);
     const unsub = watchMatch<MindiOnlineState>(matchId, next => {
       setMatch(next);
-      if (!next) setMatchLoadError(true);
+      setMatchLoadError(!next);
     }, () => setMatchLoadError(true));
     return unsub;
   }, [matchId, retryKey]);
@@ -147,7 +124,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
       name: profile?.displayName ?? seatLabelFor(seat),
       avatarPreset: profile?.avatarPreset,
       cardBackId: profile?.cardBack,
-      cardCount: state?.handsByUid[uid]?.length ?? 0,
+      cardCount: state?.handCounts?.[uid] ?? state?.handsByUid[uid]?.length ?? 0,
       active: state?.turnSeat === seat,
     };
   }
@@ -158,143 +135,17 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
   }
 
   async function handlePlayCard(card: Card) {
-    if (!state || !isMyTurn || !match) return;
-    if (!legalForMe.some((c) => cardId(c) === cardId(card))) return;
-
-    await updateMatchState<MindiOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (current.status!=="active" || s.turnSeat !== mySeat || s.outcome || current.players[mySeat]!==myUid || s.trick.some(play=>play.seat===mySeat)) return null;
-      const n = s.numPlayers ?? 4;
-      const liveHand = s.handsByUid[myUid] ?? [];
-      const liveLedSuit = s.trick[0]?.card.suit ?? null;
-      if (!getLegalPlays(liveHand, liveLedSuit).some(c => cardId(c) === cardId(card))) return null;
-
-      const hand = s.handsByUid[myUid].filter((c) => cardId(c) !== cardId(card));
-      const trick = [...s.trick, { seat: mySeat, card }];
-      // Playing off-suit *is* the renege, because getLegalPlays above already
-      // rejected this card unless the hand was void in the led suit. Commit
-      // the new trump in the same write as the card so every client's trump
-      // readout moves the moment the card lands, not a trick later.
-      const trumpSuit = establishTrump(s.trumpSuit, liveLedSuit, card);
-
-      if (trick.length < n) {
-        return {
-          state: {
-            ...s,
-            handsByUid: { ...s.handsByUid, [myUid]: hand },
-            trick,
-            trumpSuit,
-            turnSeat: n === 2 ? nextSeatFFA1v1(mySeat as 0 | 1) : nextSeat(mySeat),
-          },
-        };
-      }
-
-      // Trick complete - resolve immediately. A trump established by this very
-      // card counts within this trick, which is why trumpSuit is used here.
-      const winnerSeat = resolveTrick(trick, trumpSuit);
-      const winnerTeam = teamOf(winnerSeat);
-      const tensInTrick = trick.filter((p) => isTen(p.card)).length;
-      const tensCaptured = { ...s.tensCaptured, [winnerTeam]: s.tensCaptured[winnerTeam] + tensInTrick };
-      const tricksWon = { ...s.tricksWon, [winnerTeam]: s.tricksWon[winnerTeam] + 1 };
-      const tricksPlayed = s.tricksPlayed + 1;
-      const outcome = checkHandOutcome(tensCaptured, tricksWon, tricksPlayed, n === 2 ? 26 : 13);
-
-      const nextState: MindiOnlineState = {
-        ...s,
-        handsByUid: { ...s.handsByUid, [myUid]: hand },
-        trumpSuit,
-        trick: [],
-        lastTrick: {plays:trick,winner:winnerSeat,number:tricksPlayed},
-        tensCaptured,
-        // The same Tens the tally above just counted, recorded individually
-        // so the hand-over screen can turn them face up (Result board).
-        tenCaptures: [...(s.tenCaptures ?? []), ...tensFromTrick(trick, winnerSeat, tricksPlayed)],
-        tricksWon,
-        tricksPlayed,
-        turnSeat: outcome ? s.turnSeat : winnerSeat,
-        outcome,
-      };
-
-      return outcome ? { status: "completed", state: nextState } : { state: nextState };
-    });
+    if (!match || !isMyTurn) return;
+    await sendMatchMove(matchId, match.revision, { type: "play", card });
   }
 
-  /**
-   * CODE ISSUE 6 lived here. The reward popup was told
-   * `youWon ? 15 : -5`, two numbers that appear nowhere in the rules: a
-   * ranked hand is worth TROPHY_WIN / TROPHY_LOSS (+5 / -2), doubled to
-   * +10 / -4 in the Weekend League pool, and a casual hand is worth
-   * nothing. So the screen congratulated players on trophies they had not
-   * been given, and understated the weekend bonus. The figure shown is now
-   * the same expression updateMatchResult is called with, one line below,
-   * so the two cannot disagree again.
-   */
   const trophyMultiplier = match?.pool === "weekend" ? 2 : 1;
   const stakes = match?.pool === "casual" ? 0 : trophyMultiplier;
 
-  /**
-   * Rewards land as the hand ends, not when a button is pressed. The board
-   * (design/arena/boards/Result.dc.html) shows what the hand paid on the
-   * result screen itself, and the Gin result already worked this way.
-   */
-  const applyRewards = useCallback(async () => {
-    if (!state?.outcome || rewardsApplied) return;
-    setRewardsApplied(true);
-    const youWon = state.outcome.winner === myTeam;
-    processMatchEnd(youWon, "mindi");
-    // Casual is a no-stakes queue (see CasualOnlineClient) - coins/mission
-    // progress still apply via processMatchEnd above, same as vs-AI/Pass &
-    // Play, but trophies/rank/win-loss record are real-multiplayer-Ranked
-    // only, so skip updateMatchResult entirely for a casual match.
-    if (match?.pool !== "casual") {
-      // A failure here means the player's trophies/rank silently didn't
-      // move after a match they just finished - previously swallowed, so
-      // it looked like the game simply forgot the result.
-      const result = await updateMatchResult(myUid, youWon, "mindi", trophyMultiplier).catch(() => {
-        showToast(t("toast_trophiesFailed"), "error");
-        return null;
-      });
-      if (result) setTrophiesAfter(result.newTrophies);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state?.outcome, rewardsApplied, myTeam, match?.pool, trophyMultiplier, myUid]);
-
-  useEffect(() => { if (state?.outcome) applyRewards(); }, [state?.outcome, applyRewards]);
-
   async function handleForfeit() {
     if (!match) return;
-    const opponentTeam: Team = myTeam === "A" ? "B" : "A";
-    await updateMatchState<MindiOnlineState>(matchId, (current) => {
-      const s = current.state;
-      if (s.outcome) return null; // match already ended some other way
-      return {
-        status: "completed",
-        state: {
-          ...s,
-          outcome: {
-            winner: opponentTeam,
-            tensCaptured: s.tensCaptured,
-            tricksWon: s.tricksWon,
-            special: "forfeit",
-          },
-        },
-      };
-    }).catch((error) => {
-      // If the forfeit write fails the match never actually ends, so the
-      // opponent is left waiting on a player who has already gone.
-      showToast(t("toast_forfeitFailed"), "error");
-      throw error;
-    });
-
-    // We're leaving, so we won't be around to click "Rewards" ourselves -
-    // take the loss on our own account right now instead.
-    processMatchEnd(false, "mindi");
-    if (match.pool !== "casual") {
-      const trophyMultiplier = match.pool === "weekend" ? 2 : 1;
-      await updateMatchResult(myUid, false, "mindi", trophyMultiplier).catch(() => {
-        showToast(t("toast_trophiesFailed"), "error");
-      });
-    }
+    try { await sendMatchMove(matchId, match.revision, { type: "forfeit" }); }
+    catch (error) { showToast(t("toast_forfeitFailed"), "error"); throw error; }
   }
 
   if (matchLoadError || !match || !state) {
@@ -339,7 +190,7 @@ export function MindiOnlineClient({ matchId }: { matchId: string }) {
         modeLabel={poolLabel}
         weekend={match.pool === "weekend"}
         trophyChange={(youWon ? TROPHY_WIN : TROPHY_LOSS) * stakes}
-        trophiesAfter={trophiesAfter ?? playerStats?.trophies ?? null}
+        trophiesAfter={playerStats?.trophies ?? null}
         coins={youWon ? 10 : 2}
         balance={economyState.economy.coins}
         winnerNames={winnerNames}

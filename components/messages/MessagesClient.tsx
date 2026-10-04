@@ -12,13 +12,16 @@ import { isOnline } from "@/lib/presence";
 import { createRoom } from "@/lib/rooms";
 import { sendRoomInvite } from "@/lib/friends";
 import {
-  ensureConversation, watchMessages, watchConversations, sendMessage, markConversationRead,
+  watchConversations, sendMessage, markConversationRead,
   DmMessage, DmConversation,
 } from "@/lib/messages";
 import { Avatar, RankLabel } from "@/components/arena";
 import { getRankFromTrophies } from "@/constants/ranks";
 import { usePhonePortrait } from "@/hooks/usePhonePortrait";
 import { PhoneMessages } from "./phone/PhoneMessages";
+import { useMessageHistory } from "./useMessageHistory";
+import { useHistoryScroll } from "./useHistoryScroll";
+import { MessageHistoryControls } from "./MessageHistoryControls";
 
 /**
  * Messages — design/arena/screens/app/app-05-messages.jpg, from the
@@ -57,23 +60,27 @@ export function MessagesClient() {
   const myUid = user?.uid ?? "";
   const myName = user?.displayName ?? "Player";
 
-  const [conversations, setConversations] = useState<DmConversation[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  const [conversationState, setConversationState] = useState<{
+    uid: string; conversations: DmConversation[]; loaded: boolean; loadError: boolean;
+  }>({ uid: "", conversations: [], loaded: false, loadError: false });
+  const { conversations, loaded, loadError } = conversationState.uid === myUid
+    ? conversationState : { conversations: [], loaded: false, loadError: false };
   const [retryKey, setRetryKey] = useState(0);
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null);
 
   const withUid = searchParams.get("with");
   const withName = searchParams.get("name") ?? "Player";
 
   useEffect(() => {
+    setConversationState({ uid: myUid, conversations: [], loaded: false, loadError: false });
     if (!myUid || isGuest) return;
-    setLoaded(false);
-    setLoadError(false);
-    return watchConversations(
+    let active = true;
+    const stop = watchConversations(
       myUid,
-      (list) => { setConversations(list); setLoaded(true); },
-      () => { setLoadError(true); setLoaded(true); },
+      (list) => { if (active) setConversationState({ uid: myUid, conversations: list, loaded: true, loadError: false }); },
+      () => { if (active) setConversationState({ uid: myUid, conversations: [], loaded: true, loadError: true }); },
     );
+    return () => { active = false; stop(); };
   }, [myUid, isGuest, retryKey]);
 
   /** Who a conversation is with, from my point of view. */
@@ -84,13 +91,18 @@ export function MessagesClient() {
 
   // The open thread: the ?with= parameter, or the newest conversation once
   // the list arrives, so the screen is never an empty right-hand pane.
-  const openUid = withUid ?? (conversations.length ? other(conversations[0]).uid : null);
+  const openUid = withUid ?? (!phone && dismissedFor !== myUid && conversations.length ? other(conversations[0]).uid : null);
   const openName = withUid
     ? withName
     : conversations.length ? other(conversations[0]).name : "";
 
   function open(uid: string, name: string) {
+    setDismissedFor(null);
     router.replace(`/messages?with=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`, { scroll: false });
+  }
+  function backToList() {
+    setDismissedFor(myUid);
+    router.replace("/messages", { scroll: false });
   }
 
   if (isGuest) {
@@ -110,13 +122,13 @@ export function MessagesClient() {
     // beside it, so only one of the two is rendered at a time.
     return openUid ? (
       <ChatView
-        key={openUid}
+        key={`${myUid}:${openUid}`}
         phone
         myUid={myUid}
         myName={myName}
         otherUid={openUid}
         otherName={openName}
-        onBack={() => router.replace("/messages", { scroll: false })}
+        onBack={backToList}
       />
     ) : (
       <PhoneMessages
@@ -198,12 +210,12 @@ export function MessagesClient() {
 
       {openUid ? (
         <ChatView
-          key={openUid}
+          key={`${myUid}:${openUid}`}
           myUid={myUid}
           myName={myName}
           otherUid={openUid}
           otherName={openName}
-          onBack={() => router.replace("/messages", { scroll: false })}
+          onBack={backToList}
         />
       ) : (
         <section className="panel msg-chat msg-empty" aria-label="No conversation open">
@@ -234,12 +246,18 @@ function ChatView({
   /** Draw MChat's full-screen thread instead of the wide screen's pane. */
   phone?: boolean;
 }) {
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
+  const { threadRef, beforeChange } = useHistoryScroll();
+  const history = useMessageHistory(myUid, myName, otherUid, otherName, beforeChange);
+  const { conversationId, messages } = history;
+  const latestMessageId = messages[messages.length - 1]?.id;
   const router = useRouter();
   const t = useTranslation();
   const { showToast } = useToast();
@@ -248,35 +266,18 @@ function ChatView({
   const online = isOnline(profile?.lastSeen ?? null);
 
   useEffect(() => {
-    if (!myUid || !otherUid) return;
-    let unsub: (() => void) | undefined;
-    ensureConversation(myUid, myName, otherUid, otherName)
-      .then((id) => {
-        setConversationId(id);
-        unsub = watchMessages(id, setMessages);
-        // Opening the thread is "reading" it - marks it seen for the
-        // sidebar's Active Chats count and this screen's unread dot.
-        markConversationRead(id, myUid).catch(() => {});
-      })
-      .catch((err) => setError(String(err)));
-    return () => unsub?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myUid, otherUid]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     // Keep "read" current while the thread stays open and new messages
     // arrive - otherwise a message that lands mid-conversation would still
     // show as unread until the thread is reopened.
     if (conversationId) markConversationRead(conversationId, myUid).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length]);
+  }, [conversationId, myUid, latestMessageId]);
 
   async function handleSend() {
     if (!conversationId || !text.trim()) return;
     const toSend = text;
     setText("");
-    await sendMessage(conversationId, myUid, toSend).catch((err) => setError(String(err)));
+    setError(null);
+    await sendMessage(conversationId, myUid, toSend).catch((err) => { if (active.current) setError(String(err)); });
   }
 
   /** The board's "Invite to Mindi" - the same action the Friends row runs. */
@@ -307,6 +308,9 @@ function ChatView({
   }, [messages]);
 
   const trophies = profile?.trophies ?? 0;
+  const historyControls = (
+    <MessageHistoryControls {...history} hasOlder={!!history.nextCursor} count={messages.length} />
+  );
 
   /* MChat: the thread is its own screen. It comes in on `slideIn`, covers
      the tab bar and pins the composer to the bottom - MOBILE.md "Thread" -
@@ -343,9 +347,11 @@ function ChatView({
       </div>
 
       {error && <p role="alert" className="msg-error">{error}</p>}
+      {historyControls}
 
-      <div className="msgs">
-        {messages.length === 0 && (
+      <div className="msgs" ref={threadRef} tabIndex={0} role="region" aria-label="Message history"
+        aria-busy={history.loading || history.loadingOlder}>
+        {!history.loading && !history.error && messages.length === 0 && (
           <p className="muted2" style={{ alignSelf: "center", marginTop: 20 }}>
             {t("messages_sayHelloTo").replace("{name}", otherName)}
           </p>
@@ -354,13 +360,12 @@ function ChatView({
           <div key={group.label} style={{ display: "contents" }}>
             <span className="day">{group.label}</span>
             {group.items.map((message) => (
-              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id}>
+              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id} data-message-id={message.id}>
                 {message.text}
               </div>
             ))}
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
 
       <div className="composer">
@@ -376,7 +381,7 @@ function ChatView({
           <span className="counter" aria-hidden="true">{text.length} / {MAX}</span>
         </label>
         <button type="button" className="ar-btn" style={{ height: 48, width: 52, padding: 0 }}
-          aria-label={t("a11y_sendMessage")} onClick={handleSend} disabled={!text.trim()} data-flat>
+          aria-label={t("a11y_sendMessage")} onClick={handleSend} disabled={!conversationId || !text.trim()} data-flat>
           <Send aria-hidden="true" />
         </button>
       </div>
@@ -411,9 +416,11 @@ function ChatView({
       {error && (
         <p role="alert" className="msg-error">{error}</p>
       )}
+      {historyControls}
 
-      <div className="msg-thread">
-        {messages.length === 0 && (
+      <div className="msg-thread" ref={threadRef} tabIndex={0} role="region" aria-label="Message history"
+        aria-busy={history.loading || history.loadingOlder}>
+        {!history.loading && !history.error && messages.length === 0 && (
           <p className="muted2" style={{ alignSelf: "center", marginTop: "20px" }}>
             {t("messages_sayHelloTo").replace("{name}", otherName)}
           </p>
@@ -422,13 +429,12 @@ function ChatView({
           <div key={group.label} className="msg-day-group">
             <span className="day">{group.label}</span>
             {group.items.map((message) => (
-              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id}>
+              <div className={`bub ${message.senderUid === myUid ? "me" : "them"}`} key={message.id} data-message-id={message.id}>
                 {message.text}
               </div>
             ))}
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
 
       <div className="composer">
@@ -448,7 +454,7 @@ function ChatView({
           className="ar-btn msg-send"
           aria-label={t("a11y_sendMessage")}
           onClick={handleSend}
-          disabled={!text.trim()}
+          disabled={!conversationId || !text.trim()}
         >
           <Send aria-hidden="true" />
         </button>

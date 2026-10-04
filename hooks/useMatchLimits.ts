@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FREE_DAILY_MATCHES, FREE_WEEKLY_MAX, VIP_DAILY_MATCHES } from "@/constants/ranks";
 import { useEconomy } from "@/contexts/EconomyContext";
-import { getWeekStartKey } from "@/lib/trophyUpdates";
+import { getDayKey, getWeekStartKey, nextUtcMidnight } from "@/lib/competitionTime";
 
 interface MatchLimits {
   dailyUsed: number;
@@ -15,66 +15,82 @@ interface MatchLimits {
   isVip: boolean;
 }
 
-function getDayKey(date: Date = new Date()): string {
-  return date.toISOString().slice(0, 10);
+type Counts = { dailyUsed: number; weeklyUsed: number; lastDay: string; lastWeek: string };
+const count = (value: unknown) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+
+function currentCounts(value: Partial<Counts> | null, now: Date): Counts {
+  const lastDay = getDayKey(now);
+  const lastWeek = getWeekStartKey(now);
+  return {
+    dailyUsed: value?.lastDay === lastDay ? count(value.dailyUsed) : 0,
+    weeklyUsed: value?.lastWeek === lastWeek ? count(value.weeklyUsed) : 0,
+    lastDay,
+    lastWeek,
+  };
 }
 
-/**
- * Tracks how many ranked/Weekend League matches a player has queued into
- * today and this week, for the daily/weekly free-tier caps (GDD Beta:
- * FREE_DAILY_MATCHES / FREE_WEEKLY_MAX, raised for VIP).
- *
- * Two bugs fixed here:
- * 1. Counters never reset - once a player used their 3 free daily matches,
- *    `dailyUsed` stayed at that number in localStorage forever, since
- *    nothing ever compared "today" to the day the count was recorded.
- *    Now compares against the current day key (and the current week key,
- *    shared with lib/trophyUpdates.ts's Weekend League week logic) and
- *    resets to zero whenever they don't match.
- * 2. `isVip` was its own separate localStorage field that nothing ever
- *    set to true - so VIP players never actually got the higher daily
- *    cap. It now reads real VIP status from EconomyContext.
- */
+/** Local display counters; authoritative queue limits must be enforced by the server. */
 export function useMatchLimits(userId?: string): MatchLimits & { recordMatch: () => void } {
   const { state } = useEconomy();
   const isVip = state.profile.vip.active;
   const dailyTotal = isVip ? VIP_DAILY_MATCHES : FREE_DAILY_MATCHES;
+  const key = `thaasbai_matches_${userId || "guest"}`;
+  const [snapshot, setSnapshot] = useState(() => ({ key, counts: currentCounts(null, new Date()) }));
+  const memory = useRef(snapshot);
+  const pendingWrite = useRef<string | null>(null);
 
-  const [counts, setCounts] = useState({ dailyUsed: 0, weeklyUsed: 0 });
+  const readCounts = useCallback((): Counts => {
+    let data: Partial<Counts> | null = memory.current.key === key ? memory.current.counts : null;
+    if (pendingWrite.current === key) return currentCounts(data, new Date());
+    try {
+      const stored = localStorage.getItem(key);
+      data = stored ? JSON.parse(stored) : null;
+    } catch {
+      // Keep session counters when storage is blocked or contains malformed JSON.
+    }
+    return currentCounts(data, new Date());
+  }, [key]);
 
   useEffect(() => {
-    const key = `thaasbai_matches_${userId || "guest"}`;
-    const today = getDayKey();
-    const thisWeek = getWeekStartKey();
-    let dailyUsed = 0;
-    let weeklyUsed = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = () => {
+      clearTimeout(timer);
+      const next = { key, counts: readCounts() };
+      memory.current = next;
+      setSnapshot(next);
+      timer = setTimeout(refresh, Math.max(1, nextUtcMidnight() - Date.now()));
+    };
+    const onStorage = (event: StorageEvent) => { if (event.key === key || event.key === null) refresh(); };
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    refresh();
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [key, readCounts]);
 
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        dailyUsed = data.lastDay === today ? data.dailyUsed || 0 : 0;
-        weeklyUsed = data.lastWeek === thisWeek ? data.weeklyUsed || 0 : 0;
-      } catch {
-        // keep zeros
-      }
+  const recordMatch = useCallback(() => {
+    // Re-read and normalize before incrementing, including after a suspended tab resumes.
+    const previous = readCounts();
+    const counts = { ...previous, dailyUsed: previous.dailyUsed + 1, weeklyUsed: previous.weeklyUsed + 1 };
+    const next = { key, counts };
+    memory.current = next;
+    try {
+      localStorage.setItem(key, JSON.stringify(counts));
+      pendingWrite.current = null;
+    } catch {
+      pendingWrite.current = key;
+      // Keep the current session usable when browser storage is unavailable.
     }
+    setSnapshot(next);
+  }, [key, readCounts]);
 
-    localStorage.setItem(key, JSON.stringify({ dailyUsed, weeklyUsed, lastDay: today, lastWeek: thisWeek }));
-    setCounts({ dailyUsed, weeklyUsed });
-  }, [userId]);
-
-  const recordMatch = () => {
-    const key = `thaasbai_matches_${userId || "guest"}`;
-    const today = getDayKey();
-    const thisWeek = getWeekStartKey();
-    setCounts((prev) => {
-      const updated = { dailyUsed: prev.dailyUsed + 1, weeklyUsed: prev.weeklyUsed + 1 };
-      localStorage.setItem(key, JSON.stringify({ ...updated, lastDay: today, lastWeek: thisWeek }));
-      return updated;
-    });
-  };
-
+  const counts = currentCounts(snapshot.key === key ? snapshot.counts : null, new Date());
   return {
     dailyUsed: counts.dailyUsed,
     dailyTotal,

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Crown, Send, LogOut, Trophy, MessageCircle, RefreshCw } from "lucide-react";
+import { Crown, LogOut, Trophy, MessageCircle } from "lucide-react";
 import {
-  ClubDoc, ClubMessage, MAX_MEMBERS,
-  watchClubMessages, sendClubMessage, leaveClub, kickMember,
+  ClubDoc, MAX_MEMBERS, leaveClub, kickMember,
 } from "@/lib/clubs";
 import { watchSocialProfiles, type PlayerSearchResult } from "@/lib/friends";
 import { useToast } from "@/contexts/ToastContext";
 import { Avatar, Pill } from "@/components/arena";
 import { Suit } from "@/components/game/ArenaSprite";
+import { ClubChat } from "./ClubChat";
 
 /**
  * My Club — the right-hand panel of the Clubs board
@@ -30,7 +30,6 @@ import { Suit } from "@/components/game/ArenaSprite";
  * screen is simply the true one.
  */
 
-const MAX = 500;
 const SUITS = ["S", "H", "D", "C"] as const;
 const TINTS = ["t1", "t2", "t3", "t4"] as const;
 
@@ -54,15 +53,9 @@ export function ClubHome({ club, myUid, myName, compact = false }: {
   compact?: boolean;
 }) {
   const [tab, setTab] = useState<"members" | "chat">("members");
-  const [messages, setMessages] = useState<ClubMessage[]>([]);
-  const [text, setText] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<Record<string, PlayerSearchResult>>({});
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
-  const [chatLoaded, setChatLoaded] = useState(false);
-  const [chatRetry, setChatRetry] = useState(0);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const action = useRef(false);
   const { showToast } = useToast();
@@ -78,26 +71,6 @@ export function ClubHome({ club, myUid, myName, compact = false }: {
       // still render, just without the refresh.
     });
   }, [memberIds]);
-
-  useEffect(() => {
-    if (tab !== "chat") return;
-    setChatLoaded(false); setError(null); setMessages([]);
-    return watchClubMessages(club.id, next => { setMessages(next); setChatLoaded(true); },
-      () => { setError("Couldn't load club chat."); setChatLoaded(true); });
-  }, [tab, club.id, chatRetry]);
-
-  useEffect(() => {
-    if (tab === "chat") bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, tab]);
-
-  async function handleSend() {
-    if (!text.trim() || action.current) return;
-    action.current = true; setBusy(true); setError(null);
-    const toSend = text;
-    try { await sendClubMessage(club.id, myUid, myName, toSend); setText(""); }
-    catch { setError("Message not sent. Please try again."); }
-    finally { action.current = false; setBusy(false); }
-  }
 
   async function handleLeave() {
     if (action.current) return;
@@ -194,40 +167,7 @@ export function ClubHome({ club, myUid, myName, compact = false }: {
           </button>
         </div>
       ) : (
-        <div className="club-chat">
-          {!chatLoaded && <p className="muted2">Loading club chat...</p>}
-          {error && (
-            <p role="alert" className="muted2">
-              {error}{" "}
-              <button type="button" className="link" onClick={() => setChatRetry(v => v + 1)} data-flat>
-                <RefreshCw aria-hidden="true" />Retry
-              </button>
-            </p>
-          )}
-          {chatLoaded && !error && messages.length === 0 && (
-            <p className="muted2">No messages yet. Say hello to the club.</p>
-          )}
-          {messages.map(message => (
-            <div className={`cb2 ${message.senderUid === myUid ? "me" : "them"}`} key={message.id}>
-              {message.senderUid !== myUid && <small>{message.senderName}</small>}
-              {message.text}
-            </div>
-          ))}
-          <div ref={bottomRef} />
-          <label className="field club-composer">
-            <input
-              value={text}
-              onChange={event => setText(event.target.value.slice(0, MAX))}
-              onKeyDown={event => { if (event.key === "Enter") handleSend(); }}
-              placeholder="Message the club…"
-              aria-label="Message the club"
-              maxLength={MAX}
-            />
-            <button type="button" className="club-send" aria-label="Send to club" disabled={!text.trim() || busy} onClick={handleSend}>
-              <Send aria-hidden="true" />
-            </button>
-          </label>
-        </div>
+        <ClubChat key={`${myUid}:${club.id}`} clubId={club.id} myUid={myUid} myName={myName} />
       )}
 
       <dialog ref={dialog} className="dlg club-dlg" onClose={() => setConfirm(null)}>

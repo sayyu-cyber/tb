@@ -65,6 +65,7 @@ export interface PhoneGinBoardProps {
    * leave, or whose turn it is. Short, because `.hint` is nowrap.
    */
   hint: string;
+  error?: string;
   /** The action button's words: "Discard & win", "Discard 5", "Pick a card". */
   actionLabel: string;
   /** The id of the card just drawn, which the board tags "New". */
@@ -275,10 +276,10 @@ export function PhoneGinBoard(p: PhoneGinBoardProps) {
           </button>
         </div>
 
-        {!ceremony && (
-          <span className="hint" role="status">
-            {p.myTurn && <i className="dot live" data-ar-loop />}
-            {p.hint}
+        {(!ceremony || p.error) && (
+          <span key={p.error ? "error" : "hint"} className="hint" role={p.error ? "alert" : "status"}>
+            {!p.error && p.myTurn && <i className="dot live" data-ar-loop />}
+            {p.error || p.hint}
           </span>
         )}
 

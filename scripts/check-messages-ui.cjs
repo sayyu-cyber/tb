@@ -16,7 +16,7 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/
 const mocks = path.join(__dirname, 'messages-test-services.tsx');
 const alias = Object.fromEntries([
   '@/contexts/AuthContext', '@/contexts/ToastContext', '@/contexts/HomeSocialContext',
-  'next/navigation', '@/lib/messages', '@/lib/presence', '@/lib/rooms', '@/lib/friends',
+  'next/navigation', '@/lib/messages', '@/lib/clubs', '@/lib/presence', '@/lib/rooms', '@/lib/friends',
   '@/hooks/useTranslation', 'next/link',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
@@ -28,6 +28,7 @@ async function run() {
     output: { path: output, filename: 'component.js' },
     resolve: { extensions: ['.tsx', '.ts', '.js'], alias },
     module: { rules: [{ test: /\.tsx?$/, exclude: /node_modules/, use: path.join(__dirname, 'friends-test-loader.cjs') }] },
+    plugins: [new webpack.NormalModuleReplacementPlugin(/\.css$/, 'data:text/javascript,export default {};')],
     optimization: { minimize: false },
   }, (error, stats) => error || stats.hasErrors() ? reject(error || stats.toString()) : resolve()));
 
@@ -39,10 +40,10 @@ async function run() {
     const styles = await page.locator('link[rel=stylesheet]').evaluateAll(nodes => nodes.map(node => node.href));
     const bodyClass = await page.locator('body').getAttribute('class');
     const script = fs.readFileSync(path.join(output, 'component.js'), 'utf8');
-    await page.route('**/messages/**', route => route.fulfill({
+    await page.route(/\/messages(?:-test)?\//, route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}" style="margin:0">`
+        + `<body class="${bodyClass || ''}" style="margin:0"><style>${fs.readFileSync(path.join(root, 'components/messages/message-history.css'), 'utf8')}</style>`
         + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
         + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
@@ -159,6 +160,7 @@ async function run() {
     await page.goto(BASE + '/messages-test/');
     await page.locator('.arena-mmessages').waitFor();
     const list = page.locator('.arena-mmessages');
+    await list.locator('.conv').first().waitFor();
     assert.equal(await page.locator('.msg-page').count(), 0, 'The two-pane screen steps aside');
     assert.ok(await list.locator('.conv').count() > 0, 'The conversations are here');
     assert.ok(await list.locator('.cdiv').count() > 0, 'separated by the hairlines');
@@ -166,7 +168,7 @@ async function run() {
     await page.screenshot({ path: path.join(output, 'mmessages-390.png'), fullPage: true });
 
     await list.locator('.conv').first().click();
-    await page.locator('.arena-mchat .chat').waitFor();
+    await page.locator('.arena-mchat.chat').waitFor();
     assert.equal(await page.locator('.arena-mmessages').count(), 0, 'The thread replaces the list');
     assert.equal(await page.locator('.arena-mchat .composer').count(), 1, 'with the composer pinned');
     assert.ok((await page.locator('.arena-mchat').innerText()).toLowerCase().includes('invite to mindi'), 'and the invite');

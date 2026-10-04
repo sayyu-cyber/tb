@@ -42,7 +42,7 @@ const VIP_PLANS = [
 ];
 
 export default function CosmeticShop() {
-  const { state, purchaseCosmetic, equipCosmetic, activateVip } = useEconomy();
+  const { state, purchaseCosmetic, equipCosmetic } = useEconomy();
   const { user, isGuest } = useAuth();
   const [activeTab, setActiveTab] = useState<'featured' | 'permanent' | 'coins' | 'vip'>('featured');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -101,9 +101,11 @@ export default function CosmeticShop() {
       else showToast("Purchase could not be completed. Check your balance.", "error");
     } finally { window.setTimeout(() => { purchasePending.current = false; }, 250); }
   }
-  function handleEquip(item: CosmeticItem) {
-    equipCosmetic(item.category, item.id);
-    showToast(item.name + " equipped.", "success");
+  async function handleEquip(item: CosmeticItem) {
+    if (await equipCosmetic(item.category, item.id)) {
+      showToast(item.name + " equipped.", "success");
+      setSelectedItem(null);
+    }
   }
 
   const pendingTopup = myTopups.find((topup) => topup.status === 'pending');
@@ -162,7 +164,6 @@ export default function CosmeticShop() {
     .sort((a, b) => sort === 'price' ? priceFor(a) - priceFor(b) : sort === 'name' ? a.name.localeCompare(b.name) : 0);
 
   const vipActive = state.profile.vip.active;
-  const plan = VIP_PLANS.find(p => p.id === selectedVipPlan)!;
 
   function itemCard(item: CosmeticItem, featured?: boolean) {
     return (
@@ -322,6 +323,9 @@ export default function CosmeticShop() {
       )}
 
       {activeTab === 'vip' && (
+        <div>
+        <p role="status">VIP purchases are currently unavailable.</p>
+        <fieldset disabled style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         <VipPanel
           phone={phone}
           plans={VIP_PLANS}
@@ -329,18 +333,10 @@ export default function CosmeticShop() {
           onSelect={setSelectedVipPlan}
           active={vipActive}
           remainingDays={state.profile.vip.remainingDays}
-          onActivate={() => {
-            if (vipActive) return;
-            // CODE ISSUE 1: nothing charges for this. Left exactly as it
-            // was, deliberately - how VIP is paid for is a decision for
-            // Sayyu, not a redesign.
-            activateVip(plan.days);
-            showToast(
-              t('toast_vipActivated').replace('{plan}', plan.id === 'weekly' ? t('vip_weeklyLabel') : t('vip_monthlyLabel')),
-              'success'
-            );
-          }}
+          onActivate={() => showToast('VIP purchases are unavailable until verified billing is enabled.', 'error')}
         />
+        </fieldset>
+        </div>
       )}
 
       {/* The Featured tab shows four packs as cards; the Coin Packs and VIP
@@ -418,7 +414,7 @@ export default function CosmeticShop() {
           equipped={isItemEquipped(selectedItem)}
           onClose={() => setSelectedItem(null)}
           onBuy={() => confirmPurchase(selectedItem)}
-          onEquip={() => { handleEquip(selectedItem); setSelectedItem(null); }}
+          onEquip={() => { void handleEquip(selectedItem); }}
           onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }}
           phone={phone}
           initial={initial}

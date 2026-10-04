@@ -1,14 +1,14 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { realtimeChannelName, subscribe, toMillis, type Unsubscribe } from "@/lib/supabase/data";
-import { GameType, MatchDoc } from "@/lib/matchmaking";
-
-const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+import { GameType } from "@/lib/matchmaking";
+import { invokeMatchCommand } from "@/lib/matchCommand";
 
 export interface RoomDoc {
   code: string;
   gameType: GameType;
   ownerUid: string;
-  password: string | null;
+  /** Compatibility marker for password prompts; never contains a credential. */
+  password: boolean;
   maxPlayers: number;
   players: string[];
   playerNames: Record<string, string>;
@@ -21,25 +21,13 @@ export interface RoomDoc {
   seatOrder?: string[];
 }
 
-function generateRoomCode(): string {
-  let code = "";
-  for (let i = 0; i < 6; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-  return code;
-}
-
-function maxPlayersFor(gameType: GameType, mode: "casual" | "rankedDuo", mindiMode: "team2v2" | "ffa1v1"): number {
-  if (mode === "rankedDuo") return 2;
-  if (gameType === "mindi") return mindiMode === "ffa1v1" ? 2 : 4;
-  return 2;
-}
-
 function toRoom(row: any): RoomDoc {
   const players = (row.room_players ?? []).sort((a: any, b: any) => (a.seat_index ?? 999) - (b.seat_index ?? 999));
   return {
     code: row.code,
     gameType: row.game_type,
     ownerUid: row.owner_id,
-    password: row.password_hash,
+    password: row.has_password === true,
     maxPlayers: row.max_players,
     players: players.map((player: any) => player.user_id),
     playerNames: Object.fromEntries(players.map((player: any) => [player.user_id, player.display_name || "Player"])),
@@ -57,41 +45,29 @@ export async function getRoom(code: string): Promise<RoomDoc | null> {
   const supabase = getSupabaseBrowserClient();
   const { data, error } = await supabase
     .from("game_rooms")
-    .select("*,room_players(user_id,display_name,seat_index,joined_at),room_bans(user_id)")
+    .select("code,game_type,owner_id,has_password,max_players,status,match_id,mode,mindi_mode,created_at,room_players(user_id,display_name,seat_index,joined_at),room_bans(user_id)")
     .eq("code", code.trim().toUpperCase())
     .maybeSingle();
   if (error) throw error;
   return data ? toRoom(data) : null;
 }
 
-export async function createRoom(ownerUid: string, ownerName: string, gameType: GameType, password: string | null, mode: "casual" | "rankedDuo" = "casual", mindiMode: "team2v2" | "ffa1v1" = "team2v2"): Promise<string> {
+export async function createRoom(_ownerUid: string, _ownerName: string, gameType: GameType, password: string | null, mode: "casual" | "rankedDuo" = "casual", mindiMode: "team2v2" | "ffa1v1" = "team2v2"): Promise<string> {
   const supabase = getSupabaseBrowserClient();
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = generateRoomCode();
-    const { error } = await supabase.from("game_rooms").insert({
-      code,
-      game_type: gameType,
-      owner_id: ownerUid,
-      password_hash: password || null,
-      max_players: maxPlayersFor(gameType, mode, mindiMode),
-      mode,
-      mindi_mode: gameType === "mindi" ? mindiMode : null,
-    });
-    if (error) {
-      if (error.code === "23505") continue;
-      throw error;
-    }
-    const { error: playerError } = await supabase.from("room_players").insert({ room_code: code, user_id: ownerUid, display_name: ownerName, seat_index: 0 });
-    if (playerError) throw playerError;
-    return code;
-  }
-  throw new Error("Could not generate a unique room code - please try again");
+  const { data, error } = await supabase.rpc("create_room", {
+    p_game_type: gameType, p_password: password || null, p_mode: mode, p_mindi_mode: mindiMode,
+  });
+  if (error) throw new Error(error.message);
+  if (typeof data !== "string" || !data) throw new Error("Room creation did not return a room code");
+  return data;
 }
 
-export async function joinRoom(code: string, uid: string, displayName: string, password: string, inviteToken?: string): Promise<void> {
+export async function joinRoom(code: string, _uid: string, _displayName: string, password: string, inviteToken?: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.rpc("join_room", { p_code: code.trim().toUpperCase(), p_password: password, p_invite: inviteToken || null });
+  const { data, error } = await supabase.rpc("join_room", { p_code: code.trim().toUpperCase(), p_password: password, p_invite: inviteToken || null });
   if (error) throw new Error(error.message);
+  if (data?.error) throw new Error(data.error);
+  if (data?.ok !== true) throw new Error("The room could not confirm your seat");
 }
 
 export async function createRoomInviteLink(code: string): Promise<string> {
@@ -100,75 +76,35 @@ export async function createRoomInviteLink(code: string): Promise<string> {
   return data as string;
 }
 
-export async function setSeatOrder(code: string, ownerUid: string, seatOrder: string[]): Promise<void> {
-  const room = await getRoom(code);
-  if (!room || room.ownerUid !== ownerUid) return;
-  const sameSet = seatOrder.length === room.players.length && room.players.every((p) => seatOrder.includes(p));
-  if (!sameSet) throw new Error("Seat order must contain exactly the current players");
-  const supabase = getSupabaseBrowserClient();
-  await Promise.all(seatOrder.map((uid, seatIndex) => supabase.from("room_players").update({ seat_index: seatIndex }).eq("room_code", code).eq("user_id", uid)));
+export async function setSeatOrder(code: string, _ownerUid: string, seatOrder: string[]): Promise<void> {
+  const { error } = await getSupabaseBrowserClient().rpc("set_room_seat_order", { p_code: code.trim().toUpperCase(), p_seat_order: seatOrder });
+  if (error) throw new Error(error.message);
 }
 
-export async function kickPlayer(code: string, ownerUid: string, targetUid: string): Promise<void> {
-  const room = await getRoom(code);
-  if (!room || room.ownerUid !== ownerUid || targetUid === ownerUid) return;
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("room_players").delete().eq("room_code", code).eq("user_id", targetUid);
-  if (error) throw error;
+export async function kickPlayer(code: string, _ownerUid: string, targetUid: string): Promise<void> {
+  const { error } = await getSupabaseBrowserClient().rpc("remove_room_player", { p_code: code.trim().toUpperCase(), p_target: targetUid, p_ban: false });
+  if (error) throw new Error(error.message);
 }
 
-export async function banPlayer(code: string, ownerUid: string, targetUid: string): Promise<void> {
-  await kickPlayer(code, ownerUid, targetUid);
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("room_bans").upsert({ room_code: code, user_id: targetUid });
-  if (error) throw error;
+export async function banPlayer(code: string, _ownerUid: string, targetUid: string): Promise<void> {
+  const { error } = await getSupabaseBrowserClient().rpc("remove_room_player", { p_code: code.trim().toUpperCase(), p_target: targetUid, p_ban: true });
+  if (error) throw new Error(error.message);
 }
 
-export async function leaveRoom(code: string, uid: string): Promise<void> {
-  const room = await getRoom(code);
-  const supabase = getSupabaseBrowserClient();
-  if (room?.ownerUid === uid) {
-    await supabase.from("game_rooms").update({ status: "closed" }).eq("code", code);
-    return;
-  }
-  await supabase.from("room_players").delete().eq("room_code", code).eq("user_id", uid);
+export async function leaveRoom(code: string, _uid: string): Promise<void> {
+  const { error } = await getSupabaseBrowserClient().rpc("leave_room", { p_code: code.trim().toUpperCase(), p_close: false });
+  if (error) throw new Error(error.message);
 }
 
-export async function closeRoom(code: string, ownerUid: string): Promise<void> {
-  const room = await getRoom(code);
-  if (!room || room.ownerUid !== ownerUid) return;
-  const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("game_rooms").update({ status: "closed" }).eq("code", code);
-  if (error) throw error;
+export async function closeRoom(code: string, _ownerUid: string): Promise<void> {
+  const { error } = await getSupabaseBrowserClient().rpc("leave_room", { p_code: code.trim().toUpperCase(), p_close: true });
+  if (error) throw new Error(error.message);
 }
 
-export async function startRoomMatch<TState>(code: string, ownerUid: string, buildInitialState: (orderedPlayerUids: string[]) => TState): Promise<string> {
-  const room = await getRoom(code);
-  if (!room) throw new Error("Room not found");
-  if (room.ownerUid !== ownerUid) throw new Error("Only the room owner can start the match");
-  if (room.players.length !== room.maxPlayers) throw new Error("Room isn't full yet");
-  const orderedPlayers = room.seatOrder && room.seatOrder.length === room.players.length ? room.seatOrder : room.players;
-  const supabase = getSupabaseBrowserClient();
-  const matchDoc: MatchDoc<TState> = {
-    gameType: room.gameType,
-    pool: room.mode === "rankedDuo" ? "ranked" : "casual",
-    players: orderedPlayers,
-    status: "active",
-    createdAt: Date.now(),
-    state: buildInitialState(orderedPlayers),
-  };
-  const { data: match, error } = await supabase.from("matches").insert({
-    game_type: matchDoc.gameType,
-    pool: matchDoc.pool,
-    status: "active",
-    public_state: matchDoc.state as any,
-  }).select("id").single();
-  if (error) throw error;
-  const { error: playersError } = await supabase.from("match_players").insert(orderedPlayers.map((userId, seatIndex) => ({ match_id: match.id, user_id: userId, seat_index: seatIndex })));
-  if (playersError) throw playersError;
-  const { error: roomError } = await supabase.from("game_rooms").update({ status: "started", match_id: match.id }).eq("code", code);
-  if (roomError) throw roomError;
-  return match.id;
+export async function startRoomMatch<TState>(code: string, _ownerUid?: string, _buildInitialState?: (orderedPlayerUids: string[]) => TState): Promise<string> {
+  const matchId = await invokeMatchCommand<string | null>({ type: "start-room", code: code.trim().toUpperCase() });
+  if (typeof matchId !== "string" || !matchId) throw new Error("The room could not start a match");
+  return matchId;
 }
 
 export function watchRoom(code: string, onUpdate: (room: RoomDoc | null) => void, onError?: (err: Error) => void): Unsubscribe {

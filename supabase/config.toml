@@ -1,0 +1,4 @@
+[functions.match-command]
+# The handler validates every access token with Auth's /user endpoint.
+verify_jwt = false
+entrypoint = "./functions/match-command/index.js"

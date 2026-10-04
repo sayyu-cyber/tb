@@ -1,5 +1,5 @@
 // Isolated component-test services. Never imported by application code.
-import React from 'react';
+import React, { useSyncExternalStore } from 'react';
 
 /**
  * Stand-ins for what Messages reads.
@@ -35,11 +35,22 @@ const THREAD = [
 
 export const useAuth = () => ({ user: { uid: ME, displayName: 'Sayyu' }, isGuest: flag('guest') });
 export const useToast = () => ({ showToast: (message: string) => { document.body.dataset.toast = message; } });
+const navigationListeners = new Set<() => void>();
+const subscribeNavigation = (callback: () => void) => {
+  navigationListeners.add(callback);
+  return () => { navigationListeners.delete(callback); };
+};
 export const useRouter = () => ({
   push: (url: string) => { document.body.dataset.destination = url; },
-  replace: (url: string) => { document.body.dataset.opened = url; history.replaceState(null, '', url); },
+  replace: (url: string) => {
+    document.body.dataset.opened = url; history.replaceState(null, '', url);
+    navigationListeners.forEach(callback => callback());
+  },
 });
-export const useSearchParams = () => new URLSearchParams(location.search);
+export const useSearchParams = () => {
+  const search = useSyncExternalStore(subscribeNavigation, () => location.search);
+  return new URLSearchParams(search);
+};
 export const useTranslation = () => (key: string) => ({
   page_messages: 'Messages',
   messages_placeholder: 'Message…',
@@ -69,6 +80,15 @@ export const watchConversations = (_uid: string, callback: any, error: any) => {
   return () => clearTimeout(timer);
 };
 export const ensureConversation = async (_a: string, _b: string, other: string) => `c-${other}`;
+export const loadMessagesPage = async (id: string) => ({ messages: id === 'c-mariyam' ? THREAD : [], nextCursor: null });
+export const loadClubMessagesPage = async () => ({ messages: [], nextCursor: null });
+export function watchSocialSnapshot<T>(_key: string, _tables: unknown[], load: () => Promise<T>, callback: (value: T) => void, error?: (error: Error) => void) {
+  let active = true;
+  const timer = setTimeout(() => {
+    void load().then(value => { if (active) callback(value); }, err => { if (active) error?.(err); });
+  }, 30);
+  return () => { active = false; clearTimeout(timer); };
+}
 export const watchMessages = (id: string, callback: any) => {
   const timer = setTimeout(() => callback(id === 'c-mariyam' ? THREAD : []), 30);
   return () => clearTimeout(timer);
