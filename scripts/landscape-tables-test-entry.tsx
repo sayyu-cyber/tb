@@ -85,7 +85,7 @@ function GinWonFixture() {
 function Fixture() {
   const table = q.has("won") ? <GinWonFixture /> : q.has("gin") ? <GinFixture /> : <MindiFixture />;
   // A live match sits in the match shell, so the rotate gate can blur it.
-  return <div className={`arena-app arena-phone app-shell ${q.has("gate") ? "app-shell-match" : ""}`.trim()}>
+  return <div className={`arena-app app-shell ${q.has("gate") ? "app-shell-match" : ""}`.trim()}>
     <MatchGateProvider>
       {q.has("gate") && <RotateGate />}
       {table}

@@ -217,7 +217,7 @@ async function run() {
     const touch = await browser.newContext({viewport:{width:844,height:390},hasTouch:true});
     const phone = await touch.newPage();
     const touchErrors = []; phone.on('pageerror',e=>{touchErrors.push(e.message);console.error(e.message);});
-    await phone.route('**/mindi-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div class="arena-app arena-phone app-shell app-shell-match"><div id="test-root"></div></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+    await phone.route('**/mindi-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div class="arena-app app-shell app-shell-match"><div id="test-root"></div></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await phone.goto('http://127.0.0.1:3000/mindi-test/?online');
     const board = phone.locator('.arena-pmindi');
     await board.waitFor();

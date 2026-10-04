@@ -37,7 +37,7 @@ export function PhoneMessages({
   onRetry: () => void;
 }) {
   return (
-    <div className="arena-mmessages mpage">
+    <div className="arena-phone arena-mmessages mpage">
       <div className="mh">
         <span className="lbl dash" style={{ color: "#C6FF33" }}>Direct messages</span>
         <h1 className="disp chrome">{title}</h1>

@@ -37,7 +37,7 @@ export function PhoneAchievements({
   const ratio = total > 0 ? completed / total : 0;
 
   return (
-    <div className="arena-machievements mpage">
+    <div className="arena-phone arena-machievements mpage">
       <div className="mh">
         <span className="lbl dash" style={{ color: "#C6FF33" }}>Milestones &amp; rewards</span>
         <h1 className="disp chrome" style={{ fontSize: 41 }}>{title}</h1>

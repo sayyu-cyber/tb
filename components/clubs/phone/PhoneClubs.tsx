@@ -46,7 +46,7 @@ export function PhoneClubs({
   const needle = query.trim();
 
   return (
-    <div className="arena-mclubs mpage">
+    <div className="arena-phone arena-mclubs mpage">
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
         <div className="mh">
           <span className="lbl dash" style={{ color: "#C6FF33" }}>Thaasbai Community</span>

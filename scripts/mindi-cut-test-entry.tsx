@@ -97,7 +97,7 @@ function GinFixture() {
 
 createRoot(document.getElementById("test-root")!).render(
   <StrictMode>
-    <div className="arena-app arena-phone">
+    <div className="arena-app">
       {game === "gin" ? <GinFixture /> : <MindiFixture duel={game === "duel"} />}
     </div>
   </StrictMode>

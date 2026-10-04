@@ -87,7 +87,7 @@ export function PhoneHallOfFame({
   }
 
   return (
-    <div className="arena-mhalloffame mpage">
+    <div className="arena-phone arena-mhalloffame mpage">
       <div className="mh">
         <span className="lbl dash" style={{ color: "#C6FF33" }}>Legends of the table</span>
         <h1 className="disp chrome">{title}</h1>

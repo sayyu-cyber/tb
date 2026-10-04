@@ -29,7 +29,7 @@ export function PhoneRewards({ title, lede, streak = "", missionsOnly = false }:
   missionsOnly?: boolean;
 }) {
   return (
-    <div className="arena-mrewards mpage">
+    <div className="arena-phone arena-mrewards mpage">
       <div className="mh">
         <span className="lbl dash" style={{ color: "#C6FF33" }}>{lede}</span>
         <h1 className="disp chrome" style={{ fontSize: 42 }}>{title}</h1>

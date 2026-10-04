@@ -76,16 +76,18 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           every screen inside it, which is what components/arena/* render.
           In-match screens keep it too: the table boards have their own
           namespaces, and the two don't overlap. */}
-      {/* `arena-phone` is the namespace the phone boards were ported
-          under, alongside `arena-app` for the desktop ones. Both sheets are
-          on the shell and the media queries in arena-phone-shell.css decide
-          which chrome is visible, so nothing here branches on width. */}
+      {/* `arena-phone` - the namespace the P tables and M boards were
+          ported under - is NOT on the shell: its shared layer
+          (styles/arena-phone.css) styles generic board names like .grid and
+          .panel, and on the shell it reached every screen, desktop
+          included (Tailwind's `grid` became an absolute overlay). Each
+          composition ported under it carries it on its own root. */}
       {/* The rotate gate covers a LIVE table, so it has to say what is
           happening behind it. The table publishes the turn into this
           provider and the gate reads it; see contexts/MatchGateContext. It
           wraps both so the two are in the same tree. */}
       <MatchGateProvider>
-      <div className={`arena-app arena-phone app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
+      <div className={`arena-app app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
         {inMatch && <RotateGate />}
         <ConnectionNotice />
@@ -106,8 +108,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         {!inMatch && <AppSidebar />}
         {/* `arena-land is-m is-land` is the landscape layer's root (styles/arena-land.css):
             the phone chrome and the phone screens carry it, never the shell,
-            so its phone-sized buttons and tabs cannot reach the desktop. */}
-        {!inMatch && <div className="phone-chrome arena-land is-m is-land"><PhoneChrome /></div>}
+            so its phone-sized buttons and tabs cannot reach the desktop. The
+            chrome's base pieces (.ibtn, .coins, .ava) are the boards' own
+            rules in the shared phone layer, so it carries `arena-phone` too. */}
+        {!inMatch && <div className="phone-chrome arena-phone arena-land is-m is-land"><PhoneChrome /></div>}
       </div>
       </MatchGateProvider>
       </HomeSocialProvider>

@@ -47,7 +47,7 @@ async function run() {
     await page.route('**/play-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app arena-phone app-shell ar-stage">`
+        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app app-shell ar-stage">`
         + `<main class="app-shell-main"><div class="app-shell-toolbar" style="height:76px"></div>`
         + `<div id="test-root"></div></main>`
         + `<aside class="app-sidebar"></aside></div>`
@@ -279,7 +279,7 @@ async function run() {
     await phonePage.route('**/play-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app arena-phone app-shell ar-stage">`
+        + `<body class="${bodyClass || ''}" style="margin:0"><div class="arena-app app-shell ar-stage">`
         + `<main class="app-shell-main"><div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));

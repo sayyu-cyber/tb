@@ -17,9 +17,9 @@ import { MoreSheet } from "../components/layout/phone/MoreSheet";
 export function LandFrame({ children, notifications = 3, requests = 2, unread = 2 }: { children: React.ReactNode; notifications?: number; requests?: number; unread?: number }) {
   const [more, setMore] = useState(false);
   return (
-    <div className="arena-app arena-phone app-shell ar-stage">
+    <div className="arena-app app-shell ar-stage">
       <main className="app-shell-main" id="app-content">{children}</main>
-      <div className="phone-chrome arena-land is-m is-land">
+      <div className="phone-chrome arena-phone arena-land is-m is-land">
         <div className="mstage" aria-hidden="true" />
         <PhoneTopBar notifications={notifications} />
         <PhoneNav onMore={() => setMore(true)} moreOpen={more} requests={requests} />

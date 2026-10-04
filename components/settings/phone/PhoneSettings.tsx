@@ -25,7 +25,7 @@ export function PhoneSettings({ title, categories, active, onCategory, sections 
   sections: { id: string; title: string; Icon: LucideIcon; mtone?: "l"; body: React.ReactNode }[];
 }) {
   return (
-    <div className="arena-msettings mpage">
+    <div className="arena-phone arena-msettings mpage">
       <div className="mh">
         <span className="lbl dash" style={{ color: "#C6FF33" }}>Thaasbai</span>
         <h1 className="disp chrome">{title}</h1>

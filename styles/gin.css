@@ -226,9 +226,9 @@
   transform:translateZ(var(--z)) rotate(var(--rot));
 }
 /* styles/arena-phone.css, the phone boards' shared layer, repeats the Main
-   board's 132x185 hand card (`.hc`), and the app shell puts .arena-phone on
-   every screen, after the table sheets - so on the Gin table it would win
-   over the Gin board's own smaller cards. These are the Gin board's hand
+   board's 132x185 hand card (`.hc`), after the table sheets - so wherever
+   .arena-phone sits above the Gin table it would win over the Gin board's
+   own smaller cards. These are the Gin board's hand
    rules from styles/arena-gin-board.css, value for value, one step more
    specific. */
 .arena-canvas.arena-gin-board .hc{width:108px;height:151px;border-radius:9px;font-size:15px;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(8deg);transition:transform .5s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s;animation-delay:calc(var(--i) * 45ms + 150ms)}

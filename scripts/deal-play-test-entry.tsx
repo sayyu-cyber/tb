@@ -19,4 +19,4 @@ const game = q.includes("mindi-online") ? <MindiOnlineClient matchId="test" />
   : q.includes("gin-online") ? <GinRummyOnlineClient matchId="fixture" />
   : <GinRummyGameClient mode="ai" />;
 
-createRoot(document.getElementById("test-root")!).render(<div className="arena-app arena-phone">{game}</div>);
+createRoot(document.getElementById("test-root")!).render(<div className="arena-app">{game}</div>);

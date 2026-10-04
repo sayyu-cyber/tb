@@ -41,7 +41,7 @@ async function run() {
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
         + `<body class="${bodyClass || ''}" style="margin:0">`
-        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div class="arena-app app-shell ar-stage"><main class="app-shell-main">`
         + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));

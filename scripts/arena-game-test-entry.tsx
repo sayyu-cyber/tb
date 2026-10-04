@@ -26,5 +26,5 @@ function Fixture(){
     onSelect={setSelected} onDraw={()=>{setHand(h=>[...h,{rank:13,suit:"D"}]);setPhase("discard");}}
     onDiscard={()=>{if(location.search.includes("error"))throw new Error("network unavailable");if(!selected)return;const kept=hand.filter(c=>cardId(c)!==cardId(selected));setHand(kept);setDone(true);setSelected(null);if(findGinLayout(kept))setResult(true);}}/>;
 }
-// Inside the shell's namespaces, as in the app: the phone tables need arena-phone.
-createRoot(document.getElementById("test-root")!).render(<div className="arena-app arena-phone">{location.search.includes("mindi")?<MindiFixture/>:<Fixture/>}</div>);
+// Inside the shell's namespace, as in the app (the phone tables carry arena-phone themselves).
+createRoot(document.getElementById("test-root")!).render(<div className="arena-app">{location.search.includes("mindi")?<MindiFixture/>:<Fixture/>}</div>);

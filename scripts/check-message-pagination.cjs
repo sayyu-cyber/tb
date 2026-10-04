@@ -145,11 +145,11 @@ async function run() {
     }
     if (request.url.startsWith('/login')) {
       response.writeHead(200, { 'Content-Type': 'text/html' });
-      response.end('<html><head><link rel="stylesheet" href="/fixture.css"></head><body class="arena-app arena-phone"></body></html>'); return;
+      response.end('<html><head><link rel="stylesheet" href="/fixture.css"></head><body class="arena-app"></body></html>'); return;
     }
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     response.end(`<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head>`
-      + `<body class="arena-app arena-phone" style="margin:0"><div id="test-root"></div><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`);
+      + `<body class="arena-app" style="margin:0"><div id="test-root"></div><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`);
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = 'http://127.0.0.1:' + server.address().port;

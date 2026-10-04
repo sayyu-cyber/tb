@@ -206,7 +206,7 @@ export default function CosmeticShop() {
          item cards, coin packs, VIP strip and plan buttons are all a size
          down from the wide screen's, and they live in these two generated
          sheets. */
-      className={phone ? 'arena-mshop arena-mshopvip mpage' : 'arena-shop arena-shopvip ar-page'}
+      className={phone ? 'arena-phone arena-mshop arena-mshopvip mpage' : 'arena-shop arena-shopvip ar-page'}
       style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
     >
       {/* The wide screen sets the title and the balance side by side in a

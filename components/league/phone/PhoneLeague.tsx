@@ -42,7 +42,7 @@ export function PhoneLeague({
   retryText: string;
 }) {
   return (
-    <div className="arena-mleague mpage">
+    <div className="arena-phone arena-mleague mpage">
       <section className="leaguehero" aria-label="Weekend League status">
         <div className="word" aria-hidden="true">LEAGUE</div>
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14 }}>

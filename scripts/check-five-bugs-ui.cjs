@@ -17,7 +17,7 @@ async function run() {
     const css = await page.locator('link[rel=stylesheet]').evaluateAll(nodes => nodes.map(node => node.href));
     const styles = await Promise.all(css.map(async url => (await page.request.get(url)).text()));
     const script = fs.readFileSync(path.join(output, 'fixture.js'), 'utf8');
-    await page.route('**/five-bugs-test/**', route => route.fulfill({ contentType: 'text/html', body: `<html><head>${styles.map(text => `<style>${text}</style>`).join('')}</head><body><div class="arena-app arena-phone"><div id="test-root"></div></div><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>` }));
+    await page.route('**/five-bugs-test/**', route => route.fulfill({ contentType: 'text/html', body: `<html><head>${styles.map(text => `<style>${text}</style>`).join('')}</head><body><div class="arena-app"><div id="test-root"></div></div><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>` }));
     await page.goto('http://127.0.0.1:3000/five-bugs-test/');
     await page.locator('#chip').getByText('71,760', { exact: true }).waitFor();
     await page.getByPlaceholder('Player ID').fill('YWD54FH');

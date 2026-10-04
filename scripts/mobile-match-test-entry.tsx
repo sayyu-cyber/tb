@@ -9,7 +9,7 @@ function Fixture() {
   const [route, setRoute] = useState("/play");
   useEffect(() => { const go = (event: Event) => setRoute((event as CustomEvent<string>).detail); window.addEventListener("mobile-match-route", go); return () => window.removeEventListener("mobile-match-route", go); }, []);
   const match = route.includes("/casual/ai");
-  return <div className={`arena-app arena-phone app-shell ${match ? "app-shell-match" : "ar-stage"}`}><MatchGateProvider>
+  return <div className={`arena-app app-shell ${match ? "app-shell-match" : "ar-stage"}`}><MatchGateProvider>
     {match && <RotateGate />}
     {match ? route.includes("mindi") ? <MindiGameClient mode="ai" /> : <GinRummyGameClient mode="ai" /> : <PlayPage />}
   </MatchGateProvider></div>;

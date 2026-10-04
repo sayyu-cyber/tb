@@ -18,7 +18,7 @@ async function run() {
     const bodyClass = await page.locator('body').getAttribute('class');
     const script = fs.readFileSync(path.join(output,'component.js'),'utf8');
 
-    await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root" class="arena-app arena-phone"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+    await page.route('**/gin-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(text=>`<style>${text}</style>`).join('')}</head><body class="${bodyClass || ''}"><div id="test-root" class="arena-app"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
     await page.goto('http://127.0.0.1:3000/gin-test/');
 
     // Gin opens with the cut and the deal, played ON the table from its first

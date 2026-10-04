@@ -51,7 +51,7 @@ async function main(){
       const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,reducedMotion:reduced?'reduce':'no-preference',...(touch?{isMobile:true,hasTouch:true}:{})});
       const page=await context.newPage();page.on('pageerror',e=>errors.push(name+': '+e.message));
       const script=fs.readFileSync(path.join(output,name,'component.js'),'utf8');
-      await page.route(`**/${name}-landscape/**`,r=>r.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(s=>`<style>${s}</style>`).join('')}</head><body class="${body}"><div id="test-root" class="arena-app arena-phone"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+      await page.route(`**/${name}-landscape/**`,r=>r.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${css.map(s=>`<style>${s}</style>`).join('')}</head><body class="${body}"><div id="test-root" class="arena-app"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
       await page.goto(`${base}/${name}-landscape/${query}`);
       await page.locator('.arena-canvas').first().waitFor();await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(700);
       return page;

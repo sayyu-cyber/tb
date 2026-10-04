@@ -32,7 +32,9 @@ import { cn } from "@/lib/utils";
  * home indicator: its frame is padded by the safe-area insets
  * (`.arena-frame-phone`) and the board is scaled into what is left, so the
  * hand and the action button are never under the hardware either
- * (design/arena/LANDSCAPE.md "Building it").
+ * (design/arena/LANDSCAPE.md "Building it"). That frame also carries
+ * `arena-phone`, the namespace the P boards' shared layer was ported under
+ * (styles/arena-phone.css).
  */
 export function ArenaStage({
   width = 1440,
@@ -88,7 +90,7 @@ export function ArenaStage({
   }, []);
 
   return (
-    <div ref={frame} className={width === 844 ? "arena-frame arena-frame-phone" : "arena-frame"}>
+    <div ref={frame} className={width === 844 ? "arena-frame arena-frame-phone arena-phone" : "arena-frame"}>
       <div
         className={cn("arena-canvas", className)}
         style={{ width, height, transform: `scale(${scale})` }}

@@ -62,7 +62,7 @@ export interface PhoneLeaderboardProps {
 
 export function PhoneLeaderboard(p: PhoneLeaderboardProps) {
   return (
-    <div className="arena-mleaderboard mpage">
+    <div className="arena-phone arena-mleaderboard mpage">
       <div className="mh">
         <span className="lbl dash" style={{ color: "#C6FF33" }}>Compete and climb the ranks</span>
         <h1 className="disp chrome">Leaderboard</h1>

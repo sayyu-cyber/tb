@@ -318,7 +318,7 @@ function ChatView({
      above is shared with the wide pane: the same subscription, the same
      read marking, the same invite, the same day grouping. */
   if (phone) return (
-    <section className="arena-mchat chat" aria-label={`Chat with ${otherName}`}>
+    <section className="arena-phone arena-mchat chat" aria-label={`Chat with ${otherName}`}>
       <div className="bg2" aria-hidden="true" />
       <header className="chead">
         <button type="button" className="ibtn" aria-label={t("a11y_goBack")} onClick={onBack} data-flat>

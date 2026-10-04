@@ -169,7 +169,7 @@ async function run() {
     await phone.route('**/result-test/**', route => route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
-        + `<body class="${bodyClass || ''}"><div class="arena-app arena-phone app-shell app-shell-match">`
+        + `<body class="${bodyClass || ''}"><div class="arena-app app-shell app-shell-match">`
         + `<main class="app-shell-main"><div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
