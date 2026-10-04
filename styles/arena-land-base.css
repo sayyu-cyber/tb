@@ -1,0 +1,12 @@
+/*
+ * The landscape boards' root rule, for the app's landscape roots.
+ *
+ * Every L board starts `.ar button { font-family: inherit }`: (0,1,1), and
+ * early in the sheet. So a bare class like `.tbtn` loses to it (the tile
+ * buttons read in the UI face) while a `.x button` rule written later beats
+ * it on order. Ported, both sides gain the namespace class, so this rule is
+ * one class more than the board's - and it is loaded BEFORE the board
+ * sheets (app/layout.tsx), so ties still go to the board's later rules
+ * exactly as they do on the board.
+ */
+.arena-land.is-land button { font-family: inherit; }

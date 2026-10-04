@@ -1,5 +1,6 @@
 // Isolated component-test services. Never imported by application code.
 import React from 'react';
+import { translate } from '@/lib/i18n';
 
 /**
  * Stand-ins for what Friends reads.
@@ -33,14 +34,17 @@ const PROFILES = Object.fromEntries(FRIENDS.map((friend, index) => [
   person(friend.uid, friend.name, 20 + index, index < 5 ? online : now - (index * 30 + 5) * 60_000),
 ]));
 
-export const useAuth = () => ({ user: { uid: 'test-self', displayName: 'Sayyu' }, isGuest: flag('guest') });
+export const useAuth = () => ({ user: { uid: 'test-self', displayName: 'Sayyu' }, isGuest: flag('guest'), playerStats: { currentRank: 'Gold', trophies: 58 } });
+/** The phone shell's coins chip: the boards' 1,240. */
+export const useEconomy = () => ({ state: { economy: { coins: 1240 }, profile: { vip: { active: false } } } });
 export const useToast = () => ({ showToast: (message: string) => { document.body.dataset.toast = message; } });
-export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; } });
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
+export const usePathname = () => '/friends';
 export const useTranslation = () => (key: string) => ({
   page_friends: 'Friends',
   login_signIn: 'Sign in',
   friends_signInPrompt: 'Sign in to add friends and play together.',
-}[key] || key);
+}[key] || translate(key, 'en'));
 export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }
 export const isOnline = (time: number) => Boolean(time) && Date.now() - time < 90_000;
 

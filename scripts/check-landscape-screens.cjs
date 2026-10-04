@@ -57,6 +57,20 @@ const SCREENS={
       }},
     ],
   },
+  friends:{
+    entry:'land-friends-entry.tsx',mocks:'friends-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/ToastContext','@/contexts/EconomyContext','next/navigation','next/link','@/lib/friends','@/lib/rooms','@/lib/presence','@/hooks/useTranslation'],
+    title:'FRIENDS',
+    states:[
+      {file:'friends',ref:'landscape-04-friends',query:'?populated'},
+      {file:'friend-requests',ref:'landscape-04b-friend-requests',query:'?populated',before:async page=>{
+        await page.locator('.fhead').getByRole('button',{name:/^Requests/}).click();
+      }},
+      {file:'friend-actions',ref:'landscape-04c-friend-actions',query:'?populated',before:async page=>{
+        await page.getByRole('button',{name:'More for Mariyam'}).click();
+      }},
+    ],
+  },
 };
 
 function build(name){

@@ -86,9 +86,9 @@ async function run() {
     // ── Requests tab (app-04b) ──────────────────────────────────────────
     await page.getByRole('button', { name: /^Requests/ }).click();
     await page.waitForTimeout(150);
-    const requests = await page.locator('.roster-list').innerText();
+    const requests = await page.locator('.roster .roster-list').innerText();
     for (const heading of ['Incoming requests', 'Sent requests', 'Room invites']) {
-      assert.ok(requests.includes(heading), `The board's ${heading} section`);
+      assert.ok(requests.toUpperCase().includes(heading.toUpperCase()), `The board's ${heading} section`);
     }
     assert.equal(await page.locator('.ibtn.accept').count(), 2, 'Two incoming requests to accept');
     assert.equal(await page.locator('.fr.invite').count(), 1, 'One room invite, ringed blue');
@@ -105,7 +105,7 @@ async function run() {
     await page.getByRole('dialog').waitFor();
     await page.getByRole('textbox', { name: 'Username or player ID' }).fill('ZxNova');
     await page.getByRole('button', { name: 'Search players' }).click();
-    await page.getByText('ZxNova').waitFor();
+    await page.locator('dialog .sg b', { hasText: 'ZxNova' }).waitFor();
     await page.getByRole('button', { name: /^Add ZxNova/ }).click();
     assert.equal(await page.locator('body').getAttribute('data-sent'), 'yes');
     await page.keyboard.press('Escape');
@@ -125,7 +125,8 @@ async function run() {
       await page.goto(BASE + '/friends/' + state);
       await page.getByRole('heading', { name: 'Friends', exact: true }).waitFor();
       await page.waitForTimeout(250);
-      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      // The wide screen's sizes. A phone gets LFriends, checked below.
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow ${state} ${width}`);
@@ -140,8 +141,6 @@ async function run() {
     await page.getByRole('heading', { name: 'Friends', exact: true }).waitFor();
     await page.waitForTimeout(250);
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MFriends's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
@@ -149,35 +148,55 @@ async function run() {
     assert.equal(await page.locator('[role=switch][aria-checked]').count(), 1, 'The switch reports its state');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MFriends ──────────────────────────────────────────
-    // design/arena/boards/MFriends.dc.html, with the actions sheet from
-    // phone-04c. One column instead of two, and the row's more-menu opens
-    // the shared bottom sheet rather than a dropdown that would cover the
-    // row it belongs to.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LFriends ────────────────────────────────────────────
+    // design/arena/boards/LFriends.dc.html (+ LFriendsRequests and
+    // LFriendActions). The phone is landscape only (design/arena/
+    // LANDSCAPE.md): a fixed screen, the list panel beside the counts and
+    // discovery, and the row's "..." as a panel from the right. Only one
+    // composition mounts. scripts/check-landscape-screens.cjs holds it
+    // against its references.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-friends.ar-page').isVisible(), false, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mfriends');
-    assert.equal(await phone.isVisible(), true, 'and MFriends takes over');
-    assert.equal(await phone.locator('.sbtn').count(), 3, 'The three stat buttons');
-    assert.equal(await phone.locator('.tabs > *').count(), 3, 'Friends, Requests and the disabled Blocked');
-    assert.ok(await phone.locator('.fr').count() > 0, 'and the roster');
-    // The more button opens a sheet, not a dropdown.
-    await phone.locator('.fr .acts .ibtn').last().click();
-    await page.getByRole('dialog').waitFor();
+    assert.equal(await page.locator('.arena-friends.ar-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lfriends');
+    assert.equal(await phone.isVisible(), true, 'and LFriends takes over');
+    assert.deepEqual(await phone.locator('.sbtn b').allTextContents(), ['12', '2', '1'], 'The three counts');
+    assert.equal(await phone.locator('.fhead .tabs > *').count(), 3, 'Friends, Requests and the disabled Blocked');
+    assert.equal(await phone.locator('.fr').count(), 12, 'The roster');
+    assert.equal(await phone.locator('.fr.on').count(), 5, 'five of them online');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true, 'A fixed screen: the page does not scroll');
+    assert.ok(await phone.locator('.flist').evaluate(n => n.scrollHeight > n.clientHeight), 'the roster scrolls inside its pane');
+    // "..." opens the actions panel, not a dropdown.
+    await phone.getByRole('button', { name: 'More for Mariyam' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Mariyam' });
+    await sheet.waitFor();
     assert.equal(await page.locator('.menu').count(), 0, 'No dropdown at this size');
-    const sheet = await page.getByRole('dialog').innerText();
     for (const label of ['View Profile', 'Invite to Mindi', 'Invite to Gin Rummy', 'Remove Friend']) {
-      assert.ok(sheet.includes(label), `The sheet offers ${label}`);
+      assert.ok((await sheet.innerText()).includes(label), `The panel offers ${label}`);
     }
-    await page.screenshot({ path: path.join(output, 'mfriends-actions-390.png') });
+    await sheet.getByRole('button', { name: 'Remove Friend' }).click();
+    await page.getByRole('heading', { name: 'Remove friend?' }).waitFor();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await phone.getByRole('button', { name: 'More for Mariyam' }).click();
     await page.keyboard.press('Escape');
-    assert.equal(await page.getByRole('dialog').count(), 0, 'Escape closes it');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mfriends-390.png'), fullPage: true });
+    assert.equal(await page.getByRole('dialog', { name: 'Mariyam' }).count(), 0, 'Escape closes it');
+    // Requests: the three groups, each labelled beside its rows.
+    await phone.locator('.sbtn').nth(1).click();
+    assert.deepEqual(await phone.locator('.rgl').allTextContents(), ['Incoming requests', 'Sent requests', 'Room invites']);
+    await phone.getByRole('button', { name: 'Accept Nashid' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-accepted'), 'true');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lfriends-844.png') });
+    for (const state of ['', '?failure=1', '?guest=1']) {
+      await page.goto(BASE + '/friends/' + state);
+      await phone.waitFor();
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `No overflow at 844 ${state}`);
+    }
     await page.setViewportSize({ width: 1440, height: 900 });
+    assert.equal(await page.locator('.arena-lfriends').count(), 0, 'The phone screen is unmounted');
 
-    console.log('Friends: MFriends held upright with its actions sheet, board structure and counts, the more-menu, filter/search/sort, the Requests tab with all three sections, the add dialog, empty/guest/error states, seven widths and accessibility passed.');
+    console.log('Friends: LFriends on a phone with its actions panel, board structure and counts, the more-menu, filter/search/sort, the Requests tab with all three sections, the add dialog, empty/guest/error states, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

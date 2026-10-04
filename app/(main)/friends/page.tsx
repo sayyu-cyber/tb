@@ -21,7 +21,8 @@ import { Avatar } from '@/components/arena';
 import {
   StatButton, OnlineToggle, FriendRow, RequestRow, SuggestionRow,
 } from '@/components/friends/FriendsPieces';
-import { PhoneFriends } from '@/components/friends/phone/PhoneFriends';
+import { LandFriends } from '@/components/friends/land/LandFriends';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 
 /**
  * Friends — design/arena/screens/app/app-04-friends.jpg, with the Requests
@@ -38,16 +39,17 @@ import { PhoneFriends } from '@/components/friends/phone/PhoneFriends';
  * Settings > Privacy). That stays disabled rather than being given a fake
  * panel.
  *
- * Held upright a phone gets MFriends (design/arena/boards/MFriends.dc.html):
- * one column instead of two, and the row's more-menu opens the shared bottom
- * sheet rather than a dropdown that would cover the row it belongs to. Every
- * watcher, handler and dialog below is shared between the two compositions.
+ * A phone gets LFriends (design/arena/boards/LFriends.dc.html): a fixed
+ * screen with the list panel beside the counts and discovery, and the row's
+ * more-menu as a panel from the right. Only one composition mounts; every
+ * watcher, handler and dialog below is shared between the two.
  */
 export default function FriendsPage() {
   const { user, isGuest } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
   const t = useTranslation();
+  const phone = usePhoneLayout();
   const uid = user?.uid ?? '';
   const [tab, setTab] = useState<'friends' | 'requests'>('friends');
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -202,16 +204,32 @@ export default function FriendsPage() {
     );
   }
 
+  // Someone who has already asked you stays in the list with Respond, as
+  // both Friends boards draw Nashid; only existing friends drop out.
   const availableSuggestions = suggestions.filter(person =>
-    !friends.some(friend => friend.uid === person.uid) && !incoming.some(request => request.from === person.uid));
+    !friends.some(friend => friend.uid === person.uid));
 
   const clearFilters = () => { setQuery(''); setOnlineOnly(false); };
 
+  const accept = (request: FriendRequestDoc) => act(request.id, async () => {
+    await respondToRequest(request.id, true);
+    setIncoming(rows => rows.filter(row => row.id !== request.id));
+  }, 'Friend request accepted');
+  const decline = (request: FriendRequestDoc) => act(request.id, async () => {
+    await respondToRequest(request.id, false);
+    setIncoming(rows => rows.filter(row => row.id !== request.id));
+  });
+  const cancel = (request: FriendRequestDoc) => act(request.id, async () => {
+    await cancelOrRemove(request.id);
+    setOutgoing(rows => rows.filter(row => row.id !== request.id));
+  });
+  const dismiss = (item: RoomInviteDoc) => act(item.id, () => dismissRoomInvite(item.id));
+  const askRemove = (friend: Friend) => { setRemoving(friend); removeDialog.current?.showModal(); };
+
   return (
     <>
-    <div className="portrait-view">
-      <PhoneFriends
-        title={t('page_friends')}
+    {phone ? (
+      <LandFriends
         isGuest={isGuest}
         signInPrompt={t('friends_signInPrompt')}
         signInLabel={t('login_signIn')}
@@ -242,16 +260,14 @@ export default function FriendsPage() {
         busy={busy}
         onOpenAdd={openAdd}
         onInvite={invite}
-        onRemove={friend => { setRemoving(friend); removeDialog.current?.showModal(); }}
-        onAccept={request => act(request.id, () => respondToRequest(request.id, true))}
-        onDecline={request => act(request.id, () => respondToRequest(request.id, false))}
-        onCancel={request => act(request.id, () => cancelOrRemove(request.id))}
-        onDismissInvite={item => act(item.id, () => dismissRoomInvite(item.id))}
-        onScrollToInvites={() => document.getElementById('room-invites-phone')?.scrollIntoView({ block: 'center' })}
+        onRemove={askRemove}
+        onAccept={accept}
+        onDecline={decline}
+        onCancel={cancel}
+        onDismissInvite={dismiss}
         addControl={person => addControl(person as PlayerSearchResult)}
       />
-    </div>
-    <div className="landscape-view">
+    ) : (
     <div className="arena-friends ar-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div className="phead">
         <div>
@@ -351,7 +367,7 @@ export default function FriendsPage() {
                       profile={profiles[friend.uid]}
                       busy={busy.includes('invite')}
                       onInvite={game => invite(friend, game)}
-                      onRemove={() => { setRemoving(friend); removeDialog.current?.showModal(); }}
+                      onRemove={() => askRemove(friend)}
                     />
                   ))}
                 </div>
@@ -369,14 +385,8 @@ export default function FriendsPage() {
                     uid={request.from}
                     line="Wants to be friends"
                     busy={busy.includes(request.id)}
-                    onAccept={() => act(request.id, async () => {
-                      await respondToRequest(request.id, true);
-                      setIncoming(rows => rows.filter(row => row.id !== request.id));
-                    }, 'Friend request accepted')}
-                    onDecline={() => act(request.id, async () => {
-                      await respondToRequest(request.id, false);
-                      setIncoming(rows => rows.filter(row => row.id !== request.id));
-                    })}
+                    onAccept={() => accept(request)}
+                    onDecline={() => decline(request)}
                   />
                 ))}
 
@@ -387,10 +397,7 @@ export default function FriendsPage() {
                     <Avatar name={request.toName} seed={request.to} size={42} radius={11} />
                     <div className="nm2"><b>{request.toName}</b><span className="st">Pending</span></div>
                     <button type="button" className="minibtn dim cancel" disabled={busy.includes(request.id)}
-                      onClick={() => act(request.id, async () => {
-                        await cancelOrRemove(request.id);
-                        setOutgoing(rows => rows.filter(row => row.id !== request.id));
-                      })} data-flat>
+                      onClick={() => cancel(request)} data-flat>
                       Cancel<span className="sr-only"> request to {request.toName}</span>
                     </button>
                   </div>
@@ -411,7 +418,7 @@ export default function FriendsPage() {
                         Join
                       </Link>
                       <button type="button" className="ibtn" aria-label="Dismiss invitation"
-                        disabled={busy.includes(item.id)} onClick={() => act(item.id, () => dismissRoomInvite(item.id))}>
+                        disabled={busy.includes(item.id)} onClick={() => dismiss(item)}>
                         <X aria-hidden="true" />
                       </button>
                     </div>
@@ -482,12 +489,10 @@ export default function FriendsPage() {
       </div>
 
     </div>
-    </div>
-    {/* Both dialogs live outside the two view wrappers. A <dialog> inside a
-        `display: none` subtree will not open, and one of the two wrappers is
-        always hidden - so a copy in each would be a dialog that silently did
-        nothing on one of them. `arena-friends` travels with them for the
-        board's own `.dlg` rules. */}
+    )}
+    {/* Both dialogs live outside the two compositions, so either can open
+        them. `arena-friends` travels with them for the board's own `.dlg`
+        rules. */}
     <div className="arena-friends">
       <dialog ref={dialog} className="dlg social-dlg"
         onClick={event => { if (event.target === dialog.current) dialog.current?.close(); }}
