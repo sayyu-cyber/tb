@@ -106,3 +106,25 @@ export function topBarFor(pathname: string): TopBar | null {
   const hit = PAGE_BARS.find(([prefix]) => path === prefix || path.startsWith(prefix + "/"));
   return hit ? hit[1] : null;
 }
+
+/**
+ * The name of the page a player was on, for the turn gate's "You were on
+ * {page}" chip (LANDSCAPE.md "The turn gate"). The page bars' own titles,
+ * plus the routes that have no bar. Null falls back to the brand.
+ */
+const OTHER_NAMES: Array<[prefix: string, key: string]> = [
+  ["/play", "nav_play"],
+  ["/login", "login_signIn"],
+  ["/player", "page_playerProfile"],
+  ["/admin", "page_admin"],
+];
+
+export function pageNameKey(pathname: string): string | null {
+  const path = pathname.replace(/\/$/, "") || "/";
+  const bar = topBarFor(path);
+  if (bar?.kind === "home") return "nav_home";
+  if (bar?.kind === "page") return bar.titleKey;
+  if (bar?.kind === "back" && bar.titleKey) return bar.titleKey;
+  const hit = OTHER_NAMES.find(([prefix]) => path === prefix || path.startsWith(prefix + "/"));
+  return hit ? hit[1] : null;
+}

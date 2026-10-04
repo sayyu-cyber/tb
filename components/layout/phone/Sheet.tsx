@@ -175,7 +175,7 @@ export function Sheet({
     /* The portal lands on <body>, outside the shell, so the namespaces the
        generated sheets are scoped under have to travel with it - otherwise
        none of the board's classes match and the sheet arrives unstyled. */
-    <div ref={host} className={`arena-app arena-phone arena-land land ${namespace} mview phone-sheet-host`.replace(/\s+/g, " ").trim()}>
+    <div ref={host} className={`arena-app arena-phone arena-land is-m is-land ${namespace} mview phone-sheet-host`.replace(/\s+/g, " ").trim()}>
       <button type="button" className={scrimFull || dialog ? "mscrim full" : "mscrim"} tabIndex={-1} aria-hidden="true" onClick={onClose} data-flat />
       {dialog ? (
       <div className="ldlg">

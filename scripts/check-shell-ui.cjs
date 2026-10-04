@@ -10,7 +10,8 @@ async function run(){
  const page=await browser.newPage();const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.error(error.message);});
  await page.goto('http://127.0.0.1:3000/login/');const styles=await page.locator('link[rel=stylesheet]').evaluateAll(nodes=>nodes.map(n=>n.href));const bodyClass=await page.locator('body').getAttribute('class');
  const script=fs.readFileSync(path.join(output,'component.js'),'utf8');
- await page.route('**/shell-test/**',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8">${styles.map(url=>`<link rel="stylesheet" href="${url}">`).join('')}</head><body class="${bodyClass||''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`}));
+ const serve=route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles.map(url=>`<link rel="stylesheet" href="${url}">`).join('')}</head><body class="${bodyClass||''}"><div id="test-root"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body></html>`});
+ await page.route('**/shell-test/**',serve);
  await page.goto('http://127.0.0.1:3000/shell-test/');await page.getByRole('combobox').first().waitFor();
  assert.equal(await page.locator('body').getAttribute('data-watch-chats'),'1','Only one chat subscription');
  // ---- desktop: unchanged at 768 wide and up with a normal height --------
@@ -21,6 +22,7 @@ async function run(){
   const bounds=await page.locator('.notification-popover').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'Notification bounds '+width);
   await page.keyboard.press('Escape');await page.screenshot({path:path.join(output,'shell-'+width+'.png'),fullPage:true});
   assert.equal(await page.locator('.mrail').isVisible(),false,'No phone rail on the desktop at '+width);
+  assert.equal(await page.locator('.turn-gate').isVisible(),false,'and no turn gate at '+width);
  }
 
  // ---- the rail: right edge, one width, no way to change it --------------
@@ -67,6 +69,7 @@ async function run(){
   assert.ok(Math.abs(bar.height-52)<2,`The top bar is 52px (got ${Math.round(bar.height)})`);
   assert.ok(Math.abs(bar.x-76)<2&&Math.abs(bar.x+bar.width-width)<2,'from the rail to the right edge at '+width);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Overflow at '+width+'x'+height);
+  assert.equal(await page.locator('.turn-gate').isVisible(),false,'No turn gate held sideways at '+width);
   await page.screenshot({path:path.join(output,'shell-land-'+width+'.png')});
  }
  await page.setViewportSize({width:844,height:390});await page.waitForTimeout(300);
@@ -118,6 +121,48 @@ async function run(){
  assert.equal(await page.locator('.mrail a[aria-current=page]').getAttribute('href'),'/friends','Friends lights itself');
  await page.locator('.mrail a[href="/home"]').click();
 
+ // ---- held upright: only the turn gate shows (LGate) --------------------
+ // LANDSCAPE.md "Orientation": the whole app is landscape, so a phone held
+ // upright sees the turn gate over any page, and nothing else. It is an
+ // overlay: turning back finds the page as it was.
+ for(const [query,android] of [['?iphone',false],['',true]]){
+  // Reduced motion, so the turning phone rests sideways as the references
+  // show it (LANDSCAPE.md: "under reduced motion it rests sideways").
+  const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1,reducedMotion:'reduce'});
+  const gate=await ctx.newPage();gate.on('pageerror',error=>{errors.push(error.message);console.error(error.message);});
+  await ctx.route('**/shell-test/**',serve);await gate.goto('http://127.0.0.1:3000/shell-test/'+query);
+  await gate.locator('.turn-gate').waitFor();await gate.waitForTimeout(400);
+  const box=await gate.locator('.turn-gate').boundingBox();
+  assert.ok(box.x===0&&box.y===0&&Math.abs(box.width-390)<1&&Math.abs(box.height-844)<1,'The gate covers the whole screen '+JSON.stringify(box));
+  const onTop=await gate.evaluate(()=>{const hits=[];for(const x of [20,195,370])for(const y of [20,300,600,830]){const el=document.elementFromPoint(x,y);hits.push(!!el&&!!el.closest('.turn-gate'));}return hits.every(Boolean);});
+  assert.ok(onTop,'Nothing but the gate can be seen or touched');
+  assert.equal(await gate.getByRole('heading',{name:/Turn your phone sideways/i}).count(),1,'It asks to turn the phone');
+  assert.ok((await gate.locator('.gctx').textContent()).replace(/s+/g,' ').trim().toUpperCase()==='YOU WERE ON HOME','and says where you were');
+  assert.equal(await gate.getByRole('button',{name:/Go landscape/i}).count(),android?1:0,android?'Go landscape where the lock exists':'and no Go landscape on iPhone');
+  assert.ok((await gate.locator('.gtip b').first().innerText()).toUpperCase().includes(android?'AUTO-ROTATE OFF':'SCREEN NOT TURNING'),'with that platform\'s tip');
+  assert.equal(await gate.evaluate(()=>getComputedStyle(document.body).overflow),'hidden','The page behind does not scroll');
+  assert.equal(await gate.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'and cannot widen the screen');
+  assert.equal(await gate.locator('.gturn .gp').evaluate(n=>getComputedStyle(n).transform),'matrix(0, -1, 1, 0, 0, 0)','Under reduced motion the phone rests sideways');
+  await gate.screenshot({path:path.join(output,android?'gate-android.png':'gate-iphone.png')});
+  await gate.setViewportSize({width:844,height:390});await gate.waitForTimeout(200);
+  assert.equal(await gate.locator('.turn-gate').isVisible(),false,'Turning sideways removes the gate at once');
+  assert.equal(await gate.locator('.mrail').isVisible(),true,'and the phone shell is there');
+  assert.notEqual(await gate.evaluate(()=>getComputedStyle(document.body).overflow),'hidden','and scrolling is back');
+  await ctx.close();
+ }
+ // A desktop window dragged tall and narrow gets the same gate, asking for width.
+ {
+  const ctx=await browser.newContext({viewport:{width:390,height:844}});const gate=await ctx.newPage();
+  await ctx.route('**/shell-test/**',serve);await gate.goto('http://127.0.0.1:3000/shell-test/');await gate.locator('.turn-gate').waitFor();await gate.waitForTimeout(300);
+  assert.equal(await gate.locator('.turn-gate').isVisible(),true,'A narrow desktop window gets the gate');
+  assert.equal(await gate.getByRole('heading',{name:/Make this window wider/i}).count(),1,'asking for a wider window');
+  assert.equal(await gate.locator('.gtip').count(),0,'without the phone tips');
+  assert.equal(await gate.locator('.gturn .gp').evaluate(n=>getComputedStyle(n).animationName),'turnPhone','and the phone turns, on turnPhone');
+  assert.equal(await gate.locator('.gturn .gp').evaluate(n=>getComputedStyle(n).animationDuration),'3.2s','over 3.2s');
+  await gate.screenshot({path:path.join(output,'gate-desktop.png')});
+  await ctx.close();
+ }
+
  // Every destination is reachable by name even though no label is drawn.
  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(250);
  assert.ok(await page.locator('.app-sidebar-item[aria-label]').count()>=8,
@@ -135,7 +180,7 @@ async function run(){
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));});await page.locator('.connection-notice').waitFor();
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));});assert.equal(await page.locator('.connection-notice').count(),0);
  await page.evaluate(()=>{const match=document.createElement('div');match.className='gin-room';document.querySelector('main').append(match);});assert.equal(await page.locator('.app-sidebar').isVisible(),false);
- assert.deepEqual(errors,[]);console.log('Shell checks passed: desktop at three sizes with a right-hand rail, unchanged; held sideways at 844x390, 740 and 932 the 76px rail of exactly Home, Friends, Play, Shop and More, the 52px top bar in its kinds, the 540px More panel holding every other destination, rail lighting; named icons, shared listeners, search keyboard controls, menus, logout errors, offline notice.');
+ assert.deepEqual(errors,[]);console.log('Shell checks passed: desktop at three sizes with a right-hand rail, unchanged; held sideways at 844x390, 740 and 932 the 76px rail of exactly Home, Friends, Play, Shop and More, the 52px top bar in its kinds, the 540px More panel holding every other destination, rail lighting; upright only the turn gate (iPhone, Android with Go landscape, a narrow desktop window asking to widen), gone on turning; named icons, shared listeners, search keyboard controls, menus, logout errors, offline notice.');
  }finally{await browser.close();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

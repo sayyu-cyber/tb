@@ -13,9 +13,9 @@
    ported once. A rule the board changed, however slightly, was kept.
 
    The boards draw everything inside one root (class="ar app m land") and
-   reach it through .land; here the namespace element is that
-   root and carries .land, so those prefixes become .arena-lhome.land. Rules
-   for the root alone are dropped. */
+   reach it through .land / .m; here the namespace element is that
+   root and carries a marker for each (.is-land, .is-m), so those prefixes
+   become .arena-lhome.is-land and .arena-lhome.is-m. Rules for the root alone are dropped. */
 
 
 .arena-lhome *{box-sizing:border-box}

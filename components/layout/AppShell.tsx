@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "./sidebar/AppSidebar";
 import { TopBar } from "./TopBar";
@@ -33,23 +33,28 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const path = pathname.replace(/\/$/, "");
   const inMatch = /\/play\/[^/]+\/(casual\/(ai|passplay|online\/live)|ranked\/live)$/.test(path) || path === '/spectate';
-  /* Only the screens INSIDE a match need landscape: the two card tables in
-     every mode, spectating, and the hand result. They are a fixed picture of
-     a wide table, and on a portrait phone that scales to about a quarter
-     size and stops being playable.
-     The Play lobby used to be here too. It is not any more - MPlay is its
-     portrait composition (design/arena/MOBILE.md "Turning the phone"), so
-     the turn is asked for at the Play button instead, when it starts to
-     matter, and browsing works either way up. */
-  const needsLandscape = inMatch;
+  /* The whole app is landscape now (design/arena/LANDSCAPE.md
+     "Orientation"), so no route is singled out: an upright phone sees the
+     turn gate (components/layout/TurnGate.tsx) over any page, mounted at the
+     root so it covers the signed-out pages too. A match is the one
+     exception: held upright it keeps MRotate, which covers the live table
+     with the turn status and Leave table rather than a generic gate. */
   /* Give the orientation and fullscreen back the moment the player is out of
      a match - MOBILE.md: "When the player leaves the match, call
      screen.orientation.unlock(), and document.exitFullscreen() if the app
      entered fullscreen." Keyed on leaving rather than on a particular exit,
      so every way out of a table is covered: the gate's Leave table, the
      table's own back button, the hand result, and the browser's Back.
-     Harmless when nothing was locked; both calls are no-ops then. */
-  useEffect(() => { if (!inMatch) void releaseLandscape(); }, [inMatch]);
+     Harmless when nothing was locked; both calls are no-ops then.
+     Only on the way OUT of a match, though, not whenever the shell mounts
+     outside one: the first tap of a session may already have locked the
+     phone sideways (components/system/LandscapeBoot.tsx), and arriving on
+     Home must not undo it. */
+  const wasInMatch = useRef(inMatch);
+  useEffect(() => {
+    if (wasInMatch.current && !inMatch) void releaseLandscape();
+    wasInMatch.current = inMatch;
+  }, [inMatch]);
 
   const roomShell = /^\/play\/[^/]+\/room$/.test(path);
   const premiumShell = path === "/home" || path === "/shop" || path === "/clubs" || path === "/settings" || roomShell;
@@ -82,7 +87,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
       <MatchGateProvider>
       <div className={`arena-app arena-phone app-shell ${inMatch ? "app-shell-match" : "ar-stage"} ${premiumShell ? "app-shell-home" : ""}`}>
         <a className="app-skip-link" href="#app-content">Skip to content</a>
-        {needsLandscape && <RotateGate />}
+        {inMatch && <RotateGate />}
         <ConnectionNotice />
         <BackgroundMusicPlayer />
         <CoinTopupWatcher />
@@ -99,10 +104,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         {!inMatch && <AppSidebar />}
-        {/* `arena-land land` is the landscape layer's root (styles/arena-land.css):
+        {/* `arena-land is-m is-land` is the landscape layer's root (styles/arena-land.css):
             the phone chrome and the phone screens carry it, never the shell,
             so its phone-sized buttons and tabs cannot reach the desktop. */}
-        {!inMatch && <div className="phone-chrome arena-land land"><PhoneChrome /></div>}
+        {!inMatch && <div className="phone-chrome arena-land is-m is-land"><PhoneChrome /></div>}
       </div>
       </MatchGateProvider>
       </HomeSocialProvider>

@@ -1069,6 +1069,23 @@ export const TRANSLATIONS: Record<string, Translations> = {
   more_viewProfile: { en: "View profile", dv: "ޕްރޮފައިލް ބައްލަވާ", hi: "प्रोफ़ाइल देखें", bn: "প্রোফাইল দেখুন" },
   more_vipBlurb: { en: "More matches, exclusive rewards and more.", dv: "އިތުރު މެޗު، ޚާއްޞަ އިނާމު އަދި އިތުރު ބައެއް.", hi: "ज़्यादा मैच, खास इनाम और भी बहुत कुछ।", bn: "আরও ম্যাচ, এক্সক্লুসিভ পুরস্কার এবং আরও অনেক কিছু।" },
   more_explore: { en: "Explore", dv: "ހޯދާ ބައްލަވާ", hi: "एक्सप्लोर करें", bn: "ঘুরে দেখুন" },
+  // The turn gate (LGate, LGateAndroid): any page held upright. "Go
+  // landscape" reuses rotate_goLandscape. The tips differ from MRotate's
+  // rotate_lockHint, so they are their own.
+  gate_label: { en: "Thaasbai plays sideways", dv: "ތާސްބައި ކުޅެނީ އަރިމަތިން", hi: "थासबाई आड़ा खेला जाता है", bn: "থাসবাই আড়াআড়ি খেলা হয়" },
+  gate_title: { en: "Turn your phone sideways", dv: "ފޯނު އަރިމަތިން އަނބުރާލައްވާ", hi: "अपना फ़ोन आड़ा करें", bn: "ফোনটি আড়াআড়ি ঘোরান" },
+  gate_body: { en: "The whole app is built for landscape. Turn your phone and carry on right where you were.", dv: "މުޅި އެޕް ހަދާފައިވަނީ ލޭންޑްސްކޭޕަށް. ފޯނު އަނބުރާލައްވާފައި ކުރަމުން ދިޔަ ތަނުން ކުރިއަށް ގެންދަވާ.", hi: "पूरा ऐप लैंडस्केप के लिए बना है। फ़ोन घुमाएँ और जहाँ थे वहीं से आगे बढ़ें।", bn: "পুরো অ্যাপটি ল্যান্ডস্কেপের জন্য তৈরি। ফোন ঘুরিয়ে যেখানে ছিলেন সেখান থেকেই চালিয়ে যান।" },
+  gate_youWereOn: { en: "You were on {page}", dv: "ތިބާ ހުރީ {page}", hi: "आप {page} पर थे", bn: "আপনি {page}-এ ছিলেন" },
+  gate_tipIphoneTitle: { en: "Screen not turning?", dv: "ސްކްރީން ނުއަނބުރެނީތަ؟", hi: "स्क्रीन नहीं घूम रही?", bn: "স্ক্রিন ঘুরছে না?" },
+  gate_tipIphone: { en: "Open Control Centre and switch off Portrait Orientation Lock, then turn your phone.", dv: "ކޮންޓްރޯލް ސެންޓަރ ހުޅުވާފައި ޕޯޓްރެއިޓް އޮރިއެންޓޭޝަން ލޮކް ނިއްވާލައްވާ، ދެން ފޯނު އަނބުރާލައްވާ.", hi: "कंट्रोल सेंटर खोलें और पोर्ट्रेट ओरिएंटेशन लॉक बंद करें, फिर फ़ोन घुमाएँ।", bn: "কন্ট্রোল সেন্টার খুলে পোর্ট্রেট ওরিয়েন্টেশন লক বন্ধ করুন, তারপর ফোন ঘোরান।" },
+  gate_tipAndroidTitle: { en: "Auto-rotate off?", dv: "އޮޓޯ-ރޮޓޭޓް ނިވާފައިތަ؟", hi: "ऑटो-रोटेट बंद है?", bn: "অটো-রোটেট বন্ধ?" },
+  gate_tipAndroid: { en: "Go landscape turns the app for you. Or switch on Auto-rotate in Quick Settings.", dv: "ގޯ ލޭންޑްސްކޭޕް އިން އެޕް އަނބުރާލާނެ. ނުވަތަ ކުއިކް ސެޓިންގްސްގައި އޮޓޯ-ރޮޓޭޓް ދައްތާލައްވާ.", hi: "लैंडस्केप पर जाएँ से ऐप अपने आप घूम जाता है। या क्विक सेटिंग्स में ऑटो-रोटेट चालू करें।", bn: "ল্যান্ডস্কেপে যান চাপলে অ্যাপ নিজেই ঘুরে যায়। অথবা কুইক সেটিংসে অটো-রোটেট চালু করুন।" },
+  gate_fullTitle: { en: "Play full screen", dv: "ފުލް ސްކްރީނުން ކުޅުއްވާ", hi: "फ़ुल स्क्रीन में खेलें", bn: "ফুল স্ক্রিনে খেলুন" },
+  gate_fullIphone: { en: "Share, then Add to Home Screen. Thaasbai then opens in landscape on its own.", dv: "ޝެއާ، ދެން އެޑް ޓު ހޯމް ސްކްރީން. ދެން ތާސްބައި އަމިއްލައަށް ލޭންޑްސްކޭޕުން ހުޅުވޭނެ.", hi: "शेयर करें, फिर होम स्क्रीन पर जोड़ें। फिर थासबाई अपने आप लैंडस्केप में खुलेगा।", bn: "শেয়ার, তারপর হোম স্ক্রিনে যোগ করুন। তারপর থাসবাই নিজেই ল্যান্ডস্কেপে খুলবে।" },
+  gate_fullAndroid: { en: "Menu, then Install app. Thaasbai then opens in landscape on its own.", dv: "މެނޫ، ދެން އިންސްޓޯލް އެޕް. ދެން ތާސްބައި އަމިއްލައަށް ލޭންޑްސްކޭޕުން ހުޅުވޭނެ.", hi: "मेनू, फिर ऐप इंस्टॉल करें। फिर थासबाई अपने आप लैंडस्केप में खुलेगा।", bn: "মেনু, তারপর অ্যাপ ইনস্টল করুন। তারপর থাসবাই নিজেই ল্যান্ডস্কেপে খুলবে।" },
+  // The same gate on a screen without touch, in a narrow, tall window.
+  gate_widerTitle: { en: "Make this window wider", dv: "މި ވިންޑޯ ފުޅާކުރައްވާ", hi: "यह विंडो चौड़ी करें", bn: "এই উইন্ডোটি চওড়া করুন" },
+  gate_widerBody: { en: "The whole app is built for landscape. Widen the window and carry on right where you were.", dv: "މުޅި އެޕް ހަދާފައިވަނީ ލޭންޑްސްކޭޕަށް. ވިންޑޯ ފުޅާކޮށްލައްވާފައި ކުރަމުން ދިޔަ ތަނުން ކުރިއަށް ގެންދަވާ.", hi: "पूरा ऐप लैंडस्केप के लिए बना है। विंडो चौड़ी करें और जहाँ थे वहीं से आगे बढ़ें।", bn: "পুরো অ্যাপটি ল্যান্ডস্কেপের জন্য তৈরি। উইন্ডো চওড়া করে যেখানে ছিলেন সেখান থেকেই চালিয়ে যান।" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

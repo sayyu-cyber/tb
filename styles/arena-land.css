@@ -13,8 +13,8 @@
 
    The boards draw everything inside one root (class="ar app m land") and
    reach it through .land / .m; here the namespace element is that
-   root and carries .land, so those prefixes become .arena-land.land. Rules
-   for the root alone are dropped. */
+   root and carries a marker for each (.is-land, .is-m), so those prefixes
+   become .arena-land.is-land and .arena-land.is-m. Rules for the root alone are dropped. */
 
 /* Thaasbai Arena: phone shell + landscape layer, reference CSS (blue edition).
    Part 1 is the phone shell (build3/mobile.css). Part 2 is the landscape layer (build5/land.css), which overrides part 1.
@@ -27,7 +27,7 @@
 .arena-land .mstage{position:absolute;left:0;right:0;top:0;height:844px;pointer-events:none;overflow:hidden;background:radial-gradient(340px 260px at 92% -20px,rgba(0,188,200,.30),rgba(0,188,200,0) 70%),radial-gradient(280px 300px at -8% 560px,rgba(0,188,200,.12),rgba(0,188,200,0) 70%),linear-gradient(180deg,#07090B 0%,#030405 62%,#000 100%)}
 .arena-land .mstage::before{content:"";position:absolute;left:-70%;right:-70%;bottom:-2px;height:330px;background-image:linear-gradient(rgba(0,188,200,.32) 1.5px,rgba(0,0,0,0) 1.5px),linear-gradient(90deg,rgba(0,188,200,.32) 1.5px,rgba(0,0,0,0) 1.5px);background-size:56px 56px;background-position:center bottom;transform:perspective(340px) rotateX(58deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(0deg,#000 0%,rgba(0,0,0,.5) 45%,rgba(0,0,0,0) 90%);mask-image:linear-gradient(0deg,#000 0%,rgba(0,0,0,.5) 45%,rgba(0,0,0,0) 90%)}
 .arena-land .mstage::after{content:"";position:absolute;right:-70px;top:-70px;width:250px;height:640px;background:linear-gradient(180deg,rgba(79,227,236,.13),rgba(79,227,236,0) 75%);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);filter:blur(16px);transform:rotate(17deg)}
-.arena-land.land .mbg{position:absolute;left:0;right:0;top:844px;bottom:0;pointer-events:none;background:#000}
+.arena-land.is-m .mbg{position:absolute;left:0;right:0;top:844px;bottom:0;pointer-events:none;background:#000}
 
 /* top bar: sticky in the app, 60px + safe-area-inset-top */
 .arena-land .mtop{position:absolute;left:0;right:0;top:0;z-index:30;display:flex;align-items:center;gap:8px;height:60px;padding:0 14px 0 16px;background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.66));border-bottom:1px solid rgba(255,255,255,.07);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -74,31 +74,31 @@
 .arena-land .mh{display:flex;flex-direction:column}
 .arena-land .mh h1{margin:10px 0 0;font-size:46px;line-height:.9}
 .arena-land .mh .sub{margin:10px 0 0;font-size:14px;line-height:1.45}
-.arena-land.land .lbl{font-size:10.5px;letter-spacing:.2em}
-.arena-land.land .ph h2{font-size:17px}
-.arena-land.land .panel{border-radius:16px}
-.arena-land.land .muted{font-size:13px}
-.arena-land.land .muted2{font-size:12px}
-.arena-land.land .body{font-size:14px}
+.arena-land.is-m .lbl{font-size:10.5px;letter-spacing:.2em}
+.arena-land.is-m .ph h2{font-size:17px}
+.arena-land.is-m .panel{border-radius:16px}
+.arena-land.is-m .muted{font-size:13px}
+.arena-land.is-m .muted2{font-size:12px}
+.arena-land.is-m .body{font-size:14px}
 .arena-land .sec{display:flex;flex-direction:column;gap:12px}
 .arena-land .sech{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .arena-land .sech h2{margin:0;font-family:var(--font-display), sans-serif;font-weight:700;font-size:19px;line-height:1;letter-spacing:-.01em;text-transform:uppercase}
 .arena-land .sech p{margin:6px 0 0;font-size:12.5px;font-weight:600;color:#A4A4B2}
 
 /* buttons at phone size: 52 / 44 tall, full-width where they lead a card */
-.arena-land.land .ar-btn{height:52px;padding:0 20px;font-size:15px;border-radius:12px}
-.arena-land.land .ar-btn.sm{height:44px;padding:0 16px;font-size:13px;border-radius:11px}
-.arena-land.land .ar-btn svg{width:18px;height:18px}
-.arena-land.land .ar-btn.sm svg{width:16px;height:16px}
-.arena-land.land .ar-btn.full{width:100%}
-.arena-land.land .ibtn{width:44px;height:44px}
+.arena-land.is-m .ar-btn{height:52px;padding:0 20px;font-size:15px;border-radius:12px}
+.arena-land.is-m .ar-btn.sm{height:44px;padding:0 16px;font-size:13px;border-radius:11px}
+.arena-land.is-m .ar-btn svg{width:18px;height:18px}
+.arena-land.is-m .ar-btn.sm svg{width:16px;height:16px}
+.arena-land.is-m .ar-btn.full{width:100%}
+.arena-land.is-m .ibtn{width:44px;height:44px}
 
 /* tabs: equal-width segments that fill the row */
-.arena-land.land .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px;padding:4px;border-radius:13px}
-.arena-land.land .tabs button{justify-content:center;gap:6px;height:40px;padding:0 6px;border-radius:9px;font-size:10.5px;letter-spacing:.1em}
-.arena-land.land .tabs button svg{width:15px;height:15px}
-.arena-land.land .tabs button .n{min-width:18px;height:18px;line-height:18px;font-size:10px}
-.arena-land.land .tabs.ic button svg{display:none}
+.arena-land.is-m .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px;padding:4px;border-radius:13px}
+.arena-land.is-m .tabs button{justify-content:center;gap:6px;height:40px;padding:0 6px;border-radius:9px;font-size:10.5px;letter-spacing:.1em}
+.arena-land.is-m .tabs button svg{width:15px;height:15px}
+.arena-land.is-m .tabs button .n{min-width:18px;height:18px;line-height:18px;font-size:10px}
+.arena-land.is-m .tabs.ic button svg{display:none}
 
 /* horizontal scrollers bleed to the screen edge */
 .arena-land .hs{display:flex;gap:12px;margin:0 -16px;padding:0 16px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;scroll-padding:0 16px}
@@ -131,7 +131,7 @@
 .arena-land .chips button[aria-pressed="true"]{background:#C6FF33;color:#0A0A0A;box-shadow:none}
 .arena-land .chips button .n{min-width:18px;height:18px;padding:0 5px;border-radius:5px;background:#00BCC8;color:#00191B;font-size:10px;line-height:18px;letter-spacing:0;text-align:center}
 .arena-land .chips button[aria-pressed="true"] .n{background:#0A0A0A;color:#C6FF33}
-.arena-land .chips button:focus-visible,.arena-land.land .tabs button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.arena-land .chips button:focus-visible,.arena-land.is-m .tabs button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 
 /* one phone viewport, for sheets and dialogs on a long board (in the app: position fixed, inset 0) */
 .arena-land .mview{position:absolute;left:0;right:0;height:844px;z-index:50;overflow:hidden}
@@ -165,8 +165,8 @@
 
 /* ================= app screens on a phone held sideways ================= */
 /* the tab bar stands up as a rail on the left; the page is one centred column */
-.arena-land.land .mtop{left:76px;height:52px;padding:0 14px 0 18px}
-.arena-land.land .mpage{margin-left:76px;padding:68px 104px 40px}
+.arena-land.is-land .mtop{left:76px;height:52px;padding:0 14px 0 18px}
+.arena-land.is-land .mpage{margin-left:76px;padding:68px 104px 40px}
 .arena-land .mrail{position:absolute;left:0;top:0;bottom:0;z-index:31;width:76px;display:flex;flex-direction:column;align-items:center;padding:8px 0;background:linear-gradient(90deg,rgba(15,15,19,.97),rgba(8,8,11,.97));border-right:1px solid rgba(255,255,255,.09)}
 .arena-land .mrail::before{content:"";position:absolute;right:-1px;top:190px;width:1px;height:84px;background:linear-gradient(180deg,rgba(198,255,51,0),rgba(198,255,51,.8),rgba(198,255,51,0))}
 .arena-land .mrail .logo{margin:7px 0 16px;width:30px;height:30px;border-radius:8px;box-shadow:0 0 0 1.5px #C6FF33,0 0 14px rgba(198,255,51,.35)}
@@ -186,14 +186,14 @@
 .arena-land .mrail .pw .fc{top:5px;background:linear-gradient(135deg,#E4FF8C 0%,#C6FF33 50%,#A5DD1A 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 0 26px rgba(198,255,51,.45);animation:playglow 2.6s ease-in-out infinite}
 .arena-land .mrail .pw svg{position:absolute;left:50%;top:12px;width:22px;height:22px;margin-left:-11px;color:#0A0A0A}
 /* sheets on a sideways phone open from the rail as a side panel */
-.arena-land.land .mview{height:390px}
-.arena-land.land .mscrim{height:390px}
-.arena-land.land .sheet{left:76px;right:auto;top:0;width:392px;padding:16px 16px 20px;border-radius:0 24px 24px 0;overflow-y:auto;scrollbar-width:none;animation:sideIn .38s cubic-bezier(.2,.9,.25,1) both}
-.arena-land.land .sheet::before{display:none}
-.arena-land.land .sheet.tick::after{left:0;top:50%;width:2px;height:120px;transform:translateY(-50%);background:linear-gradient(180deg,rgba(198,255,51,0),#C6FF33,rgba(198,255,51,0))}
+.arena-land.is-land .mview{height:390px}
+.arena-land.is-land .mscrim{height:390px}
+.arena-land.is-land .sheet{left:76px;right:auto;top:0;width:392px;padding:16px 16px 20px;border-radius:0 24px 24px 0;overflow-y:auto;scrollbar-width:none;animation:sideIn .38s cubic-bezier(.2,.9,.25,1) both}
+.arena-land.is-land .sheet::before{display:none}
+.arena-land.is-land .sheet.tick::after{left:0;top:50%;width:2px;height:120px;transform:translateY(-50%);background:linear-gradient(180deg,rgba(198,255,51,0),#C6FF33,rgba(198,255,51,0))}
 @keyframes sideIn{from{transform:translateX(-100%)}to{transform:none}}
-.arena-land.land .mstage{height:390px}
-.arena-land.land .mstage::before{height:170px;background-size:60px 60px}
+.arena-land.is-land .mstage{height:390px}
+.arena-land.is-land .mstage::before{height:170px;background-size:60px 60px}
 
 /* ===== part 2: landscape layer ===== */
 /* ================= the whole app, held sideways: 844 x 390 =================
@@ -201,39 +201,39 @@
    Loaded after mobile.css. Everything here assumes class="ar app m land". */
 
 /* ---- shell ---- */
-.arena-land.land .mstage{height:390px;background:radial-gradient(420px 220px at 94% -30px,rgba(0,188,200,.30),rgba(0,188,200,0) 70%),radial-gradient(360px 260px at 8% 340px,rgba(0,188,200,.13),rgba(0,188,200,0) 70%),linear-gradient(180deg,#07090B 0%,#030405 62%,#000 100%)}
-.arena-land.land .mstage::before{height:150px;background-size:60px 60px;transform:perspective(380px) rotateX(58deg)}
-.arena-land.land .mstage::after{right:40px;top:-60px;width:300px;height:420px;transform:rotate(15deg)}
-.arena-land.land .mbg{top:390px}
-.arena-land.land .mtop{left:76px;height:52px;padding:0 14px 0 16px;gap:10px}
-.arena-land.land .mtop .ttl{font-size:15px}
-.arena-land.land .mtop .mback{width:34px;height:34px;border-radius:9px;margin-right:2px}
-.arena-land.land .mtop .coins{height:34px}
-.arena-land.land .mtop .ibtn{width:34px;height:34px}
-.arena-land.land .mtop .meb .ava{width:34px;height:34px;border-radius:9px;font-size:15px}
-.arena-land.land .mtop .bell .dotc{right:-5px;top:-5px}
-.arena-land.land .mpage{margin-left:76px;padding:64px 16px 28px;gap:12px}
-.arena-land.land .hs,.arena-land.land .chips{margin:0 -16px;padding:0 16px;scroll-padding:0 16px}
-.arena-land.land .mrail{padding-left:0}
+.arena-land.is-land .mstage{height:390px;background:radial-gradient(420px 220px at 94% -30px,rgba(0,188,200,.30),rgba(0,188,200,0) 70%),radial-gradient(360px 260px at 8% 340px,rgba(0,188,200,.13),rgba(0,188,200,0) 70%),linear-gradient(180deg,#07090B 0%,#030405 62%,#000 100%)}
+.arena-land.is-land .mstage::before{height:150px;background-size:60px 60px;transform:perspective(380px) rotateX(58deg)}
+.arena-land.is-land .mstage::after{right:40px;top:-60px;width:300px;height:420px;transform:rotate(15deg)}
+.arena-land.is-land .mbg{top:390px}
+.arena-land.is-land .mtop{left:76px;height:52px;padding:0 14px 0 16px;gap:10px}
+.arena-land.is-land .mtop .ttl{font-size:15px}
+.arena-land.is-land .mtop .mback{width:34px;height:34px;border-radius:9px;margin-right:2px}
+.arena-land.is-land .mtop .coins{height:34px}
+.arena-land.is-land .mtop .ibtn{width:34px;height:34px}
+.arena-land.is-land .mtop .meb .ava{width:34px;height:34px;border-radius:9px;font-size:15px}
+.arena-land.is-land .mtop .bell .dotc{right:-5px;top:-5px}
+.arena-land.is-land .mpage{margin-left:76px;padding:64px 16px 28px;gap:12px}
+.arena-land.is-land .hs,.arena-land.is-land .chips{margin:0 -16px;padding:0 16px;scroll-padding:0 16px}
+.arena-land.is-land .mrail{padding-left:0}
 /* the left rail grows by the notch inset on a real phone: padding-left:env(safe-area-inset-left) */
 
 /* ---- type, buttons, controls at landscape size ---- */
-.arena-land.land .ar-btn{height:44px;padding:0 18px;font-size:14px;border-radius:11px}
-.arena-land.land .ar-btn.sm{height:38px;padding:0 14px;font-size:12.5px;border-radius:10px}
-.arena-land.land .ar-btn.xs{height:32px;padding:0 11px;font-size:11.5px;border-radius:9px}
-.arena-land.land .ar-btn svg{width:17px;height:17px}
-.arena-land.land .ar-btn.sm svg,.arena-land.land .ar-btn.xs svg{width:15px;height:15px}
-.arena-land.land .ibtn{width:40px;height:40px}
-.arena-land.land .tabs{padding:3px;border-radius:12px}
-.arena-land.land .tabs button{height:34px;font-size:10.5px;border-radius:9px}
-.arena-land.land .chips button{height:34px;padding:0 12px;font-size:10.5px}
-.arena-land.land .panel{border-radius:14px}
-.arena-land.land .row{min-height:56px;padding:8px 12px;border-radius:12px;gap:11px}
-.arena-land.land .row .tx b{font-size:14px}
-.arena-land.land .row .tx span{font-size:12px}
-.arena-land.land .lbl{font-size:10px}
-.arena-land.land .sech h2{font-size:17px}
-.arena-land.land .sech p{font-size:12px;margin-top:5px}
+.arena-land.is-land .ar-btn{height:44px;padding:0 18px;font-size:14px;border-radius:11px}
+.arena-land.is-land .ar-btn.sm{height:38px;padding:0 14px;font-size:12.5px;border-radius:10px}
+.arena-land.is-land .ar-btn.xs{height:32px;padding:0 11px;font-size:11.5px;border-radius:9px}
+.arena-land.is-land .ar-btn svg{width:17px;height:17px}
+.arena-land.is-land .ar-btn.sm svg,.arena-land.is-land .ar-btn.xs svg{width:15px;height:15px}
+.arena-land.is-land .ibtn{width:40px;height:40px}
+.arena-land.is-land .tabs{padding:3px;border-radius:12px}
+.arena-land.is-land .tabs button{height:34px;font-size:10.5px;border-radius:9px}
+.arena-land.is-land .chips button{height:34px;padding:0 12px;font-size:10.5px}
+.arena-land.is-land .panel{border-radius:14px}
+.arena-land.is-land .row{min-height:56px;padding:8px 12px;border-radius:12px;gap:11px}
+.arena-land.is-land .row .tx b{font-size:14px}
+.arena-land.is-land .row .tx span{font-size:12px}
+.arena-land.is-land .lbl{font-size:10px}
+.arena-land.is-land .sech h2{font-size:17px}
+.arena-land.is-land .sech p{font-size:12px;margin-top:5px}
 
 /* ---- grids ---- */
 .arena-land .cols{display:grid;gap:12px;align-items:start;min-width:0}
@@ -270,31 +270,31 @@
 .arena-land .lstat span{font-family:var(--font-display), sans-serif;font-weight:700;font-size:9px;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#A4A4B2;white-space:nowrap}
 
 /* ---- side panels (sheets) ---- */
-.arena-land.land .mview{height:390px}
-.arena-land.land .mscrim{height:390px;left:76px}
-.arena-land.land .sheet{left:76px;right:auto;top:0;width:392px;height:390px;padding:16px 16px 18px;border-radius:0 22px 22px 0;overflow-y:auto;scrollbar-width:none;animation:sideIn .38s cubic-bezier(.2,.9,.25,1) both}
-.arena-land.land .sheet.w2{width:540px}
-.arena-land.land .sheet.w3{width:640px}
-.arena-land.land .sheet::-webkit-scrollbar{display:none}
-.arena-land.land .sheet::before{display:none}
-.arena-land.land .sheet.tick::after{left:0;top:50%;width:2px;height:120px;transform:translateY(-50%);background:linear-gradient(180deg,rgba(198,255,51,0),#C6FF33,rgba(198,255,51,0))}
+.arena-land.is-land .mview{height:390px}
+.arena-land.is-land .mscrim{height:390px;left:76px}
+.arena-land.is-land .sheet{left:76px;right:auto;top:0;width:392px;height:390px;padding:16px 16px 18px;border-radius:0 22px 22px 0;overflow-y:auto;scrollbar-width:none;animation:sideIn .38s cubic-bezier(.2,.9,.25,1) both}
+.arena-land.is-land .sheet.w2{width:540px}
+.arena-land.is-land .sheet.w3{width:640px}
+.arena-land.is-land .sheet::-webkit-scrollbar{display:none}
+.arena-land.is-land .sheet::before{display:none}
+.arena-land.is-land .sheet.tick::after{left:0;top:50%;width:2px;height:120px;transform:translateY(-50%);background:linear-gradient(180deg,rgba(198,255,51,0),#C6FF33,rgba(198,255,51,0))}
 /* a sheet that opens from the right edge */
-.arena-land.land .sheet.right{left:auto;right:0;border-radius:22px 0 0 22px;animation:sideInR .38s cubic-bezier(.2,.9,.25,1) both}
-.arena-land.land .mscrim.full{left:0}
+.arena-land.is-land .sheet.right{left:auto;right:0;border-radius:22px 0 0 22px;animation:sideInR .38s cubic-bezier(.2,.9,.25,1) both}
+.arena-land.is-land .mscrim.full{left:0}
 @keyframes sideInR{from{transform:translateX(100%)}to{transform:none}}
 /* centred dialog on the content area */
 .arena-land .ldlg{position:absolute;left:76px;right:0;top:0;height:390px;z-index:52;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .arena-land .ldlg > *{pointer-events:auto}
 .arena-land .ldlg .card{position:relative;border-radius:20px;background:linear-gradient(180deg,#17171D,#0B0B0E);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 30px 70px rgba(0,0,0,.85);animation:pop .32s cubic-bezier(.2,.9,.25,1) both}
 @keyframes pop{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
-.arena-land.land .toast{left:auto;right:16px;top:62px;width:300px;height:46px;font-size:13px}
+.arena-land.is-land .toast{left:auto;right:16px;top:62px;width:300px;height:46px;font-size:13px}
 
 /* ---- the turn-your-phone gate (the whole app asks for landscape) ---- */
 .arena-land .gate{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 36px;text-align:center;background:radial-gradient(300px 220px at 50% 38%,rgba(0,188,200,.28),rgba(0,188,200,0) 70%),#050607}
 
 /* page title in the top bar: a small lime label over a chrome title */
-.arena-land.land .mtop .pg{display:flex;flex-direction:column;gap:5px;min-width:0}
-.arena-land.land .mtop .pg .lbl{font-size:8.5px;letter-spacing:.2em;color:#C6FF33;white-space:nowrap}
-.arena-land.land .mtop .pg h1{margin:0;font-size:19px;line-height:1;letter-spacing:.02em;white-space:nowrap}
-.arena-land.land .mtop .pg .lbl.dash::before{width:14px}
+.arena-land.is-land .mtop .pg{display:flex;flex-direction:column;gap:5px;min-width:0}
+.arena-land.is-land .mtop .pg .lbl{font-size:8.5px;letter-spacing:.2em;color:#C6FF33;white-space:nowrap}
+.arena-land.is-land .mtop .pg h1{margin:0;font-size:19px;line-height:1;letter-spacing:.02em;white-space:nowrap}
+.arena-land.is-land .mtop .pg .lbl.dash::before{width:14px}
 

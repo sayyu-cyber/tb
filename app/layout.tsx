@@ -87,6 +87,7 @@ import "@/styles/arena-msettings.css";
 // portrait sheets above, which they replace screen by screen.
 import "@/styles/arena-land.css";
 import "@/styles/arena-lhome.css";
+import "@/styles/arena-lgate.css";
 import "@/styles/arena-phone-shell.css";
 import "@/styles/arena-rooms-app.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings
@@ -102,6 +103,8 @@ import { EconomyProvider } from "@/contexts/EconomyContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { MotionProvider } from "@/components/system/MotionProvider";
 import { AppShell } from "@/components/layout/AppShell";
+import { TurnGate } from "@/components/layout/TurnGate";
+import { LandscapeBoot } from "@/components/system/LandscapeBoot";
 
 /**
  * Arena typefaces (design/arena/README.md "Type").
@@ -200,6 +203,11 @@ export default function RootLayout({
             <ToastProvider>
               <EconomyProvider>
                 <AppShell>{children}</AppShell>
+                {/* The whole app is landscape: an upright phone sees the turn
+                    gate over any page, signed in or not (LANDSCAPE.md
+                    "Orientation"). Outside the shell for that reason. */}
+                <TurnGate />
+                <LandscapeBoot />
               </EconomyProvider>
             </ToastProvider>
           </SettingsProvider>

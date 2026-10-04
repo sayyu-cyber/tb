@@ -80,7 +80,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return (
       <ToastContext.Provider value={value}>
         {children}
-        <div className="arena-app arena-land land phone-toasts" role="status" aria-live="polite">
+        <div className="arena-app arena-land is-m is-land phone-toasts" role="status" aria-live="polite">
           {toasts.map((toast) => (
             <div key={toast.id} className="toast" onClick={() => dismiss(toast.id)}>
               {PHONE_ICON[toast.kind]}

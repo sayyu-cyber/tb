@@ -268,27 +268,33 @@ const minusFiles = minusFile ? minusFile.split(",").map(f => f.trim()).filter(Bo
 // `--strip ".land|.m"` is for the landscape layer. Its boards are drawn
 // inside one root, `class="ar app m land"`, and their CSS reaches every
 // piece through it: `.land .mtop`, `.m .btn`. In the app that root is the
-// namespace element itself (the phone chrome, a phone page), which carries
-// the first token as a class: `.land .mtop` and `.m .btn` become
-// `.arena-land.land .mtop` and `.arena-land.land .ar-btn`. Compound rather
-// than dropped, so each rule still outranks the plain ones exactly as it did
-// on the board - the desktop sheets gained a class from their namespace,
-// and a root rule that lost one would start losing ties it used to win.
+// namespace element itself (the phone chrome, a phone page), which carries a
+// marker class for each token: `.land .mtop` and `.m .btn` become
+// `.arena-land.is-land .mtop` and `.arena-land.is-m .ar-btn`. Compound
+// rather than dropped, so each rule still outranks the plain ones exactly as
+// it did on the board - the desktop sheets gained a class from their
+// namespace, and a root rule that lost one would start losing ties it used
+// to win. One marker per token, because not every root has both: the turn
+// gate is drawn in `class="ar app m"`, so it takes the phone sizes and not
+// the landscape ones. Markers rather than the tokens themselves, because the
+// app already styles a bare `.m` (styles/arena-phone.css paints it black).
 // A rule for the root alone (`.m{background:#000}`) styles the artboard,
 // not the app, and is dropped.
 const stripAt = positional.indexOf("--strip");
 const stripRoots = stripAt === -1 ? [] : positional[stripAt + 1].split("|").map(s => s.trim()).filter(Boolean);
 if (stripAt !== -1) positional.splice(stripAt, 2);
+const marker = token => `.is-${token.replace(/^\./, "")}`;
 function stripRoot(selector) {
   let out = selector.trim();
+  const markers = [];
   for (let changed = true; changed;) {
     changed = false;
     for (const token of stripRoots) {
       if (out === token) return null;
-      if (out.startsWith(token + " ")) { out = out.slice(token.length + 1).trim(); changed = true; }
+      if (out.startsWith(token + " ")) { out = out.slice(token.length + 1).trim(); markers.push(marker(token)); changed = true; }
     }
   }
-  return out;
+  return { rest: out, markers: markers.join("") };
 }
 
 // `--minus-shared` is the phone set's equivalent: it drops the computed
@@ -442,9 +448,9 @@ out.walkRules(rule => {
     // sets its own page background.
     if (/^(body|html)\b/.test(trimmed)) return null;
     if (!stripRoots.length) return `${ns} ${trimmed}`;
-    const rest = stripRoot(trimmed);
-    if (!rest) return null;
-    return rest === trimmed ? `${ns} ${rest}` : `${ns}${stripRoots[0]} ${rest}`;
+    const stripped = stripRoot(trimmed);
+    if (!stripped) return null;
+    return `${ns}${stripped.markers} ${stripped.rest}`;
   }).filter(Boolean);
   // Checked before assigning: postcss reads an empty selector back as [""],
   // so testing after the assignment never removed the rule and left a bare
@@ -483,8 +489,8 @@ const header = `/* GENERATED from ${origin} by scripts/port-board.mjs.
 
    The boards draw everything inside one root (class="ar app m land") and
    reach it through ${stripRoots.join(" / ")}; here the namespace element is that
-   root and carries ${stripRoots[0]}, so those prefixes become ${ns}${stripRoots[0]}. Rules
-   for the root alone are dropped.`
+   root and carries a marker for each (${stripRoots.map(marker).join(", ")}), so those prefixes
+   become ${stripRoots.map(t => ns + marker(t)).join(" and ")}. Rules for the root alone are dropped.`
     : ""
 }${
   tableBoards.length
