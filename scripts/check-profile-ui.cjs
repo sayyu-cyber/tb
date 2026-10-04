@@ -21,7 +21,7 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'artifacts/
 const mocks = path.join(__dirname, 'profile-test-services.tsx');
 const alias = Object.fromEntries([
   '@/contexts/AuthContext', '@/contexts/EconomyContext', '@/contexts/ToastContext',
-  '@/hooks/useTranslation', '@/lib/profileHistory',
+  '@/hooks/useTranslation', '@/lib/profileHistory', '@/lib/supabase/client',
 ].map(name => [name + '$', mocks]));
 alias['@'] = root;
 
@@ -49,7 +49,7 @@ async function run() {
       contentType: 'text/html; charset=utf-8',
       body: `<html><head><meta charset="utf-8">${styles.map(url => `<link rel="stylesheet" href="${url}">`).join('')}</head>`
         + `<body class="${bodyClass || ''}" style="margin:0">`
-        + `<div class="arena-app arena-phone app-shell ar-stage"><main class="app-shell-main">`
+        + `<div class="arena-app app-shell ar-stage"><main class="app-shell-main">`
         + `<div id="test-root"></div></main></div>`
         + `<script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`,
     }));
@@ -106,7 +106,8 @@ async function run() {
     assert.equal(await page.locator('body').getAttribute('data-toast'), 'User ID copied.');
 
     // ── Widths ──────────────────────────────────────────────────────────
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+    // The wide screen's sizes. A phone gets LProfile, checked below.
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
@@ -134,8 +135,7 @@ async function run() {
     // ── Accessibility ───────────────────────────────────────────────────
     await page.goto(BASE + '/profile-test/');
     await page.getByRole('heading', { name: 'Sayyu' }).waitFor();
-    // Two are in the DOM - the wide screen's and MProfile's - and CSS hides
-    // one; the accessibility tree must only ever see the one on screen.
+    // Only one composition mounts, so there is one h1.
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
     assert.ok(await page.locator('[role=progressbar][aria-valuenow]').count() >= 6, 'Meters report their value');
     assert.equal(await page.locator('.wr[role=img][aria-label]').count(), 2, 'The rings are labelled');
@@ -145,25 +145,31 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only button has an aria-label');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MProfile ──────────────────────────────────────────
-    // design/arena/boards/MProfile.dc.html. The same seven sections, with
-    // the five tabs as a scrolling chip row and the history table as a row
-    // per match.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LProfile ────────────────────────────────────────────
+    // design/arena/boards/LProfile.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md): the same sections, with the five tabs as a
+    // chip row and the history table as a row per match. Only one
+    // composition mounts. scripts/check-landscape-screens.cjs holds it
+    // against its reference.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-profile.ar-page').isVisible(), false, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mprofile');
-    assert.equal(await phone.isVisible(), true, 'and MProfile takes over');
+    assert.equal(await page.locator('.arena-profile.ar-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lprofile');
+    assert.equal(await phone.isVisible(), true, 'and LProfile takes over');
     assert.equal(await phone.locator('.chips > *').count(), 5, 'All five tabs, as a chip row');
-    assert.equal(await phone.locator('.tile').count() >= 4, true, 'The four statistics tiles');
+    assert.equal(await phone.locator('.lstat').count() >= 4, true, 'The four statistics tiles');
     assert.equal(await phone.locator('.game').count(), 2, 'Both games');
-    assert.ok(await phone.locator('.hrow').count() > 0, 'and the match history as rows');
+    assert.equal(await phone.locator('.ach').count(), 5, 'Five achievements');
+    assert.equal(await phone.locator('.hrow').count(), 5, 'and the latest five matches as rows');
     assert.ok((await phone.innerText()).includes('Member since'), 'The player card keeps its meta');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mprofile-390.png'), fullPage: true });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lprofile-844.png'), fullPage: true });
+    await phone.getByRole('button', { name: 'History' }).click();
+    assert.ok(await phone.locator('.hrow').count() > 5, 'The History chip lists every record');
     await page.setViewportSize({ width: 1440, height: 900 });
+    assert.equal(await page.locator('.arena-lprofile').count(), 0, 'The phone screen is unmounted');
 
-    console.log('Profile: board structure, MProfile held upright, board figures, masked address, tabs, edit/Escape/copy, seven widths, error/empty/admin/savefail states and accessibility passed.');
+    console.log('Profile: board structure, LProfile on a phone, board figures, masked address, tabs, edit/Escape/copy, seven widths, error/empty/admin/savefail states and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

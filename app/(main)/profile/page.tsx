@@ -16,7 +16,8 @@ import {
   AchievementsPreview, ProfileGameStats, ProfileHistory, ProfileMilestones,
   ProfileSkeleton, ProfileStatsGrid, metric,
 } from "@/components/profile/ProfileSections";
-import { PhoneProfile } from "@/components/profile/phone/PhoneProfile";
+import { LandProfile } from "@/components/profile/land/LandProfile";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { copyText } from "@/lib/clipboard";
 
 /**
@@ -29,11 +30,10 @@ import { copyText } from "@/lib/clipboard";
  * which they would not on a button. `.tabs a` is given `.tabs button`'s own
  * values in styles/arena-screens.css.
  *
- * Held upright a phone gets MProfile (design/arena/boards/MProfile.dc.html):
- * the same seven sections, with the tabs as a scrolling chip row and the
- * history table as a row per match. Both are in the DOM and CSS decides
- * which is on screen, and the page owns the profile, the history and the
- * achievements, so the two compositions read one of each.
+ * A phone gets LProfile (design/arena/boards/LProfile.dc.html): the same
+ * sections with the tabs as a chip row and the history as a row per match.
+ * One composition mounts, and the page owns the profile, the history and the
+ * achievements, so the two read one of each.
  */
 export default function ProfilePage() {
   const { user, playerStats, profileLoading, profileError, retryProfile } = useAuth();
@@ -45,6 +45,7 @@ export default function ProfilePage() {
   const [historyError, setHistoryError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [admin, setAdmin] = useState(false);
+  const phone = usePhoneLayout();
   const uid = user?.uid;
 
   useEffect(() => {
@@ -101,8 +102,8 @@ export default function ProfilePage() {
 
   return (
     <>
-    <div className="portrait-view">
-      <PhoneProfile
+    {phone ? (
+      <LandProfile
         name={name}
         tier={tier}
         stats={playerStats}
@@ -116,8 +117,8 @@ export default function ProfilePage() {
         onEdit={() => setEditing(true)}
         onCopyId={copyId}
       />
-    </div>
-    <div className="landscape-view">
+    ) : (
+    <div className="desk-view">
     <div className="arena-profile ar-page" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
       <div className="phead">
         <div>
@@ -219,6 +220,7 @@ export default function ProfilePage() {
 
     </div>
     </div>
+    )}
     {/* One modal for both compositions: it is a dialog, so a second copy in
         the hidden view would be a second focus trap in the DOM. */}
     {editModal}

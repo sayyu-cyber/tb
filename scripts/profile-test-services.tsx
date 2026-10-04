@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { translate } from "@/lib/i18n";
 import { ACHIEVEMENTS } from "@/data/cosmetics";
 
 /**
@@ -52,7 +53,10 @@ export function useAuth() {
 
 export const useEconomy = () => ({
   state: {
-    achievements: ACHIEVEMENTS,
+    // As both Profile boards draw them: the three win milestones he has
+    // passed and First Gold Rank are granted.
+    achievements: ACHIEVEMENTS.map(a =>
+      ["ach_first_win", "ach_10_wins", "ach_50_wins", "ach_first_gold"].includes(a.id) ? { ...a, unlocked: true } : a),
     economy: { coins: 1240 },
     profile: {
       stats: { matchesWon: 54, highestRank: "Gold", weekendChampion: false },
@@ -63,12 +67,18 @@ export const useEconomy = () => ({
 
 export const useToast = () => ({ showToast: (message: string) => { document.body.dataset.toast = message; } });
 
+// Anything not pinned here falls through to the real English dictionary, so
+// the phone shell's labels read as they do in the app.
 export const useTranslation = () => (key: string) => ({
   editprofile_title: "Edit Profile",
   editprofile_save: "Save Changes",
   editprofile_usernamePlaceholder: "Display Name",
   a11y_close: "Close",
-}[key] || key);
+}[key] || translate(key, "en"));
+
+/** The phone top bar and rail read the route: this is Profile. */
+export function usePathname() { return "/profile"; }
+export function useRouter() { return { push: (href: string) => { document.body.dataset.destination = href; }, replace: () => {}, back: () => {}, prefetch: () => {} }; }
 
 /**
  * The board's history: 61 Mindi matches of which 36 are wins (59%), and 35
@@ -105,4 +115,9 @@ export async function getProfileHistory() {
   if (flag("error")) throw Error("Offline");
   if (flag("empty")) return [];
   return [...shown, ...fill("Mindi", 61, 36, 0), ...fill("Gin Rummy", 35, 18, 70)];
+}
+
+/** The page asks the auth server whether this player is an admin: only with ?admin. */
+export function getSupabaseBrowserClient() {
+  return { auth: { getUser: async () => ({ data: { user: flag("admin") ? { id: "test", app_metadata: { role: "admin" } } : null } }) } };
 }

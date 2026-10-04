@@ -40,6 +40,14 @@
 .arena-land { line-height: normal; }
 :where(.arena-land) :where(button, input, select, textarea) { font-size: 13.3333px; line-height: normal; }
 
+/* The boards draw every chip as a button. A chip that opens another route
+   (Profile's Achievements and Settings) is a link, so it can be
+   middle-clicked: the same chip, values from `.chips button`. */
+.arena-land .chips > a { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 10px; background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); color: #BEBECA; font-family: var(--font-display), sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; text-decoration: none; }
+.arena-land .chips > a svg { width: 15px; height: 15px; }
+.arena-land.is-land .chips > a { height: 34px; padding: 0 12px; font-size: 10.5px; }
+.arena-land .chips > a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
 /* A screen with both compositions in the DOM shows one: the board's
    landscape phone screen, or the desktop one. */
 .phone-view { display: none; }

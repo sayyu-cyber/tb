@@ -36,6 +36,12 @@ const SCREENS={
       }},
     ],
   },
+  profile:{
+    entry:'land-profile-entry.tsx',mocks:'profile-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/EconomyContext','@/contexts/ToastContext','@/hooks/useTranslation','@/lib/profileHistory','@/lib/supabase/client','next/navigation'],
+    title:'PROFILE',
+    states:[{file:'profile',ref:'landscape-02-profile',full:true}],
+  },
 };
 
 function build(name){

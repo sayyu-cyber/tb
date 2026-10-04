@@ -14,7 +14,7 @@
  * components/ui/RankBadge.tsx is the previous design's badge and is still
  * used by screens that haven't moved yet; this is the Arena one.
  */
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export type RankTier = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -34,16 +34,21 @@ export function RankLabel({
   tier,
   children,
   className = "",
+  style,
+  markStyle,
 }: {
   tier: string;
   /** Replaces the tier name, for lines like "Silver · 31" that carry the
    *  trophy count too. The hexagon still takes its colour from `tier`. */
   children?: ReactNode;
   className?: string;
+  /** A board that sizes one label inline (LProfile: 11px, a 12x14 mark). */
+  style?: CSSProperties;
+  markStyle?: CSSProperties;
 }) {
   return (
-    <span className={`rank ${tierClass(tier)} ${className}`.trim()}>
-      <i aria-hidden="true" />
+    <span className={`rank ${tierClass(tier)} ${className}`.trim()} style={style}>
+      <i aria-hidden="true" style={markStyle} />
       {children ?? tier}
     </span>
   );
