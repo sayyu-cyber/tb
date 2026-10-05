@@ -1118,6 +1118,12 @@ export const TRANSLATIONS: Record<string, Translations> = {
   friends_addFriend: { en: "Add Friend", dv: "ރަޙްމަތްތެރިއަކު އިތުރުކުރައްވާ", hi: "दोस्त जोड़ें", bn: "বন্ধু যোগ করুন" },
   // LLeague's rules heading (LANDSCAPE.md "New copy").
   league_howItWorks: { en: "How it works", dv: "މިކަން ހިނގާ ގޮތް", hi: "यह कैसे काम करता है", bn: "এটি কীভাবে কাজ করে" },
+  // LHallOfFame (LANDSCAPE.md "New copy"): your place on the strip, and
+  // the list's heading, whose range follows how many are on the board.
+  hof_youNo: { en: "You · No. {n}", dv: "ތިބާ · ނަންބަރު {n}", hi: "आप · नंबर {n}", bn: "আপনি · নং {n}" },
+  hof_ranksRange: { en: "Ranks {from}–{to}", dv: "ރޭންކް {from}–{to}", hi: "रैंक {from}–{to}", bn: "র‍্যাঙ্ক {from}–{to}" },
+  hof_peakTrophies: { en: "Peak trophies", dv: "އެންމެ މަތީ ތަށި", hi: "सर्वोच्च ट्रॉफी", bn: "সর্বোচ্চ ট্রফি" },
+  hof_byPeak: { en: "By peak trophies", dv: "އެންމެ މަތީ ތަށިން", hi: "सर्वोच्च ट्रॉफी के अनुसार", bn: "সর্বোচ্চ ট্রফি অনুযায়ী" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

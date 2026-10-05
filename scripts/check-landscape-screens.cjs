@@ -115,6 +115,12 @@ const SCREENS={
     title:'WEEKEND LEAGUE',route:'/tournament/',
     states:[{file:'weekend-league',ref:'landscape-09-weekend-league',full:true}],
   },
+  halloffame:{
+    entry:'land-halloffame-entry.tsx',mocks:'halloffame-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/EconomyContext','@/hooks/useHallOfFame','@/hooks/useTranslation','next/link','next/navigation'],
+    title:'HALL OF FAME',route:'/hall-of-fame/',
+    states:[{file:'hall-of-fame',ref:'landscape-10-hall-of-fame',full:true}],
+  },
 };
 
 function build(name){

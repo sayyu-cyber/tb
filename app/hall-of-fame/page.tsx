@@ -3,8 +3,8 @@
 import { Award, RefreshCw, Crown, Medal, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHallOfFame } from "@/hooks/useHallOfFame";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneHallOfFame } from "@/components/halloffame/phone/PhoneHallOfFame";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandHallOfFame } from "@/components/halloffame/land/LandHallOfFame";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { HallOfFameEntry } from "@/lib/hallOfFame";
 import { Avatar, RankLabel } from "@/components/arena";
@@ -39,20 +39,21 @@ export default function HallOfFamePage() {
   const { entries, loading, error, refresh } = useHallOfFame();
   const { user } = useAuth();
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
 
   const top = entries.slice(0, 3);
   const rest = entries.slice(3);
 
-  /* Held upright a phone gets MHallOfFame: first place full width, second
-     and third two-up under it, and the table's five columns folded into a
-     row per player. It picks in JavaScript rather than CSS because
+  /* A phone gets LHallOfFame: the strip, the podium three across, then the
+     rest in two columns. It picks in JavaScript rather than CSS because
      useHallOfFame fetches once per mount. */
   if (phone) return (
-    <PhoneHallOfFame
-      title={t("page_hallOfFame")}
+    <LandHallOfFame
       stripTitle={t("hof_allTimeGreats")}
-      byPeak={t("hof_rankedByPeak")}
+      byPeak={t("hof_byPeak")}
+      peakLabel={t("hof_peakTrophies")}
+      youNo={(n) => t("hof_youNo").replace("{n}", String(n))}
+      ranks={(from, to) => t("hof_ranksRange").replace("{from}", String(from)).replace("{to}", String(to))}
       entries={entries}
       loading={loading}
       error={error}

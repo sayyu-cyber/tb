@@ -1,5 +1,6 @@
 // Isolated component-test services. Never imported by application code.
 import React from 'react';
+import { translate } from '@/lib/i18n';
 
 /**
  * Stand-ins for what the Hall of Fame reads.
@@ -27,7 +28,11 @@ const ALL = [
 ].map(([uid, displayName, highestRank, peakTrophies, wins, totalMatches]) =>
   ({ uid, displayName, highestRank, peakTrophies, wins, totalMatches, favoriteGame: null }));
 
-export const useAuth = () => ({ user: { uid: ME, displayName: 'Sayyu' } });
+export const useAuth = () => ({ user: { uid: ME, displayName: 'Sayyu' }, isGuest: false, playerStats: { currentRank: 'Gold', trophies: 58 } });
+/** What else the phone shell reads: the coins and the route. */
+export const useEconomy = () => ({ state: { economy: { coins: 1240 }, profile: { vip: { active: false } } } });
+export const usePathname = () => '/hall-of-fame';
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
 export const useHallOfFame = () => ({
   entries: flag('empty') || flag('failure') ? [] : flag('two') ? ALL.slice(0, 2) : ALL,
   loading: false,
@@ -40,5 +45,5 @@ export const useTranslation = () => (key: string) => ({
   hof_rankedByPeak: 'Ranked by peak trophies',
   hof_noLegendsYet: 'No legends yet. Be the first.',
   error_tryAgain: 'Try again',
-}[key] || key);
+}[key] || translate(key, 'en'));
 export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }

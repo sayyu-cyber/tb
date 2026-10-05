@@ -65,8 +65,8 @@ async function run() {
     assert.equal(await page.locator('.hrow.me').count(), 1, 'Your row is marked');
     assert.deepEqual((await page.locator('.hrow:not(.head) .pos').allTextContents()), ['4', '5', '6', '7', '8', '9'],
       'numbered on from the podium');
-    assert.ok((await page.locator('.hrow.me').innerText()).includes('You'));
-    assert.ok((await page.locator('.strip').innerText()).includes('Ranked by peak trophies'));
+    assert.ok((await page.locator('.hrow.me').innerText()).toUpperCase().includes('YOU'));
+    assert.ok((await page.locator('.strip').innerText()).toUpperCase().includes('RANKED BY PEAK TROPHIES'));
 
     // ── The states the board cannot draw ────────────────────────────────
     await page.goto(BASE + '/hall-of-fame/?two');
@@ -84,7 +84,8 @@ async function run() {
     for (const state of ['', '?empty']) {
       await page.goto(BASE + '/hall-of-fame/' + state);
       await page.waitForTimeout(250);
-      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      // The wide screen's sizes. A phone gets LHallOfFame, checked below.
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow ${state} ${width}`);
@@ -101,32 +102,33 @@ async function run() {
     await page.goto(BASE + '/hall-of-fame/');
     await page.waitForTimeout(250);
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MHallOfFame's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
+    // Only one composition mounts, so there is one h1.
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MHallOfFame ───────────────────────────────────────
-    // design/arena/boards/MHallOfFame.dc.html. First place takes the full
-    // width, second and third go two-up under it, and the table's five
-    // columns fold into a row per player - so the header row goes with them.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LHallOfFame ─────────────────────────────────────────
+    // design/arena/boards/LHallOfFame.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md): the strip with your place, the podium 2,
+    // 1, 3 across, then everyone after third in two columns.
+    // scripts/check-landscape-screens.cjs holds it against its reference.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-halloffame.ar-page').count(), 0, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mhalloffame');
-    assert.equal(await phone.isVisible(), true, 'and MHallOfFame takes over');
-    assert.equal(await phone.locator('.legend').count(), 3, 'The three legends');
-    assert.equal(await phone.locator('.legend.g1').count(), 1, 'first place on its own');
-    assert.ok(await phone.locator('.hrow').count() > 0, 'and the rest as rows');
-    assert.equal(await phone.locator('.hrow.head').count(), 0, 'with no column header left to label');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mhalloffame-390.png'), fullPage: true });
+    assert.equal(await page.locator('.arena-halloffame.ar-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lhalloffame');
+    assert.equal(await phone.isVisible(), true, 'and LHallOfFame takes over');
+    assert.ok((await phone.locator('.strip').innerText()).toUpperCase().includes('YOU · NO. 5'), 'Your place on the strip');
+    assert.deepEqual(await phone.locator('.legend .place').allTextContents(), ['2', '1', '3'], 'The podium, 2 1 3');
+    assert.equal(await phone.locator('.hrow').count(), 6, 'Ranks 4 to 9');
+    assert.ok((await phone.locator('.ph h2').innerText()).toUpperCase().includes('RANKS 4–9'), 'named for the range they cover');
+    assert.equal(await phone.locator('.hrow.me .pos').innerText(), '5', 'with your row lit');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lhalloffame-844.png'), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Hall of Fame: MHallOfFame held upright, the three podium cards in board order with their peaks and computed win rates, the ranked list numbered on from the podium with your row marked, the two-legend/empty/error states, seven widths and accessibility passed.');
+    console.log('Hall of Fame: LHallOfFame on a phone, the three podium cards in board order with their peaks and computed win rates, the ranked list numbered on from the podium with your row marked, the two-legend/empty/error states, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
