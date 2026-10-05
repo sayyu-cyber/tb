@@ -109,6 +109,12 @@ const SCREENS={
       }},
     ],
   },
+  league:{
+    entry:'land-league-entry.tsx',mocks:'league-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/EconomyContext','@/hooks/useTranslation','@/lib/weekendLeague','@/constants/ranks','next/navigation','next/link'],
+    title:'WEEKEND LEAGUE',route:'/tournament/',
+    states:[{file:'weekend-league',ref:'landscape-09-weekend-league',full:true}],
+  },
 };
 
 function build(name){

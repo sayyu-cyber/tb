@@ -1116,6 +1116,8 @@ export const TRANSLATIONS: Record<string, Translations> = {
   messages_goFriends: { en: "Go to Friends", dv: "ރަޙްމަތްތެރިންނަށް", hi: "दोस्तों पर जाएँ", bn: "বন্ধুদের কাছে যান" },
   // LFriends' button (the portrait board said "Add").
   friends_addFriend: { en: "Add Friend", dv: "ރަޙްމަތްތެރިއަކު އިތުރުކުރައްވާ", hi: "दोस्त जोड़ें", bn: "বন্ধু যোগ করুন" },
+  // LLeague's rules heading (LANDSCAPE.md "New copy").
+  league_howItWorks: { en: "How it works", dv: "މިކަން ހިނގާ ގޮތް", hi: "यह कैसे काम करता है", bn: "এটি কীভাবে কাজ করে" },
 };
 
 export function translate(key: string, lang: LanguageCode): string {

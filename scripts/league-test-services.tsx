@@ -1,5 +1,6 @@
 // Isolated component-test services. Never imported by application code.
 import React from 'react';
+import { translate } from '@/lib/i18n';
 
 /**
  * Stand-ins for what the Weekend League reads.
@@ -26,15 +27,19 @@ const STANDINGS = [
 
 export const useAuth = () => ({
   user: { uid: ME, displayName: 'Sayyu' },
-  playerStats: { trophies: flag('bronze') ? 12 : 58 },
+  playerStats: { trophies: flag('bronze') ? 12 : 58, currentRank: flag('bronze') ? 'Bronze' : 'Gold' },
+  isGuest: false,
 });
-export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; } });
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
+export const usePathname = () => '/tournament';
+/** The phone shell's coins chip: the boards' 1,240. */
+export const useEconomy = () => ({ state: { economy: { coins: 1240 }, profile: { vip: { active: false } } } });
 export const useTranslation = () => (key: string) => ({
   page_weekendLeague: 'Weekend League',
   tournament_noQualified: 'No qualified players yet this week.',
   tournament_notQualified: 'Reach Silver to qualify · {rank} · {trophies}',
   error_tryAgain: 'Try again',
-}[key] || key);
+}[key] || translate(key, 'en'));
 
 export const QUALIFYING_RANKS = ['Silver', 'Gold', 'Platinum'];
 export const isQualified = (rank: string) => QUALIFYING_RANKS.includes(rank);
@@ -59,3 +64,6 @@ export const RANKS = {
 export const TROPHY_WIN = 5;
 export const TROPHY_LOSS = -2;
 export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }
+
+/** The league days the shell's More panel reads (useRankLock). */
+export { RANKED_DAYS } from '../constants/ranks';

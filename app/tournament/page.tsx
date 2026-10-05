@@ -14,8 +14,8 @@ import {
   type WeeklyStanding,
 } from "@/lib/weekendLeague";
 import { Pill, Avatar, RankLabel, CoinGem } from "@/components/arena";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneLeague } from "@/components/league/phone/PhoneLeague";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandLeague } from "@/components/league/land/LandLeague";
 
 /**
  * Weekend League — design/arena/screens/app/app-09-weekend-league.jpg,
@@ -55,7 +55,7 @@ export default function TournamentPage() {
   const { playerStats, user } = useAuth();
   const router = useRouter();
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
   const [standings, setStandings] = useState<WeeklyStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,12 +87,12 @@ export default function TournamentPage() {
   const cells = countdownCells(window_.msRemaining);
   const boundary = formatLeagueBoundary(window_.boundary);
 
-  /* Held upright a phone gets MLeague: the same five sections in one
-     column. It picks in JavaScript rather than CSS because this page
-     fetches the standings once per mount, and two mounts would be two
-     fetches. */
+  /* A phone gets LLeague: the hero beside the game buttons, then the rules
+     and the standings in two columns. It picks in JavaScript rather than
+     CSS because this page fetches the standings once per mount, and two
+     mounts would be two fetches. */
   if (phone) return (
-    <PhoneLeague
+    <LandLeague
       live={live}
       title={live ? "Weekend League is live" : "Weekend League"}
       lede={live
@@ -105,6 +105,7 @@ export default function TournamentPage() {
       onMindi={() => router.push("/play/mindi/ranked")}
       onGin={() => router.push("/play/gin-rummy/ranked")}
       rules={RULES}
+      howItWorks={t("league_howItWorks")}
       standings={standings}
       loading={loading}
       error={error}

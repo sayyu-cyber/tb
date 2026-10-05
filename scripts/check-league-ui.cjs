@@ -60,7 +60,7 @@ async function run() {
     assert.equal(await page.locator('.srow.me').count(), 1, 'Your row is marked');
     assert.deepEqual((await page.locator('.srow .wt').allTextContents()).slice(0, 3), ['64', '57', '49'],
       'The board\'s top three');
-    assert.ok((await page.locator('.league-qual').innerText()).includes('You qualify · Gold'));
+    assert.ok((await page.locator('.league-qual').innerText()).toUpperCase().includes('YOU QUALIFY · GOLD'));
 
     // ── CODE ISSUE 9 ────────────────────────────────────────────────────
     // Live: the sentence says when it ends, with a real time.
@@ -85,7 +85,7 @@ async function run() {
     // ── Not qualified ───────────────────────────────────────────────────
     await page.goto(BASE + '/tournament/?bronze');
     await page.waitForTimeout(250);
-    assert.ok((await page.locator('.league-qual').innerText()).includes('Reach Silver'));
+    assert.ok((await page.locator('.league-qual').innerText()).toUpperCase().includes('REACH SILVER'));
     assert.equal(await page.locator('.gbtn:disabled').count(), 2, 'A Bronze player cannot enter');
 
     // ── Entering ────────────────────────────────────────────────────────
@@ -106,7 +106,8 @@ async function run() {
     for (const state of ['', '?closed']) {
       await page.goto(BASE + '/tournament/' + state);
       await page.waitForTimeout(250);
-      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+      // The wide screen's sizes. A phone gets LLeague, checked below.
+      for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow ${state} ${width}`);
@@ -123,8 +124,7 @@ async function run() {
     await page.goto(BASE + '/tournament/');
     await page.waitForTimeout(250);
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MLeague's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
+    // Only one composition mounts, so there is one h1.
     assert.equal(await page.locator('.cd[aria-label]').count(), 1, 'The countdown says what it counts');
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
@@ -132,24 +132,29 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MLeague ───────────────────────────────────────────
-    // design/arena/boards/MLeague.dc.html. The same five sections in one
-    // column, the rules two-up, the title at 40px. Same classes as the wide
-    // screen, so what each one does is covered above.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LLeague ─────────────────────────────────────────────
+    // design/arena/boards/LLeague.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md): the hero beside the game buttons and the
+    // champion panel, the four rules, then the standings in two columns.
+    // scripts/check-landscape-screens.cjs holds it against its reference.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.league-page').count(), 0, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mleague');
-    assert.equal(await phone.isVisible(), true, 'and MLeague takes over');
+    assert.equal(await page.locator('.league-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lleague');
+    assert.equal(await phone.isVisible(), true, 'and LLeague takes over');
     assert.equal(await phone.locator('.gbtn').count(), 2, 'Both game buttons');
     assert.equal(await phone.locator('.rule').count(), 4, 'all four rules');
-    assert.equal(await phone.locator('.cd > div').count() > 0, true, 'and the countdown');
-    assert.ok(await phone.locator('.srow').count() > 0, 'The standings are here');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mleague-390.png'), fullPage: true });
+    assert.equal(await phone.locator('.cd > div').count(), 2, 'and the countdown');
+    assert.equal(await phone.locator('.srow').count(), 13, 'Thirteen standings');
+    assert.equal(await phone.locator('.cols.c2 > .stk').count(), 2, 'in two columns');
+    assert.equal(await phone.locator('.srow.me .pos').innerText(), '10', 'with your row lit');
+    await phone.locator('.gbtn').first().click();
+    assert.equal(await page.locator('body').getAttribute('data-destination'), '/play/mindi/ranked');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lleague-844.png'), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Weekend League: MLeague held upright, hero, two game buttons, four rules, the countdown, thirteen standings with your row marked, a REAL open time when the window is closed (code issue 9), the unqualified state, entering both games, empty/error, seven widths and accessibility passed.');
+    console.log('Weekend League: LLeague on a phone, hero, two game buttons, four rules, the countdown, thirteen standings with your row marked, a REAL open time when the window is closed (code issue 9), the unqualified state, entering both games, empty/error, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
