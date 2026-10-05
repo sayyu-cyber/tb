@@ -88,7 +88,7 @@ async function run() {
     }
 
     // ── The dialog, both states (app-11b and app-11c) ───────────────────
-    await page.getByRole('textbox', { name: 'Search cosmetics' }).fill('Fireworks');
+    await page.getByRole('searchbox', { name: 'Search cosmetics' }).fill('Fireworks');
     await page.waitForTimeout(200);
     await page.locator('.item .buy').first().click();
     await page.getByRole('dialog').waitFor();
@@ -99,7 +99,7 @@ async function run() {
     await page.getByRole('dialog').getByRole('button', { name: /Buy for/ }).click();
     assert.equal(await page.locator('body').getAttribute('data-bought'), 'va_fireworks');
 
-    await page.getByRole('textbox', { name: 'Search cosmetics' }).fill('Crown Jewel');
+    await page.getByRole('searchbox', { name: 'Search cosmetics' }).fill('Crown Jewel');
     await page.waitForTimeout(200);
     await page.locator('.item .buy').first().click();
     await page.getByRole('dialog').waitFor();
@@ -122,7 +122,7 @@ async function run() {
     await page.goto(BASE + '/shop-test/?owned');
     await page.getByRole('heading', { name: 'Shop', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Permanent', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Search cosmetics' }).fill('Fireworks');
+    await page.getByRole('searchbox', { name: 'Search cosmetics' }).fill('Fireworks');
     await page.waitForTimeout(200);
     await page.locator('.item .buy.eq').first().click();
     assert.equal(await page.locator('body').getAttribute('data-equipped'), 'victoryAnimation:va_fireworks');
@@ -144,14 +144,13 @@ async function run() {
     assert.equal(await page.locator('.prow').count(), 5, 'The whole pack catalogue, as rows');
     assert.equal(await page.locator('.prow.pop').count(), 1, 'Popular');
     assert.equal(await page.locator('.prow.best').count(), 1, 'Best Value');
-    assert.equal(await page.locator('h1').innerText(), 'VIP Pass', 'The heading follows the tab');
-    // Picking a plan changes the selection and the activate label.
-    await page.locator('.plan').first().click();
-    assert.equal(await page.locator('.plan').first().getAttribute('aria-pressed'), 'true');
-    await page.getByRole('button', { name: /Activate Weekly VIP/ }).waitFor();
-    await page.locator('.plan').nth(1).click();
-    await page.getByRole('button', { name: /Activate Monthly VIP/ }).click();
-    assert.equal(await page.locator('body').getAttribute('data-vip'), '30', 'Activating uses the selected plan');
+    assert.equal(await page.locator('h1').textContent(), 'VIP Pass', 'The heading follows the tab');
+    // VIP billing is switched off (def7f8f): the plans are shown and say
+    // so, but neither they nor Activate can be used.
+    await page.getByText('VIP purchases are currently unavailable.').waitFor();
+    assert.equal(await page.locator('.plan:disabled').count(), 2, 'Both plans are disabled');
+    assert.equal(await page.getByRole('button', { name: /Activate Weekly VIP/ }).isDisabled(), true, 'and so is Activate');
+    assert.equal(await page.locator('body').getAttribute('data-vip'), null, 'Nothing was activated');
 
     // A pending top-up disables every request and says why.
     await page.goto(BASE + '/shop-test/?pending');
@@ -167,7 +166,8 @@ async function run() {
     // ── Widths ──────────────────────────────────────────────────────────
     await page.goto(BASE + '/shop-test/');
     await page.getByRole('heading', { name: 'Shop', exact: true }).waitFor();
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+    // The wide screen's sizes. A phone gets LShop, checked below.
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
@@ -181,8 +181,7 @@ async function run() {
 
     // ── Accessibility ───────────────────────────────────────────────────
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MShop's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
+    // Only one composition mounts, so there is one h1.
     const unlabelled = await page.locator('button').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
     );
@@ -190,67 +189,51 @@ async function run() {
     assert.equal(await page.locator('input[aria-label="Search cosmetics"]').count(), 0, 'Search is on the Permanent tab');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MShop, MShopBuy, MShopShort ───────────────────────
-    // MShop keeps this screen's order - balance strip, tabs, VIP strip, the
-    // same sections - but every piece in it is a size down, and those sizes
-    // live in styles/arena-mshop.css. So the page swaps namespace: the two
-    // grids narrow to two columns, the balance strip leaves the heading for
-    // a row of its own, the VIP strip becomes a column, and the purchase
-    // confirm becomes a bottom sheet. MShopBuy and MShopShort are that
-    // sheet in its two states, and their stylesheets came out
-    // byte-identical to MShop's because they are MShop with it open.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LShop, LShopBuy, LShopShort, LShopVip ───────────────
+    // design/arena/boards/LShop.dc.html and its three companions. The phone
+    // is landscape only (design/arena/LANDSCAPE.md): the balance and the
+    // four tabs on one row, Featured three across, the VIP strip, four coin
+    // packs; the purchase confirm is the centred landscape dialog in its
+    // two states; VIP Pass puts the hero beside the plans and lists every
+    // pack as a row. scripts/check-landscape-screens.cjs holds all four
+    // against their references.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.arena-shop').count(), 0, 'The wide namespace steps aside');
-    assert.equal(await page.locator('.arena-mshop.arena-mshopvip').count(), 1, 'and the board sheets take over');
-    assert.equal(await page.locator('.shop-grid').count(), 0, 'The six-across grid steps aside');
-    assert.ok(await page.locator('.item').count() > 0, 'and the items are still here');
-    assert.equal(await page.locator('.bal').count(), 1, 'The balance strip stays');
-    assert.equal(await page.locator('.phead').count(), 0, 'out of the wide heading');
-    // The board's sizes are reaching the markup, not just its class names.
-    assert.equal(
-      await page.locator('.vipstrip').evaluate(node => getComputedStyle(node).flexDirection),
-      'column', 'The VIP strip is the board\'s column, not the wide row');
-    assert.equal(
-      await page.locator('.bal b').evaluate(node => getComputedStyle(node).fontSize),
-      '28px', 'and the balance reads at the board\'s 28px');
-    // The buy confirm is a sheet, not a dialog element.
-    await page.locator('.item .buy').first().click();
-    await page.getByRole('dialog').waitFor();
-    assert.equal(await page.locator('dialog.dlg[open]').count(), 0, 'No <dialog> at this size');
-    assert.equal(
-      await page.locator('.sart').evaluate(node => getComputedStyle(node).width),
-      '92px', 'The sheet carries the board namespace, so its art square is styled');
-    const sheet = await page.getByRole('dialog').innerText();
-    assert.ok(sheet.includes('Price'), 'The sheet keeps the price row');
-    assert.ok(sheet.includes('Current balance'), 'the balance row');
-    assert.ok(sheet.includes('Cancel'), 'and a way out');
-    await page.screenshot({ path: path.join(output, 'mshopbuy-390.png') });
+    assert.equal(await page.locator('.arena-shop').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lshop.arena-lshopvip');
+    assert.equal(await phone.count(), 1, 'and LShop takes over');
+    assert.equal(await phone.locator('.dock .bal').count(), 1, 'The balance beside the tabs');
+    assert.equal(await phone.locator('.dock .tabs > button').count(), 4, 'all four tabs');
+    assert.equal(await phone.locator('.cols.c3 > .item').count(), 6, 'Featured, three across');
+    assert.equal(await phone.locator('.cols.c4 > .pack').count(), 4, 'and four coin packs');
+    // The buy confirm: the landscape dialog, both states.
+    const afford = phone.locator('.item').filter({ has: page.locator('.buy') }).first();
+    await afford.locator('.buy').click();
+    const dialog = page.getByRole('dialog');
+    await dialog.waitFor();
+    assert.equal(await page.locator('dialog.dlg[open]').count(), 0, 'No <dialog> element at this size');
+    assert.equal(await page.locator('.ldlg .card.bdlg').count(), 1, 'the board\'s centred dialog');
+    const text = await dialog.innerText();
+    for (const row of ['Price', 'Current balance', 'Cancel']) assert.ok(text.toUpperCase().includes(row.toUpperCase()), 'The dialog keeps ' + row);
     await page.keyboard.press('Escape');
     assert.equal(await page.getByRole('dialog').count(), 0, 'Escape closes it');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mshop-390.png'), fullPage: true });
-
-    // ── Held upright: MShopVip ──────────────────────────────────────────
-    // design/arena/boards/MShopVip.dc.html. Same pieces as the wide screen -
-    // `.viphero`, the six perks, the two `.plan` buttons, and the coin packs
-    // as `.prow` rows rather than the featured tab's cards - at the board's
-    // sizes, with the plans moved out of the hero onto the page under it.
-    // The balance strip is the one thing the board leaves out here, and the
-    // wide screen already leaves it out too.
-    await page.getByRole('button', { name: /VIP Pass/ }).first().click();
-    await page.locator('.viphero').waitFor();
-    assert.equal(await page.locator('.bal').count(), 0, 'No balance strip on the VIP tab');
-    assert.equal(await page.locator('.perk').count(), 6, 'All six perks');
-    assert.equal(await page.locator('.plan').count(), 2, 'Weekly and Monthly');
-    assert.equal(await page.locator('.viphero .plan').count(), 0, 'held outside the hero, as the board draws them');
-    assert.ok(await page.locator('.prow').count() > 0, 'and the coin packs as rows');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow on VIP at 390');
-    await page.screenshot({ path: path.join(output, 'mshopvip-390.png'), fullPage: true });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lshop-844.png'), fullPage: true });
+    await phone.getByRole('button', { name: /Permanent/ }).click();
+    assert.equal(await phone.locator('input[aria-label="Search cosmetics"]').count(), 1, 'Permanent: search, sort and the chips');
+    await phone.getByRole('button', { name: /VIP Pass/ }).click();
+    await phone.locator('.viphero').waitFor();
+    assert.equal(await phone.locator('.bal').count(), 0, 'No balance strip on the VIP tab');
+    assert.equal(await phone.locator('.perk').count(), 6, 'All six perks');
+    assert.equal(await phone.locator('.plan').count(), 2, 'Weekly and Monthly');
+    assert.equal(await phone.locator('.viphero .plan').count(), 0, 'beside the hero, as the board draws them');
+    assert.ok(await phone.locator('.prow').count() > 0, 'and the coin packs as rows');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow on VIP at 844');
+    await page.screenshot({ path: path.join(output, 'lshopvip-844.png'), fullPage: true });
 
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Shop: MShop, MShopBuy, MShopShort and MShopVip held upright, board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero and plan pick, pending top-up, seven widths and accessibility passed.');
+    console.log('Shop: LShop, LShopBuy, LShopShort and LShopVip on a phone, board structure, rarity labels (code issue 11), nothing free (code issue 5), both dialog states, Escape, equip, VIP hero with billing switched off, pending top-up, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

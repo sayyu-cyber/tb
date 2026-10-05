@@ -6,7 +6,8 @@ import { CoinGem } from "@/components/arena";
 import { RARITY_COLORS } from "@/data/cosmetics";
 import { Sheet } from "@/components/layout/phone/Sheet";
 import { categoryLabel } from "./categoryLabel";
-import { ShopArt } from "./ShopItemCard";
+import { ShopArt, rarityStyle } from "./ShopItemCard";
+import { LandShopArt } from "./land/LandShop";
 import { formatCoins } from "@/lib/wallet";
 
 /**
@@ -22,16 +23,12 @@ import { formatCoins } from "@/lib/wallet";
  * and the inert backdrop come from the platform rather than from us. The
  * board's `.scrim` styling is applied to ::backdrop.
  *
- * Held upright a phone gets the same confirm as a bottom sheet, with the
- * item's art beside its name - design/arena/boards/MShopBuy.dc.html and
- * MShopShort.dc.html, phone-11b-buy-sheet.jpg and
- * phone-11c-not-enough-coins.jpg. The rows, the states and the actions are
- * written once and used by both, so "Not enough coins." cannot say one
- * thing on one composition and another on the other.
+ * A phone gets LShopBuy / LShopShort (`land`): the same rows, states and
+ * actions in the landscape dialog, with the item's art beside them.
  */
 export function ShopItemDialog({
   item, intent, price, balance, owned, equipped, onClose, onBuy, onEquip, onCoins,
-  phone = false, initial = "S",
+  land = false, initial = "S",
 }: {
   item: CosmeticItem;
   intent: "preview" | "buy";
@@ -43,13 +40,13 @@ export function ShopItemDialog({
   onBuy: () => void;
   onEquip: () => void;
   onCoins: () => void;
-  /** Draw MShopBuy's bottom sheet instead of the wide screen's dialog. */
-  phone?: boolean;
+  /** Draw LShopBuy / LShopShort: the centred dialog on the landscape phone. */
+  land?: boolean;
   /** The player's initial, for the profile-frame art. */
   initial?: string;
 }) {
   const modal = useRef<HTMLDialogElement>(null);
-  useEffect(() => { if (!phone) modal.current?.showModal(); }, [phone]);
+  useEffect(() => { if (!land) modal.current?.showModal(); }, [land]);
 
   const short = !owned && balance < price;
   const passive = item.category === "emote" || item.category === "sticker";
@@ -100,32 +97,43 @@ export function ShopItemDialog({
     </>
   );
 
-  /* MShopBuy and MShopShort: the same confirm as a bottom sheet, with the
-     item's own art beside its name. Their stylesheets came out identical to
-     MShop's, because they ARE MShop with this open. */
-  if (phone) return (
-    /* The sheet portals to <body>, so the board namespace its art square
-       (`.sart`) is scoped under has to travel with it. */
-    <Sheet open onClose={onClose} label={buying ? `Buy ${item.name}?` : item.name} headingId="shop-sheet-title" namespace="arena-mshop">
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <span className="sart" style={{ ["--rg" as string]: colour }}>
-          <ShopArt item={item} initial={initial} />
-        </span>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <span className={`rar ${item.rarity.toLowerCase()}`}>
-            {item.rarity} · {categoryLabel(item.category)}
-          </span>
-          <h2 id="shop-sheet-title" className="disp" style={{ margin: 0, fontSize: 26, lineHeight: 0.95 }}>
-            {buying ? `Buy ${item.name}?` : item.name}
-          </h2>
+  /* LShopBuy and LShopShort: the art on the left, the name, the three rows
+     and the two actions on the right, in the landscape dialog (.ldlg). */
+  if (land) {
+    const title = buying ? `Buy ${item.name}?` : item.name;
+    return (
+      <Sheet open dialog onClose={onClose} label={title} headingId="shop-dialog-title" namespace="arena-lshop" className="bdlg">
+        <span className="bart" style={rarityStyle(item) as React.CSSProperties}><LandShopArt item={item} initial={initial} dialog /></span>
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <span className={`rar ${item.rarity.toLowerCase()}`}>{item.rarity} · {categoryLabel(item.category)}</span>
+          <h2 id="shop-dialog-title" className="disp" style={{ margin: "8px 0 10px", fontSize: 26, lineHeight: 0.95 }}>{title}</h2>
+          {!owned ? (
+            <div>
+              <div className="dl" style={{ borderTop: "1px solid rgba(255,255,255,.07)" }}>
+                <span>Price</span><b><CoinGem small /><span>{price.toLocaleString()} coins</span></b>
+              </div>
+              <div className="dl"><span>Current balance</span><b><CoinGem small />{formatCoins(balance)}</b></div>
+              <div className="dl" style={{ borderBottom: 0 }}>
+                <span>{short ? "More coins needed" : "After purchase"}</span>
+                <b style={{ color: short ? "#FF6B80" : "#C6FF33" }}><CoinGem small />{Math.abs(balance - price).toLocaleString()}</b>
+              </div>
+            </div>
+          ) : <p className="muted" style={{ margin: 0 }}>{item.description}</p>}
+          {short && <p role="status" style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 600, color: "#FF6B80" }}>Not enough coins.</p>}
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.5fr)", gap: 10, marginTop: "auto", paddingTop: 12 }}>
+            <button type="button" className="ar-btn ghost" onClick={onClose}>Cancel</button>
+            {owned ? (
+              <button type="button" className="ar-btn" disabled={equipped || passive} onClick={onEquip}>{equipped ? "Equipped" : passive ? "Owned" : "Equip"}</button>
+            ) : short ? (
+              <button type="button" className="ar-btn blue" onClick={onCoins}>Get Coins</button>
+            ) : (
+              <button type="button" className="ar-btn" onClick={onBuy}>Buy for {price.toLocaleString()}</button>
+            )}
+          </div>
         </div>
-      </div>
-      <div style={{ marginTop: 14 }}>{rows}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.5fr)", gap: 10, marginTop: 18 }}>
-        {actions}
-      </div>
-    </Sheet>
-  );
+      </Sheet>
+    );
+  }
 
   return (
     <dialog

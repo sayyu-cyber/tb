@@ -1,0 +1,313 @@
+/* GENERATED from design/arena/boards/LShop.dc.html by scripts/port-board.mjs.
+   Do not edit by hand - re-run the script instead.
+
+   Three changes from the board, and only three: every selector is
+   namespaced under .arena-lshop so the board's generic class names (.table,
+   .face, .panel) cannot collide with the app's; the pack's violet is
+   replaced by the owner's #00BCC8 throughout; and .btn is renamed to
+   .ar-btn, the app's own name for the same button recipe. Everything else
+   is the board's own CSS.
+
+   433 rules this board shares byte for byte with app-reference.css and landscape-reference.css
+   were dropped: they are already in styles/arena-app.css and styles/arena-land.css,
+   ported once. A rule the board changed, however slightly, was kept.
+
+   The boards draw everything inside one root (class="ar app m land") and
+   reach it through .land / .m; here the namespace element is that
+   root and carries a marker for each (.is-land, .is-m), so those prefixes
+   become .arena-lshop.is-land and .arena-lshop.is-m. Rules for the root alone are dropped. */
+
+
+.arena-lshop *{box-sizing:border-box}
+.arena-lshop a{color:#C6FF33}.arena-lshop a:hover{color:#E4FF8C}
+.arena-lshop .ar{font-family:var(--font-ui), system-ui, sans-serif;color:#fff;isolation:isolate}
+.arena-lshop .ar button{font-family:inherit}
+.arena-lshop .sprite{position:absolute;width:0;height:0;overflow:hidden}
+.arena-lshop .disp{font-family:var(--font-display), system-ui, sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;line-height:.92}
+.arena-lshop .chrome{background:linear-gradient(100deg,#8C8C97 0%,#FFFFFF 34%,#CFCFD8 52%,#FFFFFF 68%,#9A9AA6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.arena-lshop .lbl{display:inline-flex;align-items:center;gap:10px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:#BEBECA;white-space:nowrap}
+.arena-lshop .lbl.dash::before{content:"";width:22px;height:1.5px;background:currentColor}
+.arena-lshop .num{font-family:var(--font-display), sans-serif;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.arena-lshop .body{font-size:15px;line-height:1.5;font-weight:500;color:#C9C9D3;text-wrap:pretty}
+.arena-lshop .muted{font-size:13.5px;font-weight:600;color:#BEBECA}
+.arena-lshop .thaana{font-family:var(--font-thaana), sans-serif;font-weight:700;color:#6FE9F0}
+
+/* arena backdrop */
+.arena-lshop .bg{position:absolute;inset:0;background:radial-gradient(760px 420px at 50% 50%,rgba(0,188,200,.42),rgba(0,188,200,0) 72%),radial-gradient(1200px 700px at 50% 30%,#12101A 0%,#07070A 55%,#000 100%)}
+.arena-lshop .bigword{position:absolute;left:0;right:0;top:-8px;text-align:center;font-family:var(--font-display), sans-serif;font-weight:700;font-size:300px;line-height:1;letter-spacing:.02em;color:rgba(0,0,0,0);-webkit-text-stroke:1.5px rgba(255,255,255,.07);white-space:nowrap;pointer-events:none}
+.arena-lshop .beam{position:absolute;top:-60px;width:520px;height:760px;background:linear-gradient(180deg,rgba(111,233,240,.22),rgba(111,233,240,0) 80%);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);filter:blur(18px);pointer-events:none}
+@keyframes drift{0%{transform:translateY(0);opacity:0}15%{opacity:.8}85%{opacity:.6}100%{transform:translateY(-160px);opacity:0}}
+.arena-lshop .mote{position:absolute;width:3px;height:3px;border-radius:50%;background:#C6FF33;box-shadow:0 0 8px 2px rgba(198,255,51,.6);animation:drift 7s linear infinite}
+.arena-lshop .mote.b{background:#6FE9F0;box-shadow:0 0 8px 2px rgba(111,233,240,.6)}
+.arena-lshop .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,188,200,.16) 1px,rgba(0,0,0,0) 1px),linear-gradient(90deg,rgba(0,188,200,.16) 1px,rgba(0,0,0,0) 1px);background-size:60px 60px;-webkit-mask-image:radial-gradient(70% 60% at 50% 40%,#000,rgba(0,0,0,0));mask-image:radial-gradient(70% 60% at 50% 40%,#000,rgba(0,0,0,0))}
+
+/* table */
+.arena-lshop .stage{position:absolute;inset:0;perspective:2200px;perspective-origin:50% 20%}
+.arena-lshop .floor{position:absolute;left:-1280px;top:-518px;width:4000px;height:1900px;transform:rotateX(52deg) scale(.86) translateZ(-420px);background-image:radial-gradient(640px 400px at 50% 50%,rgba(0,0,0,.95),rgba(0,0,0,0) 75%),radial-gradient(900px 560px at 50% 50%,rgba(0,188,200,.55),rgba(0,188,200,0) 72%),linear-gradient(rgba(0,188,200,.5) 2px,rgba(0,0,0,0) 2px),linear-gradient(90deg,rgba(0,188,200,.5) 2px,rgba(0,0,0,0) 2px);background-size:auto,auto,110px 110px,110px 110px;background-position:center;-webkit-mask-image:radial-gradient(closest-side,#000 30%,rgba(0,0,0,0) 96%);mask-image:radial-gradient(closest-side,#000 30%,rgba(0,0,0,0) 96%)}
+.arena-lshop .table{position:absolute;left:120px;top:62px;width:1200px;height:740px;transform-style:preserve-3d;transform:rotateX(52deg) scale(.86)}
+.arena-lshop .apron{position:absolute;inset:0;border-radius:50%}
+.arena-lshop .felt{position:absolute;left:68px;top:68px;width:1064px;height:604px;border-radius:50%;transform:translateZ(-5px);background-image:radial-gradient(50% 58% at 50% 46%,rgba(255,255,255,.16),rgba(255,255,255,0) 72%),radial-gradient(closest-side,rgba(0,0,0,0) 56%,rgba(0,0,0,.55) 100%),radial-gradient(circle,rgba(255,255,255,.07) 0 3.2px,rgba(255,255,255,0) 3.8px);background-size:auto,auto,26px 26px;box-shadow:inset 0 26px 50px rgba(0,0,0,.6)}
+.arena-lshop .rail{position:absolute;inset:0;border-radius:50%;background:radial-gradient(260px 60px at 50% 3%,rgba(255,255,255,.24),rgba(255,255,255,0) 100%),radial-gradient(540px 70px at 50% 98%,rgba(111,233,240,.16),rgba(111,233,240,0) 100%),radial-gradient(600px 370px at 50% 50%,#0B0B0F 0 80%,#141419 83%,#2B2B35 89.5%,#131318 95%,#040405 100%);-webkit-mask-image:radial-gradient(532px 302px at 50% 50%,rgba(0,0,0,0) 99.6%,#000 100%);mask-image:radial-gradient(532px 302px at 50% 50%,rgba(0,0,0,0) 99.6%,#000 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2),inset 0 0 0 4px #000}
+.arena-lshop .leds{position:absolute;left:0;top:0;width:1200px;height:740px;transform:translateZ(.6px);overflow:visible}
+@keyframes chase{to{stroke-dashoffset:-48}}
+.arena-lshop .chase{animation:chase 2.4s linear infinite}
+
+/* cards, sized by font-size: 7.2em x 10.08em */
+.arena-lshop .face{position:absolute;left:0;top:0;width:7.2em;height:10.08em;border-radius:.62em;background:linear-gradient(160deg,#FFFFFF 0%,#F5F5F8 55%,#E7E7EE 100%);color:#0B0B0F;overflow:hidden}
+.arena-lshop .face.red{color:#E0213A}
+.arena-lshop .face.ten::before{content:"";position:absolute;inset:.2em;border-radius:.46em;padding:.13em;background:conic-gradient(from 200deg,#C6FF33,#00BCC8,#FFFFFF,#C6FF33,#00BCC8,#FFFFFF,#C6FF33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.arena-lshop .face.ten::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(198,255,51,.2) 42%,rgba(0,188,200,.16) 52%,rgba(255,255,255,0) 64%);background-size:260% 100%;animation:holo 3.4s ease-in-out infinite;pointer-events:none}
+@keyframes holo{0%{background-position:130% 0}100%{background-position:-30% 0}}
+.arena-lshop .idx{position:absolute;display:flex;flex-direction:column;align-items:center;gap:.12em;width:1.4em}
+.arena-lshop .idx.tl{left:.3em;top:.4em}
+.arena-lshop .idx.br{right:.3em;bottom:.4em;transform:rotate(180deg)}
+.arena-lshop .idx b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:1.32em;line-height:.9;letter-spacing:-.05em}
+.arena-lshop .idx svg{width:.72em;height:.72em}
+.arena-lshop .pips{position:absolute;left:2.38em;right:2.38em;top:1.66em;bottom:1.66em}
+.arena-lshop .pip{position:absolute;width:1.12em;height:1.12em;margin:-.56em 0 0 -.56em}
+.arena-lshop .pip.flip{transform:rotate(180deg)}
+.arena-lshop .ace{position:absolute;left:50%;top:50%;width:3.3em;height:3.3em;margin:-1.65em 0 0 -1.65em}
+.arena-lshop .court{position:absolute;left:1.8em;right:1.8em;top:1.4em;bottom:1.4em;border-radius:.4em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1em;background:currentColor}
+.arena-lshop .court::before{content:"";position:absolute;inset:.18em;border-radius:.28em;border:.06em solid rgba(255,255,255,.55)}
+.arena-lshop .court b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:2.9em;line-height:1;letter-spacing:-.04em;color:#fff}
+.arena-lshop .court svg{width:1.05em;height:1.05em;color:#fff}
+.arena-lshop .back{position:absolute;left:0;top:0;width:7.2em;height:10.08em;border-radius:.62em;background:#00BCC8;overflow:hidden}
+.arena-lshop .back::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 20% 0%,rgba(255,255,255,.24),rgba(255,255,255,0) 55%),repeating-linear-gradient(45deg,rgba(0,0,0,.26) 0 .1em,rgba(0,0,0,0) .1em .62em),repeating-linear-gradient(-45deg,rgba(0,0,0,.26) 0 .1em,rgba(0,0,0,0) .1em .62em)}
+.arena-lshop .back::after{content:"";position:absolute;inset:.34em;border-radius:.4em;box-shadow:inset 0 0 0 .08em #fff,inset 0 0 0 .22em #00BCC8,inset 0 0 0 .3em #0B0B0F}
+.arena-lshop .back i{position:absolute;left:50%;top:50%;width:3em;height:3em;margin:-1.5em 0 0 -1.5em;border-radius:.7em;transform:rotate(45deg);background:#0B0B0F;box-shadow:0 0 0 .08em #C6FF33;display:flex;align-items:center;justify-content:center;z-index:1}
+.arena-lshop .back i svg{width:1.5em;height:1.5em;color:#C6FF33;transform:rotate(-45deg)}
+
+/* player frames */
+.arena-lshop .pf{position:absolute;display:flex;align-items:center;gap:12px;height:64px;padding:6px 18px 6px 6px;border-radius:14px;background:rgba(10,10,14,.92);border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 30px -16px rgba(0,0,0,.9)}
+.arena-lshop .pf.turn{border-color:#C6FF33;box-shadow:0 0 0 4px rgba(198,255,51,.14),0 0 32px rgba(198,255,51,.22)}
+.arena-lshop .av{position:relative;flex:none;width:52px;height:52px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display), sans-serif;font-weight:700;font-size:22px;color:#0A0A0A;background:linear-gradient(135deg,#E4FF8C 0%,#C6FF33 60%,#A5DD1A 100%)}
+.arena-lshop .av.them{color:#00191B;background:linear-gradient(135deg,#4FE3EC 0%,#00BCC8 60%,#00727A 100%)}
+.arena-lshop .ct{position:absolute;right:-8px;bottom:-8px;min-width:24px;height:24px;padding:0 6px;border-radius:7px;background:#fff;color:#000;font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;line-height:24px;text-align:center;box-shadow:0 0 0 2px #000}
+.arena-lshop .nm{display:flex;flex-direction:column;gap:5px}
+.arena-lshop .nm > b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:15px;line-height:1;text-transform:uppercase;letter-spacing:.04em}
+.arena-lshop .nm > span{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;letter-spacing:.16em;text-transform:uppercase;color:#A4A4B2}
+.arena-lshop .dot{width:7px;height:7px;border-radius:2px;background:#C6FF33;flex:none}
+.arena-lshop .dot.them{background:#6FE9F0}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(198,255,51,.6)}50%{box-shadow:0 0 0 6px rgba(198,255,51,0)}}
+.arena-lshop .dot.live{animation:breathe 1.6s ease-in-out infinite}
+.arena-lshop .fan{position:absolute;width:0;height:0}
+.arena-lshop .fb{position:absolute;left:-25px;top:-74px;width:50.4px;height:70.6px;font-size:7px;transform-origin:50% 100%;transform:rotate(var(--a)) translateY(-6px);filter:drop-shadow(0 6px 6px rgba(0,0,0,.6))}
+
+/* HUD panels */
+.arena-lshop .hud{position:absolute;border-radius:14px;background:linear-gradient(180deg,rgba(20,20,26,.94),rgba(9,9,12,.94));border:1px solid rgba(255,255,255,.1);box-shadow:0 22px 44px -20px rgba(0,0,0,.95)}
+.arena-lshop .hud::before,.arena-lshop .hud::after{content:"";position:absolute;width:16px;height:16px;border-style:solid;border-color:#C6FF33;pointer-events:none}
+.arena-lshop .hud::before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-top-left-radius:14px}
+.arena-lshop .hud::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-bottom-right-radius:14px}
+.arena-lshop .hud.b::before,.arena-lshop .hud.b::after{border-color:#6FE9F0}
+.arena-lshop .cell{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.035);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px}
+.arena-lshop .mini{position:relative;flex:none;width:30px;height:42px;border-radius:6px;background:#fff;color:#0B0B0F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 2px 0 #9D9DAB,0 8px 12px -4px rgba(0,0,0,.8)}
+.arena-lshop .mini.foil::before{content:"";position:absolute;inset:0;border-radius:6px;padding:2px;background:conic-gradient(from 200deg,#C6FF33,#00BCC8,#FFFFFF,#C6FF33,#00BCC8,#FFFFFF,#C6FF33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.arena-lshop .mini.red{color:#E0213A}
+.arena-lshop .mini b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:-.06em}
+.arena-lshop .mini svg{width:10px;height:10px}
+.arena-lshop .mini.ghost{background:rgba(255,255,255,.04);color:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.arena-lshop .hex{flex:none;width:66px;height:74px;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(160deg,#4FE3EC 0%,#00BCC8 55%,#005A61 100%)}
+.arena-lshop .hex svg{width:32px;height:32px;color:#04262A;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
+.arena-lshop .hexwrap{position:relative;flex:none;width:66px;height:74px;filter:drop-shadow(0 0 16px rgba(0,188,200,.6))}
+
+/* controls */
+.arena-lshop .ar-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:58px;padding:0 26px;border:0;border-radius:12px;cursor:pointer;font-family:var(--font-display), sans-serif;font-weight:700;font-size:17px;line-height:1;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;color:#0A0A0A;background:linear-gradient(180deg,#DDFF70 0%,#C6FF33 52%,#B4EE22 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(0,0,0,.14),0 6px 0 #6F9412,0 14px 30px -6px rgba(198,255,51,.4);transition:transform .18s cubic-bezier(.3,1.7,.5,1),box-shadow .18s ease-out}
+.arena-lshop .ar-btn::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(105deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 62%);background-size:260% 100%;background-position:130% 0;pointer-events:none;transition:background-position .7s ease}
+.arena-lshop .ar-btn:hover::after,.arena-lshop .ar-btn.is-hover::after{background-position:-30% 0}
+.arena-lshop .ar-btn:active,.arena-lshop .ar-btn.is-press{transform:translateY(5px);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.14),0 1px 0 #6F9412,0 6px 14px -6px rgba(198,255,51,.4)}
+.arena-lshop .ar-btn:active,.arena-lshop .ibtn:active{transition-duration:.09s;transition-timing-function:ease-out}
+.arena-lshop .ar-btn:focus-visible{outline:2px solid #fff;outline-offset:6px}
+.arena-lshop .ar-btn:disabled{cursor:not-allowed;color:rgba(255,255,255,.45);background:#17171D;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 3px 0 #000;transform:translateY(3px)}
+.arena-lshop .ar-btn:disabled::after{display:none}
+.arena-lshop .ar-btn svg{width:19px;height:19px;flex:none}
+.arena-lshop .ar-btn.blue{color:#00191B;background:linear-gradient(180deg,#4FE3EC 0%,#00BCC8 55%,#0098A3 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.2),0 6px 0 #00727A,0 14px 30px -6px rgba(0,188,200,.5)}
+.arena-lshop .ar-btn.blue:active,.arena-lshop .ar-btn.blue.is-press{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 #00727A,0 6px 14px -6px rgba(0,188,200,.5)}
+.arena-lshop .ar-btn.ghost{color:#fff;background:#141419;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2),0 5px 0 #000}
+.arena-lshop .ar-btn.ghost::after{background-image:linear-gradient(105deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.12) 50%,rgba(255,255,255,0) 62%)}
+.arena-lshop .ar-btn.ghost:hover,.arena-lshop .ar-btn.ghost.is-hover{box-shadow:inset 0 0 0 1.5px rgba(198,255,51,.7),0 5px 0 #000}
+.arena-lshop .ar-btn.ghost:active,.arena-lshop .ar-btn.ghost.is-press{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2),0 1px 0 #000;transform:translateY(4px)}
+.arena-lshop .ar-btn.ghost[aria-pressed="true"]{color:#C6FF33;background:#10130A;box-shadow:inset 0 0 0 1.5px #C6FF33,0 1px 0 #000;transform:translateY(4px)}
+.arena-lshop .ar-btn.sm{height:48px;padding:0 18px;font-size:14px;border-radius:11px}
+.arena-lshop .ar-btn.sm::after{border-radius:11px}
+.arena-lshop .ibtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;padding:0;border:0;border-radius:12px;cursor:pointer;color:#fff;background:#121217;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 4px 0 #000;transition:transform .18s cubic-bezier(.3,1.7,.5,1),box-shadow .18s ease-out,color .15s}
+.arena-lshop .ibtn:hover{color:#C6FF33;box-shadow:inset 0 0 0 1px rgba(198,255,51,.6),0 4px 0 #000}
+.arena-lshop .ibtn:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 1px 0 #000}
+.arena-lshop .ibtn:focus-visible{outline:2px solid #fff;outline-offset:5px}
+.arena-lshop .ibtn svg{width:21px;height:21px}
+.arena-lshop .seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:#0B0B0E;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.arena-lshop .seg button{height:44px;padding:0 16px;border:0;border-radius:10px;background:rgba(0,0,0,0);color:#A4A4B2;font-family:var(--font-display), sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.arena-lshop .seg button[aria-pressed="true"]{color:#0A0A0A;background:#fff}
+.arena-lshop .seg button:focus-visible{outline:2px solid #C6FF33;outline-offset:2px}
+.arena-lshop .chip{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:7px;font-family:var(--font-display), sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.arena-lshop .chip.live{background:rgba(198,255,51,.12);color:#C6FF33;box-shadow:inset 0 0 0 1px rgba(198,255,51,.5)}
+.arena-lshop .chip.blue{background:rgba(0,188,200,.2);color:#8AF0F5;box-shadow:inset 0 0 0 1px rgba(111,233,240,.6)}
+.arena-lshop .chip.mono{background:rgba(255,255,255,.06);color:#E4E4EA;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.arena-lshop .chip.live i{width:6px;height:6px;border-radius:50%;background:#C6FF33;animation:blink 1.4s ease-in-out infinite}
+.arena-lshop .status{position:absolute;height:42px;padding:0 20px 0 14px;border-radius:10px;display:flex;align-items:center;gap:10px;transform:translateX(-50%);white-space:nowrap;background:rgba(8,8,11,.92);box-shadow:inset 3px 0 0 #C6FF33,inset 0 0 0 1px rgba(255,255,255,.12),0 12px 26px -12px rgba(0,0,0,.9);font-size:15px;font-weight:600;color:#fff}
+
+/* hand */
+.arena-lshop .hand{position:absolute;left:0;top:0;width:1440px;height:900px;perspective:1100px;perspective-origin:50% 20%;pointer-events:none}
+.arena-lshop .hc{position:absolute;left:0;top:0;width:132px;height:185px;padding:0;border:0;background:none;border-radius:11px;font-size:18.333px;cursor:pointer;pointer-events:auto;transform-origin:50% 100%;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateX(9deg);transition:transform .45s cubic-bezier(.2,.8,.2,1),translate .22s cubic-bezier(.2,.8,.2,1),opacity .18s}
+@keyframes handIn{from{translate:0 260px;opacity:0}to{translate:0 0;opacity:1}}
+.arena-lshop .hc{animation:handIn .75s cubic-bezier(.2,.85,.25,1) backwards;animation-delay:calc(var(--i) * 70ms + 150ms)}
+.arena-lshop .hc .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 4px 0 #8F8F9E,0 24px 30px -12px rgba(0,0,0,.85);transition:box-shadow .2s,filter .2s}
+.arena-lshop .hc:hover:not(:disabled){translate:0 -16px}
+.arena-lshop .hc.sel,.arena-lshop .hc.sel:hover{translate:0 -36px}
+.arena-lshop .hc.sel .face{box-shadow:0 1px 0 #DCDCE4,0 2px 0 #C6C6D0,0 3px 0 #ABABB8,0 4px 0 #8F8F9E,0 0 0 4px #C6FF33,0 0 36px 6px rgba(198,255,51,.5),0 30px 30px -12px rgba(0,0,0,.8)}
+.arena-lshop .hc.no{cursor:not-allowed;translate:0 12px}
+.arena-lshop .hc.no .face{filter:brightness(.5) saturate(.6)}
+.arena-lshop .hc.wait{cursor:default}
+.arena-lshop .hc.gone{opacity:0;translate:0 -90px;pointer-events:none}
+.arena-lshop .hc:focus-visible{outline:none}
+.arena-lshop .hc:focus-visible .face{box-shadow:0 0 0 3px #fff,0 24px 30px -12px rgba(0,0,0,.8)}
+
+/* popovers */
+@keyframes rise{from{transform:translate(-50%,14px) scale(.97);opacity:0}to{transform:translate(-50%,0) scale(1);opacity:1}}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ================= app shell (blue edition) ================= */
+
+/* sidebar: collapsed rail (default in the app) */
+
+/* sidebar: expanded panel */
+
+/* small avatars */
+
+/* top bar */
+
+/* rank badge */
+
+/* page frame */
+
+/* rarity */
+
+/* mini card-back art, sized by font-size (7.2em x 10.08em) */
+
+/* table theme swatch */
+
+/* ================= mobile shell: portrait phone, 390 wide ================= */
+/* stage: fixed to the viewport in the app (position: fixed), drawn once at the top here */
+
+/* top bar: sticky in the app, 60px + safe-area-inset-top */
+
+/* bottom tab bar: fixed in the app, 62px + safe-area-inset-bottom (22 here) */
+/* the raised Play diamond */
+@keyframes playglow{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 0 18px rgba(198,255,51,.35)}50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 0 32px rgba(198,255,51,.65)}}
+
+/* page */
+
+/* buttons at phone size: 52 / 44 tall, full-width where they lead a card */
+
+/* tabs: equal-width segments that fill the row */
+
+/* horizontal scrollers bleed to the screen edge */
+
+/* list rows */
+
+/* bottom sheet */
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
+
+/* toast */
+
+/* chip tabs: a scrolling row when the labels don't fit as equal segments */
+
+/* one phone viewport, for sheets and dialogs on a long board (in the app: position fixed, inset 0) */
+
+/* ================= turning the phone ================= */
+/* the illustration: a phone that turns sideways, a landscape table drawn inside it */
+@keyframes turnPhone{0%,18%{transform:rotate(0deg)}46%,82%{transform:rotate(-90deg)}100%{transform:rotate(0deg)}}
+@media (prefers-reduced-motion:reduce){.arena-lshop .turn .ph{animation:none;transform:rotate(-90deg)}}
+
+/* ================= app screens on a phone held sideways ================= */
+/* the tab bar stands up as a rail on the left; the page is one centred column */
+/* sheets on a sideways phone open from the rail as a side panel */
+@keyframes sideIn{from{transform:translateX(-100%)}to{transform:none}}
+/* ================= the whole app, held sideways: 844 x 390 =================
+   rail 76 | top bar 52 | content area 768 x 338 (page padding 16, gap 12)
+   Loaded after mobile.css. Everything here assumes class="ar app m land". */
+
+/* ---- shell ---- */
+/* the left rail grows by the notch inset on a real phone: padding-left:env(safe-area-inset-left) */
+
+/* ---- type, buttons, controls at landscape size ---- */
+
+/* ---- grids ---- */   /* content + a right column */   /* a left column + content */                                 /* exactly one landscape screen of content */
+/* a panel that fills its grid cell */
+
+/* ---- tiles used across screens ---- */
+
+/* ---- side panels (sheets) ---- */
+/* a sheet that opens from the right edge */
+@keyframes sideInR{from{transform:translateX(100%)}to{transform:none}}
+/* centred dialog on the content area */
+@keyframes pop{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
+
+/* ---- the turn-your-phone gate (the whole app asks for landscape) ---- */
+
+/* page title in the top bar: a small lime label over a chrome title */
+
+
+.arena-lshop .dock{display:grid;grid-template-columns:264px minmax(0,1fr);gap:12px;align-items:stretch;height:46px}
+.arena-lshop .bal{position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;padding:0 6px 0 14px;border-radius:14px;background:radial-gradient(120px 70px at 100% 50%,rgba(198,255,51,.2),rgba(198,255,51,0) 75%),linear-gradient(180deg,rgba(20,20,26,.92),rgba(9,9,12,.92));box-shadow:inset 0 0 0 1px rgba(198,255,51,.45)}
+.arena-lshop .bal .lbl{font-size:9px;letter-spacing:.18em;white-space:nowrap}
+.arena-lshop .bal b{display:flex;align-items:center;gap:9px;margin-left:auto;font-family:var(--font-display), sans-serif;font-weight:700;font-size:23px;line-height:1;font-variant-numeric:tabular-nums}
+.arena-lshop .bal .ar-btn{flex:none;width:38px;height:38px;padding:0;border-radius:10px}
+.arena-lshop .dock .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px;padding:4px;border-radius:13px}
+.arena-lshop .dock .tabs button{height:auto;justify-content:center;gap:7px;font-size:10.5px;letter-spacing:.12em}
+.arena-lshop .dock .tabs button svg{width:15px;height:15px}
+.arena-lshop .vipstrip{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(0,188,200,.24),rgba(0,188,200,.05));box-shadow:inset 0 0 0 1px rgba(0,188,200,.5)}
+.arena-lshop .vipstrip::after{content:"";position:absolute;right:120px;top:-50px;width:160px;height:160px;border-radius:50%;background:radial-gradient(closest-side,rgba(198,255,51,.2),rgba(198,255,51,0));pointer-events:none}
+.arena-lshop .vipstrip > *{position:relative;z-index:1}
+.arena-lshop .vipstrip .cr{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:conic-gradient(from 200deg,#C6FF33,#00BCC8,#FFFFFF,#C6FF33,#00BCC8,#FFFFFF,#C6FF33);color:#0A0A0A}
+.arena-lshop .vipstrip .cr svg{width:22px;height:22px}
+.arena-lshop .item{position:relative;display:flex;flex-direction:column;border-radius:15px;overflow:hidden;background:linear-gradient(180deg,rgba(20,20,26,.95),rgba(9,9,12,.95));box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.arena-lshop .item:active{box-shadow:inset 0 0 0 1.5px var(--rc),0 20px 40px -18px var(--rg)}
+.arena-lshop .item .art{position:relative;height:90px;display:flex;align-items:center;justify-content:center;background:radial-gradient(150px 80px at 50% 62%,var(--rg),rgba(0,0,0,0) 78%),#07080A;border-bottom:1px solid rgba(255,255,255,.07)}
+.arena-lshop .item .art::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,rgba(0,0,0,0) 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,rgba(0,0,0,0) 1px);background-size:20px 20px;pointer-events:none}
+.arena-lshop .item .art > :not(.feat):not(.eye){position:relative;z-index:1}
+.arena-lshop .item .feat{position:absolute;left:10px;top:10px;z-index:2;height:20px;padding:0 7px;font-size:9.5px}
+.arena-lshop .item .eye{position:absolute;right:8px;top:8px;z-index:2;width:38px;height:38px;border-radius:10px}
+.arena-lshop .item .eye svg{width:16px;height:16px}
+.arena-lshop .item .info{display:flex;flex-direction:column;gap:3px;padding:10px 12px 12px}
+.arena-lshop .item .rar{font-size:9.5px;letter-spacing:.12em;line-height:1.2}
+.arena-lshop .item h3{margin:0;font-family:var(--font-display), sans-serif;font-weight:700;font-size:15px;line-height:1.15;letter-spacing:-.01em;text-transform:uppercase;white-space:nowrap}
+.arena-lshop .item p{margin:0;font-size:12px;line-height:1.3;font-weight:500;color:#A4A4B2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arena-lshop .item .buy{margin-top:7px;display:flex;align-items:center;justify-content:center;gap:8px;height:38px;border:0;border-radius:10px;cursor:pointer;font-family:var(--font-display), sans-serif;font-weight:700;font-size:14px;letter-spacing:.04em;color:#fff;background:#141419;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18),0 3px 0 #000}
+.arena-lshop .item .buy:active{transform:translateY(3px);box-shadow:inset 0 0 0 1.5px #C6FF33,0 0 0 #000}
+.arena-lshop .item .buy.eq{background:#C6FF33;color:#0A0A0A;box-shadow:0 3px 0 #6F9412;text-transform:uppercase;font-size:12.5px;letter-spacing:.12em}
+.arena-lshop .frame{width:54px;height:54px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display), sans-serif;font-weight:700;font-size:22px;color:#0A0A0A;background:linear-gradient(135deg,#E4FF8C,#C6FF33 60%,#A5DD1A);box-shadow:0 0 0 3px #0B0B0F,0 0 0 5px #FFC940,0 0 0 6px #0B0B0F,0 0 0 7.5px rgba(255,201,64,.6),0 0 24px rgba(255,201,64,.4)}
+.arena-lshop .bubble{position:relative;display:flex;align-items:center;justify-content:center;width:72px;height:54px;border-radius:15px;background:#C6FF33;color:#0A0A0A;box-shadow:0 0 26px rgba(198,255,51,.35)}
+.arena-lshop .bubble::after{content:"";position:absolute;left:14px;bottom:-7px;width:14px;height:14px;background:#C6FF33;clip-path:polygon(0 0,100% 0,0 100%)}
+.arena-lshop .bubble svg{width:26px;height:26px}
+.arena-lshop .fw{position:relative;width:84px;height:84px}
+.arena-lshop .fw i{position:absolute;left:50%;top:50%;width:3px;height:27px;margin:-27px 0 0 -1.5px;border-radius:2px;transform-origin:50% 100%;background:linear-gradient(0deg,rgba(0,188,200,0),#4FE3EC)}
+.arena-lshop .fw i:nth-child(even){background:linear-gradient(0deg,rgba(198,255,51,0),#C6FF33);height:21px;margin-top:-21px}
+.arena-lshop .sticker{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:68px;height:68px;border-radius:18px;transform:rotate(-8deg);background:linear-gradient(160deg,#FFE58A,#E0B52E);color:#2A1F04;box-shadow:0 0 0 3px #fff,0 12px 18px -8px rgba(0,0,0,.9)}
+.arena-lshop .sticker b{font-family:var(--font-display), sans-serif;font-weight:700;font-size:10px;line-height:.95;text-transform:uppercase;text-align:center}
+.arena-lshop .pack{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px 12px;border-radius:15px;text-align:center;background:linear-gradient(180deg,rgba(20,20,26,.95),rgba(9,9,12,.95));box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.arena-lshop .pack.pop{box-shadow:inset 0 0 0 1.5px #00BCC8,0 0 40px -14px rgba(0,188,200,.6)}
+.arena-lshop .pack.best{box-shadow:inset 0 0 0 1.5px #C6FF33,0 0 40px -14px rgba(198,255,51,.6)}
+.arena-lshop .pack .flag{position:absolute;top:-11px;left:50%;transform:translateX(-50%)}
+.arena-lshop .gems{position:relative;width:80px;height:50px}
+.arena-lshop .gems i{position:absolute;width:24px;height:24px;border-radius:7px;transform:rotate(45deg);background:linear-gradient(135deg,#E4FF8C,#C6FF33 55%,#8FC20F);box-shadow:0 0 14px rgba(198,255,51,.55),inset 0 0 0 1.5px rgba(255,255,255,.4)}
+.arena-lshop .pack b.amt{font-family:var(--font-display), sans-serif;font-weight:700;font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+.arena-lshop .pack .ar-btn.sm{width:100%;height:38px;padding:0 6px;font-size:11.5px;letter-spacing:.04em}
+/* buy dialog */
+.arena-lshop .dl{display:flex;justify-content:space-between;align-items:center;height:38px;border-bottom:1px solid rgba(255,255,255,.07);font-size:14px;font-weight:600;color:#BEBECA}
+.arena-lshop .dl b{display:flex;align-items:center;gap:8px;font-family:var(--font-display), sans-serif;font-weight:700;font-size:16px;color:#fff;font-variant-numeric:tabular-nums}
+.arena-lshop .bdlg{display:grid;grid-template-columns:200px minmax(0,1fr);gap:18px;width:600px;min-height:276px;padding:16px}
+.arena-lshop .bart{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:200px;border-radius:14px;background:radial-gradient(170px 120px at 50% 58%,var(--rg),rgba(0,0,0,0) 78%),#07080A;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.arena-lshop .bart::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,rgba(0,0,0,0) 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,rgba(0,0,0,0) 1px);background-size:22px 22px;pointer-events:none}
+.arena-lshop .bart > *{position:relative;z-index:1}
+.arena-lshop .bart .frame{width:84px;height:84px;border-radius:22px;font-size:36px;box-shadow:0 0 0 4px #0B0B0F,0 0 0 7px #FFC940,0 0 0 9px #0B0B0F,0 0 0 11px rgba(255,201,64,.6),0 0 34px rgba(255,201,64,.4)}
+.arena-lshop .bart .bubble{width:112px;height:84px;border-radius:24px}
+.arena-lshop .bart .bubble::after{left:22px;bottom:-11px;width:22px;height:22px}
+.arena-lshop .bart .bubble svg{width:44px;height:44px}
+.arena-lshop .bart .fw{width:140px;height:140px}
+.arena-lshop .bart .fw i{width:4px;height:44px;margin:-44px 0 0 -2px}
+.arena-lshop .bart .fw i:nth-child(even){height:34px;margin-top:-34px}
+.arena-lshop .bart .sticker{width:114px;height:114px;border-radius:30px;box-shadow:0 0 0 5px #fff,0 18px 28px -10px rgba(0,0,0,.9)}
+.arena-lshop .bart .sticker b{font-size:16px}
+

@@ -14,7 +14,8 @@ import { requestCoinTopup, watchMyTopups, CoinTopupRequest } from '@/lib/coinTop
 import { Pill, CoinGem, Meter } from '@/components/arena';
 import { ShopItemCard } from './ShopItemCard';
 import { ShopItemDialog } from './ShopItemDialog';
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandShop } from './land/LandShop';
 import { CoinPackCard } from './StoreCoinPacks';
 import { CoinPackRow } from './CoinPackRow';
 import { VipPanel } from '@/components/vip/VipPanel';
@@ -60,11 +61,11 @@ export default function CosmeticShop() {
   const t = useTranslation();
   const { showToast } = useToast();
   const initial = (user?.displayName ?? 'S').charAt(0).toUpperCase();
-  /* MShop is the wide screen's own column - same `.bal`, same `.tabs`, same
-     `.vipstrip`, same sections in the same order - so only three things
-     change at 390px: the two grids drop to two columns, and the purchase
-     confirm becomes a bottom sheet (MShopBuy / MShopShort). */
-  const phone = usePhonePortrait();
+  /* A phone gets LShop and LShopVip (components/shop/land/LandShop), with
+     the purchase confirm as the landscape dialog (LShopBuy / LShopShort).
+     Every rule below - rotation, overrides, top-ups, VIP billing - serves
+     both compositions. */
+  const phone = usePhoneLayout();
   const twoUp = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' } as const;
 
   useEffect(() => {
@@ -200,13 +201,65 @@ export default function CosmeticShop() {
     </div>
   );
 
+  const dialog = selectedItem && (
+    <ShopItemDialog
+      item={selectedItem}
+      intent={intent}
+      price={priceFor(selectedItem)}
+      balance={state.economy.coins}
+      owned={isItemOwned(selectedItem.id)}
+      equipped={isItemEquipped(selectedItem)}
+      onClose={() => setSelectedItem(null)}
+      onBuy={() => confirmPurchase(selectedItem)}
+      onEquip={() => { void handleEquip(selectedItem); }}
+      onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }}
+      land={phone}
+      initial={initial}
+    />
+  );
+
+  if (phone) return (
+    <>
+      <LandShop
+        tab={activeTab}
+        onTab={setActiveTab}
+        coins={state.economy.coins}
+        timeLeft={timeLeft}
+        featured={featuredItems}
+        permanent={permanentItems}
+        categories={categories}
+        category={selectedCategory}
+        onCategory={setSelectedCategory}
+        query={queryText}
+        onQuery={setQueryText}
+        sort={sort}
+        onSort={setSort}
+        priceFor={priceFor}
+        isOwned={isItemOwned}
+        isEquipped={isItemEquipped}
+        onBuy={handlePurchase}
+        onEquip={(item) => { void handleEquip(item); }}
+        onPreview={(item) => { setIntent('preview'); setSelectedItem(item); }}
+        initial={initial}
+        vipActive={vipActive}
+        remainingDays={state.profile.vip.remainingDays}
+        plans={VIP_PLANS}
+        plan={selectedVipPlan}
+        onPlan={setSelectedVipPlan}
+        onActivate={() => showToast('VIP purchases are unavailable until verified billing is enabled.', 'error')}
+        vipUnavailable
+        packs={COIN_PACKS}
+        pending={pendingTopup}
+        packsDisabled={topupBusy || !!pendingTopup}
+        onPack={(pack) => { void handlePurchaseCoinPack(pack); }}
+      />
+      {dialog}
+    </>
+  );
+
   return (
     <div
-      /* MShop and MShopVip are the same page at phone size: the board's own
-         item cards, coin packs, VIP strip and plan buttons are all a size
-         down from the wide screen's, and they live in these two generated
-         sheets. */
-      className={phone ? 'arena-phone arena-mshop arena-mshopvip mpage' : 'arena-shop arena-shopvip ar-page'}
+      className="arena-shop arena-shopvip ar-page"
       style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
     >
       {/* The wide screen sets the title and the balance side by side in a
@@ -404,22 +457,7 @@ export default function CosmeticShop() {
         </section>
       )}
 
-      {selectedItem && (
-        <ShopItemDialog
-          item={selectedItem}
-          intent={intent}
-          price={priceFor(selectedItem)}
-          balance={state.economy.coins}
-          owned={isItemOwned(selectedItem.id)}
-          equipped={isItemEquipped(selectedItem)}
-          onClose={() => setSelectedItem(null)}
-          onBuy={() => confirmPurchase(selectedItem)}
-          onEquip={() => { void handleEquip(selectedItem); }}
-          onCoins={() => { setSelectedItem(null); setActiveTab('coins'); }}
-          phone={phone}
-          initial={initial}
-        />
-      )}
+      {dialog}
     </div>
   );
 }

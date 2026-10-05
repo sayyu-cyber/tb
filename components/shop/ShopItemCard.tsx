@@ -21,6 +21,12 @@ const GLOW_ALPHA: Record<string, string> = {
   Common: "40", Rare: "59", Epic: "4D", Legendary: "59",
 };
 
+/** The card's two rarity properties, `--rc` and `--rg` - shared with LShop's cards. */
+export function rarityStyle(item: CosmeticItem) {
+  const colour = RARITY_COLORS[item.rarity];
+  return { ["--rc" as string]: colour, ["--rg" as string]: `${colour}${GLOW_ALPHA[item.rarity] ?? "40"}` };
+}
+
 export function ShopItemCard({
   item,
   price,

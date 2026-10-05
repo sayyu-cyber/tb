@@ -121,6 +121,23 @@ const SCREENS={
     title:'HALL OF FAME',route:'/hall-of-fame/',
     states:[{file:'hall-of-fame',ref:'landscape-10-hall-of-fame',full:true}],
   },
+  shop:{
+    entry:'land-shop-entry.tsx',mocks:'shop-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/EconomyContext','@/contexts/ToastContext','@/contexts/SettingsContext','@/lib/coinTopups','@/lib/cosmeticRotation','@/hooks/useTranslation','next/navigation'],
+    title:'SHOP',route:'/shop/',
+    states:[
+      {file:'shop',ref:'landscape-11-shop',query:'?board',full:true},
+      {file:'shop-buy',ref:'landscape-11b-buy-dialog',query:'?board',before:async page=>{
+        await page.locator('.item',{hasText:'Fireworks'}).locator('.buy').click();
+      }},
+      {file:'shop-short',ref:'landscape-11c-not-enough-coins',query:'?board',before:async page=>{
+        await page.locator('.item',{hasText:'Crown Jewel'}).locator('.buy').click();
+      }},
+      {file:'shop-vip',ref:'landscape-12-vip-and-coin-packs',query:'?board&pending',full:true,before:async page=>{
+        await page.getByRole('button',{name:'VIP Pass'}).click();
+      }},
+    ],
+  },
 };
 
 function build(name){
