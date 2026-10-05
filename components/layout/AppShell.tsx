@@ -20,7 +20,12 @@ import { releaseLandscape } from "@/lib/orientationLock";
  * Store both require a privacy policy a reviewer can open at a plain URL
  * while signed out - behind a login wall it fails review.
  */
-const PUBLIC_PATHS = new Set(["/", "/login", "/privacy", "/terms"]);
+const PUBLIC_PATHS = new Set([
+  "/", "/login", "/privacy", "/terms",
+  // Account recovery is for people who cannot sign in: behind
+  // ProtectedRoute these bounced straight back to /login.
+  "/forgot-password", "/confirm-email", "/reset-password",
+]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

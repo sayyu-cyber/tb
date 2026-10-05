@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { requestPasswordRecovery, resendAccountConfirmation, setAccountPassword, withAuthTimeout } from "@/lib/supabase/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandAuthFrame } from "./land/LandAuthFrame";
 
 export function AccountRecovery({ mode }: { mode: "request" | "reset" | "confirmation" }) {
   const { clearAccountCompletion } = useAuth();
+  const phone = usePhoneLayout();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -74,8 +77,8 @@ export function AccountRecovery({ mode }: { mode: "request" | "reset" | "confirm
   }
 
   const inputClass = "w-full rounded-lg border border-[rgb(var(--c3))] bg-[rgb(var(--c2))] px-4 py-3 text-[rgb(var(--text-primary))]";
-  return <main className="min-h-screen bg-[rgb(var(--c1))] text-[rgb(var(--text-primary))] flex items-center justify-center px-6 py-10">
-    <section aria-labelledby="recovery-title" className="w-full max-w-sm space-y-5">
+  const section = (
+    <section aria-labelledby="recovery-title" className={phone ? "w-full max-w-sm mx-auto space-y-4 text-[rgb(var(--text-primary))]" : "w-full max-w-sm space-y-5"}>
       <h1 id="recovery-title" className="text-2xl font-bold">
         {mode === "reset" ? "Set your password" : mode === "confirmation" ? "Confirm your email" : "Reset your password"}
       </h1>
@@ -95,5 +98,10 @@ export function AccountRecovery({ mode }: { mode: "request" | "reset" | "confirm
       {mode === "reset" && !checking && !ready && <Link href="/forgot-password" className="block underline">Request a new recovery email</Link>}
       <Link href="/login" className="block text-sm underline">{done && mode === "reset" ? "Continue" : "Back to sign in"}</Link>
     </section>
+  );
+  // A phone: the brand on the left, the form on the right (LandAuthFrame).
+  if (phone) return <LandAuthFrame>{section}</LandAuthFrame>;
+  return <main className="min-h-screen bg-[rgb(var(--c1))] text-[rgb(var(--text-primary))] flex items-center justify-center px-6 py-10">
+    {section}
   </main>;
 }

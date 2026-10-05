@@ -9,7 +9,12 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { SpotlightField } from "@/components/auth/SpotlightField";
 import { useRouter } from "next/navigation";
 
-export function LoginForm() {
+/**
+ * `compact` is the landscape phone's form (components/auth/land/LandAuthFrame):
+ * the brand is on the left there, so the crown goes, and the gaps tighten so
+ * the fields and the primary button sit in one screen.
+ */
+export function LoginForm({ compact = false }: { compact?: boolean }) {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,7 +73,7 @@ export function LoginForm() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 420, damping: 34, delay: 0.2 }}
-      className="w-full max-w-sm mx-auto px-6"
+      className={compact ? "w-full max-w-sm mx-auto" : "w-full max-w-sm mx-auto px-6"}
     >
       {/* Logo, title and subtitle cascade in one after another rather than
           all at once - a small touch that makes the screen feel authored
@@ -78,7 +83,7 @@ export function LoginForm() {
         animate="visible"
         variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } } }}
       >
-        <motion.div
+        {!compact && <motion.div
           variants={{ hidden: { opacity: 0, y: 14, scale: 0.9 }, visible: { opacity: 1, y: 0, scale: 1 } }}
           transition={{ type: "spring", stiffness: 380, damping: 26 }}
           className="flex justify-center mb-8"
@@ -101,7 +106,7 @@ export function LoginForm() {
               <circle cx="75" cy="55" r="3" fill="#0F0F0F" />
             </svg>
           </div>
-        </motion.div>
+        </motion.div>}
 
         <motion.h2
           variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
@@ -113,7 +118,7 @@ export function LoginForm() {
         <motion.p
           variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
           transition={{ type: "spring", stiffness: 380, damping: 26 }}
-          className="text-[rgb(var(--c4))] text-sm text-center mb-8"
+          className={compact ? "text-[rgb(var(--c4))] text-sm text-center mb-4" : "text-[rgb(var(--c4))] text-sm text-center mb-8"}
         >
           {mode === "login" ? t("login_signInToContinue") : t("login_createAccount")}
         </motion.p>
@@ -145,14 +150,14 @@ export function LoginForm() {
         <span className="text-sm font-medium">{t("login_continueGoogle")}</span>
       </motion.button>
 
-      <div className="flex items-center gap-4 my-6">
+      <div className={compact ? "flex items-center gap-4 my-3" : "flex items-center gap-4 my-6"}>
         <div className="flex-1 h-px bg-[rgb(var(--c3))]" />
         <span className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider">{t("login_or")}</span>
         <div className="flex-1 h-px bg-[rgb(var(--c3))]" />
       </div>
 
       {/* Email form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className={compact ? "space-y-3" : "space-y-4"}>
         {mode === "signup" && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -222,7 +227,7 @@ export function LoginForm() {
       </form>
 
       {/* Toggle mode */}
-      <p className="text-center mt-6 text-sm text-[rgb(var(--c4))]">
+      <p className={compact ? "text-center mt-4 text-sm text-[rgb(var(--c4))]" : "text-center mt-6 text-sm text-[rgb(var(--c4))]"}>
         {mode === "login" ? t("login_noAccount") : t("login_haveAccount")}{" "}
         <button
           onClick={() => {
@@ -236,7 +241,7 @@ export function LoginForm() {
       </p>
 
       {/* Guest mode */}
-      <div className="mt-8 pt-6 border-t border-[rgb(var(--c2))]">
+      <div className={compact ? "mt-4 pt-4 border-t border-[rgb(var(--c2))]" : "mt-8 pt-6 border-t border-[rgb(var(--c2))]"}>
         <button
           onClick={handleGuestMode}
           disabled={loading}

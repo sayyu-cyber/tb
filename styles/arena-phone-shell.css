@@ -298,18 +298,45 @@
   outline-offset: 2px;
 }
 
-/* ── Which composition (MPlay upright, PLobby sideways) ───────────────
-   The older pages still carry both their portrait and landscape screens;
-   portrait now sits under the turn gate. */
-.portrait-view { display: none; }
-/* `contents` rather than `block`, so neither wrapper is a box: the lobby
-   board sizes itself against the shell's main column and would notice one. */
-.landscape-view { display: contents; }
-
-@media (max-width: 767px) and (orientation: portrait) {
-  .portrait-view { display: contents; }
-  .landscape-view { display: none; }
+/* ── Signed out (components/auth/land/LandAuthFrame) ──────────────────
+   No board draws these, so they are the landscape system's own parts: the
+   stage's dark, no rail, the brand on the left and the form on the right,
+   each clear of the notch. Only mounted on a phone. */
+.land-auth {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  background: radial-gradient(420px 300px at 18% 30%, rgba(198,255,51,.12), rgba(198,255,51,0) 70%),
+    radial-gradient(460px 340px at 30% 110%, rgba(0,188,200,.22), rgba(0,188,200,0) 70%), #000;
+  color: #fff;
 }
+.land-auth-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px 24px 24px calc(32px + env(safe-area-inset-left));
+  border-right: 1px solid rgba(255,255,255,.08);
+}
+.land-auth-brand .logo {
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px; color: #C6FF33;
+  box-shadow: 0 0 0 1.5px #C6FF33, 0 0 18px rgba(198,255,51,.35);
+}
+.land-auth-word { font-size: 46px; line-height: .92; letter-spacing: -.01em; text-transform: uppercase; }
+.land-auth-form {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  display: flex;
+  padding: 16px calc(24px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) 24px;
+}
+.land-auth-form::-webkit-scrollbar { display: none; }
+/* Centred when it fits, top-aligned and scrolling when it does not. */
+.land-auth-inner { margin: auto 0; width: 100%; }
 
 /* ── The turn gate (LGate) ────────────────────────────────────────────
    design/arena/LANDSCAPE.md "The turn gate". The whole app is landscape, so

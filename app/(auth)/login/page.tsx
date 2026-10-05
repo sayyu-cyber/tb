@@ -9,10 +9,13 @@ import { ScatteredCards } from "@/components/auth/ScatteredCards";
 import { useAuth } from "@/contexts/AuthContext";
 import { takeRoomReturn } from "@/lib/authReturn";
 import { AccountCompletionNotice } from "@/components/auth/AccountCompletionNotice";
+import { LandAuthFrame } from "@/components/auth/land/LandAuthFrame";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 
 export default function LoginPage() {
   const { user, loading, accountCompletion, accountBusy } = useAuth();
   const router = useRouter();
+  const phone = usePhoneLayout();
 
   useEffect(() => {
     if (!loading && !accountBusy && !accountCompletion && user && !user.isGuest) {
@@ -21,6 +24,24 @@ export default function LoginPage() {
       router.replace(destination);
     }
   }, [user, loading, router, accountCompletion, accountBusy]);
+
+  const help = (
+    <nav aria-label="Account help" className={phone ? "flex flex-wrap justify-center gap-4 mt-4 text-sm" : "flex flex-wrap justify-center gap-4 mt-6 text-sm"}>
+      <Link href="/forgot-password" className="underline">Forgot password?</Link>
+      <Link href="/confirm-email" className="underline">Resend confirmation</Link>
+    </nav>
+  );
+  const guestNote = user?.isGuest && <p className="px-6 mb-4 text-sm text-center">Create an account or link Google to keep this guest profile. Signing in to an existing account switches profiles; guest progress is not merged.</p>;
+
+  // A phone: the brand on the left, the form on the right (no rail when
+  // signed out - design/arena/LANDSCAPE.md).
+  if (phone) {
+    return (
+      <LandAuthFrame>
+        {accountCompletion ? <AccountCompletionNotice /> : <>{guestNote}<LoginForm compact />{help}</>}
+      </LandAuthFrame>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-4 relative overflow-hidden">
@@ -40,12 +61,9 @@ export default function LoginPage() {
         className="w-full max-w-md relative z-10"
       >
         {accountCompletion ? <AccountCompletionNotice /> : <>
-          {user?.isGuest && <p className="px-6 mb-4 text-sm text-center">Create an account or link Google to keep this guest profile. Signing in to an existing account switches profiles; guest progress is not merged.</p>}
+          {guestNote}
           <LoginForm />
-          <nav aria-label="Account help" className="flex flex-wrap justify-center gap-4 mt-6 text-sm">
-            <Link href="/forgot-password" className="underline">Forgot password?</Link>
-            <Link href="/confirm-email" className="underline">Resend confirmation</Link>
-          </nav>
+          {help}
         </>}
       </motion.div>
     </div>
