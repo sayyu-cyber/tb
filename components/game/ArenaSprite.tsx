@@ -10,10 +10,15 @@
  *
  * Render this ONCE inside a stage; every card and icon then references a
  * symbol by id through <use>.
+ *
+ * It sizes itself to nothing. The boards' `.sprite` rule does the same, but
+ * only inside a page's namespace, and a page that mounts it beside its roots
+ * (Home, the private room) would otherwise get an empty 300x150 box - an
+ * <svg>'s default size - above the screen.
  */
 export function ArenaSprite() {
   return (
-    <svg className="sprite" aria-hidden="true">
+    <svg className="sprite" aria-hidden="true" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
       <defs>
       <symbol id="s-S" viewBox="0 0 100 100"><path fill="currentColor" d="M50 3C57 19 72 30 84 42C93 51 96 58 96 66C96 79 86 88 73 88C64 88 57 84 53.5 77C54.5 86 59 92 68 97H32C41 92 45.5 86 46.5 77C43 84 36 88 27 88C14 88 4 79 4 66C4 58 7 51 16 42C28 30 43 19 50 3Z"></path></symbol>
       <symbol id="s-H" viewBox="0 0 100 100"><path fill="currentColor" d="M50 95C41 83 25 70 14 57C7 48 4 41 4 32C4 17 15 7 29 7C38 7 45 12 50 20C55 12 62 7 71 7C85 7 96 17 96 32C96 41 93 48 86 57C75 70 59 83 50 95Z"></path></symbol>

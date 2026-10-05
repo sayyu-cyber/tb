@@ -78,13 +78,13 @@ export default function PostMatchPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-6 relative z-10 w-full max-w-sm"
+        className="result-card text-center space-y-6 relative z-10 w-full max-w-sm"
       >
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200 }}
-          className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
+          className={`result-icon w-24 h-24 rounded-full mx-auto flex items-center justify-center ${
             isVictory
               ? "bg-gradient-to-br from-[rgb(var(--gold))] to-[rgb(var(--gold-bright))] shadow-[0_0_40px_rgb(var(--gold)/30%)]"
               : "bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]"
@@ -94,13 +94,13 @@ export default function PostMatchPage() {
             : verified ? <TrendingDown size={40} className="text-[rgb(var(--c4))]" />
               : <Trophy size={40} className="text-[rgb(var(--c4))]" />}
         </motion.div>
-        <h1 className={`text-3xl font-bold ${isVictory ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
+        <h1 className={`result-title text-3xl font-bold ${isVictory ? "gold-text-gradient" : "text-[rgb(var(--c4))]"}`}>
           {verified ? isVictory ? "Victory!" : "Defeat" : "Result unavailable"}
         </h1>
-        {currentResult.error && <p role="alert" className="text-[rgb(var(--coral-ink))] text-xs">{currentResult.error}</p>}
+        {currentResult.error && <p role="alert" className="result-error text-[rgb(var(--coral-ink))] text-xs">{currentResult.error}</p>}
 
         {verified && (
-          <div className="py-6 border-y border-[rgb(var(--c3))]">
+          <div className="result-stats py-6 border-y border-[rgb(var(--c3))]">
             {playerStats && !profileLoading && !profileError ? (
               <>
                 <p className="text-[rgb(var(--c4))] text-xs mb-2">Current Trophies</p>
@@ -115,7 +115,7 @@ export default function PostMatchPage() {
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="result-actions flex gap-3">
           <Link href="/home" className="flex-1 py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--text-primary))] text-sm font-medium flex items-center justify-center gap-2">
             <Home size={16} /> Home
           </Link>

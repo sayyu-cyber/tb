@@ -64,8 +64,8 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
         </motion.button>
       </Link>
 
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 w-full max-w-sm">
-        <div className="relative w-32 h-32 mx-auto">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="queue-search text-center space-y-8 w-full max-w-sm">
+        <div className="queue-spin relative w-32 h-32 mx-auto">
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
           <motion.div animate={{ rotate: -360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-3 rounded-full border-2 border-[rgb(var(--gold)/10%)] border-b-[rgb(var(--gold)/50%)]" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -73,7 +73,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
           </div>
         </div>
 
-        <div>
+        <div className="queue-copy">
           <h2 className="text-2xl font-bold text-[rgb(var(--text-primary))]">
             {t("casual_finding").replace("{label}", label).replace("{dots}", dots)}
           </h2>
@@ -91,7 +91,7 @@ export function CasualOnlineClient({ gameId }: { gameId: string }) {
           )}
         </div>
 
-        <Link href="/play">
+        <Link href="/play" className="queue-cancel">
           <motion.button whileTap={{ scale: 0.95 }} className="px-6 py-3 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))] text-[rgb(var(--c4))] text-sm font-medium hover:text-[rgb(var(--text-primary))] transition-colors">
             {t("rankedq_cancel")}
           </motion.button>

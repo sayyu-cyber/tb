@@ -300,21 +300,21 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
 
   if (queueing) {
     return (
-      <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-6">
-        <div className="relative w-24 h-24 mx-auto">
+      <div className="match-lobby queue-search min-h-screen bg-[rgb(var(--c1))] flex flex-col items-center justify-center px-6 text-center space-y-6">
+        <div className="queue-spin relative w-24 h-24 mx-auto">
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-[rgb(var(--gold)/20%)] border-t-[rgb(var(--gold))]" />
           <div className="absolute inset-0 flex items-center justify-center">
             <Search size={28} className="text-[rgb(var(--gold-ink))]" />
           </div>
         </div>
-        <div>
+        <div className="queue-copy">
           <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">{t("rankedduo_findingDuo")}</h2>
           <p className="text-[rgb(var(--c4))] text-sm mt-1">{t("rankedduo_faceTeam")}</p>
         </div>
         {error && (
-          <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 max-w-xs">{error}</p>
+          <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 max-w-xs queue-error">{error}</p>
         )}
-        <button onClick={handleLeave} className="text-[rgb(var(--c4))] text-sm underline">
+        <button onClick={handleLeave} className="queue-cancel text-[rgb(var(--c4))] text-sm underline">
           {t("rankedq_cancel")}
         </button>
       </div>
@@ -322,8 +322,8 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
   }
 
   return (
-    <div className="match-lobby min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="match-lobby duo-party min-h-screen bg-[rgb(var(--c1))] flex flex-col px-4 pt-4 pb-6">
+      <div className="duo-head flex items-center justify-between mb-6">
         <button aria-label={t("a11y_goBack")} onClick={handleLeave} className="p-2 rounded-xl bg-[rgb(var(--c2))] border border-[rgb(var(--c3))]">
           <ArrowLeft size={20} className="text-[rgb(var(--gold-ink))]" />
         </button>
@@ -333,7 +333,7 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
         <div className="w-10" />
       </div>
 
-      <div className="glass-card rounded-2xl p-5 mb-4 text-center">
+      <div className="duo-code glass-card rounded-2xl p-5 mb-4 text-center">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-2">{t("rankedduo_partyCodeLabel")}</p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl font-bold text-[rgb(var(--gold-ink))] tracking-widest">{code}</span>
@@ -345,10 +345,10 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
       </div>
 
       {error && (
-        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="text-[rgb(var(--coral-ink))] text-xs break-words bg-[rgb(var(--coral)/10%)] border border-[rgb(var(--coral)/30%)] rounded-lg px-3 py-2 mb-4 duo-error">{error}</p>
       )}
 
-      <div className="glass-card rounded-2xl p-4 mb-4 flex-1">
+      <div className="duo-members glass-card rounded-2xl p-4 mb-4 flex-1">
         <p className="text-[rgb(var(--c4))] text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
           <Users size={14} /> {t("rankedduo_party").replace("{n}", String(room.players.length)).replace("{m}", String(room.maxPlayers))}
         </p>
@@ -371,12 +371,12 @@ function DuoLobby({ gameId, code, myUid }: { gameId: string; code: string; myUid
         whileTap={{ scale: 0.95 }}
         disabled={!isFull}
         onClick={handleJoinQueue}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
+        className="duo-go w-full py-3.5 rounded-xl bg-gradient-to-r from-[rgb(var(--gold-deep))] to-[rgb(var(--gold))] text-[#0F0F0F] font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
       >
         <Search size={16} />
         {isFull ? t("rankedduo_findMatchTogether") : t("rankedduo_waitingPartnerBtn")}
       </motion.button>
-      <button onClick={handleLeave} className="w-full py-3 mt-2 text-[rgb(var(--c4))] text-sm flex items-center justify-center gap-2">
+      <button onClick={handleLeave} className="duo-leave w-full py-3 mt-2 text-[rgb(var(--c4))] text-sm flex items-center justify-center gap-2">
         <LogOut size={14} /> {t("rankedduo_leaveParty")}
       </button>
     </div>
