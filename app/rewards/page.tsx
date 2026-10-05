@@ -5,8 +5,8 @@ import DailyLoginCalendar from "@/components/rewards/DailyLoginCalendar";
 import MissionsPanel from "@/components/missions/MissionsPanel";
 import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneRewards } from "@/components/rewards/phone/PhoneRewards";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandRewards } from "@/components/rewards/land/LandRewards";
 import { Pill } from "@/components/arena";
 
 /**
@@ -21,14 +21,14 @@ import { Pill } from "@/components/arena";
 export default function RewardsPage() {
   const { state } = useEconomy();
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
   const streak = t("rewards_streak").replace("{n}", String(state.dailyLogin.streak));
 
   // One composition at a time rather than two hidden behind CSS: the login
   // calendar owns the claim and its celebration, and a claim must not be
   // able to fire from a copy the player cannot see.
   if (phone) {
-    return <PhoneRewards title={t("page_dailyRewards")} lede="Come back every day" streak={streak} />;
+    return <LandRewards streak={streak} />;
   }
 
   return (

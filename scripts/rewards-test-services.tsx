@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { DAILY_LOGIN_REWARDS, DAILY_MISSION_TEMPLATES, WEEKLY_MISSION_TEMPLATES } from "@/data/cosmetics";
+import { translate } from "@/lib/i18n";
 
 /**
  * Stand-ins for what Daily Rewards and Missions read.
@@ -40,7 +41,8 @@ export function useEconomy() {
       economy: { coins: 1240 },
       profile: { vip: { active: false, remainingDays: 0 } },
       dailyLogin: {
-        streak: claimed,
+        // The boards' streak counts today's visit: six days, five claimed.
+        streak: claimed === 0 ? 1 : Math.min(7, claimed + (claimed === claimedThrough ? 1 : 0)),
         lastClaimed: 0,
         rewards: DAILY_LOGIN_REWARDS.map(reward => ({ ...reward, claimed: reward.day <= claimed })),
       },
@@ -77,7 +79,12 @@ export const useTranslation = () => (key: string) => ({
   missions_dailyReset: "Resets at 00:00",
   missions_weeklyTitle: "Weekly Missions",
   missions_weeklyReset: "Resets every Sunday",
-}[key] || key);
+}[key] || translate(key, "en"));
+
+/** What the phone shell reads: the player, and the route. */
+export const useAuth = () => ({ user: { uid: "test-self", displayName: "Sayyu" }, isGuest: false, playerStats: { currentRank: "Gold", trophies: 58 } });
+export const usePathname = () => (typeof location !== "undefined" && location.search.includes("missions") ? "/missions" : "/rewards");
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
 
 export default function Link({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return <a href={href} {...props}>{children}</a>;

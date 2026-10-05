@@ -138,6 +138,17 @@ const SCREENS={
       }},
     ],
   },
+  rewards:{
+    entry:'land-rewards-entry.tsx',mocks:'rewards-test-services.tsx',
+    aliases:['@/contexts/EconomyContext','@/contexts/AuthContext','@/hooks/useTranslation','next/link','next/navigation'],
+    title:'DAILY REWARDS',route:'/rewards/',
+    states:[
+      {file:'rewards-missions',ref:'landscape-13-rewards-missions',full:true},
+      {file:'day-claimed',ref:'landscape-13b-day-claimed',before:async page=>{
+        await page.getByRole('button',{name:/^Claim Day 6/}).click();
+      }},
+    ],
+  },
 };
 
 function build(name){

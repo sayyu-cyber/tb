@@ -61,11 +61,15 @@ async function run() {
     assert.equal(await page.locator('.mis.done').count(), 2, 'Two daily missions are done');
 
     // CODE ISSUE 7: each day names its own bonus.
-    const bonuses = await page.locator('.day .bonus').allTextContents();
-    assert.equal(bonuses[2].trim(), '+ GG Sticker', 'Day 3 gives the sticker');
-    assert.equal(bonuses[4].trim(), '+ Maldives Wave banner', 'Day 5 gives the banner');
-    assert.equal(bonuses[6].trim(), '+ 1-Hour Room Card', 'Only Day 7 gives a Room Card');
-    assert.equal(bonuses[0].trim(), '', 'A day with no bonus says nothing');
+    // By day, not by position: today's tile carries Claim instead of a bonus line.
+    const bonusOf = async day => {
+      const line = page.locator('.day-grid > .day').nth(day - 1).locator('.bonus');
+      return (await line.count()) ? (await line.textContent()).trim() : null;
+    };
+    assert.equal(await bonusOf(3), '+ GG Sticker', 'Day 3 gives the sticker');
+    assert.equal(await bonusOf(5), '+ Maldives Wave banner', 'Day 5 gives the banner');
+    assert.equal(await bonusOf(7), '+ 1-Hour Room Card', 'Only Day 7 gives a Room Card');
+    assert.equal(await bonusOf(1), '', 'A day with no bonus says nothing');
     // Nothing anywhere promises a Room Card on a day that does not give one.
     const roomCardMentions = await page.locator('.day', { hasText: 'Room Card' }).count();
     assert.equal(roomCardMentions, 1, 'Exactly one tile mentions a Room Card');
@@ -79,10 +83,11 @@ async function run() {
     await page.locator('.day.today').click();
     await page.getByRole('dialog').waitFor();
     assert.equal(await page.locator('body').getAttribute('data-claimed'), '6');
-    const popup = await page.getByRole('dialog').innerText();
-    assert.ok(popup.includes('Day 6 Claimed!'));
-    assert.ok(popup.includes('+150 Coins'));
-    assert.ok(popup.includes('Day 7: 250 coins and a 1-Hour Room Card'), 'and says what tomorrow gives');
+    // Read case-blind: the title is set in capitals by the stylesheet.
+    const popup = (await page.getByRole('dialog').innerText()).toUpperCase();
+    assert.ok(popup.includes('DAY 6 CLAIMED!'));
+    assert.ok(popup.includes('+150 COINS'));
+    assert.ok(popup.includes('DAY 7: 250 COINS AND A 1-HOUR ROOM CARD'), 'and says what tomorrow gives');
     await page.getByRole('button', { name: 'Continue' }).click();
     assert.equal(await page.getByRole('dialog').count(), 0);
     assert.equal(await page.locator('.day.claimed').count(), 6, 'The tile is now claimed');
@@ -92,68 +97,65 @@ async function run() {
     await page.getByRole('heading', { name: 'Daily Rewards' }).waitFor();
     await page.locator('.day.today').click();
     await page.getByRole('dialog').waitFor();
-    const lastPopup = await page.getByRole('dialog').innerText();
-    assert.ok(lastPopup.includes("That's the full week."), 'The cycle ends cleanly');
-    assert.ok(!lastPopup.includes('Come back tomorrow'), 'and promises no day 8');
+    const lastPopup = (await page.getByRole('dialog').innerText()).toUpperCase();
+    assert.ok(lastPopup.includes("THAT'S THE FULL WEEK."), 'The cycle ends cleanly');
+    assert.ok(!lastPopup.includes('COME BACK TOMORROW'), 'and promises no day 8');
     await page.getByRole('button', { name: 'Continue' }).click();
 
     // ── Missions on its own route ───────────────────────────────────────
     await page.goto(BASE + '/rewards-test/?missions');
-    await page.getByRole('heading', { name: 'Missions' }).waitFor();
+    await page.getByRole('heading', { name: 'Missions', exact: true }).waitFor();
     assert.equal(await page.locator('.mis').count(), 6, 'The same panels, not a second drawing of them');
     assert.equal(await page.locator('.day').count(), 0, 'and no login calendar');
 
-    // ── Held upright: MRewards ──────────────────────────────────────────
-    // design/arena/boards/MRewards.dc.html. The calendar's seven tiles go
-    // four to a row with Day 7 spanning two and lying on its side; the two
-    // mission panels stack and each row's meter drops to its own line. The
-    // claim celebration becomes the board's centred `.cel` over an
-    // `.mscrim`. What a day or a mission is worth is the wide screen's own
-    // working, checked above.
+    // ── On a phone: LRewards ────────────────────────────────────────────
+    // design/arena/boards/LRewards.dc.html (+ LRewardsClaimed). The phone is
+    // landscape only (design/arena/LANDSCAPE.md): seven tall day cells in a
+    // row with the streak beside the heading, the two mission panels side by
+    // side with each row's meter on its own line, and the claim as the
+    // landscape dialog. /missions is the same screen on a phone.
+    // scripts/check-landscape-screens.cjs holds both against their references.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.goto(BASE + '/rewards-test/');
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole('heading', { name: 'Daily Rewards' }).waitFor();
-    assert.equal(await page.locator('.arena-rewards').count(), 0, 'The wide screen steps aside');
-    const phone = page.locator('.arena-mrewards');
-    assert.equal(await phone.isVisible(), true, 'and MRewards takes over');
-    assert.equal(await phone.locator('.days > .day').count(), 7, 'Seven tiles in the four-column grid');
-    assert.equal(await phone.locator('.day.big .col').count(), 1, 'Day 7 lies on its side');
+    const phone = page.locator('.arena-lrewards');
+    await phone.waitFor();
+    assert.equal(await page.locator('.arena-rewards').count(), 0, 'The wide screen is unmounted');
+    assert.equal(await phone.locator('.days > .day').count(), 7, 'Seven day cells in a row');
     assert.equal(await phone.locator('.day.claimed').count(), 5, 'Five claimed');
-    assert.equal(await phone.locator('.day.today').count(), 1, 'One is today');
-    assert.equal(await phone.locator('.mis').count(), 6, 'Both mission panels, stacked');
+    assert.equal(await phone.locator('.day.today .dn').innerText().then(text => text.toUpperCase()), 'TODAY', 'Today is lit and says so');
+    assert.ok((await phone.locator('.ph').first().innerText()).toUpperCase().includes('STREAK: 6 DAYS'), 'The streak beside the heading');
+    assert.equal(await phone.locator('.mis').count(), 6, 'Both mission panels');
+    assert.equal(await phone.locator('.cols.c2 > .panel').count(), 2, 'side by side');
     assert.equal(
       await phone.locator('.mis').first().evaluate(node => node.lastElementChild.className),
       'pr', 'and each row ends with its meter on its own line');
-    // No tile promises a bonus it does not give, and none reserves a blank
-    // line for one it has not got.
     assert.deepEqual(
       (await phone.locator('.day .bonus').allTextContents()).map(text => text.trim()),
       ['+ GG Sticker', '+ Maldives Wave banner', '+ 1-Hour Room Card'],
       'Only the three days with a bonus draw a bonus line');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'mrewards-390.png'), fullPage: true });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lrewards-844.png'), fullPage: true });
 
-    // The celebration, centred rather than pinned at the board's 190px.
     await phone.locator('.day.today').click();
-    await page.locator('.cel').waitFor();
-    const cel = await page.getByRole('dialog').innerText();
-    assert.ok(cel.includes('Day 6 Claimed!') && cel.includes('+150 Coins'), 'It says what was claimed');
-    assert.equal(await page.locator('.mscrim').count(), 1, 'over the phone scrim');
-    await page.screenshot({ path: path.join(output, 'mrewards-claimed-390.png') });
+    await page.locator('.ldlg .card.lcel').waitFor();
+    const cel = (await page.getByRole('dialog').innerText()).toUpperCase();
+    assert.ok(cel.includes('DAY 6 CLAIMED!') && cel.includes('+150 COINS'), 'It says what was claimed');
+    assert.equal(await page.locator('body').getAttribute('data-claimed'), '6');
     await page.getByRole('button', { name: 'Continue' }).click();
     assert.equal(await page.getByRole('dialog').count(), 0, 'and Continue closes it');
 
-    // Missions upright: the same two panels, no calendar.
+    // Missions is part of Rewards on a phone: the same screen.
     await page.goto(BASE + '/rewards-test/?missions');
-    await page.getByRole('heading', { name: 'Missions' }).waitFor();
-    assert.equal(await page.locator('.arena-mrewards .mis').count(), 6, 'The same panels held upright');
-    assert.equal(await page.locator('.day').count(), 0, 'and no login calendar');
+    await phone.waitFor();
+    assert.equal(await phone.locator('.mis').count(), 6, 'The same panels');
+    assert.equal(await phone.locator('.day').count(), 7, 'with the login calendar');
     await page.setViewportSize({ width: 1440, height: 900 });
 
     // ── Widths ──────────────────────────────────────────────────────────
     await page.goto(BASE + '/rewards-test/');
     await page.getByRole('heading', { name: 'Daily Rewards' }).waitFor();
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+    // The wide screen's sizes. A phone gets LRewards, checked above.
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(250);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
@@ -181,7 +183,7 @@ async function run() {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
 
     assert.deepEqual(errors, []);
-    console.log('Rewards: seven tiles and their states, named bonuses (code issue 7), the claim popup incl. end of cycle, six missions with catalogue-named rewards, Missions on its own route, MRewards held upright with its four-column grid and centred celebration, seven widths, accessibility and reduced motion passed.');
+    console.log('Rewards: seven tiles and their states, named bonuses (code issue 7), the claim popup incl. end of cycle, six missions with catalogue-named rewards, Missions on its own route, LRewards on a phone with its day row and landscape dialog, four wide-screen widths, accessibility and reduced motion passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

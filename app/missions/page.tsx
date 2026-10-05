@@ -1,9 +1,10 @@
 "use client";
 
 import MissionsPanel from "@/components/missions/MissionsPanel";
+import { useEconomy } from "@/contexts/EconomyContext";
 import { useTranslation } from "@/hooks/useTranslation";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneRewards } from "@/components/rewards/phone/PhoneRewards";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandRewards } from "@/components/rewards/land/LandRewards";
 
 /**
  * Missions — design/arena/screens/app/app-13-rewards-missions.jpg.
@@ -14,12 +15,13 @@ import { PhoneRewards } from "@/components/rewards/phone/PhoneRewards";
  */
 export default function MissionsPage() {
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const { state } = useEconomy();
+  const phone = usePhoneLayout();
 
-  // Same arrangement as Daily Rewards held upright, minus the login
-  // calendar and the streak chip, which belong to that route.
+  // On a phone Missions is part of Rewards (LANDSCAPE.md, LRewards): the
+  // same screen, login calendar and all.
   if (phone) {
-    return <PhoneRewards title={t("page_missions")} lede="Daily and weekly goals" missionsOnly />;
+    return <LandRewards streak={t("rewards_streak").replace("{n}", String(state.dailyLogin.streak))} />;
   }
 
   return (

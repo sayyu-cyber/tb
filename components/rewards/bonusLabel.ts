@@ -41,7 +41,10 @@ export function bonusLabel(bonusItem: string | undefined): string | null {
       : cosmetic.category === "cardBack" ? "card back"
       : cosmetic.category === "tableTheme" ? "table"
       : "";
-    return suffix ? `${cosmetic.name} ${suffix}` : cosmetic.name;
+    // A name that already ends in its category ("GG Sticker") is not given
+    // it twice.
+    const named = suffix && cosmetic.name.toLowerCase().endsWith(suffix.toLowerCase());
+    return suffix && !named ? `${cosmetic.name} ${suffix}` : cosmetic.name;
   }
 
   // An id nothing recognises says nothing rather than promising the wrong
