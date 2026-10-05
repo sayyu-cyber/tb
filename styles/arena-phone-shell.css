@@ -338,6 +338,25 @@
 /* Centred when it fits, top-aligned and scrolling when it does not. */
 .land-auth-inner { margin: auto 0; width: 100%; }
 
+/* The legal pages (components/legal/LegalPage) stay documents - plain type
+   that reviewers skim - but a landscape phone gives them two columns: the
+   title pinned on the left, the text beside it, clear of the notch. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .legal-page {
+    max-width: none;
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: start;
+    padding: 20px calc(24px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+    font-size: 14px;
+  }
+  .legal-head { position: sticky; top: 20px; grid-row: 1 / span 2; }
+  .legal-page h1 { font-size: 26px; }
+  .legal-body { margin-top: 0; grid-column: 2; }
+  .legal-footer { grid-column: 2; }
+}
+
 /* ── The turn gate (LGate) ────────────────────────────────────────────
    design/arena/LANDSCAPE.md "The turn gate". The whole app is landscape, so
    any page held upright is covered by it: always in the DOM, shown by this

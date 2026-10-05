@@ -23,11 +23,15 @@ export function LegalPage({
 }) {
   return (
     <main className="legal-page">
-      <Link href="/" className="legal-back">
-        ← Thaasbai
-      </Link>
-      <h1>{title}</h1>
-      <p className="legal-updated">Last updated: {updated}</p>
+      {/* One block, so a landscape phone can pin it beside the text
+          (styles/arena-phone-shell.css); the wide page gives it no style. */}
+      <header className="legal-head">
+        <Link href="/" className="legal-back">
+          ← Thaasbai
+        </Link>
+        <h1>{title}</h1>
+        <p className="legal-updated">Last updated: {updated}</p>
+      </header>
       <div className="legal-body">{children}</div>
       <footer className="legal-footer">
         <Link href="/privacy/">Privacy Policy</Link>
