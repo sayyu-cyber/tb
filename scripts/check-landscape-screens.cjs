@@ -98,6 +98,17 @@ const SCREENS={
     title:'LEADERBOARD',route:'/leaderboard/',
     states:[{file:'leaderboard',ref:'landscape-07-leaderboard'}],
   },
+  achievements:{
+    entry:'land-achievements-entry.tsx',mocks:'achievements-test-services.tsx',
+    aliases:['@/contexts/EconomyContext','@/contexts/AuthContext','@/hooks/useTranslation','next/link','next/navigation'],
+    title:'ACHIEVEMENTS',route:'/achievements/',
+    states:[
+      {file:'achievements',ref:'landscape-08-achievements',full:true},
+      {file:'achievements-ranks',ref:'landscape-08b-achievements-ranks',before:async page=>{
+        await page.locator('.chips').getByRole('button',{name:/^Ranks/}).click();
+      }},
+    ],
+  },
 };
 
 function build(name){

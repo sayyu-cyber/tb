@@ -90,7 +90,8 @@ async function run() {
     // ── Widths ──────────────────────────────────────────────────────────
     await page.goto(BASE + '/achievements/');
     await page.waitForTimeout(250);
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+    // The wide screen's sizes. A phone gets LAchievements, checked below.
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(200);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
@@ -104,8 +105,6 @@ async function run() {
     // ── Accessibility ───────────────────────────────────────────────────
     await page.setViewportSize({ width: 1440, height: 900 });
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1, 'One h1 on screen');
-    // Two are in the DOM - the wide screen's and MAchievements's - and CSS
-    // hides one; the accessibility tree must only see the one on screen.
     assert.equal(await page.locator('[role=progressbar][aria-valuenow]').count(), 10, 'Every meter reports its value');
     const unlabelled = await page.locator('button,a').evaluateAll(
       nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label')).length
@@ -113,24 +112,28 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    // ── Held upright: MAchievements ─────────────────────────────────────
-    // design/arena/boards/MAchievements.dc.html. The left rail's ring,
-    // categories and copy stack above the list; the ring panel turns on its
-    // side and the five categories become a scrolling chip row. The rows are
-    // the wide screen's own, so what one is worth is covered above.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LAchievements ───────────────────────────────────────
+    // design/arena/boards/LAchievements.dc.html (+ LAchievementsRanks). The
+    // phone is landscape only (design/arena/LANDSCAPE.md): the ring with
+    // coins earned and still to earn, summed from the rewards themselves,
+    // the five category chips, and the rows two across.
+    // scripts/check-landscape-screens.cjs holds it against its references.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.ach-page').isVisible(), false, 'The wide screen steps aside');
-    const phone = page.locator('.arena-machievements');
-    assert.equal(await phone.isVisible(), true, 'and MAchievements takes over');
+    assert.equal(await page.locator('.ach-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lachievements');
+    assert.equal(await phone.isVisible(), true, 'and LAchievements takes over');
     assert.equal(await phone.locator('.chips > button').count(), 5, 'All five categories, as chips');
-    assert.ok(await phone.locator('.arow').count() > 0, 'and every achievement');
-    assert.equal(await phone.locator('.wr').count(), 1, 'One overall ring');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'machievements-390.png'), fullPage: true });
+    assert.equal(await phone.locator('.arow').count(), 10, 'and every achievement');
+    assert.equal(await phone.locator('.arow.done').count(), 4, 'four of them complete');
+    assert.deepEqual(await phone.locator('.ahero .lstat b').allTextContents(), ['1,650', '6,100'], 'Coins earned and still to earn, from the rewards');
+    await phone.locator('.chips').getByRole('button', { name: /^Ranks/ }).click();
+    assert.equal(await phone.locator('.arow').count(), 2, 'Ranks: the two rank milestones');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 844');
+    await page.screenshot({ path: path.join(output, 'lachievements-844.png'), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    console.log('Achievements: MAchievements held upright, ten rows with four complete, the labelled ring, five category counts, Prestige rather than zero, filtering, the empty and finished extremes, seven widths and accessibility passed.');
+    console.log('Achievements: LAchievements on a phone, ten rows with four complete, the labelled ring, five category counts, Prestige rather than zero, filtering, the empty and finished extremes, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

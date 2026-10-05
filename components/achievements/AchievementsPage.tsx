@@ -11,7 +11,8 @@ import {
   type AchievementCategoryId,
 } from "@/lib/achievements";
 import { AchievementRow } from "./AchievementRow";
-import { PhoneAchievements } from "./phone/PhoneAchievements";
+import { LandAchievements } from "./land/LandAchievements";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 
 /**
  * Achievements — design/arena/screens/app/app-08-achievements.jpg, from the
@@ -46,6 +47,7 @@ export default function AchievementsPage() {
   const { state } = useEconomy();
   const t = useTranslation();
   const [category, setCategory] = useState<AchievementCategoryId>("all");
+  const phone = usePhoneLayout();
 
   const resolved = useMemo(
     () =>
@@ -88,20 +90,27 @@ export default function AchievementsPage() {
     };
   });
 
-  return (
-    <>
-    <div className="portrait-view">
-      <PhoneAchievements
-        title={t("page_achievements")}
+  // A phone gets LAchievements: the ring with what the achievements have
+  // paid and would still pay - summed from the rewards themselves - then
+  // the chips and the rows. Only one composition mounts.
+  if (phone) {
+    const earned = resolved.filter((a) => a.complete).reduce((sum, a) => sum + Math.max(0, a.reward), 0);
+    const toEarn = resolved.filter((a) => !a.complete).reduce((sum, a) => sum + Math.max(0, a.reward), 0);
+    return (
+      <LandAchievements
         completed={completed}
         total={total}
+        earned={earned}
+        toEarn={toEarn}
         categories={chipList}
         category={category}
         onCategory={(id) => setCategory(id as AchievementCategoryId)}
         shown={shown}
       />
-    </div>
-    <div className="landscape-view">
+    );
+  }
+
+  return (
     <div className="arena-achievements ar-page ach-page">
       <aside className="ach-side">
         <div>
@@ -169,7 +178,5 @@ export default function AchievementsPage() {
           ))}
       </section>
     </div>
-    </div>
-    </>
   );
 }
