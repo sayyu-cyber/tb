@@ -448,6 +448,25 @@
   .app-shell-main .result-card:has(> .result-stats) .result-error { grid-area: error; }
   .app-shell-main .result-card .result-stats { grid-area: stats; padding: 14px 0; }
   .app-shell-main .result-card:has(> .result-stats) .result-actions { grid-area: actions; margin-top: 8px; }
+
+  /* Another player's page: who they are (and Report, Block) on the left,
+     their numbers on the right, rather than one column three screens long. */
+  .app-shell-main .player-page { padding: 4px 16px 24px; }
+  .app-shell-main .player-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-auto-flow: row dense;
+    align-items: start;
+    gap: 12px;
+  }
+  .app-shell-main .player-body > :not([hidden]) { margin: 0; }
+  .app-shell-main .player-body .player-live { grid-column: 1 / -1; }
+  .app-shell-main .player-body .player-card { grid-column: 1; grid-row: span 3; }
+  .app-shell-main .player-body .mod-actions { grid-column: 1; }
+  .app-shell-main .player-body .player-stats,
+  .app-shell-main .player-body .player-row { grid-column: 2; }
+  .app-shell-main .player-body .player-stats > * { padding: 12px 14px; }
+  .app-shell-main .player-body .player-row { padding: 12px 14px; }
 }
 
 /* ── The turn gate (LGate) ────────────────────────────────────────────

@@ -46,7 +46,7 @@ function build() {
   const mocks = path.join(__dirname, 'landscape-routes-services.tsx');
   const alias = Object.fromEntries([
     '@/contexts/AuthContext', '@/contexts/EconomyContext', '@/contexts/SettingsContext', '@/contexts/HomeSocialContext',
-    '@/hooks/useTranslation', 'next/navigation', 'next/link', '@/lib/supabase/client', '@/lib/rooms',
+    '@/hooks/useTranslation', 'next/navigation', 'next/link', '@/lib/supabase/client', '@/lib/rooms', '@/lib/publicProfile',
   ].map(name => [name + '$', mocks]));
   alias['@'] = root;
   return new Promise((resolve, reject) => compiler.webpack({

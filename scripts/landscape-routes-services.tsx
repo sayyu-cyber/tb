@@ -55,7 +55,10 @@ export const useToast = () => ({ showToast: (message: string) => { document.body
 export const useSettings = () => ({ settings: { music: false, language: "en", notifications: false, sound: false }, updateSettings: () => {} });
 export const useHomeSocial = () => ({ friends: [], requests: [], chats: [], online: [], profiles: {}, loading: false, error: false, retry: () => {} });
 export const HomeSocialProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-export const useTranslation = () => (key: string) => translate(key, "en");
+// One function for the page's life, as the real hook keeps it: pages list it
+// in effect dependencies.
+const t = (key: string) => translate(key, "en");
+export const useTranslation = () => t;
 
 export const usePathname = () => ROUTE().split("?")[0];
 export const useSearchParams = () => new URLSearchParams(ROUTE().split("?")[1] || "");
@@ -86,6 +89,14 @@ function rpc(name: string) {
   return Promise.resolve({ data: match, error: null });
 }
 export const getSupabaseBrowserClient = () => new Proxy({}, { get: (_target, prop) => (prop === "rpc" ? rpc : (nothing() as Record<string | symbol, unknown>)[prop]) });
+
+/** Another player's public page (?route=/player?uid=nashid). */
+export async function getPublicProfile(uid: string) {
+  return {
+    uid, displayName: "Nashid", trophies: 132, currentRank: "Platinum", highestRank: "Platinum", peakTrophies: 140,
+    wins: 81, losses: 47, totalMatches: 128, winPercentage: 63, favoriteGame: "mindi",
+  };
+}
 
 /** A ranked-duo party (?route=/play/mindi/ranked-duo?code=K7M4QR): you,
  *  and with ?full your partner too. Every other room call is the real one. */

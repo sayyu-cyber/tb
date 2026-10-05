@@ -76,7 +76,7 @@ export function PlayerProfileClient() {
   }, [uid, t]);
 
   return (
-    <div className="pt-4 pb-32 px-4">
+    <div className="player-page pt-4 pb-32 px-4">
       <PageHeader title={t("page_playerProfile")} />
 
       {loading ? (
@@ -86,16 +86,16 @@ export function PlayerProfileClient() {
           <p className="text-[rgb(var(--c4))] text-sm">{error}</p>
         </div>
       ) : profile ? (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="player-body space-y-4">
           {liveMatchId && (
-            <Link href={`/spectate?m=${liveMatchId}`}>
+            <Link href={`/spectate?m=${liveMatchId}`} className="player-live">
               <div className="glass-card rounded-xl p-3 flex items-center justify-center gap-2 border border-[rgb(var(--gold)/30%)] bg-[rgb(var(--gold)/5%)]">
                 <Eye size={14} className="text-[rgb(var(--gold-ink))]" />
                 <span className="text-[rgb(var(--gold-ink))] text-sm font-medium">{t("playerprofile_watchingLive")}</span>
               </div>
             </Link>
           )}
-          <div className={`glass-card rounded-2xl p-6 text-center bg-gradient-to-b ${getBannerPreset(profile.bannerPreset).gradient}`}>
+          <div className={`player-card glass-card rounded-2xl p-6 text-center bg-gradient-to-b ${getBannerPreset(profile.bannerPreset).gradient}`}>
             <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarPreset(profile.avatarPreset).gradient} p-[2px] mx-auto mb-3`}>
               <div className="w-full h-full rounded-full bg-[rgb(var(--c2))] flex items-center justify-center">
                 <span className="text-[rgb(var(--text-primary))] text-xl font-bold">{profile.displayName.charAt(0).toUpperCase()}</span>
@@ -107,7 +107,7 @@ export function PlayerProfileClient() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="player-stats grid grid-cols-2 gap-3">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 text-[rgb(var(--c4))] text-xs mb-1">
                 <Trophy size={14} className="text-[rgb(var(--gold-ink))]" /> {t("profile_trophies")}
@@ -136,7 +136,7 @@ export function PlayerProfileClient() {
             </div>
           </div>
 
-          <div className="glass-card rounded-xl p-4 flex items-center justify-between">
+          <div className="player-row glass-card rounded-xl p-4 flex items-center justify-between">
             <span className="text-[rgb(var(--c4))] text-sm">{t("playerprofile_highestRankReached")}</span>
             <span className="font-semibold text-sm" style={{ color: rankColor(profile.highestRank) }}>
               {profile.highestRank}
@@ -144,7 +144,7 @@ export function PlayerProfileClient() {
           </div>
 
           {profile.favoriteGame && (
-            <div className="glass-card rounded-xl p-4 flex items-center justify-between">
+            <div className="player-row glass-card rounded-xl p-4 flex items-center justify-between">
               <span className="text-[rgb(var(--c4))] text-sm">{t("profile_favoriteGame")}</span>
               <span className="text-[rgb(var(--text-primary))] text-sm font-medium capitalize">{profile.favoriteGame.replace("_", " ")}</span>
             </div>
