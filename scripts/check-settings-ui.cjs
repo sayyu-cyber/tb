@@ -112,41 +112,45 @@ async function run() {
     await page.locator('.faq').first().click();
     await page.getByText('Equip owned cosmetics from your').waitFor();
 
-    // ── Held upright: MSettings ─────────────────────────────────────────
-    // design/arena/boards/MSettings.dc.html. The category rail becomes the
-    // phone's scrolling chip row - still scroll-to, not swap - the sections
-    // stack at the board's `.sec2` size with the first one ticked, and the
-    // About card moves to the foot of the page with Log Out inside it. The
-    // rows themselves are the wide screen's own, checked above.
-    await page.setViewportSize({ width: 390, height: 844 });
+    // ── On a phone: LSettings ───────────────────────────────────────────
+    // design/arena/boards/LSettings.dc.html. The phone is landscape only
+    // (design/arena/LANDSCAPE.md): a fixed screen, the four groups on the
+    // left and the chosen group's controls on the right - the pane swaps.
+    // Notifications and Sound Effects are drawn switched off and say they
+    // are not connected; only Background Music works. Log Out is in Account.
+    // scripts/check-landscape-screens.cjs holds it against its reference.
+    await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(350);
-    assert.equal(await page.locator('.set-page').count(), 0, 'The wide screen steps aside');
-    const phone = page.locator('.arena-msettings');
-    assert.equal(await phone.isVisible(), true, 'and MSettings takes over');
-    assert.equal(await phone.locator('.chips > button').count(), 4, 'Four categories, as chips');
-    assert.equal(await phone.locator('.sec2').count(), 5, 'Every section is still on the page');
-    assert.equal(await phone.locator('.panel.tick.sec2').count(), 1, 'The board ticks the first panel only');
-    assert.equal(await phone.locator('[role=switch]').count(), 1, 'The same implemented switch');
+    assert.equal(await page.locator('.set-page').count(), 0, 'The wide screen is unmounted');
+    const phone = page.locator('.arena-lsettings');
+    assert.equal(await phone.isVisible(), true, 'and LSettings takes over');
+    assert.equal(await phone.locator('.snav').count(), 4, 'Four groups');
+    assert.equal(await phone.locator('[role=switch]').count(), 3, 'Three switches');
+    assert.equal(await phone.locator('[role=switch]:disabled').count(), 2, 'two of them off and saying why');
     assert.equal(await phone.locator('.langs button').count(), 4, 'and the four languages');
-    // The language control takes a line of its own at 390.
-    assert.equal(
-      await phone.locator('.langs').evaluate(node => node.getBoundingClientRect().width > node.parentElement.getBoundingClientRect().width * 0.9),
-      true, 'The language buttons wrap onto their own row');
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at 390');
-    await page.screenshot({ path: path.join(output, 'msettings-390.png'), fullPage: true });
-
-    // The chips scroll to a section rather than swapping panels.
-    await phone.locator('.chips > button', { hasText: 'Privacy & Security' }).click();
-    await page.waitForTimeout(300);
-    assert.equal(await phone.locator('.sec2').count(), 5, 'Nothing was swapped out');
-    assert.equal(await phone.locator('.chips button[aria-pressed="true"]').count(), 1, 'One chip is pressed');
-    const heading = await page.locator('#settings-privacy').boundingBox();
-    assert.ok(heading.y >= 0, 'and the section it scrolled to is not under the top bar');
+    await phone.getByRole('switch', { name: 'Background Music' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-saved'), '{"music":false}', 'Music saves');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true, 'A fixed screen: the page does not scroll');
+    await page.screenshot({ path: path.join(output, 'lsettings-844.png') });
+    await phone.locator('.snav', { hasText: 'Account' }).click();
+    assert.equal(await phone.locator('.atile').count(), 2, 'Account: the two tiles');
+    assert.equal(await phone.getByRole('button', { name: 'Log Out' }).count(), 1, 'and Log Out');
+    assert.equal(await phone.locator('.sec2').count(), 1, 'The pane swapped');
+    await phone.locator('.snav', { hasText: 'Privacy & Security' }).click();
+    assert.equal(await phone.locator('.ptile').count(), 2, 'Privacy: the policy and the terms');
+    await phone.locator('.snav', { hasText: 'Help & Support' }).click();
+    assert.equal(await phone.locator('.faq').count(), 3, 'Help: the three questions');
+    for (const size of [[740, 360], [932, 430]]) {
+      await page.setViewportSize({ width: size[0], height: size[1] });
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'No overflow at ' + size[0]);
+    }
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.waitForTimeout(250);
 
     // ── Widths ──────────────────────────────────────────────────────────
-    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [844, 390], [768, 1024], [390, 844], [320, 700]]) {
+    // The wide screen's sizes. A phone gets LSettings, checked above.
+    for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 900], [768, 1024]]) {
       await page.setViewportSize({ width, height });
       await page.waitForTimeout(200);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Overflow ' + width);
@@ -168,7 +172,7 @@ async function run() {
     assert.equal(unlabelled, 0, 'Every icon-only control has an aria-label');
 
     assert.deepEqual(errors, []);
-    console.log('Settings: sections, category navigation, working music preference, unimplemented controls omitted, languages, failed save, masked address, admin/guest/blocked states, FAQs, seven widths and accessibility passed.');
+    console.log('Settings: sections, category navigation, working music preference, unimplemented controls omitted, languages, failed save, masked address, admin/guest/blocked states, FAQs, LSettings on a phone, four wide-screen widths and accessibility passed.');
   } finally { await browser.close(); }
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

@@ -14,8 +14,8 @@ import { useToast } from "@/contexts/ToastContext";
 import { LogoutBar } from "@/components/settings/LogoutBar";
 import { isAdminEmail } from "@/lib/admin";
 import { useTranslation } from "@/hooks/useTranslation";
-import { usePhonePortrait } from "@/hooks/usePhonePortrait";
-import { PhoneSettings } from "@/components/settings/phone/PhoneSettings";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { LandSettings } from "@/components/settings/land/LandSettings";
 import { LANGUAGE_NAMES } from "@/lib/i18n";
 import { LanguageCode, AppSettings } from "@/types";
 import { RankLabel } from "@/components/arena";
@@ -23,8 +23,8 @@ import { getRankFromTrophies } from "@/constants/ranks";
 
 /**
  * Settings — design/arena/screens/app/app-14-settings.jpg, from the
- * Settings board; held upright, design/arena/boards/MSettings.dc.html and
- * design/arena/screens/phone/phone-14-settings.jpg.
+ * Settings board; on a phone, design/arena/boards/LSettings.dc.html
+ * (components/settings/land/LandSettings).
  *
  * A category rail and an About card on the left, the sections themselves on
  * the right. The rail scrolls to a section rather than swapping panels,
@@ -34,10 +34,8 @@ import { getRankFromTrophies } from "@/constants/ranks";
  * Push notifications and game sound effects have no implementation yet,
  * so their controls are omitted until a preference can actually take effect.
  *
- * Both compositions build the same five section bodies and only frame them
- * differently - the rail becomes a chip row, the About card moves to the
- * foot of the page. One composition mounts at a time, because the blocked
- * list inside Privacy holds a live subscription that must exist once.
+ * One composition mounts at a time, because the blocked list inside Privacy
+ * holds a live subscription that must exist once.
  */
 
 const CATEGORIES = [
@@ -131,7 +129,7 @@ export default function SettingsPage() {
   const { user, isGuest, playerStats } = useAuth();
   const { showToast } = useToast();
   const t = useTranslation();
-  const phone = usePhonePortrait();
+  const phone = usePhoneLayout();
   const [active, setActive] = useState("preferences");
 
   function save(change: Partial<AppSettings>) {
@@ -150,9 +148,26 @@ export default function SettingsPage() {
   // The board masks the address to its first letter, as Profile does.
   const maskedEmail = user?.email ? `${user.email[0]}••••@${user.email.split("@")[1] ?? ""}` : null;
 
-  // The five section bodies, built once. Each composition frames them its
-  // own way: the wide screen in `.sec` panels beside the rail, MSettings in
-  // `.sec2` panels under the chip row.
+  // A phone gets LSettings: two panes, the chosen group's controls on the
+  // right, from the same saved settings and handlers.
+  if (phone) {
+    return (
+      <LandSettings
+        t={t}
+        music={settings.music}
+        onMusic={() => save({ music: !settings.music })}
+        language={settings.language}
+        onLanguage={(code) => save({ language: code })}
+        isGuest={isGuest}
+        isAdmin={isAdminEmail(user?.email)}
+        account={maskedEmail || user?.displayName || "Player"}
+        tier={tier}
+        faqs={FAQS}
+      />
+    );
+  }
+
+  // The five section bodies the wide screen frames in `.sec` panels beside the rail.
   const sections = [
     {
       id: "preferences", title: "Game Preferences", Icon: Gamepad2, tone: "l" as const, mtone: "l" as const,
@@ -165,21 +180,13 @@ export default function SettingsPage() {
             checked={settings.music}
             onChange={() => save({ music: !settings.music })}
           />
-          {/* Upright the four language buttons take a line of their own:
-              they are 40px each and will not share a row with the label at
-              390px, which is how the board draws them. */}
-          <div className="srow" style={phone ? { flexWrap: "wrap", rowGap: 12 } : undefined}>
+          <div className="srow">
             <span className="ri" aria-hidden="true"><Languages /></span>
             <span className="tx">
               <b>{t("settings_language")}</b>
-              <span>
-                {phone && settings.language === "dv"
-                  ? "Dhivehi lays the app out right to left."
-                  : "App language"}
-              </span>
+              <span>App language</span>
             </span>
-            <div className="langs" role="group" aria-label={t("settings_language")}
-              style={phone ? { flex: "1 0 100%" } : undefined}>
+            <div className="langs" role="group" aria-label={t("settings_language")}>
               {LANGUAGES.map((code) => (
                 <button
                   key={code}
@@ -195,7 +202,7 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
-          {!phone && settings.language === "dv" && (
+          {settings.language === "dv" && (
             <p className="muted2 set-note">Dhivehi lays the app out right to left.</p>
           )}
         </>
@@ -248,12 +255,12 @@ export default function SettingsPage() {
               <span>Music and language preferences are stored in this browser.</span>
             </span>
           </div>
-          <div className="srow set-blocked" style={phone ? { alignItems: "flex-start", paddingTop: 14 } : undefined}>
+          <div className="srow set-blocked">
             <span className="ri" aria-hidden="true"><Ban /></span>
             <span className="tx">
               <b>Blocked Players</b>
               <span>Blocked players cannot message you, and you will not see their messages.</span>
-              <BlockedPlayers phone={phone} />
+              <BlockedPlayers />
             </span>
           </div>
           <LinkRow
@@ -268,7 +275,7 @@ export default function SettingsPage() {
             description="Account rules, coins, and fair play."
             href="/terms"
           />
-          <p className="muted2 set-note" style={phone ? { margin: "12px 2px 0", fontSize: 12.5, lineHeight: 1.5 } : undefined}>
+          <p className="muted2 set-note">
             Account deletion and data export are handled by request — see the Privacy Policy for how
             to ask. Two-factor authentication is not available in the app yet.
           </p>
@@ -285,18 +292,6 @@ export default function SettingsPage() {
       )),
     },
   ];
-
-  if (phone) {
-    return (
-      <PhoneSettings
-        title={t("settings_title")}
-        categories={CATEGORIES}
-        active={active}
-        onCategory={focusSection}
-        sections={sections}
-      />
-    );
-  }
 
   return (
     <div className="arena-settings ar-page set-page">

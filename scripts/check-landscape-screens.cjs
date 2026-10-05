@@ -149,6 +149,12 @@ const SCREENS={
       }},
     ],
   },
+  settings:{
+    entry:'land-settings-entry.tsx',mocks:'settings-test-services.tsx',
+    aliases:['@/contexts/AuthContext','@/contexts/SettingsContext','@/contexts/ToastContext','@/contexts/EconomyContext','@/hooks/useTranslation','@/lib/admin','@/lib/i18n','@/constants/ranks','@/components/moderation/BlockedPlayers','@/components/settings/LogoutBar','next/link','next/navigation'],
+    title:'SETTINGS',route:'/settings/',
+    states:[{file:'settings',ref:'landscape-14-settings',query:'?board'}],
+  },
 };
 
 function build(name){

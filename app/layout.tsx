@@ -64,7 +64,6 @@ import "@/styles/arena-roomlobby.css";
 import "@/styles/arena-mroomlobby.css";
 // The portrait screens. MShopBuy and MShopShort came out byte-identical to
 // MShop - they are MShop with a sheet open - so one sheet serves all three.
-import "@/styles/arena-msettings.css";
 // The landscape phone (design/arena/LANDSCAPE.md): the shell and layout
 // layer every L* board shares, then each screen's own board sheet. After the
 // portrait sheets above, which they replace screen by screen.
@@ -84,6 +83,7 @@ import "@/styles/arena-lhalloffame.css";
 import "@/styles/arena-lshop.css";
 import "@/styles/arena-lshopvip.css";
 import "@/styles/arena-lrewards.css";
+import "@/styles/arena-lsettings.css";
 import "@/styles/arena-phone-shell.css";
 import "@/styles/arena-rooms-app.css";
 // Owned by the second agent building the Friends/Clubs/Leaderboard/Settings

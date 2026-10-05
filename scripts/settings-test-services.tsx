@@ -1,5 +1,8 @@
 // Isolated component-test services. Never imported by application code.
 import React, { useState } from 'react';
+// '@/lib/i18n' is this file in the check's build, so the real dictionary is
+// reached by path.
+import { translate } from '../lib/i18n';
 
 /**
  * Stand-ins for what Settings reads.
@@ -14,7 +17,8 @@ import React, { useState } from 'react';
 const flag = (name: string) => new URLSearchParams(location.search).has(name);
 
 export function useSettings() {
-  const [settings, setSettings] = useState({ music: true, language: flag('dv') ? 'dv' : 'en', notifications: false, sound: false });
+  // ?board: the landscape board's state, music off.
+  const [settings, setSettings] = useState({ music: !flag('board'), language: flag('dv') ? 'dv' : 'en', notifications: false, sound: false });
   return {
     settings,
     updateSettings: (change: any) => {
@@ -37,7 +41,11 @@ export const useTranslation = () => (key: string) => ({
   settings_sound: 'Sound Effects',
   settings_music: 'Background Music',
   settings_language: 'Language',
-}[key] || key);
+}[key] || translate(key, 'en'));
+/** What else the phone shell reads: the coins and the route. */
+export const useEconomy = () => ({ state: { economy: { coins: 1240 }, profile: { vip: { active: false } } } });
+export const usePathname = () => '/settings';
+export const useRouter = () => ({ push: (url: string) => { document.body.dataset.destination = url; }, replace: () => {}, back: () => {}, prefetch: () => {} });
 export const isAdminEmail = (email?: string) => email === 'admin@thaasbai.mv';
 export const LANGUAGE_NAMES = { en: 'English', dv: 'ދިވެހި', hi: 'हिन्दी', bn: 'বাংলা' };
 export const getRankFromTrophies = (trophies: number) =>
@@ -48,19 +56,19 @@ export const RANKS = {
 };
 export const TROPHY_WIN = 5;
 export const TROPHY_LOSS = -2;
-export function BlockedPlayers({ phone = false }: { phone?: boolean }) {
+export function BlockedPlayers({ boxed = false }: { boxed?: boolean }) {
   const text = flag('blocked')
     ? '1 blocked player.'
     : "You haven't blocked anyone. You can block a player from their profile.";
-  // Held upright the note is boxed inside the row's text column.
-  return phone
-    ? <span style={{ marginTop: 8, padding: '11px 12px', borderRadius: 10, background: 'rgba(255,255,255,.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)', color: '#BEBECA' }}>{text}</span>
+  // On a phone the note is boxed inside the row's text column.
+  return boxed
+    ? <span style={{ marginTop: 7, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)', color: '#BEBECA' }}>{text}</span>
     : <p className="muted2">{text}</p>;
 }
-export function LogoutBar({ phone = false }: { phone?: boolean }) {
-  if (phone) {
+export function LogoutBar({ land = false }: { land?: boolean }) {
+  if (land) {
     return (
-      <button type="button" className="ar-btn ghost sm" style={{ marginLeft: 'auto', height: 42, color: '#FF6B80' }}>
+      <button type="button" className="ar-btn ghost" style={{ marginTop: 'auto', flex: 'none', color: '#FF6B80' }}>
         Log Out
       </button>
     );
@@ -74,3 +82,6 @@ export function LogoutBar({ phone = false }: { phone?: boolean }) {
   );
 }
 export default function Link({ href, children, ...props }: any) { return <a href={href} {...props}>{children}</a>; }
+
+/** The league days the shell's More panel reads (useRankLock). */
+export { RANKED_DAYS } from '../constants/ranks';
